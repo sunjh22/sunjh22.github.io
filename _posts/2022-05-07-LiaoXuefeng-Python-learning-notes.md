@@ -6,6 +6,8 @@ tags: [LearingNotes]
 render_with_liquid: false
 ---
 
+[教程地址](https://www.liaoxuefeng.com/wiki/1016959663602400)
+
 ## Python基础
 
 ### 字符串和编码
@@ -422,3 +424,377 @@ bart = Student('Bart Simpson', 59)
 数据封装：直接在类的内部定义访问数据的函数，也即类的方法
 
 Python允许对实例变量绑定任何数据，也就是说，对于两个实例变量，虽然它们都是同一个类的不同实例，但拥有的变量名称都可能不同
+
+### 访问限制
+如果要让内部属性不被外部访问，可以把属性的名称前加上两个下划线`__`，在Python中，实例的变量名如果以`__`开头，就变成了一个私有变量（private），只有内部可以访问，外部不能访问
+
+但是如果外部代码要获取name和score怎么办？可以给Student类增加`get_name`和`get_score`这样的方法
+```python
+class Student(object):
+    ...
+
+    def get_name(self):
+        return self.__name
+
+    def get_score(self):
+        return self.__score
+
+# 对传入参数做检查
+    def set_score(self, score):
+        if 0 <= score <= 100:
+            self.__score = score
+        else:
+            raise ValueError('bad score')
+```
+
+以一个下划线开头的实例变量名，比如_name，这样的实例变量外部是可以访问的，但是，按照约定俗成的规定，当你看到这样的变量时，意思就是，“虽然我可以被访问，但是，请把我视为私有变量，不要随意访问”
+
+### 继承和多态
+在OOP程序设计中，当我们定义一个class的时候，可以从某个现有的class继承，新的class称为子类（Subclass），而被继承的class称为基类、父类或超类（Base class、Super class）
+
+**继承**: 子类获得了父类的全部功能，在继承关系中，如果一个实例的数据类型是某个子类，那它的数据类型也可以被看做是父类。但是，反过来就不行
+
+**多态**: 当子类和父类都存在相同的方法时，子类的方法会覆盖父类的方法，在代码运行的时候，总是会调用子类的方法
+
+著名的“开闭”原则: 对扩展开放, 对修改封闭
+
+静态语言 vs 动态语言: Java是静态语言，Python是动态语言，动态语言的“鸭子类型”，它并不要求严格的继承体系，一个对象只要“看起来像鸭子，走起路来像鸭子”，那它就可以被看做是鸭子
+
+### 获取对象信息
+使用`type()`函数判断对象类型
+
+`isinstance()`函数判断class的类型
+
+如果要获得一个对象的所有属性和方法，可以使用`dir()`函数，它返回一个包含字符串的list
+
+配合`getattr()`、`setattr()`以及`hasattr()`，我们可以直接操作一个对象的状态
+
+### 面向对象高级编程
+为了达到限制的目的，Python允许在定义`class`的时候，定义一个特殊的`__slots__`变量，来限制该`class`实例能添加的属性
+```python
+class Student(object):
+    __slots__ = ('name', 'age') # 用tuple定义允许绑定的属性名称
+```
+
+使用`__slots__`要注意，`__slots__`定义的属性仅对当前类实例起作用，对继承的子类是不起作用的使用,除非在子类中也定义`__slots__`，这样，子类实例允许定义的属性就是自身的`__slots__`加上父类的`__slots__`
+
+### 使用@property
+Python内置的`@property`装饰器就是负责把一个方法变成属性调用的
+```python
+class Student(object):
+
+    @property
+    def score(self):
+        return self._score
+
+    @score.setter
+    def score(self, value):
+        if not isinstance(value, int):
+            raise ValueError('score must be an integer!')
+        if value < 0 or value > 100:
+            raise ValueError('score must between 0 ~ 100!')
+        self._score = value
+```
+
+定义只读属性: 只定义`getter`方法，不定义`setter`方法就是一个只读属性
+
+### 多重继承
+很有用的性质：通过多重继承，一个子类就可以同时获得多个父类的所有功能
+
+### 定制类
+Python中有特殊用途的函数：
+- `__str__`、`__repr__()`，打印出易于读的示例
+- `__iter__`, 返回一个可迭代的类
+- `__getitem__`，使类像list那样可以按照下标取出元素
+- `__getattr__`，动态返回一个属性，当调用不存在的属性时，Python解释器会试图调用`__getattr__`来尝试获得属性
+
+### 使用枚举类
+
+### 使用元类
+
+## 错误、调试和测试
+
+### 错误处理
+`try...except...finally...`的错误处理机制: try后面是测试执行语句，若没有报错，则跳过except，若报错，try中错误之后的语句不再执行，报一个exception。用这个方法的好处是即使报错了后面的程序仍然可以运行
+
+exception：Python的错误其实也是class，所有的错误类型都继承自`BaseException`，在使用exception时，父类错误会覆盖子类错误
+
+常见的错误类型和继承关系[在这](https://docs.python.org/3/library/exceptions.html#exception-hierarchy)
+
+```python
+try:
+    print('try')
+    r = 10/0
+    print('result:' r)
+except ZeroDivisionError as e:
+    print('except', e)
+```
+
+也可以用Python内置的`logging`模块记录错误信息
+
+try...except可以捕获错误，raise可以抛出错误，例子
+```python
+def foo(s):
+    n = int(s)
+    if n==0:
+        raise ValueError('invalid value: %s' % s)
+    return 10/n
+```
+
+### 调试
+用断言(assert)代替print来检查和调试，启动Python解释器时可以用-O参数来关闭`assert`。一个例子
+```python
+def foo(s):
+    n = int(s)
+    assert n!=0, "n is zero"
+    return 10/0
+
+def main():
+    foo('0')
+```
+
+第二种方法是用logging，比较复杂，以后需要的时候再考虑使用
+
+第三种是单步运行和断点：Python的调试器*pdb*可以让程序以单步方式运行，也可以用IDE
+
+### 单元测试
+“测试驱动开发”（TDD：Test-Driven Development）
+
+可以用Python自带的unittest模块编写单元测试，其实是编写一个测试类，一个例子
+```python
+import unittest
+
+from mydict import Dict
+
+class TestDict(unittest.TestCase):
+
+    def test_init(self):
+        d = Dict(a=1, b='test')
+        self.assertEqual(d.a, 1)
+        self.assertEqual(d.b, 'test')
+        self.assertTrue(isinstance(d, dict))
+
+    def test_key(self):
+        d = Dict()
+        d['key'] = 'value'
+        self.assertEqual(d.key, 'value')
+
+    def test_attr(self):
+        d = Dict()
+        d.key = 'value'
+        self.assertTrue('key' in d)
+        self.assertEqual(d['key'], 'value')
+
+    def test_keyerror(self):
+        d = Dict()
+        with self.assertRaises(KeyError):
+            value = d['empty']
+
+    def test_attrerror(self):
+        d = Dict()
+        with self.assertRaises(AttributeError):
+            value = d.empty
+
+# 运行单元测试
+if __name__ == '__main__':
+    unittest.main()
+```
+
+可以在单元测试中编写两个特殊的`setUp()`和`tearDown()`方法。这两个方法会分别在每调用一个测试方法的前后分别被执行
+
+### 文档测试
+Python内置的“文档测试”（`doctest`）模块可以直接提取注释中的代码并执行测试
+
+## IO编程
+
+### 操作文件和目录
+`os`模块, `os.path`模块可以让我们像在命令行中一样操作文件和目录
+
+常用函数：`os.path.abspath('.')`，`os.path.join()`，`os.path.split()`，`os.path.splitext()`, `os.listdir()`, `os.mkdir()`
+
+`shutil`模块可以看做是`os`模块的补充，比如`copyfile()`函数
+
+### 序列化
+我们把变量从内存中变成可存储或传输的过程称之为序列化，在Python中叫pickling，在其他语言中也被称之为serialization，marshalling，flattening等等，都是一个意思。
+
+Python提供了`pickle`模块来实现序列化: `pickle.dump(variable, file)`序列化一个变量并存入文件, `pickle.load(variable, file)`从一个file-like object中反序列化一个对象为变量
+
+把对象序列化为标准格式如JSON，因为JSON表示出来就是一个字符串，可以被所有语言读取，也可以方便地存储到磁盘或者通过网络传输
+
+Python内置的`json`模块提供了非常完善的Python对象到JSON格式的转换: json.dumps(), json.loads()
+
+如果要序列化一个类实例，需要把这个类转换为一个可序列化的字典，可以写一个函数转换也可以偷懒用`print(json.dumps(s, default=lambda obj: obj.__dict__))`
+
+## 进程和线程
+一个任务就是一个进程（Process）,进程内的“子任务”称为线程（Thread）
+
+`multiprocessing`模块是跨平台版本的多进程模块,`multiprocessing`模块提供了一个`Process`类来代表一个进程对象。一个例子
+```python
+from multiprocessing import Process
+import os
+
+def run_proc(name):
+    print("Run child process %s (%s)" % (name, os.getpid()))
+
+if __name__=='__main__':
+    print("Parent process %s." % os.getpid())
+    p = Process(target=run_proc, args=('test'))
+    print("Child process will start")
+    p.start()
+    p.join()
+    print("Child process end")
+```
+
+如果要启动大量的子进程，可以用进程池的方式批量创建子进程
+```python
+from multiprocessing import Pool
+import os, time, random
+
+def long_time_task(name):
+    print('Run task %s (%s)...' % (name, os.getpid()))
+    start = time.time()
+    time.sleep(random.random() * 3)
+    end = time.time()
+    print('Task %s runs %0.2f seconds.' % (name, (end - start)))
+
+if __name__=='__main__':
+    print('Parent process %s.' % os.getpid())
+    p = Pool(4)
+    for i in range(5):
+        p.apply_async(long_time_task, args=(i,))
+    print('Waiting for all subprocesses done...')
+    p.close()
+    p.join()
+    print('All subprocesses done.')
+```
+
+子进程
+
+进程间通信可以通过Queue、Pipes等实现
+```python
+from multiprocessing import Process, Queue
+import os, time, random
+
+# 写数据进程执行的代码:
+def write(q):
+    print('Process to write: %s' % os.getpid())
+    for value in ['A', 'B', 'C']:
+        print('Put %s to queue...' % value)
+        q.put(value)
+        time.sleep(random.random())
+
+# 读数据进程执行的代码:
+def read(q):
+    print('Process to read: %s' % os.getpid())
+    while True:
+        value = q.get(True)
+        print('Get %s from queue.' % value)
+
+if __name__=='__main__':
+    # 父进程创建Queue，并传给各个子进程：
+    q = Queue()
+    pw = Process(target=write, args=(q,))
+    pr = Process(target=read, args=(q,))
+    # 启动子进程pw，写入:
+    pw.start()
+    # 启动子进程pr，读取:
+    pr.start()
+    # 等待pw结束:
+    pw.join()
+    # pr进程里是死循环，无法等待其结束，只能强行终止:
+    pr.terminate()
+```
+
+### 多进程
+`threading`模块，启动一个线程就是把一个函数传入并创建`Thread`实例，然后调用`start()`开始执行,一个例子
+```python
+import time, threading
+
+def loop():
+    print('thread %s is running' % threading.current_thread().name)
+    n = 0
+    while n < 5:
+        n += 1
+        print('thread %s >>> %s' %(threading.current_thread().name, n))
+        time.sleep(1)
+    print('thread %s ended.' % threading.current_thread().name)
+
+print('thread %s is running...' % threading.current_thread().name)
+t = threading.Thread(target=loop, name="LoopThread")
+t.start()
+t.join()
+print('thread %s ended.' % threading.current_thread().name)
+```
+
+Lock: 多线程编程，模型复杂，容易发生冲突，必须用锁加以隔离，同时，又要小心死锁的发生
+
+多线程在Python中只能交替执行，即使100个线程跑在100核CPU上，也只能用到1个核, 故Python中应当通过多进程实现多核任务
+
+`ThreadLocal`解决了参数在一个线程中各个函数之间互相传递的问题
+
+多进程模式最大的优点就是稳定性高,缺点是创建进程的代价大
+
+计算密集型 vs. IO密集型: 计算密集型任务同时进行的数量应当等于CPU的核心数，尽量用C语言编写
+
+Python中单线程的异步编程模型称为协程
+
+### 分布式进程
+很有意思的特性，但是现在暂时没什么兴趣去深究这个，稍微理解下原理就可以：有一个进程作为调度者，将任务分布到不同机器的其他进程中，他们之间通过网络通信
+
+## 正则表达式
+教程中的总结很简练，需要的话可以随时回来查阅
+
+在正则表达式中，如果直接给出字符，就是精确匹配。用`\d`可以匹配一个数字，`\w`可以匹配一个字母或数字，`\s`匹配空格， `.`可以匹配任意字符
+
+要匹配变长的字符，在正则表达式中，用`*`表示任意个字符（包括0个），用`+`表示至少一个字符，用`?`表示0个或1个字符，用`{n}`表示n个字符，用`{n,m}`表示n-m个字符
+
+由于`'-'`是特殊字符，在正则表达式中，要用`'\'`转义
+
+用`[]`表示范围, `A|B`可以匹配A或B, `^`表示行的开头, `$`表示行的结束
+
+正则表达式还可以同来做字符串切分和分组
+
+正则匹配默认是贪婪匹配，加个?就可以让\d+采用非贪婪匹配
+
+## 常用内建模块
+`datetime`模块
+
+`collections`模块是Python内建的一个集合模块，提供了许多有用的集合类
+
+- `namedtuple`: namedtuple是一个函数，它用来创建一个自定义的tuple对象，并且规定了tuple元素的个数，并可以用属性而不是索引来引用tuple的某个元素
+- `deque`: deque是为了高效实现插入和删除操作的双向列表，适合用于队列和栈
+- `default`: 在key不存在时返回一个默认值，默认值是调用函数返回的，而函数在创建defaultdict对象时传入，如dd = defaultdict(lambda: 'N/A')默认返回NA，或dd=default(list())返回list
+- `OrderedDict`: OrderedDict的Key会按照插入的顺序排列，不是Key本身排序, 可以构建一个一个FIFO（先进先出）的dict，当容量超出限制时，先删除最早添加的Key - `LastUpdatedOrderedDict`
+- `ChainMap`: ChainMap可以把一组dict串起来并组成一个逻辑上的dict, 应用程序传参时可以用ChainMap实现参数的优先级查找
+- `Counter`: Counter是一个简单的计数器，例如，统计字符出现的个数
+
+`base64`模块：Base64是一种任意二进制到文本字符串的编码方法，常用于在URL、Cookie、网页中传输少量二进制数据
+
+`struct`模块：用来解决bytes和其他二进制数据类型的转换
+
+`hashlib`模块提供了常见的摘要算法，如MD5，SHA1，摘要算法就是通过摘要函数f()对任意长度的数据data计算出固定长度的摘要digest，目的是为了发现原始数据是否被人篡改过，常用于验证用户登录
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
