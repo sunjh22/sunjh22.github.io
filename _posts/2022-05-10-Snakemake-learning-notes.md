@@ -10,12 +10,19 @@ This post records the learning of Snakemake. Refered to this [tutorial](https://
 
 The Snakemake workflow management system is a tool to create reproducible and scalable data analyses. Workflows are described via a human readable, Python based language. They can be seamlessly scaled to server, cluster, grid and cloud environments, without the need to modify the workflow definition. Finally, Snakemake workflows can entail a description of required software, which will be automatically deployed to any execution environment.
 
-The first and the most important thing is that you know the whole pipeline to do the thing, the sequences, the tools, the version of tools, the input and output, the parameters, the log files.
+The first and the most important thing is that you know how to do the thing, sequences, tools and their version, input and output, parameters and log files.
 
-Keep in mind that Snakemake helps you build a workflow that make you reproduce your analysis easily, but itself will not analyze anything.
+Keep in mind that Snakemake could help you build a workflow that make the analysis reproducible, but itself does not analyze anything.
 
-## An example
-Config file
+## Install
+
+Recommand install through conda or mamba
+    
+    mamba install -c bioconda snakemake
+
+## Example from Snakemake tutorial
+
+Config file - store global variables in dictionary, can be wrote in JSON or YAML
 ```yaml
 samples:
     A: data/samples/A.fastq
@@ -24,7 +31,7 @@ samples:
 prior_mutation_rate: 0.001
 ```
 
-Sankefile
+Snakefile
 ```python
 configfile: "config.yaml"
 
@@ -48,8 +55,6 @@ rule bwa_map:
         rg=r"@RG\tID:{sample}\tSM:{sample}"
     log:
         "logs/bwa_mem/{sample}.log"
-    benchmark:
-        "benchmarks/{sample}.bwa.benchmark.txt"
     threads: 8
     shell:
         "(bwa mem -R '{params.rg}' -t {threads} {input} | "
@@ -98,69 +103,99 @@ rule plot_quals:
         "plots/quals.svg"
     script:
         "scripts/plot-quals.py"
+
+
+# wrapper version bwa_mem
+rule bwa_mem:
+  input:
+      ref="data/genome.fa",
+      sample=lambda wildcards: config["samples"][wildcards.sample]
+  output:
+      temp("mapped_reads/{sample}.bam")
+  log:
+      "logs/bwa_mem/{sample}.log"
+  params:
+      "-R '@RG\tID:{sample}\tSM:{sample}'"
+  threads: 8
+  wrapper:
+      "0.15.3/bio/bwa/mem"
 ```
 
-## Useful command line
-- dry-run and print shell commands: `snakemake -np`
+`envs/samtools.yaml`
+```yaml
+channels:
+  - bioconda
+  - conda-forge
+dependencies:
+  - samtools =1.9
+```
 
-- visualize the DAG of jobs using the Graphviz dot command: `snakemake --dag | dot -Tsvg > dag.svg`
+## Rules in snakemake
+. `rule`
 
-- execute the workflow with 8 cores: `snakemake --cores 8`
+. `wildcards` - 用来获取通配符匹配到的部分
 
-- `expand()` produces a list, an example `expand("sorted_reads/{sample}.{replicate}.bam", sample=SAMPLES, replicate=[0, 1])`
+. `input`
 
-- `--forcerun` forcing re-execution of parts of the workflow, `--forceall` forcing re-execution of whole workflow
+. `output`
 
-- If `--cores` command is given without a number, all available cores are used
+. `shell`
 
-- Snakemake will load the config file and store its contents into a globally available dictionary named `config`
+. `threads`
 
-## Directory structure
-Git repository with
+. `message`
 
-	├── .gitignore
-	├── README.md
-	├── LICENSE.md
-	├── config
-	│   └── config.yaml
-	├── workflow
-	│   ├── envs
-	│   │   ├── env1.yaml
-	│   │   └── env2.yaml
-	│   ├── report
-	│   │   ├── fig1.rst
-	│   │   ├── fig2.rst
-	│   │   └── workflow.rst
-	│   ├── rules
-	│   │   ├── rules1.smk
-	│   │   └── rules2.smk
-	│   ├── scripts
-	│   │   ├── script1.py
-	│   │   └── script2.R
-	│   ├── notebooks
-	│   │   ├── notebook1.py.ipynb
-	│   │   └── notebook2.r.ipynb
-	│   └── Snakefile
-	├── resources
-	└── results
+. `script` - you can use `snakemake.input[0]` to access the properties of the rule in Python, and `snakemake@input[[1]]` or `snakemake@input[["myfile"]]` in R
 
+. `log`
 
-## Snakemake property
+. `params`
+
+. `run` - write python code in this block
+
+. `temp` - assign temperary files, will be removed after running
+
+. `protected`
+
+. `benchmark` - with the benchmark directive, Snakemake can be instructed to measure the wall clock time of a job
+
+. `include` - include another Snakefile into the current one
+
+. `conda` - specify Conda environments per rule, required tools and their version can be specified in a file `envs/samtools.yaml` as shown in above
+
+. `wrappers` - A wrapper is a short script that wraps (typically) a command line application and makes it directly addressable from within Snakemake
+
+. `expand` - produces a list, an example `expand("sorted_reads/{sample}.{replicate}.bam", sample=SAMPLES, replicate=[0, 1])`
+
+. `glob_wildcards` - can extract all matched contents to a list
+
+. Input function - determine the input of a rule through a function
+
+. Rule Dependencies - output of former rules can be the input of this rule
+
+## Execution
+
+. `snakemake -np`, dry run and print shell commands, if `--cores` command is given without a number, all available cores are used
+
+. `snakemake targetfiles --cores 8`, run for single specific targets, snakemake will automatically find dependency
+
+. `snakemake somerules --core 8`, run specific rules, the output of the rule will be the target
+
+. `--forceall`, force to re-run specific rules or targets
+
+. `snakemake --use-conda --cores 1`, will automatically create required environments and activate them before a job is executed
+
+. `snakemake --dag | dot -Tpdf > dag.pdf`, build a graph showing the logic of snakemake run
+
+. `snakemake --dag | dot -Tsvg > dag.svg`
+
 - Snakemake allows generalizing rules by using named wildcards, you can have multiple wildcards in your file paths, however, to avoid conflicts with other jobs of the same rule, all output files of a rule have to contain exactly the same wildcards.
 
 - Snakemake automatically creates missing directories before jobs are executed
 
 - Snakemake allows to access wildcards in the shell command via the wildcards object that has an attribute with the value for each wildcard
 
-- Snakemake uses the Python format mini language to format shell commands.
-
-- Snakefiles are in principle Python code enhanced by some declarative statements to define workflows
-
 - In the Python script, all properties of the rule like input, output, wildcards, etc. are available as attributes of a global snakemake object
-
-- In R scripts, an S4 object named snakemake analogous to the Python case above is available and allows access to input and output files and other parameters
-
-- Config files can be written in JSON or YAML
 
 - Snakemake workflows are executed in three phases
 
@@ -170,25 +205,28 @@ Git repository with
 
 	- In the scheduling phase, the DAG of jobs is executed, with jobs started according to the available resources.
 
-- **Input functions** take as single argument a `wildcards` object, that allows to access the wildcards values via attributes (here `wildcards.sample`)
-
-- The flag `--summary` prints a table associating each output file with the rule used to generate it, the creation date and optionally the version of the tool used for creation is provided.
-
 ## Additional features
+
 ### Benchmarking
+
 With the `benchmark` directive, Snakemake can be instructed to measure the wall clock time of a job.
 
 ### Modularization
+
 Snakemake provides the `include` directive to include another Snakefile into the current one
 
 ### Automatic deployment of software dependencies
+
 Use `conda` directive, execute snakemake with `snakemake --use-conda --cores 1`
 
 ### Tool wrappers
- A wrapper is a short script that wraps (typically) a command line application and makes it directly addressable from within Snakemake. [Snakemake wrapper repository](https://snakemake-wrappers.readthedocs.io/)
+
+A wrapper is a short script that wraps (typically) a command line application and makes it directly addressable from within Snakemake. [Snakemake wrapper repository](https://snakemake-wrappers.readthedocs.io/)
 
 ### Cluster execution
-`snakemake --cluster qsub --jobs 100`
+
+`snakemake --cluster qsub --jobs 10`
 
 ### Constraining wildcards
+
 the wildcard sample in the output file `"sorted_reads/{sample}.bam"` can be constrained to only allow alphanumeric sample names as `"sorted_reads/{sample,[A-Za-z0-9]+}.bam"`.

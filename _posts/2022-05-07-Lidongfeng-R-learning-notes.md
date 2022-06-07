@@ -15,31 +15,7 @@ options(repos=c(CRAN="https://mirror.tuna.tsinghua.edu.cn/CRAN/"))
 install.packages("sos")
 ```
 
-安装GitHub上的R包
-```R
-if(!require(devtools)) install.packages('devtools')
-devtools::install_github("kjhealy/socviz")
-```
-
-安装Bioconductor上的R包
-```R
-options(repos=c(CRAN="https://mirror.tuna.tsinghua.edu.cn/CRAN/"))
-if (!requireNamespace("BiocManager", quietly = TRUE)){
-  install.packages("BiocManager")
-  BiocManager::install()
-}
-options(BioC_mirror="https://mirrors.tuna.tsinghua.edu.cn/bioconductor")
-BiocManager::install(c("Biostrings"))
-```
-
-更新扩展包
-```R
-options(repos=c(CRAN="http://mirror.tuna.tsinghua.edu.cn/CRAN/"))
-update.packages(checkBuilt=TRUE, ask=FALSE)
-```
-
 ## 数据类型与相应计算
-
 R是“动态类型”语言， 赋值实际上是“绑定”（binding）， 即将一个变量名与一个存储地址联系在一起， 同一个存储地址可以有多个变量名与其联系
 
 ### 数值型向量及其运算
@@ -141,23 +117,23 @@ lubridate的`dseconds()`, `dminutes()`, `dhours()`, `ddays()`, `dweeks()`, `dyea
 
 用`unclass()`函数将时间长度数据的类型转换为以秒为单位的普通数值
 
-lubridate提供了`%--%`运算符构造一个时间期间。 时间区间可以求交集、并集等
+lubridate提供了`%--%`运算符构造一个时间区间。 时间区间可以求交集、并集等
 
 生成时间区间， 也可以用`lubridate::interval(start, end)`函数
 
 把一个R日期时间值用`as.POSIXlt()`转换为`POSIXlt`类型， 就可以用列表元素方法取出其组成的年、月、日、时、分、秒等数值
 
+
 ## R因子类型
 
 ### factor
-因子的`levels`属性可以看成是一个映射， 把整数值1,2,映射成这些水平值， 因子在保存时会保存成整数值1,2,等与水平值对应的编号
+因子的`levels`属性可以看成是一个映射，把整数值1,2,映射成这些水平值，因子在保存时会保存成1,2,等与水平值对应的编号
 
 为了对因子执行字符型操作（如取子串）， 保险的做法是先用as.character()函数强制转换为字符型
 ```R
 factor(x, levels = sort(unique(x), na.last = TRUE), 
        labels, exclude = NA, ordered = FALSE)
 ```
-
 ### cut()
 连续取值的变量，可以用`cut()`函数将其分段， 转换成因子。 使用`breaks`参数指定分点， 最小分点要小于数据的最小值， 最大分点要大于等于数据的最大值， 默认使用左开右闭区间分组
 
@@ -201,17 +177,13 @@ li["b"] <- list(NULL)
 ## R矩阵和数组
 - 对矩阵`A`，`diag(A)`访问`A`的主对角线元素组成的向量。 另外，若`x`为正整数值标量，`diag(x)`返回`x`阶单位阵； 若`x`为长度大于1的向量， `diag(x)`返回以x的元素为主对角线元素的对角矩阵
 
-- 若x是向量，`cbind(x)`把x变成列向量， 即列数为1的矩阵， `rbind(x)`把x变成行向量
+- 若x是向量，`cbind(x)`把x变成列向量，即列数为1的矩阵，`rbind(x)`把x变成行向量
 
 - 对两个同形状的矩阵， 用`*`表示两个矩阵对应元素相乘(注意这不是线性代数中的矩阵乘法)， 用`/`表示两个矩阵对应元素相除
 
 - 用`%*%`表示矩阵乘法而不是用`*`表示， 注意矩阵乘法要求左边的矩阵的列数等于右边的矩阵的行数
 
-- 用%*%表示矩阵乘法而不是用*表示， 注意矩阵乘法要求左边的矩阵的列数等于右边的矩阵的行数。注意矩阵乘法总是给出矩阵结果， 即使此矩阵已经退化为行向量、列向量甚至于退化为标量也是一样
-
 - 设`x`, `y`是两个向量， 计算向量内积， 可以用`sum(x*y)`表示
-
-- R向量支持外积运算， 记为`%o%`, 结果为矩阵。 `x %o% y`的第行第列元素等于`x[i]`乘以`y[j]`。这种运算还可以推广到x的每一元素与y的每一元素进行其它的某种运算， 而不限于乘积运算，可以用outer(x,y,f)完成， 其中f是某种运算，或者接受两个自变量的函数
 
 用`solve(A)`求`A`的逆矩阵
 
@@ -227,12 +199,12 @@ li["b"] <- list(NULL)
 # 三维数组ara可以看成是4个2X3矩阵
 ara <- array(1:24, dim=c(2,3,4))
 ```
-
 ## 数据框
-在R markdown文件中， 可以将数据框保存的表格显示为富文本格式， 方法是使用`knitr::kable()`函数
+在R markdown文件中，可以将数据框保存的表格显示为富文本格式，方法是使用`knitr::kable()`函数
 
 ### tibble
 从tibble取出的一列结果仍是tibble而不是向量， 为了提取一列为向量应使用双方括号格式或`$`格式
+
 
 # 编程模块
 
@@ -244,8 +216,8 @@ read_csv()函数：参数`skip=`, `locale=locale()`,`col_names=`,`col_types`.
 `read_table2()`读入用空格作为间隔的文本文件， 同一行的两个数据项之间可以用一个或多个空格分隔， 不需要空格个数相同， 也不需要上下对齐
 
 ## 程序控制结构
-- 分支结构：if-else, ifelse()
-- 循环结构：for, 如果需要对某个向量x按照下标循环， 获得所有下标序列的标准写法是`seq_along(x)`
+- 分支结构：if-else, ifelse(), dplyr::case_when()相当于ifelse的多分支推广，在mutate中需要根据条件定义一个新的变量的时候很有用
+- 循环结构：for, 如果需要对某个向量x按照下标循环，获得所有下标序列的标准写法是`seq_along(x)`
 - while()和repeat
 ```R
 # 用泰勒展开逼近计算e的值
@@ -264,21 +236,25 @@ err <- s - e0
 cat("k=", k, " s=", s, " e=", e0, " 误差=", err, "\n")
 ```
 
-如果对向量每个元素遍历并保存结果， 应在循环之前先将结果变量产生等长的存储， 在循环内为已经分配好存储空间的输出向量的元素赋值。 为了产生长度为n的数值型向量，用`numeric(n)`； 为了产生长度为n的列表，用`vector("list", n)`
+如果对向量每个元素遍历并保存结果，应在循环之前先将结果变量产生等长的存储，在循环内为已经分配好存储空间的输出向量的元素赋值。为了产生长度为n的数值型向量，用`numeric(n)`； 为了产生长度为n的列表，用`vector("list", n)`
+
+if和while中用到的条件必须是标量值，而且必须为TRUE or FALSE
 
 ### 管道控制
 R从4.1.0版本开始提供了一个`|>`运算符实现管道控制
 
 ## 函数
-函数名 <- function(形式参数表) 函数体，函数也是一个对象
+函数名 <- function(形式参数表) 函数体，*函数也是一个对象*
 
-从R 4.1.0版本开始，简单的R函数还可以写成`\(x)` 表达式的形式, 用\(x)代替`function`关键字
+从R 4.1.0版本开始，简单的R函数还可以写成`\(x)` 表达式的形式, 用`\(x)`代替`function`关键字
 
-函数体的最后一个表达式是函数返回值,为了返回多个变量值， 将这些变量打包为一个列表返回即可
+函数体的最后一个表达式是函数返回值,为了返回多个变量值，将这些变量打包为一个列表返回即可
+
+函数定义中的自变量叫做形式参数或形参(formal arguments)。 函数调用时，形式参数得到实际值，叫做实参(actual arguments)
 
 `formals()`可以查看函数的形式参数表
 
-R中在递归调用时， 最好用 `Recall` 代表调用自身， 这样保证函数即使被改名（在R中函数是一个对象， 改名后仍然有效）递归调用仍指向原来定义
+R中在递归调用时，最好用 `Recall` 代表调用自身，这样保证函数即使被改名（在R中函数是一个对象，改名后仍然有效）递归调用仍指向原来定义
 
 R中的无名函数类似于Python中的lambda匿名函数，只要`function(形式参数)`就可以
 
@@ -300,29 +276,28 @@ replicate(6, {
   x <- rnorm(5, 0, 1); 
   c(mean(x), sd(x)) })
 ```
-
 ### 避免制作副本
-- 事先分配好用来保存结果的数据结构， 在每次循环中填入相应结果
-- 在循环内修改数据框的值也会制作数据框副本，修改列表元素就不会制作副本
+- 事先分配好用来保存结果的数据结构，在每次循环中填入相应结果
+- 在循环内修改数据框的值会制作数据框副本，修改列表元素不会制作副本
 
 ### R的计算函数
 
 #### 数学函数
 #### 概括函数
-- cumsum和cumprod计算累计， 得到和输入等长的向量结果
+- cumsum和cumprod计算累计，得到和输入等长的向量结果
 - diff计算前后两项的差分
-- mean计算均值，var计算样本方差或协方差矩阵， sd计算样本标准差, median计算中位数， quantile计算样本分位数。 cor计算相关系数
+- mean计算均值，var计算样本方差或协方差矩阵，sd计算样本标准差, median计算中位数，quantile计算样本分位数。cor计算相关系数
 - colSums, colMeans, rowSums, rowMeans对矩阵的每列或每行计算总和或者平均值
 
 #### 最值
 - pmax(x1,x2,...)对若干个等长向量计算对应元素的最大值
 
 #### 排序
-- sort返回排序结果
-- order返回排序用的下标序列
-- unique()返回去掉重复元素的结果， duplicated()对每个元素用一个逻辑值表示是否与前面某个元素重复
-- rev反转序列
-- rank计算秩统计量
+- `sort`返回排序结果
+- `order`返回排序用的下标序列
+- `unique()`返回去掉重复元素的结果，`duplicated()`对每个元素用一个逻辑值表示是否与前面某个元素重复
+- `rev`反转序列
+- `rank`计算秩统计量
 
 ### 一元定积分
 `integrate(f, lower, upper)`对一元函数f计算从lower到upper的定积分
@@ -342,7 +317,7 @@ replicate(6, {
 
 懒惰求值：懒惰求值使得缺省值在初次访问时， 是在函数内的环境（局部变量作用域）内求值的， 不是在其调用处的环境内求值
 
-懒惰求值使得缺省值在初次访问时， 是在函数内的环境（局部变量作用域）内求值的， 不是在其调用处的环境内求值，将每一个小问题编写成一个单独的函数，编写一系列的测试函数， 对每个函数进行测试，最好能有自动化的测试策略
+将每一个小问题编写成一个单独的函数，编写一系列的测试函数， 对每个函数进行测试，最好能有自动化的测试策略
 
 ### 程序调试
 在函数中加browser()可以进行断点调试，在调试命令行
@@ -359,19 +334,33 @@ replicate(6, {
 
 函数`stopifnot`可以指定自变量的若干个条件， 当自变量不符合条件时自动出错停止。类似于Python中的assert
 
-### 泛函
-用函数作为参数的函数称为泛函（functionals）
+### 泛函（functionals）
+使用purrr包中得`map`函数及其变种进行各种泛函分析。
+`map`函数要求的输入格式是`map(data, function)`, map总是返回列表
 
-`purrr::map`是更容易理解和使用的泛函，map总是返回列表，如果确知其调用的函数总是返回某种类型的标量值， 可以用map的变种
+`map`变种及其性质
+- `map_lgl`：返回逻辑向量
+- `map_int`：返回整型向量
+- `map_dbl`: 返回双精度浮点型向量(double类型)
+- `map_chr`: 返回字符型向量
+- `modify`: 输出的数据类型与输入的数据类型一致，可用于对数据框特定列进行修改，如`modify(dataframe, ~ if(is.numeric(.x) .x-median(.x) else .x)`，可以先判断是否是数值型列，然后每一项减去中位数，也可以用`modify`的变种`modify_if()`写作`modify_if(dataframe, is.numeric, ~ .x-median(.x))`
+- `map2`: 支持两个输入自变量，输出也是一个列表，若提前已知输出类型，可用相应变种指定输出类型
+- `walk`: 狭义上讲，这个函数不产生输出也即不返回数据，适用于一些作图和保存数据到文件的情况，如`d.class %>% split(d.class, d.class[['sex']]) %>% walk(paste0("class", names(.), '.csv'), ~ write.csv(.x, file=.y))`，这条命令首先将一个数据框按某一列分成两个，然后将分开的数据框分别写到两个文件中
+- `imap`: 如果x有元素名，`imap(x, f)`相当于`imap2(x, names(x), f)`； 如果x没有元素名，`imap(x, f)`相当于`map2(x, seq_along(x), f)`
+- `pmap`: 支持多个输入自变量
+- `...`： 形参, 一个例子理解一下：`map_dbl(d.class[,3:5], mean, trim=0.10)`中的`trim=0.10`就是map函数的`...`形参
 
-`map_lgl()`：返回逻辑向量；
-`map_int()`：返回整型向量；
-`map_dbl()`: 返回双精度浮点型向量(double类型)；
-`map_chr()`: 返回字符型向量
+`purrr::reduce`函数: 可以用来对输入列表或向量的元素逐次的用给定的函数进行合并运算，类似于用`sum`和`prod`进行累加和累乘
+`purrr::accumulate`函数: 就像`reduce`函数是`sum`的推广，`accumulate`函数就像是`cumsum`的推广
 
-`...`形参,一个例子理解一下：`map_dbl(d.class[,3:5], mean, trim=0.10)`中的`trim=0.10`就是map函数的`...`形参
+示性函数：返回逻辑向量的函数，示性函数可以作为泛函的输入，purrr包中以示性函数为输入的泛函有
+- `keep(.x, .p)`: 保留满足`.p`条件的元素
+- `discard`: 于`keep`相反
 
-purrr包提供了一个`keep`函数， 可以专门用来选择数据框各列或列表元素中满足某种条件的子集，这个条件用一个返回逻辑值的函数来给出,挺有用的，一个例子：`dsub <- keep(d.class, is.numeric)`
+基本R中的泛函： `apply`类函数
+- `lapply(x, FUN, ...)`: 总是返回列表
+- `sapply()`: 优先尝试返回向量或矩阵，不可行时才返回列表
+- `mapply()`: 可以支持多个输入自变量，类似于`map2`
 
 
 
