@@ -26,3 +26,40 @@ render_with_liquid: false
 	sudo iptables -I INPUT -p tcp --dport 10086 -j ACCEPT
 
 然后在`10.20.57.27:10086`上就可以访问IGV的展示结果了
+
+# 在Linux服务器上用Python开一个服务器
+```bash
+python -m http.server --bind 10.20.57.27 10086
+```
+将该服务器运行在tmux中便可以常驻后台
+
+# 运行服务器中的jupyter notebook
+```bash
+jupyter notebook --no-browser --port 10087 --ip=10.20.57.27
+```
+
+# Mean-shift algorithm
+[参考这篇文章](https://nicehuster.github.io/2019/08/05/shift/)
+
+# t-test
+one-sample t-test: 比较一组样本(数量为n)的均值与一个预期的总体均值是否相等，null hypothesis就是相等，自由度为n-1
+two-sample t-test: 比较两组样本(数量分别为n1,n2)的均值是否相等，null hypothesis是相等，自由度为n1+n2-2，假设是两个样本都服从正态分布且方差相同
+Welch-test: 和two-sample t-test一样，都是比较两组样本的均值是否相等，但是没有两组样本方差相同的假设
+
+# 中心化，标准化和归一化
+中心化(center): 使样本的均值减去一个特定的值(通常为减到0或减去样本的中位数值)
+标准化(scale): 使样本的均值为0，标准差为1
+归一化(normalize): 使样本的值落在在0-1之间(通过min-max normalization: x' = (x - X_min) / (X_max - X_min))，或-1到1之间(通过x' = (x - μ) / (X_max - X_min))
+
+# reads 去重
+`samtools rmdup`: 比较适合单端reads去重，只考虑reads map的起始和终止位置，方向还有质量值，不考虑比对情况，结果会直接去除重复的reads
+`gatk RemoveDuplicatesSpark`: 适合双端reads去重，考虑reads**5'端**比对到的位置，方向和碱基比对情况，结果只会标记重复的reads而不会去除
+
+# bwa mem -M
+supplementary reads指的是一条reads中的一部分map到参考区域一，另一部分map到参考区域二，较短的一部分的flag值是2048；
+secondary reads指的是一条reads可以map到基因组上的不同位置，包含supplementary reads的情况，异常map的flag值是256；
+
+用`baw mem -M`参数可以mark supplementary reads使其变为secondary reads，也即flag值从2048变为256
+
+# Umap and Bismap mappability
+Refer to this [site](https://bismap.hoffmanlab.org)
