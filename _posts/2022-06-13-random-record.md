@@ -71,3 +71,8 @@ Refer to this [site](https://bismap.hoffmanlab.org)
 
 这个map的目的是标记整个基因组上highly mappable的位置，也即可以被特定长度的k-mer特异性map的位置。
 方法是首先产生一个基因组上可能有的所有k-mer，然后将这些k-mer用bowtie2 map回基因组上，标记那些只map到基因组上一个位置的k-mer的起始位置。结果中1表示这个位置是uniquely mappable，0表示这个位置产生的k-mer可以map到基因组上的其他地方。
+
+# Subsample reads from bam file
+```bash
+samtools view --subsample 0.01 in.bam > out.bam
+```
