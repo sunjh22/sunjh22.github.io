@@ -2,7 +2,7 @@
 title:  "ComplexHeatmap LearingNotes"
 date:   2022-07-18
 categories: [R, heatmap]
-tags: [LearingNotes]
+tags: [LearningNotes]
 render_with_liquid: false
 ---
 

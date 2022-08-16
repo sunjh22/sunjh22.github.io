@@ -2,7 +2,7 @@
 title:  "廖雪峰Python3教程学习笔记"
 date:   2022-05-07
 categories: [Python3]
-tags: [LearingNotes]
+tags: [LearningNotes]
 render_with_liquid: false
 ---
 

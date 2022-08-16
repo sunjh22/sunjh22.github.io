@@ -2,7 +2,7 @@
 title:  "李东风R教程学习笔记"
 date:   2022-05-07
 categories: [R]
-tags: [LearingNotes]
+tags: [LearningNotes]
 render_with_liquid: false
 ---
 [教程地址](https://www.math.pku.edu.cn/teachers/lidf/docs/Rbook/html/_Rbook/index.html)
