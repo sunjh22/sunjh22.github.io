@@ -8,8 +8,6 @@ render_with_liquid: false
 
 This post records the learning of Snakemake. Refered to this [tutorial](https://snakemake.readthedocs.io/en/stable/)
 
-The Snakemake workflow management system is a tool to create reproducible and scalable data analyses. Workflows are described via a human readable, Python based language. They can be seamlessly scaled to server, cluster, grid and cloud environments, without the need to modify the workflow definition. Finally, Snakemake workflows can entail a description of required software, which will be automatically deployed to any execution environment.
-
 The first and the most important thing is that you know how to do the thing, sequences, tools and their version, input and output, parameters and log files.
 
 Keep in mind that Snakemake could help you build a workflow that make the analysis reproducible, but itself does not analyze anything.
@@ -20,9 +18,12 @@ Recommand install through conda or mamba
     
     mamba install -c bioconda snakemake
 
-## Example from Snakemake tutorial
+## Example files from Snakemake tutorial
 
-Config file - store global variables in dictionary, can be wrote in JSON or YAML
+### Config file
+
+store global variables in dictionary, can be wrote in JSON or YAML
+
 ```yaml
 samples:
     A: data/samples/A.fastq
@@ -31,20 +32,28 @@ samples:
 prior_mutation_rate: 0.001
 ```
 
-Snakefile
+### Snakefile
+
+Main part of snakemake workflow, containing all rules need to be excuted, use `include` to include other Snakemake files
+
 ```python
 configfile: "config.yaml"
 
-
+# localrules all require all intended output, it will not be submitted to cluster
+localrules: all
 rule all:
     input:
         "plots/quals.svg"
 
-
+# input function, enable us to process input files, like add if to filter some conditions
 def get_bwa_map_input_fastqs(wildcards):
     return config["samples"][wildcards.sample]
 
-
+# generally, for one rule, input, output, params, threads are necessary; log and benchmark
+# could be used to record the running information; conda could indicate specific environment;
+# four ways to run: shell, script, wrapper and directly write Python code.
+# {sample} here is a wildcard, snakemake will automatically determine the content of wildcard
+# based on the whole workflow. In rule all, wildcard can not be used, it needs explicit target.
 rule bwa_map:
     input:
         "data/genome.fa",
@@ -60,7 +69,9 @@ rule bwa_map:
         "(bwa mem -R '{params.rg}' -t {threads} {input} | "
         "samtools view -Sb - > {output}) 2> {log}"
 
-
+# temp() tell snakemake to delete the intermediate files after no process is dependent on them
+# protected() could protect the important files in case they are deleted or covered accidently.
+# {sample} and {wildcards.sample} are equivalent here.
 rule samtools_sort:
     input:
         "mapped_reads/{sample}.bam"
@@ -79,7 +90,10 @@ rule samtools_index:
     shell:
         "samtools index {input}"
 
-
+# expand() is a very useful function, it returns a list
+# multiext is variant of expand(), it is useful in reference index
+# usage: multiext("refs/genome", ".fa", ".fa.fai", ".bwt")
+# use a () to put all commands in shell to one, then log can log everything happened.
 rule bcftools_call:
     input:
         fa="data/genome.fa",
@@ -105,7 +119,10 @@ rule plot_quals:
         "scripts/plot-quals.py"
 
 
-# wrapper version bwa_mem
+# wrapper is pre-compiled tool distributed in snakemake-wrapper. The pattern of whole rule
+# should be identical to what has been defined in wrapper, or it will throw errors. When
+# running, snakemake will automatically download a conda env to run the tool. You can sepcify
+# the path for conda env in command line `snakemake --conda-env /a/path/to/`
 rule bwa_mem:
   input:
       ref="data/genome.fa",
@@ -121,7 +138,10 @@ rule bwa_mem:
       "0.15.3/bio/bwa/mem"
 ```
 
-`envs/samtools.yaml`
+### Environment file
+
+Environment file for specific tool to run: `envs/samtools.yaml`, used under `conda` parameter.
+
 ```yaml
 channels:
   - bioconda
@@ -130,103 +150,37 @@ dependencies:
   - samtools =1.9
 ```
 
-## Rules in snakemake
-. `rule`
+## Snakemake execution
 
-. `wildcards` - 用来获取通配符匹配到的部分
+- `snakemake -np`, dry run and print shell commands, if `--cores` command is given without a number, all available cores are used
 
-. `input`
+- `snakemake targetfiles --cores 8`, run for single specific targets, snakemake will automatically find dependency
 
-. `output`
+- `snakemake somerules --core 8`, run specific rules, the output of the rule will be the target
 
-. `shell`
+- `--forceall`, force to re-run specific rules or targets
 
-. `threads`
+- `snakemake --use-conda --cores 1`, will automatically create required environments and activate them before a job is executed
 
-. `message`
+- `snakemake --dag | dot -Tpdf > dag.pdf` or `snakemake --dag | dot -Tsvg > dag.svg`, build a graph showing the workflow logic
 
-. `script` - you can use `snakemake.input[0]` to access the properties of the rule in Python, and `snakemake@input[[1]]` or `snakemake@input[["myfile"]]` in R
+- `snakemake --cluster qsub --jobs 10`, run snakemake in clusters
 
-. `log`
-
-. `params`
-
-. `run` - write python code in this block
-
-. `temp` - assign temperary files, will be removed after running
-
-. `protected`
-
-. `benchmark` - with the benchmark directive, Snakemake can be instructed to measure the wall clock time of a job
-
-. `include` - include another Snakefile into the current one
-
-. `conda` - specify Conda environments per rule, required tools and their version can be specified in a file `envs/samtools.yaml` as shown in above
-
-. `wrappers` - A wrapper is a short script that wraps (typically) a command line application and makes it directly addressable from within Snakemake
-
-. `expand` - produces a list, an example `expand("sorted_reads/{sample}.{replicate}.bam", sample=SAMPLES, replicate=[0, 1])`
-
-. `glob_wildcards` - can extract all matched contents to a list
-
-. Input function - determine the input of a rule through a function
-
-. Rule Dependencies - output of former rules can be the input of this rule
-
-## Execution
-
-. `snakemake -np`, dry run and print shell commands, if `--cores` command is given without a number, all available cores are used
-
-. `snakemake targetfiles --cores 8`, run for single specific targets, snakemake will automatically find dependency
-
-. `snakemake somerules --core 8`, run specific rules, the output of the rule will be the target
-
-. `--forceall`, force to re-run specific rules or targets
-
-. `snakemake --use-conda --cores 1`, will automatically create required environments and activate them before a job is executed
-
-. `snakemake --dag | dot -Tpdf > dag.pdf`, build a graph showing the logic of snakemake run
-
-. `snakemake --dag | dot -Tsvg > dag.svg`
-
-- Snakemake allows generalizing rules by using named wildcards, you can have multiple wildcards in your file paths, however, to avoid conflicts with other jobs of the same rule, all output files of a rule have to contain exactly the same wildcards.
+- `snakemake --use-conda --cores 4 --conda-frontend mamba --conda-prefix ~/data/biosoft/grenepipe/conda-envs --directory example/`, a complicated but useful snakemake run
 
 - Snakemake automatically creates missing directories before jobs are executed
 
-- Snakemake allows to access wildcards in the shell command via the wildcards object that has an attribute with the value for each wildcard
-
-- In the Python script, all properties of the rule like input, output, wildcards, etc. are available as attributes of a global snakemake object
-
-- Snakemake workflows are executed in three phases
-
-	- In the initialization phase, the files defining the workflow are parsed and all rules are instantiated.
-
-	- In the DAG phase, the directed acyclic dependency graph of all jobs is built by filling wildcards and matching input files to output files.
-
-	- In the scheduling phase, the DAG of jobs is executed, with jobs started according to the available resources.
-
 ## Additional features
 
-### Benchmarking
+1. use `include` to include other Snakefile into current one, this feature enable us to separate a large workflow into small pieces
+2. under `script` parameter, in Python script we can access Snakemake properties by like `snakemake.input[0]`, or we can do that in R script by `snakemake@input[[1]]`
 
-With the `benchmark` directive, Snakemake can be instructed to measure the wall clock time of a job.
+## One good snakemake example - GrenePipe
 
-### Modularization
-
-Snakemake provides the `include` directive to include another Snakefile into the current one
-
-### Automatic deployment of software dependencies
-
-Use `conda` directive, execute snakemake with `snakemake --use-conda --cores 1`
-
-### Tool wrappers
-
-A wrapper is a short script that wraps (typically) a command line application and makes it directly addressable from within Snakemake. [Snakemake wrapper repository](https://snakemake-wrappers.readthedocs.io/)
-
-### Cluster execution
-
-`snakemake --cluster qsub --jobs 10`
-
-### Constraining wildcards
-
-the wildcard sample in the output file `"sorted_reads/{sample}.bam"` can be constrained to only allow alphanumeric sample names as `"sorted_reads/{sample,[A-Za-z0-9]+}.bam"`.
+    git clone https://github.com/moiexpositoalonsolab/grenepipe.git
+    conda install mamba -n base -c conda-forge
+    mamba env create -f envs/grenepipe.yaml
+    conda activate grenepipe
+    cd grenepipe
+    ./example/prepare.sh
+    snakemake --use-conda --cores 4 --conda-frontend mamba --conda-prefix ~/data/biosoft/grenepipe/conda-envs --directory example/ 2>2.log

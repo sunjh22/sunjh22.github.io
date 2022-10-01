@@ -53,7 +53,6 @@ Detailed procedures about this step can refer to the first few steps of [Setting
 	```
 	{: .nolineno}
 		
-
 3. Add and commit your work
 	```bash
 	$ git add .

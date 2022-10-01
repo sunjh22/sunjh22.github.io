@@ -55,7 +55,7 @@ Add author information in `_data/authors.yml` (If your website doesn't have this
   twitter: <twitter_of_author>
   url: <homepage_of_author>
 ```
-{: file="_data/authors.yml" }
+`{: file="_data/authors.yml" }`
 
 And then set up the custom author in the post's YAML block:
 
@@ -186,7 +186,7 @@ If you host the images on the CDN, you can save the time of repeatedly writing t
 ```yaml
 img_cdn: https://cdn.com
 ```
-{: file='_config.yml' .nolineno}
+`{: file='_config.yml' .nolineno}`
 
 Once `img_cdn` is assigned, the CDN URL will be added to the path of all images (images of site avatar and posts) starting with `/`.
 

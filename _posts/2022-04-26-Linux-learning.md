@@ -5,43 +5,15 @@ categories: [Linux]
 render_with_liquid: false
 ---
 
-Some useful bioinformatics tricks that I always forgot when in need.
-
-## sort a bed file according to chromosome and start position
-First three columns are chromosome, start and end
-	
+## 在Linux服务器上用Python开一个服务器
 ```bash
-$ sort -Vk 1 -k 2,3n demo.bed
+python -m http.server --bind 10.20.57.27 10086
 ```
-	
-## compare two files, show comman lines
-	
+将该服务器运行在tmux中便可以常驻后台
+
+## 运行服务器中的jupyter notebook
 ```bash
-$ comm -12 file1 file2
-```
-
-## Convert text between uppercase and lowercase
-[A good reference](https://www.networkworld.com/article/3529409/converting-between-uppercase-and-lowercase-on-the-linux-command-line.html)
-
-Converting all letters
-
-```bash
-$ echo "Hello There" | tr [:lower:] [:upper:]
-$ echo "Hello There" | tr a-z A-Z
-$ echo "Hello There" | awk '{print toupper($0)}'
-$ echo $dept | sed 's/[a-z]/\U&/g'
-```
-
-Capitalizing first letters only
-
-```bash
-$ echo design \& engineering| sed -e "s/\b\(.\)/\u\1/g"
-```
-
-Making sure only first letters are uppercase
-		
-```bash
-$ echo -n "design & engineering" | python3 -c "import sys; print(sys.stdin.read().title())"
+jupyter notebook --no-browser --port 10087 --ip=10.20.57.27
 ```
 
 ## Zombie process

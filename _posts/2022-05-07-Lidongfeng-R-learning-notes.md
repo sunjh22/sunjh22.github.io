@@ -408,21 +408,20 @@ colorRampPalette(brewer.pal(8,"Dark2"))(9)
 # 通过这种方法可以构建新的颜色板然后从其中取任意数量的颜色
 ```
 
+## 批量读入文件，合并到一个数据框中
+```R
+# 这里以读入三个read depth文件为例
+listfiles <- dir(path = 'depth', pattern = paste0('^', 'Sample_', samplename), full.names = T)
+listdepth <- vector('list', length = 3)
+for (i in seq_along(listdepth)) {
+  listdepth[[i]] <- read.delim(listfiles[[i]], col.names = c('ref','position','depth'), header = F)
+}
+avgDepth <- do.call(rbind, listdepth)
+```
+
+`Ctrl+Alt+Shift+R`插入函数文档注释 <https://zhuanlan.zhihu.com/p/150568854>
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  
