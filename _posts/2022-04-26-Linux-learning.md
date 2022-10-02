@@ -1,5 +1,5 @@
 ---
-title:  "Common useful linux tricks"
+title:  "Linux"
 date:   2022-04-26
 categories: [Linux]
 render_with_liquid: false

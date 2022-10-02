@@ -1,5 +1,5 @@
 ---
-title:  "Random record before categorizing them"
+title:  "Bioinformatics"
 date:   2022-06-13
 render_with_liquid: false
 ---
