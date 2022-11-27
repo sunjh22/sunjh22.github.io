@@ -8,21 +8,22 @@ render_with_liquid: false
 
 This post records the learning of Snakemake. Refered to this [tutorial](https://snakemake.readthedocs.io/en/stable/)
 
-The first and the most important thing is that you know how to do the thing, sequences, tools and their version, input and output, parameters and log files.
+The first and the most important thing is that you know how to do the thing logically, sequences, tools and their version, input and output, parameters and log files.
 
 Keep in mind that Snakemake could help you build a workflow that make the analysis reproducible, but itself does not analyze anything.
 
 ## Install
 
-Recommand install through conda or mamba
-    
+Recommand install through conda or mamba, it is better to create a isolated environment
+
+    conda install -c conda-forge mamba
     mamba install -c bioconda snakemake
 
 ## Example files from Snakemake tutorial
 
 ### Config file
 
-store global variables in dictionary, can be wrote in JSON or YAML
+Store global variables in dictionary, can be wrote in JSON or YAML
 
 ```yaml
 samples:
@@ -45,7 +46,7 @@ rule all:
     input:
         "plots/quals.svg"
 
-# input function, enable us to process input files, like add if to filter some conditions
+# input function, enable us to process input files, like add if to filter based on some conditions
 def get_bwa_map_input_fastqs(wildcards):
     return config["samples"][wildcards.sample]
 

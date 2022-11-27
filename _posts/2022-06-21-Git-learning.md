@@ -142,6 +142,11 @@ git push origin :refs/tags/<tagname>
 # 可以用通用字符排除文件，可以用!字符另外加入例外文件
 ```
 
+# generate key
+```
+ssh-keygen -t rsa -C 'xxxxx@company.com' -f ~/.ssh/gitee_id_rsa
+```
+
 # 基本概念
 1. 工作区 <-> 暂存区 <-> 当前分支
 
