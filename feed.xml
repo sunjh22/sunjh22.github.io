@@ -1,0 +1,1093 @@
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en-US"><generator uri="https://jekyllrb.com/" version="4.2.2">Jekyll</generator><link href="/feed.xml" rel="self" type="application/atom+xml" /><link href="/" rel="alternate" type="text/html" hreflang="en-US" /><updated>2022-12-17T00:10:50+00:00</updated><id>/feed.xml</id><title type="html">Jiahong’s Blog</title><subtitle>For learning, practicing and reviewing.</subtitle><entry><title type="html">Li Jian’s Song List from My girlfriend</title><link href="/posts/Lijian-song-list/" rel="alternate" type="text/html" title="Li Jian’s Song List from My girlfriend" /><published>2022-11-27T00:00:00+00:00</published><updated>2022-11-27T00:00:00+00:00</updated><id>/posts/Lijian-song-list</id><content type="html" xml:base="/posts/Lijian-song-list/"><![CDATA[<ol>
+  <li>父亲写的散文诗</li>
+  <li>水流众生</li>
+  <li>月光</li>
+  <li>雨后初晴</li>
+  <li>今天是你的生日 妈妈</li>
+  <li>消失的月光</li>
+  <li>一念一生</li>
+  <li>老情歌</li>
+  <li>在水一方</li>
+  <li>一切刚刚好</li>
+  <li>君子行</li>
+  <li>车站</li>
+  <li>美若黎明</li>
+  <li>深海之寻</li>
+  <li>袖手旁观</li>
+  <li>向往</li>
+  <li>绽放</li>
+  <li>城市之光</li>
+  <li>众妙</li>
+  <li>Feeling Good</li>
+  <li>璀璨</li>
+  <li>门</li>
+  <li>无烟之火</li>
+  <li>紫罗兰</li>
+  <li>幻梦花园</li>
+  <li>人群中的人</li>
+  <li>美丽生灵</li>
+  <li>我唯有的你</li>
+  <li>梅雨</li>
+  <li>风花树</li>
+  <li>雨夜曲</li>
+  <li>珍爱深深</li>
+  <li>依然在路上</li>
+  <li>抚仙湖</li>
+  <li>深町小夜曲</li>
+  <li>日落之前</li>
+  <li>雾中列车</li>
+  <li>当有天老去</li>
+  <li>沧海轻舟</li>
+  <li>我愿人长久</li>
+  <li>万物安生</li>
+  <li>故乡山川</li>
+</ol>]]></content><author><name></name></author><category term="Song" /><category term="Lijian" /><summary type="html"><![CDATA[父亲写的散文诗 水流众生 月光 雨后初晴 今天是你的生日 妈妈 消失的月光 一念一生 老情歌 在水一方 一切刚刚好 君子行 车站 美若黎明 深海之寻 袖手旁观 向往 绽放 城市之光 众妙 Feeling Good 璀璨 门 无烟之火 紫罗兰 幻梦花园 人群中的人 美丽生灵 我唯有的你 梅雨 风花树 雨夜曲 珍爱深深 依然在路上 抚仙湖 深町小夜曲 日落之前 雾中列车 当有天老去 沧海轻舟 我愿人长久 万物安生 故乡山川]]></summary></entry><entry><title type="html">Notes for Bioinfomatics Data Skills</title><link href="/posts/Buffalo-bioinformaticsDS-learning/" rel="alternate" type="text/html" title="Notes for Bioinfomatics Data Skills" /><published>2022-08-10T00:00:00+00:00</published><updated>2022-08-10T00:00:00+00:00</updated><id>/posts/Buffalo-bioinformaticsDS-learning</id><content type="html" xml:base="/posts/Buffalo-bioinformaticsDS-learning/"><![CDATA[<h2 id="1-how-to-learn-bioinformatics">1. How to learn bioinformatics</h2>
+
+<ol>
+  <li>Assert about assumptions: Python’s <code class="language-plaintext highlighter-rouge">assert()</code> and R’s <code class="language-plaintext highlighter-rouge">stopifnot()</code></li>
+  <li>Develop frequently used scripts into tools</li>
+</ol>
+
+<h2 id="2-setting-up-and-managing-a-bioinformatics-project">2. Setting up and managing a bioinformatics project</h2>
+
+<ol>
+  <li>Create a well-organized directory structure</li>
+  <li>Document your project in detail: command lines, data source, tool version</li>
+</ol>
+
+<h2 id="3-remedial-unix-shell">3. Remedial unix shell</h2>
+<ol>
+  <li>Use <code class="language-plaintext highlighter-rouge">tail -f</code> to monitor redirected standard error</li>
+  <li>Use <code class="language-plaintext highlighter-rouge">tee</code> to store standard output stream to an intermediate file</li>
+  <li>Use <code class="language-plaintext highlighter-rouge">fg %&lt;job id&gt;</code> to return program to foreground</li>
+  <li>Use <code class="language-plaintext highlighter-rouge">bg %&lt;job id&gt;</code> to put a suspended job into background and run</li>
+  <li>Use operator <code class="language-plaintext highlighter-rouge">&amp;&amp;</code> to chain two commands in which the later one is dependent on the first one</li>
+  <li>Command substitution, use <code class="language-plaintext highlighter-rouge">mkdir reuslts-$(date +%F)</code> to create a directory with current date as name</li>
+</ol>
+
+<h2 id="4-working-with-remote-machines">4. Working with remote machines</h2>
+
+<h2 id="5-git">5. Git</h2>
+
+<h2 id="6-bioinformatics-data">6. Bioinformatics data</h2>
+<ol>
+  <li>Use powerful <code class="language-plaintext highlighter-rouge">wget --accept --recursive --no-parent --limit-rate -O</code></li>
+  <li>Use <code class="language-plaintext highlighter-rouge">curl -O</code> to download redirected content</li>
+  <li>Use <code class="language-plaintext highlighter-rouge">rsync -avz -e ssh source destination</code> to transfer entire directory to remote machine, archive, compressed</li>
+  <li>Use <code class="language-plaintext highlighter-rouge">diff -u file1 file2</code> to find differnece between two small files</li>
+  <li>Use <code class="language-plaintext highlighter-rouge">gunzip -c file.txt.gz &gt; file.txt</code> to keep original compressed file</li>
+  <li>Use <code class="language-plaintext highlighter-rouge">zgrep, zcat, zless</code></li>
+  <li>The most important step in documenting your work is that you’re consistent and make it a habit.</li>
+</ol>
+
+<h2 id="7-unix-data-tools">7. Unix data tools</h2>
+<ol>
+  <li><code class="language-plaintext highlighter-rouge">(head -n 2; tail -n 2)</code></li>
+  <li>Keep in mind <code class="language-plaintext highlighter-rouge">wc -l</code> is not robust in some cases</li>
+  <li>Use <code class="language-plaintext highlighter-rouge">column -t</code> to neat output, default delimiter is <code class="language-plaintext highlighter-rouge">\t</code>, can be changed by <code class="language-plaintext highlighter-rouge">-s</code></li>
+  <li><code class="language-plaintext highlighter-rouge">-E</code> turn on <code class="language-plaintext highlighter-rouge">grep</code>’s extended regular expression, aliasd to <code class="language-plaintext highlighter-rouge">egrep</code></li>
+  <li>Deal with Non-ASCII files, <code class="language-plaintext highlighter-rouge">alias nonascii="LC_CTYPE=C grep --color='auto' -n -P '[\x80-\xFF]'"</code></li>
+  <li><code class="language-plaintext highlighter-rouge">sort -s</code> makes sort stable (turns off last-resort sorting)</li>
+  <li><code class="language-plaintext highlighter-rouge">sort -c</code> check sorting status</li>
+  <li><code class="language-plaintext highlighter-rouge">sort -k1,1V</code> understands numbers inside strings</li>
+  <li><code class="language-plaintext highlighter-rouge">uniq -d</code> outputs duplicated lines</li>
+  <li>Use <code class="language-plaintext highlighter-rouge">join -1 column1 -2 column2 (-a 1) file1 file2</code> to join two files by specific column</li>
+  <li><code class="language-plaintext highlighter-rouge">awk -F"," -v OFS="\t" {}</code></li>
+  <li>associative array in awk works like dictionaries in Python</li>
+  <li><code class="language-plaintext highlighter-rouge">bioawk -c hdr</code> is powerful for processing long-column with header files</li>
+  <li><code class="language-plaintext highlighter-rouge">sed</code> for capturing text between delimiters</li>
+  <li>Use subshell to combine two sequential commands’ standard output into a single stream. Like
+<code class="language-plaintext highlighter-rouge">(zgrep "^#" gtf.gz; zgrep -v "^#" gtf.gz | sort -Vk1,1 -k4,4n) | gzip &gt; sorted.gtf.gz</code></li>
+  <li><code class="language-plaintext highlighter-rouge">mkfifo namedpipe</code> to create a named pipe object</li>
+  <li>Process substitution, input to the program <code class="language-plaintext highlighter-rouge">&lt;(...)</code>, output to the program <code class="language-plaintext highlighter-rouge">&gt;(...)</code> like <code class="language-plaintext highlighter-rouge">&gt;(gzip &gt; file.txt.gz</code></li>
+</ol>
+
+<h2 id="8-introducing-r">8. Introducing R</h2>
+<ul>
+  <li>factor is class, its type is integer</li>
+  <li>Set <code class="language-plaintext highlighter-rouge">colClasses</code> to <code class="language-plaintext highlighter-rouge">NULL</code> can force R to skip the column</li>
+  <li>Set <code class="language-plaintext highlighter-rouge">nrow</code> to include several number of rows of a file when using <code class="language-plaintext highlighter-rouge">read.delim()</code></li>
+  <li><code class="language-plaintext highlighter-rouge">read.delim()</code> read string column as factors by default, disable it by set <code class="language-plaintext highlighter-rouge">stringAsFactors=F</code></li>
+  <li><code class="language-plaintext highlighter-rouge">comment.char</code> ignore lines begin with this argument</li>
+  <li><code class="language-plaintext highlighter-rouge">na.strings=c('na', 'Na', 'NA')</code> set all these values to NA</li>
+  <li>Set <code class="language-plaintext highlighter-rouge">drop=F</code> when subsetting one column from a dataframe and keep it a dataframe</li>
+  <li><code class="language-plaintext highlighter-rouge">which.min(), which.max()</code></li>
+  <li><code class="language-plaintext highlighter-rouge">subset(data, conditions)</code></li>
+  <li><code class="language-plaintext highlighter-rouge">scale_x_log10(), scale_x_continuous(limits=c(start, end))</code></li>
+  <li>transparency level <code class="language-plaintext highlighter-rouge">alpha</code></li>
+  <li>Cleveland’s <strong>Visualizing Data</strong></li>
+  <li>binning data, <code class="language-plaintext highlighter-rouge">cut()</code> by breaks (how many groups) or by pre-specified ranges</li>
+  <li>single column: <code class="language-plaintext highlighter-rouge">geom_density()</code> - continuous, and <code class="language-plaintext highlighter-rouge">geom_bar()</code> - discrete</li>
+  <li><code class="language-plaintext highlighter-rouge">match(x, y)</code> returns the first occurrence of each of x’s values in y</li>
+  <li>merge two datasets is comman task in data analysis, use <code class="language-plaintext highlighter-rouge">match()</code> or <code class="language-plaintext highlighter-rouge">merge()</code></li>
+  <li>visualize by categories: <code class="language-plaintext highlighter-rouge">facet_wrap(), facet_grid()</code>, like <code class="language-plaintext highlighter-rouge">table()</code> for summarizing data</li>
+  <li>data structure, data types (integer, double, character, logical, complex, and raw) and class (numeric, factor) are different</li>
+  <li><code class="language-plaintext highlighter-rouge">str()</code> refers to structure</li>
+</ul>
+
+<h2 id="9-working-with-range-data">9. Working with Range data</h2>
+<h2 id="10-working-with-sequence-data">10. Working with Sequence data</h2>
+<h2 id="11-working-with-alignment-data">11. Working with alignment data</h2>
+<h2 id="12-shell-scripting-pipelines-and-parallelizing-tasks">12. Shell scripting, pipelines and parallelizing tasks</h2>
+<h2 id="13-out-of-memory-approaches-tabix-and-sqlite">13. Out-of-memory approaches: Tabix and SQLite</h2>]]></content><author><name></name></author><category term="LearningNotes" /><summary type="html"><![CDATA[1. How to learn bioinformatics]]></summary></entry><entry><title type="html">ComplexHeatmap LearingNotes</title><link href="/posts/ComplexHeatmap-learning/" rel="alternate" type="text/html" title="ComplexHeatmap LearingNotes" /><published>2022-07-18T00:00:00+00:00</published><updated>2022-07-18T00:00:00+00:00</updated><id>/posts/ComplexHeatmap-learning</id><content type="html" xml:base="/posts/ComplexHeatmap-learning/"><![CDATA[<p><a href="https://jokergoo.github.io/ComplexHeatmap-reference/book/">Tutorial websites</a></p>
+
+<p>When drawing a heatmap, I think following points are important:</p>
+<ol>
+  <li>assign beautiful colors in regard to numerical variables and categorical variables
+ 1.1 integer number or float number -&gt; discrete color or continuous color</li>
+  <li>clustering
+ 2.1 self-defined clustering method
+ 2.2 beautiful dendrograms
+ 2.3 reorder row or column
+ 2.4 relabel row or column names</li>
+  <li>
+    <p>heatmap split</p>
+  </li>
+  <li>add row and column annotations, annotation name, bar size, position, text annotations</li>
+  <li>legend positions</li>
+  <li>split cells, add context in cells</li>
+</ol>
+
+<h1 id="assign-colors">Assign colors</h1>
+<div class="language-R highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre><span class="c1"># this is for continuous values</span><span class="w">
+</span><span class="n">circlize</span><span class="o">::</span><span class="n">colorRamp2</span><span class="p">(</span><span class="n">breaks</span><span class="p">,</span><span class="w"> </span><span class="n">colors</span><span class="p">)</span><span class="w">
+
+</span><span class="c1"># for discrete case, directly assign colors to different categories, a named vectors</span><span class="w">
+</span></pre></td></tr></tbody></table></code></pre></div></div>
+
+<h1 id="clustering">Clustering</h1>
+<div class="language-R highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="c1"># self-defined clustering method, a function that accept two arguments</span><span class="w">
+</span><span class="n">robust_dist</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="k">function</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="w"> </span><span class="n">y</span><span class="p">){</span><span class="w">
+
+</span><span class="p">}</span><span class="w">
+</span><span class="n">Heatmap</span><span class="p">(</span><span class="n">test1</span><span class="p">,</span><span class="w"> </span><span class="n">clustering_distance_rows</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">robust_dist</span><span class="p">)</span><span class="w">
+</span></pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="comparison-between-different-distancing-methods">Comparison between different distancing methods</h2>
+<p>Euclidean</p>
+
+<p>Pearson</p>
+
+<p>Spearman</p>
+
+<p>Kendall</p>
+
+<h2 id="comparison-between-different-clustering-methods">Comparison between different clustering methods</h2>
+<p>ward.D</p>
+
+<p>ward.D2</p>
+
+<p>single</p>
+
+<p>complete</p>
+
+<p>average</p>
+
+<p>median</p>
+
+<p>centroid</p>
+
+<h2 id="comparison-between-different-partition-methods">Comparison between different partition methods</h2>
+<p>k-means</p>
+
+<p>pam</p>]]></content><author><name></name></author><category term="R" /><category term="heatmap" /><category term="LearningNotes" /><summary type="html"><![CDATA[Tutorial websites]]></summary></entry><entry><title type="html">pysam basic usage</title><link href="/posts/pysam-learning/" rel="alternate" type="text/html" title="pysam basic usage" /><published>2022-07-05T00:00:00+00:00</published><updated>2022-07-05T00:00:00+00:00</updated><id>/posts/pysam-learning</id><content type="html" xml:base="/posts/pysam-learning/"><![CDATA[<p><a href="https://pysam.readthedocs.io/en/latest/usage.html">Original source</a></p>
+
+<p>Several useful usages</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+</pre></td><td class="rouge-code"><pre><span class="kn">import</span> <span class="nn">pysam</span>
+
+<span class="c1"># open a BAM file
+</span><span class="n">samfile</span> <span class="o">=</span> <span class="n">pysam</span><span class="p">.</span><span class="n">AlignmentFile</span><span class="p">(</span><span class="s">'file.bam'</span><span class="p">,</span> <span class="s">'rb'</span><span class="p">)</span>
+
+<span class="c1"># fetch reads mapped to a region
+</span><span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">samfile</span><span class="p">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">'chr1'</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">):</span>
+	<span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+<span class="c1"># pileup - single basecount in the region
+</span><span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">samfile</span><span class="p">.</span><span class="n">pileup</span><span class="p">(</span><span class="s">'chr1'</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">):</span>
+	<span class="k">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+<span class="c1"># use samtools commands with python
+</span><span class="n">pysam</span><span class="p">.</span><span class="n">sort</span><span class="p">(</span><span class="s">'-o'</span><span class="p">,</span> <span class="s">'output.bam'</span><span class="p">,</span> <span class="s">'in.bam'</span><span class="p">)</span>
+<span class="c1"># which is same as `samtools sort -o output.bam in.bam`
+</span>
+<span class="c1"># work with tabix file, like bgzip compressed and tabix indexed gtf file
+</span><span class="n">tabixFile</span> <span class="o">=</span> <span class="n">pysam</span><span class="p">.</span><span class="n">TabixFile</span><span class="p">(</span><span class="s">'in.gtf.gz'</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">gtf</span> <span class="ow">in</span> <span class="n">tabixFile</span><span class="p">.</span><span class="n">fetch</span><span class="p">(</span><span class="n">reference</span><span class="o">=</span><span class="s">'1'</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">100000</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">110000</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="n">pysam</span><span class="p">.</span><span class="n">asGTF</span><span class="p">()):</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">gtf</span><span class="p">.</span><span class="n">contig</span><span class="p">,</span> <span class="n">gtf</span><span class="p">.</span><span class="n">start</span><span class="p">,</span> <span class="n">gtf</span><span class="p">.</span><span class="n">end</span><span class="p">,</span> <span class="n">gtf</span><span class="p">.</span><span class="n">gene_id</span><span class="p">)</span>
+
+<span class="c1"># work with VCF/BCF
+</span><span class="kn">from</span> <span class="nn">pysam</span> <span class="kn">import</span> <span class="n">VariantFile</span>
+<span class="n">bcfFile</span> <span class="o">=</span> <span class="n">VariantFile</span><span class="p">(</span><span class="s">'in.bcf'</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">bcfFile</span><span class="p">.</span><span class="n">fetch</span><span class="p">(</span><span class="s">'chr1'</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">2000</span><span class="p">):</span>
+	<span class="k">print</span><span class="p">(</span><span class="n">x</span><span class="p">.</span><span class="n">contig</span><span class="p">,</span> <span class="n">x</span><span class="p">.</span><span class="n">pos</span><span class="p">,</span> <span class="n">x</span><span class="p">.</span><span class="n">ref</span><span class="p">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>]]></content><author><name></name></author><summary type="html"><![CDATA[Original source]]></summary></entry><entry><title type="html">Learn Git</title><link href="/posts/Git-learning/" rel="alternate" type="text/html" title="Learn Git" /><published>2022-06-21T00:00:00+00:00</published><updated>2022-06-21T00:00:00+00:00</updated><id>/posts/Git-learning</id><content type="html" xml:base="/posts/Git-learning/"><![CDATA[<h1 id="绑定本地仓库到github">绑定本地仓库到GitHub</h1>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>git config <span class="nt">--global</span> user.name <span class="s2">"Your Name"</span>
+git config <span class="nt">--global</span> user.email <span class="s2">"email@example.com"</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h1 id="初始化git仓库">初始化git仓库</h1>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td><td class="rouge-code"><pre>git init
+
+<span class="c"># 也可以直接clone一个已经创建的远程仓库到本地</span>
+git clone git@github.com:sunjh22/CNVPipe.git
+
+<span class="c"># clone privite仓库可以用下面的方法</span>
+<span class="c"># 先去 Settings -&gt; Developer settings -&gt; Personal access tokens 创建一个新token</span>
+<span class="c"># 然后复制下面的内容，输入用户名和token即可</span>
+git clone https://github.com/sunjh22/CNVPipe.git
+
+<span class="c"># 这样操作不便之处在于每次远程推送都需要输入用户名和token</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h1 id="基本操作">基本操作</h1>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+</pre></td><td class="rouge-code"><pre><span class="c"># 添加文件</span>
+git add file.txt
+
+<span class="c"># 提交文件</span>
+git commit <span class="nt">-m</span> <span class="s1">'message'</span>
+
+<span class="c"># 添加远程仓库，origin可以改为任意的名字，会绑定后面的地址</span>
+git remote add origin git@github.com:sunjh22/CNVPipe.git
+
+<span class="c"># 删除远程库链接</span>
+git remote <span class="nb">rm </span>origin
+
+<span class="c"># 从本地仓库推送到远程仓库</span>
+git push origin main
+
+<span class="c"># 先指定本地dev分支与远程origin/dev分支的链接</span>
+git branch <span class="nt">--set-upstream-to</span><span class="o">=</span>origin/dev dev
+
+<span class="c"># 再抓取最新的远程库</span>
+git pull
+
+<span class="c"># 查看工作区状态</span>
+git status
+
+<span class="c"># 查看修改内容</span>
+git diff file.txt
+
+<span class="c"># 查看历史版本</span>
+git log <span class="nt">--pretty</span><span class="o">=</span>oneline <span class="nt">--graph</span>
+
+<span class="c"># 回退到之前版本</span>
+git reset <span class="nt">--hard</span> commit_id
+
+<span class="c"># 回到上一个版本</span>
+git reset <span class="nt">--hard</span> HEAD^
+
+<span class="c"># 撤销工作区的修改</span>
+git checkout <span class="nt">--</span> file.txt
+
+<span class="c"># 撤下暂存区的修改</span>
+git reset HEAD file.txt
+
+<span class="c"># 删除版本库中的文件</span>
+git <span class="nb">rm </span>file.txt
+
+<span class="c"># 查看远程库的信息</span>
+git remote <span class="nt">-v</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h1 id="分支的概念">分支的概念</h1>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+</pre></td><td class="rouge-code"><pre><span class="c"># 创建分支</span>
+git branch branchname
+
+<span class="c"># 切换分支</span>
+git switch branchname
+
+<span class="c"># 创建+切换</span>
+git switch <span class="nt">-c</span> branchname
+
+<span class="c"># 查看当前分支</span>
+git branch
+
+<span class="c"># 在本地创建和远程分支对应的分支</span>
+git branch <span class="nt">-b</span> dev origin/dev
+
+<span class="c"># 合并指定分支到当前分支</span>
+git merge branchname
+
+<span class="c"># 删除某一分支</span>
+git branch <span class="nt">-d</span> branchname
+
+<span class="c"># 手动解决合并中的冲突</span>
+
+<span class="c"># 保存当前工作现场</span>
+git stash
+
+<span class="c"># 恢复工作现场</span>
+git stash pop
+
+<span class="c"># 复制一个特定的提交(commit)到当前分支</span>
+git cherry-pick &lt;commit_id&gt;
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h1 id="标签">标签</h1>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+</pre></td><td class="rouge-code"><pre><span class="c"># 打标签，默认是给HEAD打标签，也可以指定特定commit-id</span>
+git tag &lt;tagname&gt;
+
+<span class="c"># 加标签信息</span>
+git tag <span class="nt">-a</span> &lt;tagname&gt; <span class="nt">-m</span> <span class="s1">'标签信息'</span>
+
+<span class="c"># 查看标签</span>
+git tag
+
+<span class="c"># 删除本地标签</span>
+git tag <span class="nt">-d</span> tagname
+
+<span class="c"># 推送特定标签到远程</span>
+git push origin tagname
+
+<span class="c"># 推送全部本地标签到远程</span>
+git push origin <span class="nt">--tags</span>
+
+<span class="c"># 删除远程标签</span>
+git push origin :refs/tags/&lt;tagname&gt;
+
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h1 id="gitignore">.gitignore</h1>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="c"># 可以用通用字符排除文件，可以用!字符另外加入例外文件</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h1 id="generate-key">generate key</h1>
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>ssh-keygen -t rsa -C 'xxxxx@company.com' -f ~/.ssh/gitee_id_rsa
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h1 id="基本概念">基本概念</h1>
+<ol>
+  <li>工作区 &lt;-&gt; 暂存区 &lt;-&gt; 当前分支</li>
+</ol>
+
+<h1 id="远程仓库的设置">远程仓库的设置</h1>
+<ol>
+  <li>创建ssh key <code class="language-plaintext highlighter-rouge">ssh-keygen -t rsa -C "youremail@example.com"</code></li>
+  <li>登陆GitHub，打开“Account settings”，“SSH Keys”页面，点“Add SSH Key”，填上任意Title，在Key文本框里粘贴<code class="language-plaintext highlighter-rouge">id_rsa.pub</code>文件的内容</li>
+</ol>]]></content><author><name></name></author><category term="Git" /><summary type="html"><![CDATA[绑定本地仓库到GitHub 1 2 git config --global user.name "Your Name" git config --global user.email "email@example.com"]]></summary></entry><entry><title type="html">Bioinformatics</title><link href="/posts/Bioinformatics/" rel="alternate" type="text/html" title="Bioinformatics" /><published>2022-06-13T00:00:00+00:00</published><updated>2022-06-13T00:00:00+00:00</updated><id>/posts/Bioinformatics</id><content type="html" xml:base="/posts/Bioinformatics/"><![CDATA[<h2 id="sort">Sort</h2>
+
+<p>Sort a bed file according to chromosome and start position</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nv">$ </span><span class="nb">sort</span> <span class="nt">-Vk</span> 1 <span class="nt">-k</span> 2,3n demo.bed
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="comm">Comm</h2>
+
+<p>Compare two files, show comman lines</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nv">$ </span><span class="nb">comm</span> <span class="nt">-12</span> file1 file2
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="uppercase-to-lowercase">uppercase to lowercase</h2>
+
+<p><a href="https://www.networkworld.com/article/3529409/converting-between-uppercase-and-lowercase-on-the-linux-command-line.html">A good reference</a></p>
+
+<p>Converting all letters</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td><td class="rouge-code"><pre><span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"Hello There"</span> | <span class="nb">tr</span> <span class="o">[</span>:lower:] <span class="o">[</span>:upper:]
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"Hello There"</span> | <span class="nb">tr </span>a-z A-Z
+<span class="nv">$ </span><span class="nb">echo</span> <span class="s2">"Hello There"</span> | <span class="nb">awk</span> <span class="s1">'{print toupper($0)}'</span>
+<span class="nv">$ </span><span class="nb">echo</span> <span class="nv">$dept</span> | <span class="nb">sed</span> <span class="s1">'s/[a-z]/\U&amp;/g'</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Capitalizing first letters only</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nv">$ </span><span class="nb">echo </span>design <span class="se">\&amp;</span> engineering| <span class="nb">sed</span> <span class="nt">-e</span> <span class="s2">"s/</span><span class="se">\b\(</span><span class="s2">.</span><span class="se">\)</span><span class="s2">/</span><span class="se">\u\1</span><span class="s2">/g"</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>Making sure only first letters are uppercase</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nv">$ </span><span class="nb">echo</span> <span class="nt">-n</span> <span class="s2">"design &amp; engineering"</span> | python3 <span class="nt">-c</span> <span class="s2">"import sys; print(sys.stdin.read().title())"</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="在网页上查看igv的结果">在网页上查看IGV的结果</h2>
+
+<p>全部运行在<code class="language-plaintext highlighter-rouge">10.20.57.27</code>服务器上</p>
+
+<p>下载<code class="language-plaintext highlighter-rouge">node.js</code>二进制版本</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>wget https://nodejs.org/dist/v16.15.1/node-v16.15.1-linux-x64.tar.xz
+<span class="nb">tar</span> <span class="nt">-xf</span> https://nodejs.org/dist/v16.15.1/node-v16.15.1-linux-x64.tar.xz
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>软链接<code class="language-plaintext highlighter-rouge">npm,npx,node</code>到<code class="language-plaintext highlighter-rouge">~/data3/bin/</code>，然后在tmux中开启一个服务器</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>tmux new <span class="nt">-s</span> web
+npx http-server ./ <span class="nt">-p</span> 10086
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>用<code class="language-plaintext highlighter-rouge">igv_web.py</code>生成一个<code class="language-plaintext highlighter-rouge">index.html</code>。主要是借用<code class="language-plaintext highlighter-rouge">igv.js</code>在browser上直接展示IGV的结果</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>python ~/data3/bin/igv_web.py <span class="nt">-r</span> /data3/refs/hg38/analysisSet/hg38.analysisSet.fa <span class="nt">-m</span> level1_node0_cell0.bam <span class="nt">-g</span> /data3/refs/hg38/annotation/UCSC.hg38.ncbiRefSeq.gtf
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>要注意10086这个端口必须已经开放，需要root或sudo权限</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nb">sudo </span>iptables <span class="nt">-I</span> INPUT <span class="nt">-p</span> tcp <span class="nt">--dport</span> 10086 <span class="nt">-j</span> ACCEPT
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>然后在<code class="language-plaintext highlighter-rouge">10.20.57.27:10086</code>上就可以访问IGV的展示结果了</p>
+
+<h2 id="mean-shift-algorithm">Mean-shift algorithm</h2>
+
+<p><a href="https://nicehuster.github.io/2019/08/05/shift/">参考这篇文章</a></p>
+
+<h2 id="t-test">t-test</h2>
+
+<ul>
+  <li>one-sample t-test: 比较一组样本(数量为n)的均值与一个预期的总体均值是否相等，null hypothesis就是相等，自由度为n-1</li>
+  <li>two-sample t-test: 比较两组样本(数量分别为n1,n2)的均值是否相等，null hypothesis是相等，自由度为n1+n2-2，假设是两个样本都服从正态分布且方差相同</li>
+  <li>Welch-test: 和two-sample t-test一样，都是比较两组样本的均值是否相等，但是没有两组样本方差相同的假设</li>
+</ul>
+
+<h2 id="center-scale-and-normalize">center, scale and normalize</h2>
+
+<ul>
+  <li>中心化(center): 使样本的均值减去一个特定的值(通常为减到0或减去样本的中位数值)</li>
+  <li>标准化(scale): 使样本的均值为0，标准差为1，也即正态化。在单细胞中一般对基因做scale，目的是更好的在热图上展示不同基因在细胞中的表达差异</li>
+  <li>归一化(normalize): 使样本的值落在0-1之间(通过min-max normalization: x’ = (x - X_min) / (X_max - X_min))，或-1到1之间(通过x’ = (x - μ) / (X_max - X_min))</li>
+</ul>
+
+<h2 id="remove-duplicates">remove duplicates</h2>
+
+<p><code class="language-plaintext highlighter-rouge">samtools rmdup</code>: 比较适合单端reads去重，只考虑reads map的起始和终止位置，方向还有质量值，不考虑比对情况，结果会直接去除重复的reads
+<code class="language-plaintext highlighter-rouge">gatk RemoveDuplicatesSpark</code>: 适合双端reads去重，考虑reads<strong>5’端</strong>比对到的位置，方向和碱基比对情况，结果只会标记重复的reads而不会去除</p>
+
+<h2 id="bwa-mem--m">bwa mem -M</h2>
+
+<p>supplementary reads指的是一条reads中的一部分map到参考区域一，另一部分map到参考区域二，较短的一部分的flag值是2048；</p>
+
+<p>secondary reads指的是一条reads可以map到基因组上的不同位置，包含supplementary reads的情况，异常map的flag值是256；</p>
+
+<p>用<code class="language-plaintext highlighter-rouge">baw mem -M</code>参数可以mark supplementary reads使其变为secondary reads，也即flag值从2048变为256，这样有利于利用这些reads做变异检测，否则这些reads会被丢弃</p>
+
+<h2 id="umap-and-bismap-mappability">Umap and Bismap mappability</h2>
+
+<p>Refer to this <a href="https://bismap.hoffmanlab.org">site</a></p>
+
+<p>这个map的目的是标记整个基因组上highly mappable的位置，也即可以被特定长度的k-mer特异性map的位置。
+方法是首先产生一个基因组上可能有的所有k-mer，然后将这些k-mer用bowtie2 map回基因组上，标记那些只map到基因组上一个位置的k-mer的起始位置。结果中1表示这个位置是uniquely mappable，0表示这个位置产生的k-mer可以map到基因组上的其他地方。</p>
+
+<h2 id="subsample-reads-from-bam-file">Subsample reads from bam file</h2>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre>samtools view <span class="nt">--subsample</span> 0.01 <span class="k">in</span>.bam <span class="o">&gt;</span> out.bam
+</pre></td></tr></tbody></table></code></pre></div></div>
+<h2 id="beffroni-and-bh-fdr-correction">beffroni and BH (FDR) correction</h2>
+
+<p>beffroni校正是用P值直接除以总的test数</p>
+
+<p>BH是先对P值进行排序，然后用P值除以test数再乘以P值的秩</p>
+
+<p>可以参考<a href="https://zhuanlan.zhihu.com/p/565427011">这篇文章</a></p>
+
+<h2 id="bowtie2-alignment-report">Bowtie2 alignment report</h2>
+
+<p><a href="https://www.jianshu.com/p/eeed5186e90e">详解Bowtie2的比对Summary</a></p>
+
+<blockquote class="prompt-tip">
+  <p>aligned <strong>concordantly</strong> 0 times，也即合理匹配0次，表示双端reads不能合理匹配上，在这种情况下，bowtie2一方面会报告这些reads中可以不合理匹配上的reads，另一方面会将双端reads拆分成单端reads继续align，并且报告单端reads可以匹配上的数量。 aligned <strong>concordantly</strong> exactly 1 times，表示合理匹配且只匹配到基因组上的一个位置的reads。 aligned <strong>concordantly</strong> &gt;1 times，表示有些双端reads可以匹配到基因组上的多个位置。 overall alignment rate = (合理匹配一次readsx2 + 多重匹配readsx2 + 不合理匹配readsx2 + 单端匹配reads) / 总双端readsx2</p>
+</blockquote>]]></content><author><name></name></author><summary type="html"><![CDATA[Sort]]></summary></entry><entry><title type="html">Biology</title><link href="/posts/Biology/" rel="alternate" type="text/html" title="Biology" /><published>2022-05-25T00:00:00+00:00</published><updated>2022-05-25T00:00:00+00:00</updated><id>/posts/Biology</id><content type="html" xml:base="/posts/Biology/"><![CDATA[<h2 id="understand-sense-and-antisense-strand">Understand sense and antisense strand</h2>
+<p>How to understand the relationship between sense strand, mRNA, codon, UTR. <a href="https://www.jianshu.com/p/4f23aafaf7eb">如何理解搞懂codon，cds，mRNA，sense strand，ATG，AUG之间的关系</a></p>
+
+<blockquote>
+  <p>DNA有双链，其中一条会被用作模板转录RNA，这条链叫模板链、非编码链和反义链(antisense strand)，另外一条链就叫非模板链，编码链和正义链(sense strand)，这一条链除了T/U的区别和mRNA中的碱基序列一致。一条DNA序列可以分为编码区和非编码区，编码区又分为内含子(intron)和外显子(exon)，经过剪切的成熟mRAN包含蛋白编码区cds(protein coding sequence)和UTR区(untranslated region)，在cds上会有一个翻译起始密码子也即AUG(Met/M)/GUG(Val/V)，会有一个翻译终止密码子也即UAA/UAG/UGA。</p>
+</blockquote>
+
+<h2 id="understand-ld">Understand LD</h2>
+
+<p>LD - linkage disequilibrium
+(可以参考这篇文章)[https://cloud.tencent.com/developer/article/1625934]</p>
+
+<p>总结就是</p>
+<ol>
+  <li>连锁不平衡表示两个基因的遗传不服从哈代温伯格定律，发生了连锁现象，导致这两个基因的某种单体型概率变大，一般发生在距离相近的两个基因间。</li>
+  <li>有两个参数可以表征LD，一个是D值，另一个是r2，两个值趋近1表示完全连锁不平衡，即两个基因遗传时完全绑定</li>
+</ol>]]></content><author><name></name></author><category term="Basic concepts" /><summary type="html"><![CDATA[Understand sense and antisense strand How to understand the relationship between sense strand, mRNA, codon, UTR. 如何理解搞懂codon，cds，mRNA，sense strand，ATG，AUG之间的关系]]></summary></entry><entry><title type="html">Mamba Usage Notebook</title><link href="/posts/Mamba-learning/" rel="alternate" type="text/html" title="Mamba Usage Notebook" /><published>2022-05-18T00:00:00+00:00</published><updated>2022-05-18T00:00:00+00:00</updated><id>/posts/Mamba-learning</id><content type="html" xml:base="/posts/Mamba-learning/"><![CDATA[<p>Almost all commands in conda could be replaced by mamba, except activation and deactivation still using conda</p>
+
+<h2 id="create-a-environment">create a environment</h2>
+<p><code class="language-plaintext highlighter-rouge">mamba create -n nameofmyenv &lt;list of packages&gt;</code></p>
+
+<h2 id="install-further-packages">install further packages</h2>
+<p><code class="language-plaintext highlighter-rouge">mamba install otherpkgs</code></p>
+
+<h2 id="install-packages-through-channels">install packages through channels</h2>
+<p><code class="language-plaintext highlighter-rouge">mamba install -c bioconda samtools</code></p>
+
+<h2 id="remove-a-environment">remove a environment</h2>
+<p><code class="language-plaintext highlighter-rouge">mamba remove -n snakemake-tutorial --all</code></p>]]></content><author><name></name></author><category term="Conda" /><category term="Mamba" /><summary type="html"><![CDATA[Almost all commands in conda could be replaced by mamba, except activation and deactivation still using conda]]></summary></entry><entry><title type="html">Snakemake Tutorial</title><link href="/posts/Snakemake-learning-notes/" rel="alternate" type="text/html" title="Snakemake Tutorial" /><published>2022-05-10T00:00:00+00:00</published><updated>2022-05-10T00:00:00+00:00</updated><id>/posts/Snakemake-learning-notes</id><content type="html" xml:base="/posts/Snakemake-learning-notes/"><![CDATA[<p>This post records the learning of Snakemake. Refered to this <a href="https://snakemake.readthedocs.io/en/stable/">tutorial</a></p>
+
+<p>The first and the most important thing is that you know how to do the thing logically, sequences, tools and their version, input and output, parameters and log files.</p>
+
+<p>Keep in mind that Snakemake could help you build a workflow that make the analysis reproducible, but itself does not analyze anything.</p>
+
+<h2 id="install">Install</h2>
+
+<p>Recommand install through conda or mamba, it is better to create a isolated environment</p>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>conda install -c conda-forge mamba
+mamba install -c bioconda snakemake
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="example-files-from-snakemake-tutorial">Example files from Snakemake tutorial</h2>
+
+<h3 id="config-file">Config file</h3>
+
+<p>Store global variables in dictionary, can be wrote in JSON or YAML</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="na">samples</span><span class="pi">:</span>
+    <span class="na">A</span><span class="pi">:</span> <span class="s">data/samples/A.fastq</span>
+    <span class="na">B</span><span class="pi">:</span> <span class="s">data/samples/B.fastq</span>
+
+<span class="na">prior_mutation_rate</span><span class="pi">:</span> <span class="m">0.001</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="snakefile">Snakefile</h3>
+
+<p>Main part of snakemake workflow, containing all rules need to be excuted, use <code class="language-plaintext highlighter-rouge">include</code> to include other Snakemake files</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+37
+38
+39
+40
+41
+42
+43
+44
+45
+46
+47
+48
+49
+50
+51
+52
+53
+54
+55
+56
+57
+58
+59
+60
+61
+62
+63
+64
+65
+66
+67
+68
+69
+70
+71
+72
+73
+74
+75
+76
+77
+78
+79
+80
+81
+82
+83
+84
+85
+86
+87
+88
+89
+90
+91
+92
+93
+94
+95
+96
+97
+98
+99
+</pre></td><td class="rouge-code"><pre><span class="n">configfile</span><span class="p">:</span> <span class="s">"config.yaml"</span>
+
+<span class="c1"># localrules all require all intended output, it will not be submitted to cluster
+</span><span class="n">localrules</span><span class="p">:</span> <span class="nb">all</span>
+<span class="n">rule</span> <span class="nb">all</span><span class="p">:</span>
+    <span class="nb">input</span><span class="p">:</span>
+        <span class="s">"plots/quals.svg"</span>
+
+<span class="c1"># input function, enable us to process input files, like add if to filter based on some conditions
+</span><span class="k">def</span> <span class="nf">get_bwa_map_input_fastqs</span><span class="p">(</span><span class="n">wildcards</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">config</span><span class="p">[</span><span class="s">"samples"</span><span class="p">][</span><span class="n">wildcards</span><span class="p">.</span><span class="n">sample</span><span class="p">]</span>
+
+<span class="c1"># generally, for one rule, input, output, params, threads are necessary; log and benchmark
+# could be used to record the running information; conda could indicate specific environment;
+# four ways to run: shell, script, wrapper and directly write Python code.
+# {sample} here is a wildcard, snakemake will automatically determine the content of wildcard
+# based on the whole workflow. In rule all, wildcard can not be used, it needs explicit target.
+</span><span class="n">rule</span> <span class="n">bwa_map</span><span class="p">:</span>
+    <span class="nb">input</span><span class="p">:</span>
+        <span class="s">"data/genome.fa"</span><span class="p">,</span>
+        <span class="n">get_bwa_map_input_fastqs</span>
+    <span class="n">output</span><span class="p">:</span>
+        <span class="n">temp</span><span class="p">(</span><span class="s">"mapped_reads/{sample}.bam"</span><span class="p">)</span>
+    <span class="n">params</span><span class="p">:</span>
+        <span class="n">rg</span><span class="o">=</span><span class="sa">r</span><span class="s">"@RG\tID:{sample}\tSM:{sample}"</span>
+    <span class="n">log</span><span class="p">:</span>
+        <span class="s">"logs/bwa_mem/{sample}.log"</span>
+    <span class="n">threads</span><span class="p">:</span> <span class="mi">8</span>
+    <span class="n">shell</span><span class="p">:</span>
+        <span class="s">"(bwa mem -R '{params.rg}' -t {threads} {input} | "</span>
+        <span class="s">"samtools view -Sb - &gt; {output}) 2&gt; {log}"</span>
+
+<span class="c1"># temp() tell snakemake to delete the intermediate files after no process is dependent on them
+# protected() could protect the important files in case they are deleted or covered accidently.
+# {sample} and {wildcards.sample} are equivalent here.
+</span><span class="n">rule</span> <span class="n">samtools_sort</span><span class="p">:</span>
+    <span class="nb">input</span><span class="p">:</span>
+        <span class="s">"mapped_reads/{sample}.bam"</span>
+    <span class="n">output</span><span class="p">:</span>
+        <span class="n">protected</span><span class="p">(</span><span class="s">"sorted_reads/{sample}.bam"</span><span class="p">)</span>
+    <span class="n">shell</span><span class="p">:</span>
+        <span class="s">"samtools sort -T sorted_reads/{wildcards.sample} "</span>
+        <span class="s">"-O bam {input} &gt; {output}"</span>
+
+
+<span class="n">rule</span> <span class="n">samtools_index</span><span class="p">:</span>
+    <span class="nb">input</span><span class="p">:</span>
+        <span class="s">"sorted_reads/{sample}.bam"</span>
+    <span class="n">output</span><span class="p">:</span>
+        <span class="s">"sorted_reads/{sample}.bam.bai"</span>
+    <span class="n">shell</span><span class="p">:</span>
+        <span class="s">"samtools index {input}"</span>
+
+<span class="c1"># expand() is a very useful function, it returns a list
+# multiext is variant of expand(), it is useful in reference index
+# usage: multiext("refs/genome", ".fa", ".fa.fai", ".bwt")
+# use a () to put all commands in shell to one, then log can log everything happened.
+</span><span class="n">rule</span> <span class="n">bcftools_call</span><span class="p">:</span>
+    <span class="nb">input</span><span class="p">:</span>
+        <span class="n">fa</span><span class="o">=</span><span class="s">"data/genome.fa"</span><span class="p">,</span>
+        <span class="n">bam</span><span class="o">=</span><span class="n">expand</span><span class="p">(</span><span class="s">"sorted_reads/{sample}.bam"</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s">"samples"</span><span class="p">]),</span>
+        <span class="n">bai</span><span class="o">=</span><span class="n">expand</span><span class="p">(</span><span class="s">"sorted_reads/{sample}.bam.bai"</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s">"samples"</span><span class="p">])</span>
+    <span class="n">output</span><span class="p">:</span>
+        <span class="s">"calls/all.vcf"</span>
+    <span class="n">params</span><span class="p">:</span>
+        <span class="n">rate</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s">"prior_mutation_rate"</span><span class="p">]</span>
+    <span class="n">log</span><span class="p">:</span>
+        <span class="s">"logs/bcftools_call/all.log"</span>
+    <span class="n">shell</span><span class="p">:</span>
+        <span class="s">"(bcftools mpileup -f {input.fa} {input.bam} | "</span>
+        <span class="s">"bcftools call -mv -P {params.rate} - &gt; {output}) 2&gt; {log}"</span>
+
+
+<span class="n">rule</span> <span class="n">plot_quals</span><span class="p">:</span>
+    <span class="nb">input</span><span class="p">:</span>
+        <span class="s">"calls/all.vcf"</span>
+    <span class="n">output</span><span class="p">:</span>
+        <span class="s">"plots/quals.svg"</span>
+    <span class="n">script</span><span class="p">:</span>
+        <span class="s">"scripts/plot-quals.py"</span>
+
+
+<span class="c1"># wrapper is pre-compiled tool distributed in snakemake-wrapper. The pattern of whole rule
+# should be identical to what has been defined in wrapper, or it will throw errors. When
+# running, snakemake will automatically download a conda env to run the tool. You can sepcify
+# the path for conda env in command line `snakemake --conda-env /a/path/to/`
+</span><span class="n">rule</span> <span class="n">bwa_mem</span><span class="p">:</span>
+  <span class="nb">input</span><span class="p">:</span>
+      <span class="n">ref</span><span class="o">=</span><span class="s">"data/genome.fa"</span><span class="p">,</span>
+      <span class="n">sample</span><span class="o">=</span><span class="k">lambda</span> <span class="n">wildcards</span><span class="p">:</span> <span class="n">config</span><span class="p">[</span><span class="s">"samples"</span><span class="p">][</span><span class="n">wildcards</span><span class="p">.</span><span class="n">sample</span><span class="p">]</span>
+  <span class="n">output</span><span class="p">:</span>
+      <span class="n">temp</span><span class="p">(</span><span class="s">"mapped_reads/{sample}.bam"</span><span class="p">)</span>
+  <span class="n">log</span><span class="p">:</span>
+      <span class="s">"logs/bwa_mem/{sample}.log"</span>
+  <span class="n">params</span><span class="p">:</span>
+      <span class="s">"-R '@RG</span><span class="se">\t</span><span class="s">ID:{sample}</span><span class="se">\t</span><span class="s">SM:{sample}'"</span>
+  <span class="n">threads</span><span class="p">:</span> <span class="mi">8</span>
+  <span class="n">wrapper</span><span class="p">:</span>
+      <span class="s">"0.15.3/bio/bwa/mem"</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h3 id="environment-file">Environment file</h3>
+
+<p>Environment file for specific tool to run: <code class="language-plaintext highlighter-rouge">envs/samtools.yaml</code>, used under <code class="language-plaintext highlighter-rouge">conda</code> parameter.</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td><td class="rouge-code"><pre><span class="na">channels</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">bioconda</span>
+  <span class="pi">-</span> <span class="s">conda-forge</span>
+<span class="na">dependencies</span><span class="pi">:</span>
+  <span class="pi">-</span> <span class="s">samtools =1.9</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="snakemake-execution">Snakemake execution</h2>
+
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">snakemake -np</code>, dry run and print shell commands, if <code class="language-plaintext highlighter-rouge">--cores</code> command is given without a number, all available cores are used</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">snakemake targetfiles --cores 8</code>, run for single specific targets, snakemake will automatically find dependency</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">snakemake somerules --core 8</code>, run specific rules, the output of the rule will be the target</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">--forceall</code>, force to re-run specific rules or targets</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">snakemake --use-conda --cores 1</code>, will automatically create required environments and activate them before a job is executed</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">snakemake --dag | dot -Tpdf &gt; dag.pdf</code> or <code class="language-plaintext highlighter-rouge">snakemake --dag | dot -Tsvg &gt; dag.svg</code>, build a graph showing the workflow logic</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">snakemake --cluster qsub --jobs 10</code>, run snakemake in clusters</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">snakemake --use-conda --cores 4 --conda-frontend mamba --conda-prefix ~/data/biosoft/grenepipe/conda-envs --directory example/</code>, a complicated but useful snakemake run</p>
+  </li>
+  <li>
+    <p>Snakemake automatically creates missing directories before jobs are executed</p>
+  </li>
+</ul>
+
+<h2 id="additional-features">Additional features</h2>
+
+<ol>
+  <li>use <code class="language-plaintext highlighter-rouge">include</code> to include other Snakefile into current one, this feature enable us to separate a large workflow into small pieces</li>
+  <li>under <code class="language-plaintext highlighter-rouge">script</code> parameter, in Python script we can access Snakemake properties by like <code class="language-plaintext highlighter-rouge">snakemake.input[0]</code>, or we can do that in R script by <code class="language-plaintext highlighter-rouge">snakemake@input[[1]]</code></li>
+</ol>
+
+<h2 id="one-good-snakemake-example---grenepipe">One good snakemake example - GrenePipe</h2>
+
+<div class="language-plaintext highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td><td class="rouge-code"><pre>git clone https://github.com/moiexpositoalonsolab/grenepipe.git
+conda install mamba -n base -c conda-forge
+mamba env create -f envs/grenepipe.yaml
+conda activate grenepipe
+cd grenepipe
+./example/prepare.sh
+snakemake --use-conda --cores 4 --conda-frontend mamba --conda-prefix ~/data/biosoft/grenepipe/conda-envs --directory example/ 2&gt;2.log
+</pre></td></tr></tbody></table></code></pre></div></div>]]></content><author><name></name></author><category term="Pipeline" /><category term="Tutorial" /><category term="Snakemake" /><summary type="html"><![CDATA[This post records the learning of Snakemake. Refered to this tutorial]]></summary></entry><entry><title type="html">Make Tutorial</title><link href="/posts/Make-learning-notes/" rel="alternate" type="text/html" title="Make Tutorial" /><published>2022-05-08T00:00:00+00:00</published><updated>2022-05-08T00:00:00+00:00</updated><id>/posts/Make-learning-notes</id><content type="html" xml:base="/posts/Make-learning-notes/"><![CDATA[<p>This post is a summary of this awesome <a href="http://swcarpentry.github.io/make-novice/">Make tutorial</a></p>
+
+<p>Make is a tool which can run commands to read files, process these files in some way, and write out the processed files.</p>
+
+<p>Make is called a build tool - it builds data files, plots, papers, programs or libraries. It can also update existing files if desired.</p>
+
+<p>Make tracks the dependencies between the files it creates and the files used to create these. If one of the original files (e.g. a data file) is changed, then Make knows to recreate, or update, the files that depend upon this file (e.g. a plot).</p>
+
+<h2 id="makefiles">Makefiles</h2>
+<p>Components: rules, targets, dependencies and actions</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td><td class="rouge-code"><pre>target : dependency
+	actions
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<p>In Makefile, the first target is the default target Make attempts to build.</p>
+
+<p><strong>phony target</strong> - tell Make always execute this rule no matter the target exists or not.</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>.PHONY : clean
+clean :
+	<span class="nb">rm</span> <span class="nt">-f</span> <span class="k">*</span>.dat
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<blockquote class="prompt-info">
+  <p>The order of rebuilding dependencies is arbitrary. You should not assume that they will be built in the order in which they are listed.
+Dependencies must form a directed acyclic graph. A target cannot depend on a dependency which itself, or one of its dependencies, depends on that target.</p>
+</blockquote>
+
+<p><code class="language-plaintext highlighter-rouge">up to date</code> means that the Makefile has a rule with one or more actions whose target is the name of a file (or directory) and the file is up to date.</p>
+
+<p><code class="language-plaintext highlighter-rouge">Nothing to be done</code> means that the file exists but either :</p>
+
+<ul>
+  <li>the Makefile has no rule for it, or</li>
+  <li>the Makefile has a rule for it, but that rule has no actions</li>
+</ul>
+
+<p><code class="language-plaintext highlighter-rouge">make -n</code>, dry run, print the command but not run</p>
+
+<h2 id="automatic-variables">Automatic Variables</h2>
+<ul>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">$@</code> is a Make automatic variable which means ‘the target of the current rule’. When Make is run it will replace this variable with the target name.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">$^</code> is another automatic variable which means ‘all the dependencies of the current rule’. Again, when Make is run it will replace this variable with the dependencies.</p>
+  </li>
+  <li>
+    <p><code class="language-plaintext highlighter-rouge">$&lt;</code> means ‘the first dependency of the current rule’.</p>
+  </li>
+</ul>
+
+<h2 id="dependencies-on-data-and-code">Dependencies on Data and Code</h2>
+<p>Dry run: <code class="language-plaintext highlighter-rouge">make</code> can show the commands it will execute without actually running them if we pass the <code class="language-plaintext highlighter-rouge">-n</code> flag</p>
+
+<p>Key points</p>
+
+<ul>
+  <li>Make results depend on processing scripts as well as data files.</li>
+  <li>Dependencies are transitive: if A depends on B and B depends on C, a change to C will indirectly trigger an update to A.</li>
+</ul>
+
+<h2 id="pattern-rules">Pattern Rules</h2>
+<p><code class="language-plaintext highlighter-rouge">%</code> is a Make wildcard. <code class="language-plaintext highlighter-rouge">$*</code> is a special variable which gets replaced by the stem with which the rule matched.</p>
+
+<blockquote class="prompt-info">
+  <p>The Make <code class="language-plaintext highlighter-rouge">%</code> wildcard can only be used in a target and in its dependencies. It cannot be used in actions. In actions, you may however use <code class="language-plaintext highlighter-rouge">$*</code>, which will be replaced by the stem with which the rule matched.</p>
+</blockquote>
+
+<h2 id="variables">Variables</h2>
+<p><code class="language-plaintext highlighter-rouge">$(...)</code> tells Make to replace a variable with its value when Make is run</p>
+
+<p>We can pull variables out into a new file that just holds variable definitions - <code class="language-plaintext highlighter-rouge">config.mk</code></p>
+
+<p>We can then import <code class="language-plaintext highlighter-rouge">config.mk</code> into <code class="language-plaintext highlighter-rouge">Makefile</code> using: <code class="language-plaintext highlighter-rouge">include config.mk</code></p>
+
+<h2 id="functions">Functions</h2>
+<p><code class="language-plaintext highlighter-rouge">wildcard.</code> is function that gets a list of files matching some pattern, which we can then save in a variable. For example</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nv">TXT_FILES</span><span class="o">=</span><span class="si">$(</span>wildcard books/<span class="k">*</span>.txt<span class="si">)</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<blockquote class="prompt-tips">
+  <p><strong>@echo</strong> Make prints actions as it executes them. Using @ at the start of an action tells Make not to print this action. So, by using @echo instead of echo, we can see the result of echo (the variable’s value being printed) but not the echo command itself.</p>
+</blockquote>
+
+<p><code class="language-plaintext highlighter-rouge">patsubst</code> (‘pattern substitution’) takes a pattern, a replacement string and a list of names in that order; each name in the list that matches the pattern is replaced by the replacement string. Again, we can save the result in a variable. For example</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+</pre></td><td class="rouge-code"><pre><span class="nv">DAT_FILES</span><span class="o">=</span><span class="si">$(</span>patsubst books/%.txt, %.dat, <span class="si">$(</span>TXT_FILES<span class="si">))</span>
+</pre></td></tr></tbody></table></code></pre></div></div>
+
+<h2 id="self-documenting-makefiles">Self-Documenting Makefiles</h2>
+<p>Provide a <code class="language-plaintext highlighter-rouge">help</code> target in Makefiles</p>
+
+<p>We can use <code class="language-plaintext highlighter-rouge">##</code> (or even <code class="language-plaintext highlighter-rouge">###)</code> for comments that describe what a rule does and that we want <code class="language-plaintext highlighter-rouge">sed</code> to detect, for example</p>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr><td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td><td class="rouge-code"><pre>.PHONY : <span class="nb">help
+help</span> : Makefile
+	@sed <span class="nt">-n</span> <span class="s1">'s/^##//p'</span> <span class="nv">$&lt;</span>
+</pre></td></tr></tbody></table></code></pre></div></div>]]></content><author><name></name></author><category term="Pipeline" /><category term="Tutorial" /><category term="Make" /><summary type="html"><![CDATA[This post is a summary of this awesome Make tutorial]]></summary></entry></feed>
