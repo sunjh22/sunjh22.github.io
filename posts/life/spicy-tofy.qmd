@@ -1,0 +1,12 @@
+---
+title: "My Weekend Spicy Tofu Recipe"
+categories: [Food, Recipes, Spicy]
+date: "2024-05-21"
+image: tofu.jpg
+---
+
+## Ingredients
+* Tofu
+* Chili Oil
+
+![Delicious Tofu](tofu_photo.jpg){width=80%}

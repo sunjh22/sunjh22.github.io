@@ -1,0 +1,13 @@
+---
+title: "Single Cell Analysis with Seurat"
+categories: [Bioinformatics, R, scRNA-seq]
+date: "2024-05-20"
+image: image.png
+---
+
+Here is how I normalize data:
+
+```{r}
+library(Seurat)
+# Code actually runs and displays output!
+pbmc <- NormalizeData(pbmc)
