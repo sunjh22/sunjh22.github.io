@@ -1,5 +1,52 @@
 [
   {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
+    "section": "",
+    "text": "I am currently a PostDoctoral Fellow at The Hong Kong Polytechnic University. My interests include developing new algorithms for calling genetic variants and studying cancer evolution at single-cell level, and constructing AI virtural cell.\nI am maintaining this blog to record my daily working and learning, so I can review them in any time."
+  },
+  {
+    "objectID": "posts/daily/20251208.html",
+    "href": "posts/daily/20251208.html",
+    "title": "How to build a website on Github",
+    "section": "",
+    "text": "About three years ago, I built a blog website on Github using jekyll, now I want to re-start, so I asked Gemini 3 to help me. I followed its instructions and successfully built it.\n\n1. Archive previous site\n\nGo to your existing repository on GitHub.\nClick Settings -&gt; General.\nRename the repository to something like blog-archive-jekyll.\nCreate a new repository named sunjh22.github.io.\n\n\n\n2. Create new repository\n\nCreate a new repository named sunjh22.github.io.\nInitialize it with a README.md.\nGo to Settings &gt; Pages and set the “Source” to Deploy from a branch -&gt; main -&gt; /docs. (We will configure Quarto to render to a /docs folder).\n\n\n\n3. Download and install Quarto\nwget https://github.com/quarto-dev/quarto-cli/releases/download/v1.8.26/quarto-1.8.26-linux-amd64.tar.gz\ntar -xzf quarto-1.8.26-linux-amd64.tar.gz\nln -s /home/sunjh/data/biosoft/quarto-1.8.26/bin/quarto ~/data/bin/\n\n\n4. Initialize the Project\ngit clone https://github.com/sunjh22/sunjh22.github.io.git\ncd sunjh22.github.io\nquarto create-project myblog --type website:blog\nmv myblog/* .\nmv myblog/.gitignore .\nrmdir myblog\n\n\n5. Configure for GitHub Pages\nEdit _quarto.yml, index.qmd and about.qmd. All the new posts should be under ‘posts/’ directory, make three sub-directories ‘posts/bioinfo’, ‘posts/life’ and ‘posts/daily’.\n\n\n6. Preview and Publish\n# Because the port restriction, preview function is not available now.\nquarto preview\n\n# Render the full site\nquarto render\n\n# Push to Github\ngit add .\ngit commit -m \"Initial commit\"\ngit push origin main\n\n\nBonus for git push\n\nCheck for existing SSH keys:\n\nls -al ~/.ssh\nIf you see id_ed25519.pub or id_rsa.pub, skip to step 3.\n\nGenerate a new SSH key:\n\nssh-keygen -t ed25519 -C \"your_email@example.com\"\n(Press Enter through all prompts to accept defaults).\n\nAdd the key to GitHub: Display your public key:\n\ncat ~/.ssh/id_ed25519.pub\n# Or cat ~/.ssh/id_rsa.pub\nCopy the output (starts with ssh-ed25519…). Go to GitHub Settings → SSH and GPG keys → New SSH key. Paste the key and save.\n\nSwitch your repository to use SSH: Currently, your repo is looking for the HTTPS link. You need to point it to the SSH link.\n\n# Change remote URL from HTTPS to SSH\ngit remote set-url origin git@github.com:sunjh22/sunjh22.github.io.git\n\n# Verify it changed\ngit remote -v\n# Should show: origin  git@github.com:sunjh22/sunjh22.github.io.git (fetch)\n\nPush:\n\ngit push origin main",
+    "crumbs": [
+      "About",
+      "Daily summary",
+      "Daily",
+      "How to build a website on Github"
+    ]
+  },
+  {
+    "objectID": "posts/bioinfo/single-cell-analysis.html",
+    "href": "posts/bioinfo/single-cell-analysis.html",
+    "title": "Single Cell Analysis with Seurat",
+    "section": "",
+    "text": "Here is how I normalize data:\nlibrary(Seurat) # Code actually runs and displays output! pbmc &lt;- NormalizeData(pbmc)",
+    "crumbs": [
+      "About",
+      "Bioinformatics",
+      "Bioinfo",
+      "Single Cell Analysis with Seurat"
+    ]
+  },
+  {
+    "objectID": "posts/welcome/index.html",
+    "href": "posts/welcome/index.html",
+    "title": "How to build a website on Github",
+    "section": "",
+    "text": "About three years ago, I built a blog website on Github using jekyll, now I want to re-start, so I asked Gemini 3 to help me. I followed its instructions and successfully built it.\n\n1. Archive previous site\n\nGo to your existing repository on GitHub.\nClick Settings -&gt; General.\nRename the repository to something like blog-archive-jekyll.\nCreate a new repository named username.github.io."
+  },
+  {
+    "objectID": "posts/post-with-code/index.html",
+    "href": "posts/post-with-code/index.html",
+    "title": "Post With Code",
+    "section": "",
+    "text": "This is a post with executable code."
+  },
+  {
     "objectID": "posts/life/spicy-tofy.html",
     "href": "posts/life/spicy-tofy.html",
     "title": "My Weekend Spicy Tofu Recipe",
@@ -26,44 +73,10 @@
     ]
   },
   {
-    "objectID": "posts/post-with-code/index.html",
-    "href": "posts/post-with-code/index.html",
-    "title": "Post With Code",
-    "section": "",
-    "text": "This is a post with executable code."
-  },
-  {
     "objectID": "index.html",
     "href": "index.html",
-    "title": "myblog",
+    "title": "To be a better man",
     "section": "",
-    "text": "Post With Code\n\n\n\nnews\n\ncode\n\nanalysis\n\n\n\n\n\n\n\n\n\nDec 8, 2025\n\n\nHarlow Malloc\n\n\n\n\n\n\n\n\n\n\n\n\nWelcome To My Blog\n\n\n\nnews\n\n\n\n\n\n\n\n\n\nDec 5, 2025\n\n\nTristan O’Malley\n\n\n\n\n\n\n\n\n\n\n\n\nMy Weekend Spicy Tofu Recipe\n\n\n\nFood\n\nRecipes\n\nSpicy\n\n\n\n\n\n\n\n\n\nMay 21, 2024\n\n\n\n\n\n\n\n\n\n\n\n\nSingle Cell Analysis with Seurat\n\n\n\nBioinformatics\n\nR\n\nscRNA-seq\n\n\n\n\n\n\n\n\n\nMay 20, 2024\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About",
-    "section": "",
-    "text": "About this blog"
-  },
-  {
-    "objectID": "posts/welcome/index.html",
-    "href": "posts/welcome/index.html",
-    "title": "Welcome To My Blog",
-    "section": "",
-    "text": "This is the first post in a Quarto blog. Welcome!\n\nSince this post doesn’t specify an explicit image, the first image in the post will be used in the listing page of posts."
-  },
-  {
-    "objectID": "posts/bioinfo/single-cell-analysis.html",
-    "href": "posts/bioinfo/single-cell-analysis.html",
-    "title": "Single Cell Analysis with Seurat",
-    "section": "",
-    "text": "Here is how I normalize data:\nlibrary(Seurat) # Code actually runs and displays output! pbmc &lt;- NormalizeData(pbmc)",
-    "crumbs": [
-      "About",
-      "Bioinformatics",
-      "Bioinfo",
-      "Single Cell Analysis with Seurat"
-    ]
+    "text": "How to build a website on Github\n\n\n\nrandom\n\n\n\n\n\n\n\n\n\nDec 8, 2025\n\n\nSun Jiahong\n\n\n\n\n\n\n\n\n\n\n\n\nPost With Code\n\n\n\nnews\n\ncode\n\nanalysis\n\n\n\n\n\n\n\n\n\nDec 8, 2025\n\n\nHarlow Malloc\n\n\n\n\n\n\n\n\n\n\n\n\nHow to build a website on Github\n\n\n\nrandom\n\n\n\n\n\n\n\n\n\nDec 8, 2025\n\n\nSun Jiahong\n\n\n\n\n\n\n\n\n\n\n\n\nMy Weekend Spicy Tofu Recipe\n\n\n\nFood\n\nRecipes\n\nSpicy\n\n\n\n\n\n\n\n\n\nMay 21, 2024\n\n\n\n\n\n\n\n\n\n\n\n\nSingle Cell Analysis with Seurat\n\n\n\nBioinformatics\n\nR\n\nscRNA-seq\n\n\n\n\n\n\n\n\n\nMay 20, 2024\n\n\n\n\n\nNo matching items"
   }
 ]
