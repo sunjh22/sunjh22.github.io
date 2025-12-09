@@ -1,6 +1,12 @@
 project:
   type: website
   output-dir: docs
+  resources:
+    - "images/"
+
+execute:
+  freeze: auto
+  cache: true
 
 website:
   title: "Jiahong's blog"
@@ -27,4 +33,16 @@ format:
         #- brand
     css: styles.css
     toc: true
+    code-fold: true
+    code-tools: true
 
+# Global settings for R code
+knitr:
+  opts_chunk:
+    message: false
+    warning: false
+    fig.align: "center"
+    fig.width: 8
+    fig.height: 6
+    dpi: 300
+    dev: "svg"

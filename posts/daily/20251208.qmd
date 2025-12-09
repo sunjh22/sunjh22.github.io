@@ -1,8 +1,8 @@
 ---
 title: "How to build a website on Github"
-author: "Sun Jiahong"
+author: "Ryan Sun"
 date: "2025-12-08"
-categories: [random]
+categories: [daily, tutorial]
 ---
 
 About three years ago, I built a blog website on Github using jekyll, now I want to re-start, so I asked Gemini 3 to help me. I followed its instructions and successfully built it.

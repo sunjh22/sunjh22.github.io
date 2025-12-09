@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -183,7 +218,7 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">To be a better man</h1>
+      <div class="quarto-title-block"><div><h1 class="title">To be a better man</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
                       </div>
   </div>
     
@@ -286,6 +321,12 @@ window.Quarto = {
  <span class="menu-text">How to build a website on Github</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./posts/daily/20251209.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ATAC-seq v.s ChIP-seq</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -297,7 +338,7 @@ window.Quarto = {
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
         
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(5)</span></div><div class="category" data-category="YW5hbHlzaXM=">analysis <span class="quarto-category-count">(1)</span></div><div class="category" data-category="QmlvaW5mb3JtYXRpY3M=">Bioinformatics <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Y29kZQ==">code <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Rm9vZA==">Food <span class="quarto-category-count">(1)</span></div><div class="category" data-category="bmV3cw==">news <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Ug==">R <span class="quarto-category-count">(1)</span></div><div class="category" data-category="cmFuZG9t">random <span class="quarto-category-count">(2)</span></div><div class="category" data-category="UmVjaXBlcw==">Recipes <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2NSTkEtc2Vx">scRNA-seq <span class="quarto-category-count">(1)</span></div><div class="category" data-category="U3BpY3k=">Spicy <span class="quarto-category-count">(1)</span></div></div></div>
+    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(4)</span></div><div class="category" data-category="QVRBQy1zZXE=">ATAC-seq <span class="quarto-category-count">(1)</span></div><div class="category" data-category="QmlvaW5mb3JtYXRpY3M=">Bioinformatics <span class="quarto-category-count">(1)</span></div><div class="category" data-category="ZGFpbHk=">daily <span class="quarto-category-count">(2)</span></div><div class="category" data-category="Rm9vZA==">Food <span class="quarto-category-count">(1)</span></div><div class="category" data-category="Ug==">R <span class="quarto-category-count">(1)</span></div><div class="category" data-category="UmVjaXBlcw==">Recipes <span class="quarto-category-count">(1)</span></div><div class="category" data-category="c2NSTkEtc2Vx">scRNA-seq <span class="quarto-category-count">(1)</span></div><div class="category" data-category="U3BpY3k=">Spicy <span class="quarto-category-count">(1)</span></div><div class="category" data-category="dHV0b3JpYWw=">tutorial <span class="quarto-category-count">(1)</span></div></div></div>
 <!-- main -->
 <main class="content quarto-banner-title-block column-body" id="quarto-document-content">
 
@@ -308,74 +349,44 @@ window.Quarto = {
 
 
 
+<!-- -->
+
 
 <div class="quarto-listing quarto-listing-container-default" id="listing-listing">
 <div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-categories="cmFuZG9t" data-listing-date-sort="1765123200000" data-listing-file-modified-sort="1765208840862" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="58">
-<div class="thumbnail"><a href="./posts/welcome/index.html" class="no-external">
+<div class="quarto-post image-right" data-index="0" data-categories="ZGFpbHklMkNBVEFDLXNlcQ==" data-listing-date-sort="1765209600000" data-listing-file-modified-sort="1765266331980" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="115">
+<div class="thumbnail"><a href="./posts/daily/20251209.html" class="no-external">
 
-<div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
-
-</a></div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/welcome/index.html" class="no-external">How to build a website on Github</a>
-</h3>
-<div class="listing-categories">
-
-<div class="listing-category" onclick="window.quartoListingCategory('cmFuZG9t'); return false;">random</div>
-
-</div>
-<div class="delink listing-description"><a href="./posts/welcome/index.html" class="no-external">
-About three years ago, I built a blog website on Github using jekyll, now I want to re-start, so I asked Gemini 3 to help me. I followed its instructions and successfully…
-</a></div>
-</div>
-<div class="metadata">
-<a href="./posts/welcome/index.html" class="no-external">
-<div class="listing-date">
-Dec 8, 2025
-</div>
-<div class="listing-author">
-Sun Jiahong
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-categories="bmV3cyUyQ2NvZGUlMkNhbmFseXNpcw==" data-listing-date-sort="1765123200000" data-listing-file-modified-sort="1765161610538" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="7">
-<div class="thumbnail"><a href="./posts/post-with-code/index.html" class="no-external">
-
-<img loading="lazy" src="./posts/post-with-code/image.jpg" class="thumbnail-image">
+<p class="card-img-top"><img src="posts/daily/images/common-histone-modifications.png" alt="Common histone modifications"  class="thumbnail-image card-img"/></p>
 
 </a></div>
 <div class="body">
 <h3 class="no-anchor listing-title">
-<a href="./posts/post-with-code/index.html" class="no-external">Post With Code</a>
+<a href="./posts/daily/20251209.html" class="no-external">ATAC-seq v.s ChIP-seq</a>
 </h3>
 <div class="listing-categories">
 
-<div class="listing-category" onclick="window.quartoListingCategory('bmV3cw=='); return false;">news</div>
+<div class="listing-category" onclick="window.quartoListingCategory('ZGFpbHk='); return false;">daily</div>
 
-<div class="listing-category" onclick="window.quartoListingCategory('Y29kZQ=='); return false;">code</div>
-
-<div class="listing-category" onclick="window.quartoListingCategory('YW5hbHlzaXM='); return false;">analysis</div>
+<div class="listing-category" onclick="window.quartoListingCategory('QVRBQy1zZXE='); return false;">ATAC-seq</div>
 
 </div>
-<div class="delink listing-description"><a href="./posts/post-with-code/index.html" class="no-external">
-This is a post with executable code.
+<div class="delink listing-description"><a href="./posts/daily/20251209.html" class="no-external">
+ATAC-seq is used to find genomewide open regions that any protein could bind, including transcription binding site, promoters and enhancers (non-specific). Use hyperactive…
 </a></div>
 </div>
 <div class="metadata">
-<a href="./posts/post-with-code/index.html" class="no-external">
+<a href="./posts/daily/20251209.html" class="no-external">
 <div class="listing-date">
-Dec 8, 2025
+Dec 9, 2025
 </div>
 <div class="listing-author">
-Harlow Malloc
+Ryan Sun
 </div>
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="2" data-categories="cmFuZG9t" data-listing-date-sort="1765123200000" data-listing-file-modified-sort="1765210009851" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="304">
+<div class="quarto-post image-right" data-index="1" data-categories="ZGFpbHklMkN0dXRvcmlhbA==" data-listing-date-sort="1765123200000" data-listing-file-modified-sort="1765259633696" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="2" data-listing-word-count-sort="304">
 <div class="thumbnail"><a href="./posts/daily/20251208.html" class="no-external">
 
 <div class="listing-item-img-placeholder card-img-top" >&nbsp;</div>
@@ -387,7 +398,9 @@ Harlow Malloc
 </h3>
 <div class="listing-categories">
 
-<div class="listing-category" onclick="window.quartoListingCategory('cmFuZG9t'); return false;">random</div>
+<div class="listing-category" onclick="window.quartoListingCategory('ZGFpbHk='); return false;">daily</div>
+
+<div class="listing-category" onclick="window.quartoListingCategory('dHV0b3JpYWw='); return false;">tutorial</div>
 
 </div>
 <div class="delink listing-description"><a href="./posts/daily/20251208.html" class="no-external">
@@ -400,12 +413,12 @@ About three years ago, I built a blog website on Github using jekyll, now I want
 Dec 8, 2025
 </div>
 <div class="listing-author">
-Sun Jiahong
+Ryan Sun
 </div>
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="3" data-categories="Rm9vZCUyQ1JlY2lwZXMlMkNTcGljeQ==" data-listing-date-sort="1716220800000" data-listing-file-modified-sort="1765166578220" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="5">
+<div class="quarto-post image-right" data-index="2" data-categories="Rm9vZCUyQ1JlY2lwZXMlMkNTcGljeQ==" data-listing-date-sort="1716220800000" data-listing-file-modified-sort="1765166578220" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="5">
 <div class="thumbnail"><a href="./posts/life/spicy-tofy.html" class="no-external">
 
 <img loading="lazy" src="./posts/life/tofu.jpg" class="thumbnail-image">
@@ -439,6 +452,8 @@ Sun Jiahong
 </div>
 
 
+<!-- -->
+
 
 </a></div>
 </div>
@@ -450,7 +465,7 @@ May 21, 2024
 </a>
 </div>
 </div>
-<div class="quarto-post image-right" data-index="4" data-categories="QmlvaW5mb3JtYXRpY3MlMkNSJTJDc2NSTkEtc2Vx" data-listing-date-sort="1716134400000" data-listing-file-modified-sort="1765166474502" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
+<div class="quarto-post image-right" data-index="3" data-categories="QmlvaW5mb3JtYXRpY3MlMkNSJTJDc2NSTkEtc2Vx" data-listing-date-sort="1716134400000" data-listing-file-modified-sort="1765166474502" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="1" data-listing-word-count-sort="8">
 <div class="thumbnail"><a href="./posts/bioinfo/single-cell-analysis.html" class="no-external">
 
 <img loading="lazy" src="./posts/bioinfo/image.png" class="thumbnail-image">
@@ -554,6 +569,57 @@ May 20, 2024
         container: window.document.getElementById('quarto-embedded-source-code-modal')
       });
       clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
@@ -883,7 +949,22 @@ May 20, 2024
       }
     }
   });
-  </script>
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "To be a better man"</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="an">listing:</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co">  contents: posts</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">  feed: true</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">  sort: "date desc"</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">  type: default</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">  categories: true</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">  sort-ui: false</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">  filter-ui: false</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="an">page-layout:</span><span class="co"> full</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="an">title-block-banner:</span><span class="co"> true</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
 </div> <!-- /content -->
 
 

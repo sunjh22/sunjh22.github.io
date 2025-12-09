@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -209,6 +244,12 @@ ul.task-list li input[type="checkbox"] {
  <span class="menu-text">How to build a website on Github</span></a>
   </div>
 </li>
+          <li class="sidebar-item">
+  <div class="sidebar-item-container"> 
+  <a href="./posts/daily/20251209.html" class="sidebar-item-text sidebar-link">
+ <span class="menu-text">ATAC-seq v.s ChIP-seq</span></a>
+  </div>
+</li>
       </ul>
   </li>
       </ul>
@@ -225,19 +266,34 @@ ul.task-list li input[type="checkbox"] {
   round " style="height: 15em; width: 15em;">
  <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">About</h1>
+<div class="quarto-title-block"><div><h1 class="title">About</h1><button type="button" class="btn code-tools-button" id="quarto-code-tools-source"><i class="bi"></i> Code</button></div></div>
 </div>
 <div class="quarto-title-meta">
   </div>
 </header><main class="content" id="quarto-document-content">
-<p>I am currently a PostDoctoral Fellow at The Hong Kong Polytechnic University. My interests include developing new algorithms for calling genetic variants and studying cancer evolution at single-cell level, and constructing AI virtural cell.</p>
-<p>I am maintaining this blog to record my daily working and learning, so I can review them in any time.</p>
+<p>🔬 The Academic and Professional (The Head)</p>
+<p>🌟 Current Role &amp; Mission</p>
+<p>I am Sun Jiahong (you can call me Ryan), a Postdoctoral Researcher specializing in Bioinformatics and Computational Biology at The Hong Kong Polytechnic University (PolyU) and Center for Eye and Vision Research (CEVR). My work centers on developing new algorithms for calling genetic variants and studying cancer evolution at single-cell level. I am also interested in a very new research field: AI virtual cell. I aim to translate complex biological datasets into actionable insights, particularly focusing on virtual cell modeling and disease mechanism discovery.</p>
+<p>🧬 Research Focus &amp; Expertise</p>
+<ul>
+<li>Omics Data Analysis: Expertise in WGS, single-cell DNA-seq, bulk RNA-seq and single-cell RNA-seq (scRNA-seq) data processing.</li>
+<li>Statistical Modeling: Advanced knowledge of Bayesian statistics, machine learning (supervised/unsupervised), and dimensionality reduction techniques.</li>
+<li>Computational Tools: Fluent in R (Tidyverse, Bioconductor) and Python (scikit-learn, PyTorch), with experience in cloud computing environments (AWS/GCP).</li>
+<li>Key Interest: Currently focused on studying genetic variations in cancers to find common cancer evolutionary patterns and risking factors.</li>
+</ul>
+<p>🚀 What You’ll Find Here</p>
+<p>The bioinformatics section of this blog serves as a digital notebook for reproducible research. I share comprehensive tutorials, deep dives into statistical methods, and critiques of new tools. You’ll find code and analysis for challenging projects related to omics data and AI virtual cell models.</p>
+<p>☕ The Personal and Curated (The Heart)</p>
+<p>📚 Learning &amp; Literacy - Reading: I am an avid reader of classic literature, focusing on [Author or Genre]. My non-fiction interests revolve around cognitive science and the philosophy of language. - English Learning: As an ESL speaker/lifelong learner, I share tips, resources, and reflections on improving fluency and professional communication.</p>
+<p>🍳 Food &amp; Fuel - Approach to Food: My culinary philosophy mirrors my research: precise, experimental, and driven by data (i.e., ingredients ratios!). I focus on recipes that are high-nutrient, efficient for a busy schedule, and often inspired by [Cuisine Type].</p>
+<p>🤝 Connect and Collaborate Email: The best way to reach me is via email: <a href="jiahong.sun@connect.polyu.hk">Email</a> GitHub: View my repositories and source code for the blog here: <a href="sunjh22.github.io">GitHub</a> Google Scholar: For my formal publication list: <a href="https://scholar.google.com/citations?user=zNjRrUEAAAAJ&amp;hl=en">Google Scholar</a></p>
 
 
+<!-- -->
 </main> 
   <hr class="about-sep">
    <div class="about-links">
-  <a href="https://linkedin.com" class="about-link" rel="" target="">
+  <a href="https://www.linkedin.com/in/jiahong-sun-6a668b219/" class="about-link" rel="" target="">
     <i class="bi bi-linkedin"></i>
      <span class="about-link-text">LinkedIn</span>
   </a>
@@ -311,6 +367,57 @@ ul.task-list li input[type="checkbox"] {
         container: window.document.getElementById('quarto-embedded-source-code-modal')
       });
       clipboardModal.on('success', onCopySuccess);
+    }
+    const viewSource = window.document.getElementById('quarto-view-source') ||
+                       window.document.getElementById('quarto-code-tools-source');
+    if (viewSource) {
+      const sourceUrl = viewSource.getAttribute("data-quarto-source-url");
+      viewSource.addEventListener("click", function(e) {
+        if (sourceUrl) {
+          // rstudio viewer pane
+          if (/\bcapabilities=\b/.test(window.location)) {
+            window.open(sourceUrl);
+          } else {
+            window.location.href = sourceUrl;
+          }
+        } else {
+          const modal = new bootstrap.Modal(document.getElementById('quarto-embedded-source-code-modal'));
+          modal.show();
+        }
+        return false;
+      });
+    }
+    function toggleCodeHandler(show) {
+      return function(e) {
+        const detailsSrc = window.document.querySelectorAll(".cell > details > .sourceCode");
+        for (let i=0; i<detailsSrc.length; i++) {
+          const details = detailsSrc[i].parentElement;
+          if (show) {
+            details.open = true;
+          } else {
+            details.removeAttribute("open");
+          }
+        }
+        const cellCodeDivs = window.document.querySelectorAll(".cell > .sourceCode");
+        const fromCls = show ? "hidden" : "unhidden";
+        const toCls = show ? "unhidden" : "hidden";
+        for (let i=0; i<cellCodeDivs.length; i++) {
+          const codeDiv = cellCodeDivs[i];
+          if (codeDiv.classList.contains(fromCls)) {
+            codeDiv.classList.remove(fromCls);
+            codeDiv.classList.add(toCls);
+          } 
+        }
+        return false;
+      }
+    }
+    const hideAllCode = window.document.getElementById("quarto-hide-all-code");
+    if (hideAllCode) {
+      hideAllCode.addEventListener("click", toggleCodeHandler(false));
+    }
+    const showAllCode = window.document.getElementById("quarto-show-all-code");
+    if (showAllCode) {
+      showAllCode.addEventListener("click", toggleCodeHandler(true));
     }
       var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
       var mailtoRegex = new RegExp(/^mailto:/);
@@ -640,7 +747,53 @@ ul.task-list li input[type="checkbox"] {
       }
     }
   });
-  </script>
+  </script><div class="modal fade" id="quarto-embedded-source-code-modal" tabindex="-1" aria-labelledby="quarto-embedded-source-code-modal-label" aria-hidden="true"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="quarto-embedded-source-code-modal-label">Source Code</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="">
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" data-shortcodes="false"><pre class="sourceCode markdown code-with-copy"><code class="sourceCode markdown"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="an">title:</span><span class="co"> "About"</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="an">image:</span><span class="co"> profile.png</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="an">about:</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="co">  template: jolla</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="co">  links:</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co">    - icon: linkedin</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co">      text: LinkedIn</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co">      href: https://www.linkedin.com/in/jiahong-sun-6a668b219/</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="co">    - icon: github</span></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="co">      text: Github</span></span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="co">      href: https://github.com/sunjh22</span></span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="co">---</span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>🔬 The Academic and Professional (The Head)</span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a>🌟 Current Role &amp; Mission</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a>I am Sun Jiahong (you can call me Ryan), a Postdoctoral Researcher specializing in Bioinformatics and Computational Biology at The Hong Kong Polytechnic University (PolyU) and Center for Eye and Vision Research (CEVR). My work centers on developing new algorithms for calling genetic variants and studying cancer evolution at single-cell level. I am also interested in a very new research field: AI virtual cell. I aim to translate complex biological datasets into actionable insights, particularly focusing on virtual cell modeling and disease mechanism discovery.</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>🧬 Research Focus &amp; Expertise</span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Omics Data Analysis: Expertise in WGS, single-cell DNA-seq, bulk RNA-seq and single-cell RNA-seq (scRNA-seq) data processing.</span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Statistical Modeling: Advanced knowledge of Bayesian statistics, machine learning (supervised/unsupervised), and dimensionality reduction techniques.</span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Computational Tools: Fluent in R (Tidyverse, Bioconductor) and Python (scikit-learn, PyTorch), with experience in cloud computing environments (AWS/GCP).</span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Key Interest: Currently focused on studying genetic variations in cancers to find common cancer evolutionary patterns and risking factors.</span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>🚀 What You'll Find Here</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>The bioinformatics section of this blog serves as a digital notebook for reproducible research. I share comprehensive tutorials, deep dives into statistical methods, and critiques of new tools. You'll find code and analysis for challenging projects related to omics data and AI virtual cell models.</span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>☕ The Personal and Curated (The Heart)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>📚 Learning &amp; Literacy</span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Reading: I am an avid reader of classic literature, focusing on <span class="co">[</span><span class="ot">Author or Genre</span><span class="co">]</span>. My non-fiction interests revolve around cognitive science and the philosophy of language.</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>English Learning: As an ESL speaker/lifelong learner, I share tips, resources, and reflections on improving fluency and professional communication.</span>
+<span id="cb1-38"><a href="#cb1-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-39"><a href="#cb1-39" aria-hidden="true" tabindex="-1"></a>🍳 Food &amp; Fuel</span>
+<span id="cb1-40"><a href="#cb1-40" aria-hidden="true" tabindex="-1"></a><span class="ss">- </span>Approach to Food: My culinary philosophy mirrors my research: precise, experimental, and driven by data (i.e., ingredients ratios!). I focus on recipes that are high-nutrient, efficient for a busy schedule, and often inspired by <span class="co">[</span><span class="ot">Cuisine Type</span><span class="co">]</span>.</span>
+<span id="cb1-41"><a href="#cb1-41" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-42"><a href="#cb1-42" aria-hidden="true" tabindex="-1"></a>🤝 Connect and Collaborate</span>
+<span id="cb1-43"><a href="#cb1-43" aria-hidden="true" tabindex="-1"></a>Email: The best way to reach me is via email: <span class="co">[</span><span class="ot">Email</span><span class="co">](jiahong.sun@connect.polyu.hk)</span></span>
+<span id="cb1-44"><a href="#cb1-44" aria-hidden="true" tabindex="-1"></a>GitHub: View my repositories and source code for the blog here: <span class="co">[</span><span class="ot">GitHub</span><span class="co">](sunjh22.github.io)</span></span>
+<span id="cb1-45"><a href="#cb1-45" aria-hidden="true" tabindex="-1"></a>Google Scholar: For my formal publication list: <span class="co">[</span><span class="ot">Google Scholar</span><span class="co">](https://scholar.google.com/citations?user=zNjRrUEAAAAJ&amp;hl=en)</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button" data-in-quarto-modal=""><i class="bi"></i></button></div>
+</div></div></div></div></div>
 </div> <!-- /content -->
 
 
