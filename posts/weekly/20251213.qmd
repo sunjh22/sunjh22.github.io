@@ -1,0 +1,8 @@
+---
+title: "20251213-Weekly summary"
+author: "Ryan Sun"
+date: "2025-12-13"
+categories: [weekly]
+---
+
+This is a test weekly summary page.

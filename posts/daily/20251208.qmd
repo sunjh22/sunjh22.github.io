@@ -1,5 +1,5 @@
 ---
-title: "How to build a website on Github"
+title: "20251208-How to build a website on Github"
 author: "Ryan Sun"
 date: "2025-12-08"
 categories: [daily, tutorial]

@@ -1,15 +1,16 @@
 ---
-title: "ATAC-seq v.s ChIP-seq"
+title: "20251209-ATAC-seq v.s ChIP-seq"
 author: "Ryan Sun"
 date: "2025-12-09"
 categories: [daily, ATAC-seq]
 ---
 
 ATAC-seq is used to find genomewide open regions that any protein could bind, including transcription binding site, promoters and enhancers (non-specific). Use hyperactive Tn5 transposase on unfixed nuclei, typically requires 500-50,000 cells as input, it is simple and fast.
+
 ChIP-seq is used to find the binding site of specific proteins (e.g transcription factors) or screen the specific histone modifications by specific antibodies (specific). Use specific antibody against the protein/modification of interest on crosslinked (fixed) chromatin, typically requires 1-10 million cells, it is more labor-intensive.
 
 As seen in @fig-histone, there are six common histone modifications.
-![Common histone modifications](images/common-histone-modifications.png){#fig-histone}
+![Common histone modifications](/images/common-histone-modifications.png){#fig-histone}
 
 @fig-antibody shows the current best-practice panel (what most big consortia and top labs use in 2024–2025) for mapping histone modifications.
-![Best-practice antibody panel](images/antibodies-for-histone-modifications.png){#fig-antibody}
+![Best-practice antibody panel](/images/antibodies-for-histone-modifications.png){#fig-antibody}

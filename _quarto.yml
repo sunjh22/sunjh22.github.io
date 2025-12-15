@@ -1,8 +1,7 @@
 project:
   type: website
   output-dir: docs
-  resources:
-    - "images/"
+  #resources: "images/"
 
 execute:
   freeze: auto
@@ -11,26 +10,35 @@ execute:
 website:
   title: "Jiahong's blog"
   description: "A daily summary"
-  #site-url: https://your-website-url.example.com # you must change this appropriately for RSS feeds to work properly
+  site-url: https://sunjh22.github.io/
+  search: true
+  back-to-top-navigation: true
   navbar:
     right:
+      - text: "Home"
+        href: index.qmd
       - about.qmd
       - icon: github
         href: https://github.com/sunjh22
   sidebar:
     style: "docked"
-    search: true
     contents:
       - section: "Bioinformatics"
         contents: posts/bioinfo
       - section: "Life & Recipes"
         contents: posts/life
-      - section: "Daily summary"
-        contents: posts/daily
+      - section: "Daily Summary"
+        contents: 
+          - "posts/daily"
+          - "posts/weekly"
+          # - "posts/daily/*.qmd"
+          # - "posts/daily/*.ipynb"
+          # - "posts/weekly/*.qmd"
+          # - "posts/weekly/*.ipynb"
+
 format:
   html:
     theme: cosmo
-        #- brand
     css: styles.css
     toc: true
     code-fold: true

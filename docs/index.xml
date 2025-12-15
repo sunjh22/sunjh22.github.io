@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss  xmlns:atom="http://www.w3.org/2005/Atom" 
+      xmlns:media="http://search.yahoo.com/mrss/" 
+      xmlns:content="http://purl.org/rss/1.0/modules/content/" 
+      xmlns:dc="http://purl.org/dc/elements/1.1/" 
+      version="2.0">
+<channel>
+<title>Jiahong&#39;s blog</title>
+<link>https://sunjh22.github.io/</link>
+<atom:link href="https://sunjh22.github.io/index.xml" rel="self" type="application/rss+xml"/>
+<description>A daily summary</description>
+<generator>quarto-1.8.26</generator>
+<lastBuildDate>Fri, 12 Dec 2025 16:00:00 GMT</lastBuildDate>
+<item>
+  <title>20251213-Weekly summary</title>
+  <dc:creator>Ryan Sun</dc:creator>
+  <link>https://sunjh22.github.io/posts/weekly/20251213.html</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>This is a test weekly summary page.</p>
+
+
+<!-- -->
+
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>weekly</category>
+  <guid>https://sunjh22.github.io/posts/weekly/20251213.html</guid>
+  <pubDate>Fri, 12 Dec 2025 16:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>20251209-ATAC-seq v.s ChIP-seq</title>
+  <dc:creator>Ryan Sun</dc:creator>
+  <link>https://sunjh22.github.io/posts/daily/20251209.html</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>ATAC-seq is used to find genomewide open regions that any protein could bind, including transcription binding site, promoters and enhancers (non-specific). Use hyperactive Tn5 transposase on unfixed nuclei, typically requires 500-50,000 cells as input, it is simple and fast.</p>
+<p>ChIP-seq is used to find the binding site of specific proteins (e.g transcription factors) or screen the specific histone modifications by specific antibodies (specific). Use specific antibody against the protein/modification of interest on crosslinked (fixed) chromatin, typically requires 1-10 million cells, it is more labor-intensive.</p>
+<p>As seen in <strong>?@fig-histone</strong>, there are six common histone modifications. <img src="https://sunjh22.github.io/images/common-histone-modifications.png" id="fig-histone" class="img-fluid" alt="Common histone modifications"></p>
+<p><strong>?@fig-antibody</strong> shows the current best-practice panel (what most big consortia and top labs use in 2024–2025) for mapping histone modifications. <img src="https://sunjh22.github.io/images/antibodies-for-histone-modifications.png" id="fig-antibody" class="img-fluid" alt="Best-practice antibody panel"></p>
+
+
+<!-- -->
+
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>daily</category>
+  <category>ATAC-seq</category>
+  <guid>https://sunjh22.github.io/posts/daily/20251209.html</guid>
+  <pubDate>Mon, 08 Dec 2025 16:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>20251208-How to build a website on Github</title>
+  <dc:creator>Ryan Sun</dc:creator>
+  <link>https://sunjh22.github.io/posts/daily/20251208.html</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>About three years ago, I built a blog website on Github using jekyll, now I want to re-start, so I asked Gemini 3 to help me. I followed its instructions and successfully built it.</p>
+<section id="archive-previous-site" class="level1">
+<h1>1. Archive previous site</h1>
+<ol type="1">
+<li>Go to your existing repository on GitHub.</li>
+<li>Click Settings -&gt; General.</li>
+<li>Rename the repository to something like blog-archive-jekyll.</li>
+<li>Create a new repository named sunjh22.github.io.</li>
+</ol>
+</section>
+<section id="create-new-repository" class="level1">
+<h1>2. Create new repository</h1>
+<ol type="1">
+<li>Create a new repository named sunjh22.github.io.</li>
+<li>Initialize it with a README.md.</li>
+<li>Go to Settings &gt; Pages and set the “Source” to Deploy from a branch -&gt; main -&gt; /docs. (We will configure Quarto to render to a /docs folder).</li>
+</ol>
+</section>
+<section id="download-and-install-quarto" class="level1">
+<h1>3. Download and install Quarto</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">wget</span> https://github.com/quarto-dev/quarto-cli/releases/download/v1.8.26/quarto-1.8.26-linux-amd64.tar.gz</span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">tar</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-xzf</span> quarto-1.8.26-linux-amd64.tar.gz</span>
+<span id="cb1-3"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ln</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-s</span> /home/sunjh/data/biosoft/quarto-1.8.26/bin/quarto ~/data/bin/</span></code></pre></div></div>
+</section>
+<section id="initialize-the-project" class="level1">
+<h1>4. Initialize the Project</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb2" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">git</span> clone https://github.com/sunjh22/sunjh22.github.io.git</span>
+<span id="cb2-2"><span class="bu" style="color: null;
+background-color: null;
+font-style: inherit;">cd</span> sunjh22.github.io</span>
+<span id="cb2-3"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">quarto</span> create-project myblog <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">--type</span> website:blog</span>
+<span id="cb2-4"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mv</span> myblog/<span class="pp" style="color: #AD0000;
+background-color: null;
+font-style: inherit;">*</span> .</span>
+<span id="cb2-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">mv</span> myblog/.gitignore .</span>
+<span id="cb2-6"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">rmdir</span> myblog</span></code></pre></div></div>
+</section>
+<section id="configure-for-github-pages" class="level1">
+<h1>5. Configure for GitHub Pages</h1>
+<p>Edit <code>_quarto.yml</code>, <code>index.qmd</code> and <code>about.qmd</code>. All the new posts should be under ‘posts/’ directory, make three sub-directories ‘posts/bioinfo’, ‘posts/life’ and ‘posts/daily’.</p>
+</section>
+<section id="preview-and-publish" class="level1">
+<h1>6. Preview and Publish</h1>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Because the port restriction, preview function is not available now.</span></span>
+<span id="cb3-2"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">quarto</span> preview</span>
+<span id="cb3-3"></span>
+<span id="cb3-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Render the full site</span></span>
+<span id="cb3-5"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">quarto</span> render</span>
+<span id="cb3-6"></span>
+<span id="cb3-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Push to Github</span></span>
+<span id="cb3-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">git</span> add .</span>
+<span id="cb3-9"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">git</span> commit <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-m</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"Initial commit"</span></span>
+<span id="cb3-10"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">git</span> push origin main</span></code></pre></div></div>
+</section>
+<section id="bonus-for-git-push" class="level1">
+<h1>Bonus for git push</h1>
+<ol type="1">
+<li>Check for existing SSH keys:</li>
+</ol>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ls</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-al</span> ~/.ssh</span>
+<span id="cb4-2"><span class="ex" style="color: null;
+background-color: null;
+font-style: inherit;">If</span> you see id_ed25519.pub or id_rsa.pub, skip to step 3.</span></code></pre></div></div>
+<ol start="2" type="1">
+<li>Generate a new SSH key:</li>
+</ol>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">ssh-keygen</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-t</span> ed25519 <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-C</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">"your_email@example.com"</span></span></code></pre></div></div>
+<p>(Press Enter through all prompts to accept defaults).</p>
+<ol start="3" type="1">
+<li>Add the key to GitHub: Display your public key:</li>
+</ol>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">cat</span> ~/.ssh/id_ed25519.pub</span>
+<span id="cb6-2"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Or cat ~/.ssh/id_rsa.pub</span></span></code></pre></div></div>
+<p>Copy the output (starts with ssh-ed25519…). Go to GitHub Settings → SSH and GPG keys → New SSH key. Paste the key and save.</p>
+<ol start="4" type="1">
+<li>Switch your repository to use SSH: Currently, your repo is looking for the HTTPS link. You need to point it to the SSH link.</li>
+</ol>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Change remote URL from HTTPS to SSH</span></span>
+<span id="cb7-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">git</span> remote set-url origin git@github.com:sunjh22/sunjh22.github.io.git</span>
+<span id="cb7-3"></span>
+<span id="cb7-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Verify it changed</span></span>
+<span id="cb7-5"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">git</span> remote <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-v</span></span>
+<span id="cb7-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># Should show: origin  git@github.com:sunjh22/sunjh22.github.io.git (fetch)</span></span></code></pre></div></div>
+<ol start="5" type="1">
+<li>Push:</li>
+</ol>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">git</span> push origin main</span></code></pre></div></div>
+
+
+<!-- -->
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>daily</category>
+  <category>tutorial</category>
+  <guid>https://sunjh22.github.io/posts/daily/20251208.html</guid>
+  <pubDate>Sun, 07 Dec 2025 16:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>My Weekend Spicy Tofu Recipe</title>
+  <link>https://sunjh22.github.io/posts/life/spicy-tofy.html</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="ingredients" class="level2">
+
+<ul>
+<li>Tofu</li>
+<li>Chili Oil</li>
+</ul>
+
+
+<!-- -->
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>Food</category>
+  <category>Recipes</category>
+  <category>Spicy</category>
+  <guid>https://sunjh22.github.io/posts/life/spicy-tofy.html</guid>
+  <pubDate>Mon, 20 May 2024 16:00:00 GMT</pubDate>
+</item>
+<item>
+  <title>Single Cell Analysis with Seurat</title>
+  <link>https://sunjh22.github.io/posts/bioinfo/single-cell-analysis.html</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<p>Here is how I normalize data:</p>
+<p>library(Seurat) # Code actually runs and displays output! pbmc &lt;- NormalizeData(pbmc)</p>
+
+
+<!-- -->
+
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>Bioinformatics</category>
+  <category>R</category>
+  <category>scRNA-seq</category>
+  <guid>https://sunjh22.github.io/posts/bioinfo/single-cell-analysis.html</guid>
+  <pubDate>Sun, 19 May 2024 16:00:00 GMT</pubDate>
+</item>
+</channel>
+</rss>
