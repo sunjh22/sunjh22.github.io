@@ -1,0 +1,90 @@
+---
+title: "20251216-Efficient-MST"
+author: "Ryan Sun"
+date: "2025-12-16"
+categories: [daily, Python, MST]
+---
+
+# Highly efficient implementation minimum spanning tree in Python
+```python
+"""
+Constructs a Minimum Spanning Tree (MST) from single-cell copy number profiles
+based on the Euclidean distance.
+
+Optimized version using pandas, scipy.spatial, and scipy.sparse.
+"""
+
+import argparse
+import sys
+import pandas as pd
+import numpy as np
+from scipy.spatial.distance import pdist, squareform
+from scipy.sparse.csgraph import minimum_spanning_tree
+
+def main():
+    # 四步：构建参数，添加参数，包装参数和调用参数
+    parser = argparse.ArgumentParser(description="Build an MST from scCNV profiles using Euclidean Distance (Optimized).")
+    parser.add_argument("input_file", help="Path to the input CNV profile TSV file (bins as columns, cells as rows).")
+    parser.add_argument("output_file", help="Path for the output MST file.")
+    args = parser.parse_args()
+
+    print(f"Reading copy number profiles from: {args.input_file}")
+    
+    # OPTIMIZATION 1: Use pandas for fast I/O
+    # Reads the entire matrix into memory efficiently. 速度更快，内存消耗更大
+    # header=None assumes the file has no header row (based on your demo file).
+    # index_col=0 uses the first column (Cell IDs) as the index.
+    try:
+        df = pd.read_csv(args.input_file, sep='\t', header=None, index_col=0)
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        sys.exit(1)
+        
+    n_cells, n_bins = df.shape
+    print(f"Successfully read {n_cells} cells and {n_bins} bins.")
+
+    if n_cells < 2:
+        print("Error: Need at least 2 cells to build a tree.")
+        sys.exit(1)
+
+    # OPTIMIZATION 2: Vectorized distance calculation
+    print("Calculating pairwise Euclidean distances...")
+    # pdist computes pairwise distances in C, which is orders of magnitude faster than Python loops.
+    # It returns a condensed distance matrix to save memory.
+    try:
+        dist_condensed = pdist(df.values, metric='euclidean')
+        dist_matrix = squareform(dist_condensed)
+    except MemoryError:
+        print("Error: Not enough memory to compute the full distance matrix.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error calculating distances: {e}")
+        sys.exit(1)
+
+    # OPTIMIZATION 3: Efficient MST algorithm
+    print("Constructing Minimum Spanning Tree...")
+    # uses efficient implementation (Kruskal's/Prim's) from scipy
+    mst_csr = minimum_spanning_tree(dist_matrix)
+    
+    # Convert the sparse matrix to Coordinate (COO) format to extract edges easily
+    mst_coo = mst_csr.tocoo()
+    
+    print(f"Writing MST to: {args.output_file}")
+    cell_ids = df.index
+    
+    try:
+        with open(args.output_file, 'w') as f:
+            f.write("from\tto\tdistance\n")
+            # Iterate through the edges found by the MST algorithm
+            for u, v, w in zip(mst_coo.row, mst_coo.col, mst_coo.data):
+                # Map numeric indices back to original Cell IDs
+                f.write(f"{cell_ids[u]}\t{cell_ids[v]}\t{w}\n")
+    except IOError as e:
+        print(f"Error writing output file: {e}")
+        sys.exit(1)
+
+    print("Euclidean Tree inference finished successfully!")
+
+if __name__ == "__main__":
+    main()
+```

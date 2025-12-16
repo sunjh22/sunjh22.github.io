@@ -1,0 +1,79 @@
+---
+title: "20251215-UKBiobank"
+author: "Ryan Sun"
+date: "2025-12-15"
+categories: [daily]
+---
+
+# Python skills
+
+1. 定义一个函数： def some_function(variable1: type, variable2: type) -> type of return value。举个栗子：def read_copy_number_profiles(filepath: str) -> Dict[str, np.ndarray]:
+2. 定义一个变量：variable1: Dict[str, list[int]] = {}。举个栗子：profiles: Dict[str, list[int]] = {}
+3. Convert lists to Numpy array: np.array(list, dtype=int)
+4. argparse用法
+    4.1 初始化：parser = argparse.ArgumentParser(description="")
+    4.2 添加参数: parser.add_argument("input_file", help=""), parser.add_argument("output_file", help="")
+    4.3 包装参数: args = parser.parse_args()
+    4.4 调用参数: input_file = args.input_file
+
+```python
+# Perform statistical test in Python
+from scipy import stats
+cml_counts = [10671,26081,26593,96335,110570]
+healthy_counts = [101835,431203,183384]
+# T-test
+t_stat1, p_val1 = stats.ttest_ind(cml_counts, healthy_counts, equal_var=False)
+# Mann-Whiteney U test
+t_stat, p_val = stats.mannwhitneyu(cml_counts, healthy_counts, equal_var=False)
+```
+
+# Linux skills
+
+```bash
+# Use AWK to filter rows, usage of && and ||
+grep -v 'NormB' PC1_clusterA_metadata.csv | awk -F',' 'NR == 1 { print; next } {cnv = $4; ploidy = $5} cnv > 0.03693037 && (ploidy < 1.98583 || ploidy > 2.015871)' 
+```
+
+# Apply for UK Biobank data access
+
+Deciphering the Immunogenetic Landscape: Epistatic Interactions between HLA and KIR Loci and their Impact on Human Health Phenotypes in the UK Biobank
+
+1. Scientific Rationale
+1.1 Background: Natural Killer (NK) cells are pivotal in the innate immune response against viral infections and tumors. Their function is tightly regulated by the interaction between KIR receptors (encoded on chromosome 19) and their specific HLA class I ligands (encoded on chromosome 6).
+1.2 The Gap: Both gene families are highly polymorphic. While HLA associations with disease are well-documented, the epistatic (combinatorial) effect of HLA-KIR pairs is less understood, primarily because most studies lack the sample size to detect these complex interactions.
+1.3 UK Biobank Advantage: The UKB offers a unique opportunity to study these interactions at scale. The availability of Whole Exome Sequencing (WES) and Whole Genome Sequencing (WGS) allows for the direct calling of complex KIR copy numbers and alleles, which can then be correlated with the rich phenotypic data available.
+
+2. Research Questions
+2.1 What is the landscape of KIR allelic diversity and copy number variation (CNV) across the UK Biobank population, and how does it stratify by ancestry?
+2.2 How do specific epistatic combinations of KIR receptors and their cognate HLA ligands (e.g., KIR2DL1 with HLA-C2) influence susceptibility to immune-mediated diseases, infections, and cancer?
+2.3 Can we identify novel pleiotropic effects of HLA-KIR interactions across a broad spectrum of phenotypes (PheWAS)?
+
+3. Specific Objectives
+Objective 1: Immunogenetic Profiling. To determine high-resolution HLA alleles and KIR genotypes (including copy number and allelic variants) for UK Biobank participants. Note: HLA is already imputed in UKB, but KIR often requires running specific calling tools (like T1K or KIRCLE) on the WES/WGS data.
+Objective 2: Epistatic Interaction Mapping. To classify individuals based on functional NK cell "education" status (e.g., Receptor-Ligand match vs. mismatch) and define interaction terms (e.g., KIR3DL1+HLA-Bw4).
+Objective 3: Phenome-Wide Association Study (PheWAS). To perform a PheWAS to systematically screen for associations between HLA-KIR combinations and diverse phenotypes, with a focus on:
+Autoimmunity: Rheumatoid arthritis, Psoriasis, IBD.
+Infection: Viral susceptibility (e.g., severe influenza, COVID-19 severity).
+Malignancy: Hematological cancers and solid tumors.
+
+This research will clarify the "missing heritability" in immune-mediated diseases by looking beyond single-gene effects to gene-gene interactions. Understanding these mechanisms could lead to better risk stratification for patients and potential therapeutic targets involving NK cell modulation (e.g., checkpoint inhibitors).
+
+This research is in the public interest because it aims to improve the understanding of the genetic mechanisms underlying human immune response, specifically the interactions between HLA and KIR gene families. While these genes are known to be critical for fighting infections and cancer, their combined diversity is complex and poorly understood at the population level. By characterizing these variations in the UK Biobank, this project seeks to:
+1. Identify genetic markers that predict susceptibility to immune-mediated diseases and cancer.
+2. Clarify the 'missing heritability' in complex disease traits that single-gene studies have failed to capture.
+Ultimately, this work aims to provide fundamental knowledge that could lead to improved risk stratification and the development of targeted immunotherapies. We are committed to publishing our findings in peer-reviewed scientific journals and sharing any developed bioinformatics tools with the research community to maximize the utility of this resource.
+
+# HLA & KIR
+
+4-field allele calls
+1: represent broad antigen group
+2: indicate a unique protein variant, may affect T-cell binding
+3: denote a sepcific silent variant, do not affect protein
+4: non-coding region variations, including introns, 5'/3' UTRs, promoter and enhancer
+
+over 30,000 HLA alleles in IMGT/HLA database
+
+HLA locus (chromosome 6p21.3), ~5Mb, ~140 genes, Class I and II are core loci, most genes have copy number of 2, DRB3/4/5 generally have CNVs
+
+KIR locus (chromosome 19q13.42), ~150kb, 15 functional genes + 2 pseudogenes
+
