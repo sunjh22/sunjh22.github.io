@@ -10,7 +10,72 @@
 <atom:link href="https://sunjh22.github.io/index.xml" rel="self" type="application/rss+xml"/>
 <description>A daily summary</description>
 <generator>quarto-1.8.26</generator>
-<lastBuildDate>Mon, 15 Dec 2025 16:00:00 GMT</lastBuildDate>
+<lastBuildDate>Tue, 16 Dec 2025 16:00:00 GMT</lastBuildDate>
+<item>
+  <title>20251217-Linux skills</title>
+  <dc:creator>Ryan Sun</dc:creator>
+  <link>https://sunjh22.github.io/posts/daily/20251217.html</link>
+  <description><![CDATA[ 
+
+
+
+
+
+<section id="linux-skills" class="level1">
+
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1" style="background: #f1f3f5;"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 从metadata里取cell id，然后在matrix里提取有这个cell id的行</span></span>
+<span id="cb1-2"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">awk</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'NR==FNR {words["\"" $1 "\""] = 1; next} $1 in words'</span> normal/PC1_clusterA_normal_metadata.tsv PC1_clusterA_matrix.txt <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> normal/PC1_clusterA_normal_matrix.txt</span>
+<span id="cb1-3"></span>
+<span id="cb1-4"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 假设file2是file1的一部分，下面这个操作相当于file1-file2</span></span>
+<span id="cb1-5"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># -f file2: Use patterns from file2</span></span>
+<span id="cb1-6"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># -F: Treat patterns as fixed strings (not regex)</span></span>
+<span id="cb1-7"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># -v: Invert match — print lines not matching any pattern</span></span>
+<span id="cb1-8"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">grep</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-vFf</span> file2 file1 <span class="op" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;">&gt;</span> file3</span>
+<span id="cb1-9"></span>
+<span id="cb1-10"><span class="co" style="color: #5E5E5E;
+background-color: null;
+font-style: inherit;"># 在第一行前面插入一行新内容，并对原文件进行备份</span></span>
+<span id="cb1-11"><span class="fu" style="color: #4758AB;
+background-color: null;
+font-style: inherit;">sed</span> <span class="at" style="color: #657422;
+background-color: null;
+font-style: inherit;">-i.bak</span> <span class="st" style="color: #20794D;
+background-color: null;
+font-style: inherit;">'1i\cell_id,sample,CancerType,cnv_burden,ploidy,state'</span> PC1_clusterA_tumor_metadata.csv</span></code></pre></div></div>
+
+
+<!-- -->
+
+</section>
+
+<a onclick="window.scrollTo(0, 0); return false;" id="quarto-back-to-top"><i class="bi bi-arrow-up"></i> Back to top</a> ]]></description>
+  <category>daily</category>
+  <category>Linux</category>
+  <guid>https://sunjh22.github.io/posts/daily/20251217.html</guid>
+  <pubDate>Tue, 16 Dec 2025 16:00:00 GMT</pubDate>
+</item>
 <item>
   <title>20251216-Efficient-MST</title>
   <dc:creator>Ryan Sun</dc:creator>

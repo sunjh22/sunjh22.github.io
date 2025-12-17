@@ -1,0 +1,22 @@
+---
+title: "20251217-Linux skills"
+author: "Ryan Sun"
+date: "2025-12-17"
+categories: [daily, Linux]
+---
+
+
+# Linux skills
+```bash
+# 从metadata里取cell id，然后在matrix里提取有这个cell id的行
+awk 'NR==FNR {words["\"" $1 "\""] = 1; next} $1 in words' normal/PC1_clusterA_normal_metadata.tsv PC1_clusterA_matrix.txt > normal/PC1_clusterA_normal_matrix.txt
+
+# 假设file2是file1的一部分，下面这个操作相当于file1-file2
+# -f file2: Use patterns from file2
+# -F: Treat patterns as fixed strings (not regex)
+# -v: Invert match — print lines not matching any pattern
+grep -vFf file2 file1 > file3
+
+# 在第一行前面插入一行新内容，并对原文件进行备份
+sed -i.bak '1i\cell_id,sample,CancerType,cnv_burden,ploidy,state' PC1_clusterA_tumor_metadata.csv
+```
