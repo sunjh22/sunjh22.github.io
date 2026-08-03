@@ -1,0 +1,9 @@
+---
+title: "Python & R"
+description: "Programming foundations and scientific data analysis."
+---
+
+- [Python basics](python-basics.qmd)
+- [Python advanced](python-advanced.qmd)
+- [R basics](r-basics.qmd)
+- [R visualization](r-visualization.qmd)

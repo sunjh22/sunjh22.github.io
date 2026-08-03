@@ -1,0 +1,20 @@
+---
+title: "Knowledge Map"
+description: "A structured map of bioinformatics, omics, computation, and statistics."
+toc: false
+---
+
+This is the durable part of the site: topics are organized by concept rather than publication date. Each page will evolve from an outline into a practical reference with explanations, examples, and reproducible code.
+
+| Area | Scope |
+|---|---|
+| [Bioinformatics](bioinformatics/index.qmd) | Software, algorithms, workflows, databases |
+| [Omics data analysis](omics/index.qmd) | Genome, transcriptome, epigenome, multiome, spatial and molecular profiling |
+| [Machine learning](machine-learning/index.qmd) | Foundations, classical ML, and deep learning |
+| [Statistics](statistics/index.qmd) | Probability, inference, mixture models, and modelling |
+| [Linux](linux/index.qmd) | Commands, administration, environments, and networking |
+| [Python & R](programming/index.qmd) | Programming, tooling, visualization, and reproducible analysis |
+
+::: {.callout-note}
+Pages labelled **Planned** are intentional placeholders in the learning roadmap, not missing links.
+:::

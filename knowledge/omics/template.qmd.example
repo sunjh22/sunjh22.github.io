@@ -1,0 +1,67 @@
+---
+title: "Assay or analysis title"
+subtitle: "From experimental design to biological interpretation"
+description: "A concise summary used by listings and search engines."
+author: "Jiahong Sun"
+date: "YYYY-MM-DD"
+date-modified: "YYYY-MM-DD"
+categories: [Omics, Modality, Analysis]
+toc: true
+number-sections: true
+code-fold: show
+draft: true
+---
+
+## Biological question
+
+Define what the assay measures and which biological questions it can answer.
+
+## Experimental design
+
+Discuss samples, replicates, controls, depth, batch structure, and relevant metadata.
+
+## Data and file formats
+
+Describe raw inputs, reference resources, intermediate files, and expected outputs.
+
+## Analysis workflow
+
+### Quality control
+
+List metrics, diagnostic plots, and exclusion criteria.
+
+### Preprocessing
+
+Explain alignment or quantification, filtering, normalization, and batch handling.
+
+### Statistical analysis
+
+State the model, contrasts, covariates, assumptions, and multiple-testing procedure.
+
+### Biological interpretation
+
+Explain annotation, enrichment, visualization, and validation.
+
+## Reproducible example
+
+```{python}
+#| eval: false
+# Load a small example and demonstrate the essential analysis.
+```
+
+## Pitfalls and limitations
+
+- Technical confounder
+- Statistical limitation
+- Biological over-interpretation to avoid
+
+## Checklist
+
+- [ ] Design and controls documented
+- [ ] Software versions and references recorded
+- [ ] QC thresholds justified
+- [ ] Results validated with an independent view
+
+## References
+
+- Assay paper, benchmark, and current best-practice resource.

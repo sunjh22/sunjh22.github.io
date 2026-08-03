@@ -1,0 +1,8 @@
+---
+title: "Linux"
+description: "Practical Linux for scientific computing and reproducible research."
+---
+
+- [Basic commands](basic-commands.qmd)
+- [System management](system-management.qmd)
+- [Environments & networking](environments-networking.qmd)

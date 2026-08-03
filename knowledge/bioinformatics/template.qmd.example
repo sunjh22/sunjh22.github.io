@@ -1,0 +1,58 @@
+---
+title: "Article title"
+subtitle: "One-sentence scope of this note"
+description: "A concise summary used by listings and search engines."
+author: "Jiahong Sun"
+date: "YYYY-MM-DD"
+date-modified: "YYYY-MM-DD"
+categories: [Bioinformatics, Software-or-Algorithms]
+toc: true
+number-sections: true
+code-fold: show
+draft: true
+---
+
+## Why this matters
+
+State the biological question, the computational problem, and when this topic is useful.
+
+## Core idea
+
+Explain the method from first principles. Define inputs, outputs, assumptions, and key terminology.
+
+## How it works
+
+Describe the algorithm or software workflow step by step. Add complexity or implementation details when useful.
+
+## Minimal example
+
+```bash
+# A small, reproducible command
+tool --input example.dat --output result.dat
+```
+
+Explain every non-obvious option and show how to inspect the output.
+
+## Practical workflow
+
+Cover installation, input preparation, recommended parameters, output files, and downstream integration.
+
+## Pitfalls and diagnostics
+
+- Common failure mode
+- Quality-control signal
+- Assumption that is easy to violate
+
+## Alternatives
+
+Compare related tools or algorithms and give decision criteria.
+
+## Take-home messages
+
+1. Main conceptual point.
+2. Main practical recommendation.
+3. Important limitation.
+
+## References
+
+- Primary paper or official documentation.

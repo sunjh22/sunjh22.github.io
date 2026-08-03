@@ -1,0 +1,7 @@
+---
+title: "Linux System Management"
+description: "Processes, storage, services, users, logging, and performance."
+categories: [Linux, Systems]
+---
+
+Planned: systemd, users and groups, storage, resource monitoring, schedulers, logs, security basics, and troubleshooting.

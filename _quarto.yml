@@ -1,56 +1,117 @@
 project:
   type: website
-  output-dir: docs
-  #resources: "images/"
+  output-dir: _site
+  render:
+    - "*.qmd"
+    - "knowledge/**/*.qmd"
+    - "blog/**/*.qmd"
 
 execute:
   freeze: auto
   cache: true
 
 website:
-  title: "Jiahong's blog"
-  description: "A daily summary"
-  site-url: https://sunjh22.github.io/
-  search: true
+  title: "Jiahong Sun"
+  description: "Bioinformatics, omics, algorithms, statistics, and scientific computing"
+  site-url: https://sunjh22.github.io
+  favicon: profile.png
+  search:
+    location: navbar
+    type: overlay
+  reader-mode: true
   back-to-top-navigation: true
+  page-navigation: true
+  bread-crumbs: true
   navbar:
-    right:
-      - text: "Home"
+    background: primary
+    left:
+      - text: Home
         href: index.qmd
-      - about.qmd
+      - text: Knowledge
+        href: knowledge/index.qmd
+      - text: Blog
+        href: blog/index.qmd
+      - text: About
+        href: about.qmd
+    right:
       - icon: github
         href: https://github.com/sunjh22
+        aria-label: GitHub
   sidebar:
-    style: "docked"
+    style: docked
+    collapse-level: 1
     contents:
-      - section: "Bioinformatics"
-        contents: posts/bioinfo
-      - section: "Life & Recipes"
-        contents: posts/life
-      - section: "Daily Summary"
-        contents: 
-          - "posts/daily"
-          - "posts/weekly"
-          # - "posts/daily/*.qmd"
-          # - "posts/daily/*.ipynb"
-          # - "posts/weekly/*.qmd"
-          # - "posts/weekly/*.ipynb"
+      - section: "Knowledge Map"
+        href: knowledge/index.qmd
+        contents:
+          - section: "Bioinformatics"
+            href: knowledge/bioinformatics/index.qmd
+            contents:
+              - knowledge/bioinformatics/software.qmd
+              - knowledge/bioinformatics/algorithms.qmd
+              - knowledge/bioinformatics/workflows.qmd
+              - knowledge/bioinformatics/databases.qmd
+          - section: "Omics Data Analysis"
+            href: knowledge/omics/index.qmd
+            contents:
+              - knowledge/omics/genomics.qmd
+              - knowledge/omics/transcriptomics.qmd
+              - knowledge/omics/epigenomics.qmd
+              - knowledge/omics/multiomics.qmd
+              - knowledge/omics/spatial-proteomics-metabolomics.qmd
+          - section: "Machine Learning"
+            href: knowledge/machine-learning/index.qmd
+            contents:
+              - knowledge/machine-learning/basics.qmd
+              - knowledge/machine-learning/deep-learning.qmd
+          - section: "Statistics"
+            href: knowledge/statistics/index.qmd
+            contents:
+              - knowledge/statistics/distributions.qmd
+              - knowledge/statistics/mixture-models.qmd
+              - knowledge/statistics/statistical-modelling.qmd
+          - section: "Linux"
+            href: knowledge/linux/index.qmd
+            contents:
+              - knowledge/linux/basic-commands.qmd
+              - knowledge/linux/system-management.qmd
+              - knowledge/linux/environments-networking.qmd
+          - section: "Python & R"
+            href: knowledge/programming/index.qmd
+            contents:
+              - knowledge/programming/python-basics.qmd
+              - knowledge/programming/python-advanced.qmd
+              - knowledge/programming/r-basics.qmd
+              - knowledge/programming/r-visualization.qmd
+      - section: "Blog"
+        href: blog/index.qmd
+        contents:
+          - blog/booknotes/index.qmd
+          - blog/english/index.qmd
+          - blog/others/index.qmd
+  page-footer:
+    left: "© 2026 Jiahong Sun"
+    right: "Built with [Quarto](https://quarto.org/)"
 
 format:
   html:
-    theme: cosmo
-    css: styles.css
+    theme:
+      light: [litera, custom.scss]
+      dark: [darkly, custom.scss]
     toc: true
-    code-fold: true
+    toc-depth: 3
+    code-fold: show
     code-tools: true
+    code-copy: true
+    anchor-sections: true
+    smooth-scroll: true
 
-# Global settings for R code
 knitr:
   opts_chunk:
     message: false
     warning: false
-    fig.align: "center"
-    fig.width: 8
-    fig.height: 6
+    fig-align: center
+    fig-width: 8
+    fig-height: 6
     dpi: 300
-    dev: "svg"
+    dev: svg

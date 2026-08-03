@@ -1,0 +1,13 @@
+---
+title: "Spatial, Proteomics & Metabolomics"
+description: "Spatially resolved expression and molecular phenotyping beyond nucleic acids."
+categories: [Omics, Spatial, Proteomics, Metabolomics]
+---
+
+## Spatial transcriptomics
+
+Planned: platforms, spatial QC, deconvolution, domains, spatial statistics, and cell–cell interactions.
+
+## Proteomics and metabolomics
+
+Planned: mass spectrometry fundamentals, preprocessing, normalization, identification, quantification, and pathway analysis.

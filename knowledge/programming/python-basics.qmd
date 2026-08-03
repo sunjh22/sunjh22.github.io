@@ -1,0 +1,7 @@
+---
+title: "Python Basics"
+description: "Core Python for reliable scientific programs."
+categories: [Python, Programming]
+---
+
+Planned: data structures, strings, iterators and generators, file I/O, functions and pipelines, classes and objects, typing, testing, and algorithms such as DFS/BFS.

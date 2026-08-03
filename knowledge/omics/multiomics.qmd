@@ -1,0 +1,7 @@
+---
+title: "Multiomics"
+description: "Joint profiling and integration across molecular modalities."
+categories: [Omics, Multiomics]
+---
+
+Planned: single-cell RNA + ATAC multiome, paired versus unpaired integration, latent representations, regulatory links, and benchmarking.

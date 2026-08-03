@@ -1,0 +1,17 @@
+---
+title: "Bioinformatics Algorithms"
+description: "Algorithms and mathematical ideas behind biological data analysis."
+categories: [Bioinformatics, Algorithms]
+---
+
+## Geometry and neighborhoods
+
+Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical clustering.
+
+## Graphs and optimization
+
+Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.
+
+## Sequence and probabilistic models
+
+Planned: BWT/FM-index, hidden Markov models, MCMC, and Bayesian inference.

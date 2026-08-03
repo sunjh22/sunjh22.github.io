@@ -1,0 +1,58 @@
+---
+title: "Model or concept title"
+subtitle: "Intuition, mathematics, implementation, and evaluation"
+description: "A concise summary used by listings and search engines."
+author: "Jiahong Sun"
+date: "YYYY-MM-DD"
+date-modified: "YYYY-MM-DD"
+categories: [Machine Learning, Model Family]
+toc: true
+number-sections: true
+code-fold: show
+draft: true
+---
+
+## Problem formulation
+
+Define the task, data, target, and desired generalization setting.
+
+## Intuition
+
+Explain the model without equations before introducing formal notation.
+
+## Mathematical formulation
+
+Define symbols, objective function, assumptions, and optimization procedure.
+
+## Algorithm
+
+Give training and inference steps, computational complexity, and important hyperparameters.
+
+## Minimal implementation
+
+```{python}
+#| eval: false
+# Small, readable implementation or library example.
+```
+
+## Evaluation
+
+Specify data splitting, baselines, metrics, uncertainty estimates, and leakage checks.
+
+## Application to biological data
+
+Describe what changes for high dimensionality, small samples, batches, class imbalance, and interpretability.
+
+## Failure modes
+
+- Optimization or convergence issue
+- Generalization failure
+- Misleading metric or shortcut
+
+## Take-home messages
+
+Summarize when to use the method, when not to use it, and the most important implementation detail.
+
+## References
+
+- Original paper, textbook treatment, and reliable implementation.

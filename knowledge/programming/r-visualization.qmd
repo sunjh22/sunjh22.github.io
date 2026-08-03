@@ -1,0 +1,7 @@
+---
+title: "R Visualization"
+description: "Principles and tools for clear statistical graphics."
+categories: [R, Visualization]
+---
+
+Planned: visual encoding, ggplot2 grammar, scales, facets, themes, annotation, ComplexHeatmap, interactive figures, and publication-ready export.

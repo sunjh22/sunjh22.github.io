@@ -1,0 +1,6 @@
+---
+title: "Book Notes"
+description: "Ideas and reflections from books."
+---
+
+Reading notes will live here, organized by book and connected to broader themes in science, language, and life.

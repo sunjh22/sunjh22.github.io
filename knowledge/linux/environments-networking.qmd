@@ -1,0 +1,7 @@
+---
+title: "Environments & Networking"
+description: "Git, Conda/Mamba, containers, web servers, and network fundamentals."
+categories: [Linux, Reproducibility, Networking]
+---
+
+Planned: Git, Conda/Mamba, Docker, Apptainer, SSH, DNS, HTTP, ports, proxies, firewalls, and Nginx.

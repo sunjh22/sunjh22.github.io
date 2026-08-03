@@ -1,0 +1,8 @@
+---
+title: "Statistics"
+description: "Probability, inference, and models for biological variation."
+---
+
+- [Probability distributions](distributions.qmd)
+- [Mixture models](mixture-models.qmd)
+- [Statistical modelling](statistical-modelling.qmd)

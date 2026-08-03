@@ -1,0 +1,17 @@
+---
+title: "Blog"
+description: "Dated notes, reading, language learning, and other observations."
+listing:
+  contents:
+    - "**/*.qmd"
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: true
+  feed:
+    type: partial
+    items: 20
+---
+
+The blog is the chronological stream of the site. Mature technical notes may later be consolidated into the [knowledge map](../knowledge/index.qmd).

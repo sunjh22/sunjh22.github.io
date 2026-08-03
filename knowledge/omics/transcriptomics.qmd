@@ -1,0 +1,17 @@
+---
+title: "Transcriptomics"
+description: "Bulk and single-cell RNA sequencing workflows and interpretation."
+categories: [Omics, Transcriptomics]
+---
+
+## Bulk RNA-seq
+
+Planned: design matrices, quantification, normalization, differential expression, pathways, and batch effects.
+
+## Single-cell RNA-seq
+
+Planned: QC, normalization, integration, clustering, annotation, trajectories, differential testing, and cell–cell communication.
+
+### Existing note
+
+- [Single-cell analysis with Seurat](transcriptomics/single-cell-analysis.qmd)

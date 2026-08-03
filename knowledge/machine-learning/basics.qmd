@@ -1,0 +1,7 @@
+---
+title: "Machine Learning Foundations"
+description: "Data, objectives, validation, regularization, and classical models."
+categories: [Machine Learning]
+---
+
+Planned: supervised and unsupervised learning, loss functions, bias–variance tradeoff, cross-validation, leakage, metrics, feature engineering, and interpretability.

@@ -1,15 +1,73 @@
 ---
-title: "To be a better man"
+title: "Jiahong Sun"
+page-layout: full
+title-block-banner: false
+toc: false
 listing:
-  contents: posts
-  feed: true
+  id: recent-writing
+  contents:
+    - "knowledge/**/*.qmd"
+    - "blog/**/*.qmd"
   sort: "date desc"
   type: default
   categories: true
   sort-ui: false
-  filter-ui: false
-page-layout: full
-title-block-banner: true
+  filter-ui: true
+  feed: true
+  fields: [date, title, description, categories, reading-time]
 ---
 
+::: {.hero}
+<div class="eyebrow">Bioinformatics · Omics · Scientific Computing</div>
 
+# Build knowledge, not just notes.
+
+I am a bioinformatics postdoctoral researcher studying genetic variation, cancer evolution, and computational methods. This site is my structured, evolving map of what I have learned—and what I am still curious about.
+
+[Explore the knowledge map](knowledge/index.qmd){.btn .btn-primary} [About me](about.qmd){.btn .btn-outline-primary}
+:::
+
+## Knowledge areas
+
+::: {.knowledge-grid}
+::: {.knowledge-card}
+### [Bioinformatics](knowledge/bioinformatics/index.qmd)
+
+Classical tools, algorithms, workflow languages, and databases.
+:::
+
+::: {.knowledge-card}
+### [Omics data analysis](knowledge/omics/index.qmd)
+
+Genomics, transcriptomics, epigenomics, multiomics, and spatial data.
+:::
+
+::: {.knowledge-card}
+### [Machine learning](knowledge/machine-learning/index.qmd)
+
+Core methods, deep learning, and biological applications.
+:::
+
+::: {.knowledge-card}
+### [Statistics](knowledge/statistics/index.qmd)
+
+Distributions, mixture models, inference, and statistical modelling.
+:::
+
+::: {.knowledge-card}
+### [Linux](knowledge/linux/index.qmd)
+
+Commands, systems, environments, networking, and reproducibility.
+:::
+
+::: {.knowledge-card}
+### [Python & R](knowledge/programming/index.qmd)
+
+Programming foundations, advanced patterns, and visualization.
+:::
+:::
+
+## Recent writing
+
+::: {#recent-writing}
+:::

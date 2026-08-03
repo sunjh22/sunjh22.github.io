@@ -1,0 +1,17 @@
+---
+title: "Classic Bioinformatics Software"
+description: "How foundational command-line tools work, when to use them, and how they fit together."
+categories: [Bioinformatics, Software]
+---
+
+## Sequence alignment
+
+Planned: BWA, Bowtie2, STAR, minimap2.
+
+## Genomic file operations
+
+Planned: SAMtools, BCFtools, BEDtools, tabix, Picard.
+
+## Variant and feature analysis
+
+Planned: GATK, Cell Ranger, MACS2 and related tools.

@@ -1,0 +1,7 @@
+---
+title: "Epigenomics"
+description: "Chromatin accessibility, protein–DNA binding, and histone modifications."
+categories: [Omics, Epigenomics]
+---
+
+Planned: bulk and single-cell ATAC-seq, ChIP-seq, peak calling, QC, motif analysis, differential accessibility, and regulatory interpretation.

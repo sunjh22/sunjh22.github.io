@@ -1,0 +1,7 @@
+---
+title: "Bioinformatics Databases"
+description: "A curated index of reliable biological databases and reference resources."
+categories: [Bioinformatics, Databases]
+---
+
+Planned collections: reference genomes, gene annotation, population variation, cancer genomics, expression, epigenomics, proteins, pathways, and literature.

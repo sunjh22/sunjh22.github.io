@@ -1,0 +1,7 @@
+---
+title: "Python Advanced"
+description: "Python internals, metaprogramming, systems, web, and debugging."
+categories: [Python, Programming]
+---
+
+Planned: decorators, descriptors, metaclasses, concurrency, networking, packaging, profiling, logging, debugging, and operating-system interfaces.

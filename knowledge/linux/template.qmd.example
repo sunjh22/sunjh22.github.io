@@ -1,0 +1,63 @@
+---
+title: "Linux task or tool"
+subtitle: "A practical and reproducible command-line guide"
+description: "A concise summary used by listings and search engines."
+author: "Jiahong Sun"
+date: "YYYY-MM-DD"
+date-modified: "YYYY-MM-DD"
+categories: [Linux, Shell-or-Systems]
+toc: true
+number-sections: true
+code-fold: show
+draft: true
+---
+
+## Goal
+
+Describe the task, environment, prerequisites, and expected result.
+
+## Mental model
+
+Explain the relevant files, streams, processes, permissions, or network concepts.
+
+## Quick start
+
+```bash
+# Minimal safe example
+command --option input
+```
+
+## Command anatomy
+
+Explain arguments, flags, quoting, exit status, standard input/output/error, and filesystem effects.
+
+## Real bioinformatics example
+
+Use a small realistic example and show both the command and expected output.
+
+## Verification
+
+```bash
+# Confirm that the operation produced the intended result.
+```
+
+## Safety and portability
+
+- Destructive behavior and recovery
+- GNU versus BSD differences
+- Shell assumptions
+- Performance considerations
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| Example error | Example cause | Example fix |
+
+## Cheat sheet
+
+Collect the few commands worth remembering.
+
+## References
+
+- Manual page and official project documentation.

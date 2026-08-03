@@ -1,0 +1,7 @@
+---
+title: "Statistical Modelling"
+description: "From regression to hierarchical and Bayesian models."
+categories: [Statistics, Modelling]
+---
+
+Planned: linear and generalized linear models, survival analysis, mixed-effects models, shrinkage, hypothesis testing, multiple testing, Bayesian inference, and model criticism.

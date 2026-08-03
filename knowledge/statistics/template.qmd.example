@@ -1,0 +1,56 @@
+---
+title: "Statistical concept or model"
+subtitle: "Assumptions, derivation, inference, and interpretation"
+description: "A concise summary used by listings and search engines."
+author: "Jiahong Sun"
+date: "YYYY-MM-DD"
+date-modified: "YYYY-MM-DD"
+categories: [Statistics, Topic]
+toc: true
+number-sections: true
+code-fold: show
+draft: true
+---
+
+## Question and estimand
+
+State the scientific question and precisely define the quantity to estimate or test.
+
+## Intuition
+
+Give a plain-language explanation and a motivating biological example.
+
+## Definitions and notation
+
+Define random variables, parameters, distributions, and conditioning assumptions.
+
+## Model
+
+Write the likelihood or data-generating process and explain every assumption.
+
+## Estimation or inference
+
+Derive or outline the estimator, posterior, test statistic, interval, or algorithm.
+
+## Worked example
+
+```{r}
+#| eval: false
+# Simulate or analyze a compact example.
+```
+
+Interpret the result in scientific language, not only through a p-value.
+
+## Diagnostics and sensitivity
+
+Show how to check assumptions, fit, robustness, calibration, and uncertainty.
+
+## Common misconceptions
+
+- Misinterpretation to avoid
+- Boundary case
+- Difference from a related method
+
+## References
+
+- Textbook chapter and methodological paper.

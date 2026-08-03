@@ -1,5 +1,6 @@
 /.quarto/
+/_site/
+/site_libs/
+/.jupyter_cache/
 **/*.quarto_ipynb
-.ipynb_checkpoints/
-.quarto/
-posts/daily/.ipynb_checkpoints/
+**/.ipynb_checkpoints/

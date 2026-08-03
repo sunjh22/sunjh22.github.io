@@ -1,0 +1,7 @@
+---
+title: "Deep Learning"
+description: "Neural-network foundations, architectures, training, and biological applications."
+categories: [Machine Learning, Deep Learning]
+---
+
+Planned: multilayer perceptrons, CNNs, RNNs, autoencoders, transformers, graph neural networks, optimization, regularization, and foundation models.

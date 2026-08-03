@@ -1,0 +1,7 @@
+---
+title: "Mixture Models"
+description: "Latent populations, identifiability, and estimation."
+categories: [Statistics, Mixture Models]
+---
+
+Planned: finite mixtures, latent variables, EM, Gaussian mixtures, zero inflation, identifiability, initialization, and model selection.

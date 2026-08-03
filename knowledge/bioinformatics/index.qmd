@@ -1,0 +1,9 @@
+---
+title: "Bioinformatics"
+description: "Tools and computational ideas that underpin modern biological data analysis."
+---
+
+- [Classic software](software.qmd): aligners, file formats, variant callers, peak callers, and single-cell toolchains
+- [Algorithms](algorithms.qmd): indexing, optimization, graphs, probabilistic models, and inference
+- [Workflow languages](workflows.qmd): reproducible and portable pipelines
+- [Databases](databases.qmd): reference genomes, annotation, variation, expression, and pathways

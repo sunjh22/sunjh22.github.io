@@ -1,0 +1,18 @@
+---
+title: "20251209—ATAC-seq vs. ChIP-seq"
+author: "Jiahong Sun"
+date: "2025-12-09"
+categories: [Daily, ATAC-seq, ChIP-seq]
+---
+
+ATAC-seq identifies genome-wide open chromatin regions that may be accessible to transcription factors and other DNA-binding proteins, including regulatory regions such as promoters and enhancers. It uses a hyperactive Tn5 transposase on unfixed nuclei, typically requires fewer cells than ChIP-seq, and has a relatively simple experimental workflow.
+
+ChIP-seq maps the genomic binding sites of a specific protein or a specific histone modification using an antibody against the target of interest. It uses crosslinked chromatin, typically requires more input material, and is more labor-intensive.
+
+The following diagram summarizes six common histone modifications.
+
+![Common histone modifications](/images/common-histone-modifications.png)
+
+The next diagram shows a commonly used antibody panel for mapping histone modifications.
+
+![Antibody panel for histone modifications](/images/antibodies-for-histone-modifications.png)

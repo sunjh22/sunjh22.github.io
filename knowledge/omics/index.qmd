@@ -1,0 +1,10 @@
+---
+title: "Omics Data Analysis"
+description: "From experimental design and raw data to biological interpretation."
+---
+
+- [Genomics](genomics.qmd): WGS, WES, and single-cell DNA sequencing
+- [Transcriptomics](transcriptomics.qmd): bulk and single-cell RNA sequencing
+- [Epigenomics](epigenomics.qmd): ATAC-seq, ChIP-seq, and single-cell chromatin assays
+- [Multiomics](multiomics.qmd): joint RNA and ATAC and cross-modality integration
+- [Spatial, proteomics & metabolomics](spatial-proteomics-metabolomics.qmd)

@@ -1,0 +1,7 @@
+---
+title: "R Basics"
+description: "R language foundations and data analysis."
+categories: [R, Programming]
+---
+
+Planned: vectors, data frames, functions, environments, S3/S4, tidy evaluation, data manipulation, testing, packages, and Bioconductor.

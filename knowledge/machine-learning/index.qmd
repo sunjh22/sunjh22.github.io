@@ -1,0 +1,7 @@
+---
+title: "Machine Learning"
+description: "Machine-learning foundations and models for biological data."
+---
+
+- [Foundations](basics.qmd)
+- [Deep learning](deep-learning.qmd)

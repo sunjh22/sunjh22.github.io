@@ -1,0 +1,9 @@
+---
+title: "Workflow Languages"
+description: "Reproducible, portable, and scalable computational workflows."
+categories: [Bioinformatics, Workflows]
+---
+
+Planned comparisons and tutorials: CWL, WDL, Nextflow, and Snakemake.
+
+The focus will be on dependency graphs, caching, containers, executors, portability, testing, and production deployment.

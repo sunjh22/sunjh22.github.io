@@ -1,0 +1,17 @@
+---
+title: "Genomics"
+description: "Whole-genome, whole-exome, and single-cell DNA sequencing."
+categories: [Omics, Genomics]
+---
+
+## Whole-genome sequencing
+
+Planned: experimental design, QC, alignment, variant calling, CNV/SV analysis, annotation, and cohort analysis.
+
+## Whole-exome sequencing
+
+Planned: capture-specific QC, coverage, germline and somatic variants, and limitations.
+
+## Single-cell DNA sequencing
+
+Planned: amplification bias, allele dropout, copy-number inference, phylogeny, and tumor evolution.

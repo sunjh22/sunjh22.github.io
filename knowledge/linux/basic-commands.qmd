@@ -1,0 +1,7 @@
+---
+title: "Linux Basic Commands"
+description: "Files, text streams, processes, permissions, and shell composition."
+categories: [Linux, Shell]
+---
+
+Planned: filesystem navigation, pipes, redirection, grep, sed, awk, find, archives, permissions, processes, and robust shell scripting.

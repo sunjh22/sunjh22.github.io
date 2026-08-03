@@ -1,0 +1,13 @@
+---
+title: "Others"
+description: "Daily notes, weekly reviews, life, recipes, and uncategorized explorations."
+listing:
+  contents: "**/*.qmd"
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: true
+---
+
+Short-lived observations and personal notes that do not yet belong in the structured knowledge map.

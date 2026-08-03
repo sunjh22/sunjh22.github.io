@@ -1,0 +1,7 @@
+---
+title: "Probability Distributions"
+description: "Discrete and continuous probability distributions and their biological uses."
+categories: [Statistics, Probability]
+---
+
+Planned: Bernoulli, binomial, multinomial, Poisson, negative binomial, beta-binomial, normal, gamma, beta, and Dirichlet distributions.

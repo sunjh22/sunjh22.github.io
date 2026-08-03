@@ -1,0 +1,64 @@
+---
+title: "Python or R topic"
+subtitle: "Concept, implementation, testing, and scientific use"
+description: "A concise summary used by listings and search engines."
+author: "Jiahong Sun"
+date: "YYYY-MM-DD"
+date-modified: "YYYY-MM-DD"
+categories: [Python-or-R, Programming]
+toc: true
+number-sections: true
+code-fold: show
+draft: true
+---
+
+## Learning objectives
+
+After reading this note, the reader should be able to:
+
+1. Explain the core concept.
+2. Implement a minimal example.
+3. Recognize common errors and choose an appropriate pattern.
+
+## Concept
+
+Explain the abstraction, why it exists, and how it relates to nearby concepts.
+
+## Minimal example
+
+```{python}
+#| eval: false
+# Replace with Python or change the engine to {r}.
+```
+
+## Step-by-step explanation
+
+Explain data structures, control flow, types, state, inputs, outputs, and side effects.
+
+## Scientific computing example
+
+Use a small bioinformatics or data-analysis task rather than a purely artificial example.
+
+## Robust version
+
+Add validation, error handling, logging, type hints or documentation, and tests where appropriate.
+
+## Performance and design
+
+Discuss readability first, then complexity, vectorization, memory, and profiling when relevant.
+
+## Common mistakes
+
+- Typical syntax or semantic error
+- Fragile pattern
+- Better alternative
+
+## Exercises
+
+1. Small modification.
+2. Debugging exercise.
+3. Applied extension.
+
+## References
+
+- Official language documentation and a reliable deeper treatment.
