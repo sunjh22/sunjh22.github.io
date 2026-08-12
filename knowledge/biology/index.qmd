@@ -1,0 +1,6 @@
+---
+title: "Biology"
+description: "Biological knowledge that improves the interpretation of bioinformatics discoveries"
+---
+
+- [Experimental techniques](technique.qmd): principles underlying important biological assays

@@ -1,0 +1,7 @@
+---
+title: "Experimental Techniques"
+description: "Principles underlying important experimental techniques"
+categories: [Biology, Technique]
+---
+
+- [CNV detection with FISH, microarrays, and WGS](technique/cnv-detection-by-fish-array-wgs.qmd)

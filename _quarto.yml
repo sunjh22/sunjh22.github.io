@@ -51,6 +51,10 @@ website:
               - knowledge/bioinformatics/algorithms.qmd
               - knowledge/bioinformatics/workflows.qmd
               - knowledge/bioinformatics/databases.qmd
+          - section: "Biology"
+            href: knowledge/biology/index.qmd
+            contents:
+              - knowledge/biology/technique.qmd
           - section: "Omics Data Analysis"
             href: knowledge/omics/index.qmd
             contents:

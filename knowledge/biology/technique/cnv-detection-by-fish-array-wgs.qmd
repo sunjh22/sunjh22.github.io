@@ -1,0 +1,1347 @@
+---
+title: "CNV Detection by FISH, Microarray/SNP Array, and Whole-Genome Sequencing"
+subtitle: "Principles, Mechanisms, Strengths, and Applications"
+description: "Summarize the principles of FISH, SNP-array and NGS for CNV detection"
+author: "Jiahong Sun"
+date: "2026-08-12"
+date-modified: "2026-08-12"
+categories: [Biology]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Overview
+
+Copy number variations (CNVs) are genomic structural variations in which a DNA segment is present in a copy number different from the normal diploid state. In a typical diploid autosomal genome, most regions have two copies, while CNVs can result in deletions, duplications, or larger amplifications.
+
+Three commonly used approaches for detecting CNVs are:
+
+1. **Fluorescence in situ hybridization (FISH)**
+2. **Microarray-based methods, including array-CGH and SNP arrays**
+3. **Whole-genome sequencing (WGS)**
+
+The fundamental difference among these approaches is **what they physically measure**:
+
+| Method | Basic measurement | Main principle | Typical application |
+|---|---|---|---|
+| **FISH** | Number of fluorescent signals | Direct visualization of specific DNA loci | Targeted CNV confirmation |
+| **Microarray / SNP array** | Probe hybridization intensity and, for SNP arrays, allele-specific signal balance | Genome-wide measurement of DNA dosage at predefined probes | Genome-wide CNV screening |
+| **WGS** | Sequencing reads and their genomic alignments | Infer CNVs from read depth, allele information, and structural-variant signals | Genome-wide discovery and characterization |
+
+A useful conceptual summary is:
+
+> **FISH asks:** "How many copies of this specific locus are present?"  
+> **Array asks:** "How much DNA is present at thousands or millions of predefined loci, and which alleles are present?"  
+> **WGS asks:** "What does the genome sequence and its alignment pattern tell us about copy number and structural variation?"
+
+# FISH
+
+## Basic principle
+
+**Fluorescence in situ hybridization (FISH)** uses fluorescently labeled DNA probes that are complementary to a specific genomic region.
+
+The probe hybridizes to its target sequence, and the resulting fluorescent signals can be visualized using fluorescence microscopy.
+
+The basic workflow is:
+
+```text
+Design locus-specific probe
+          ↓
+Denature cellular DNA/chromosomes
+          ↓
+Probe hybridization
+          ↓
+Wash away nonspecific binding
+          ↓
+Fluorescence microscopy
+          ↓
+Count fluorescent signals
+```
+
+## CNV detection mechanism
+
+Consider a genomic region that normally exists in two copies.
+
+### Normal diploid state
+
+```text
+Chromosome 1:     ●
+Chromosome 2:     ●
+
+                   ↓
+
+                 2 signals
+```
+
+This is consistent with two copies.
+
+### Heterozygous deletion
+
+```text
+Chromosome 1:     ●
+Chromosome 2:     -
+
+                   ↓
+
+                 1 signal
+```
+
+This suggests that one copy has been deleted.
+
+### Duplication
+
+```text
+Chromosome 1:     ●●
+Chromosome 2:     ●
+
+                   ↓
+
+                 3 signals
+```
+
+This suggests three copies.
+
+Therefore, FISH essentially detects CNVs by **counting physical copies of a specific DNA region**.
+
+## Advantages
+
+- Direct visualization of the genomic locus
+- Relatively straightforward interpretation
+- Can distinguish different copy numbers
+- Useful for confirming a suspected CNV
+- Can be performed at the single-cell level
+- Useful for investigating mosaicism
+
+## Limitations
+
+The major limitation is that FISH is **targeted**.
+
+A probe must generally be designed for the region of interest before the experiment.
+
+Therefore:
+
+- It is not an efficient method for discovering unknown genome-wide CNVs.
+- It usually cannot characterize the full extent of an unknown CNV.
+- Resolution depends on probe design and the genomic region.
+
+> **Key concept:** FISH = direct visualization and counting of copies at a predefined genomic locus.
+
+# Microarray-Based CNV Detection
+
+Microarrays provide a genome-wide approach to CNV detection by measuring the amount of DNA that hybridizes to thousands or millions of predefined probes.
+
+Two important types are:
+
+- **Array comparative genomic hybridization (array-CGH)**
+- **SNP arrays**
+
+Although their designs differ, both can detect CNVs through changes in DNA hybridization intensity.
+
+## SNP array
+
+### The key idea: what is actually on an SNP array?
+
+An SNP array is essentially a solid surface containing **millions of immobilized short DNA probes**.
+
+Importantly:
+
+> **The array probe does not get inserted into the patient's genome.**
+
+Instead, the probes are already physically attached to the array surface. The patient's genomic DNA is added to the array, and DNA fragments in the sample **hybridize to complementary probes**.
+
+Conceptually:
+
+```text
+                    SNP ARRAY
+
+       ┌───────────────────────────────┐
+       │ Probe A   Probe B   Probe A   │
+       │   ↓         ↓         ↓       │
+       │  ────      ────      ────     │
+       │                               │
+       │ Probe B   Probe A   Probe B   │
+       │   ↓         ↓         ↓       │
+       │  ────      ────      ────     │
+       └───────────────────────────────┘
+              ↑
+       Probes are fixed
+       to the array surface
+```
+
+The patient's DNA is then introduced:
+
+```text
+Patient genomic DNA
+        ↓
+fragmentation / labeling
+        ↓
+hybridization
+        ↓
+binding to complementary
+array probes
+```
+
+The physical principle is ordinary complementary DNA base pairing.
+
+### How does genomic DNA hybridize to a specific probe?
+
+Suppose the genomic region contains an SNP with two possible alleles:
+
+```text
+Reference sequence:
+
+5' ──── A T G C A G T C A G ──── 3'
+             ↑
+          SNP position
+```
+
+Imagine the two possible alleles are A and G:
+
+```text
+Allele A: ...ATGCA...
+Allele B: ...ATGCG...
+                 ↑
+                SNP
+```
+
+The array can contain allele-specific probes.
+
+For example:
+
+```text
+Probe for allele A:
+
+3' ──── TACGT ──── 5'
+
+Probe for allele B:
+
+3' ──── TACGC ──── 5'
+```
+
+If the patient's DNA contains the complementary sequence, it preferentially hybridizes to that probe.
+
+For example:
+
+```text
+Patient DNA:   5' ─ A T G C A ─ 3'
+                    │ │ │ │ │
+Array probe:       T A C G T
+                  3' ─────── 5'
+```
+
+The two strands form a stable DNA duplex through Watson-Crick base pairing.
+
+Thus:
+
+> **The array does not dynamically "probe" the genome. The patient's DNA molecules physically bind to complementary probes that are already immobilized on the array.**
+
+## What happens to the patient's genomic DNA before hybridization?
+
+The general workflow is:
+
+```text
+Patient blood / tissue
+        ↓
+Genomic DNA extraction
+        ↓
+DNA amplification / preparation
+        ↓
+DNA fragmentation
+        ↓
+DNA labeling
+        ↓
+Hybridization to array probes
+        ↓
+Washing
+        ↓
+Fluorescence scanning
+```
+
+The exact chemistry differs between array platforms, but the conceptual process is the same: genomic DNA is prepared so that it can hybridize to the array's immobilized probes.
+
+### How is DNA hybridization intensity measured?
+
+After hybridization, the array is washed to remove nonspecifically bound DNA.
+
+The DNA associated with the array generates an optical signal, typically through fluorescent labeling and platform-specific detection chemistry.
+
+Conceptually:
+
+```text
+Array probe ───── Patient DNA
+                       ↓
+                fluorescent signal
+                       ↓
+                  light emission
+                       ↓
+                 array scanner
+                       ↓
+              measured intensity
+```
+
+The scanner measures the signal at each probe location.
+
+For example:
+
+```text
+Probe 1:   ███████████████   strong signal
+Probe 2:   █████████         moderate signal
+Probe 3:   ██                weak signal
+Probe 4:   ███████████████   strong signal
+```
+
+The important idea is:
+
+> **The amount of DNA hybridized to a probe affects the measured signal intensity.**
+
+If a genomic region has fewer copies, fewer DNA molecules from that region are available to hybridize, so the signal tends to decrease.
+
+If the region has more copies, more DNA molecules are available, so the signal tends to increase.
+
+### How hybridization intensity reflects copy number
+
+Consider a genomic region X.
+
+#### Normal diploid individual
+
+```text
+Chromosome 1:     Region X
+Chromosome 2:     Region X
+
+                   ↓
+             2 copies of X
+                   ↓
+          normal amount of DNA
+                   ↓
+          normal fluorescence
+```
+
+#### Heterozygous deletion
+
+```text
+Chromosome 1:     Region X
+Chromosome 2:     deleted
+
+                   ↓
+             1 copy of X
+                   ↓
+       approximately half DNA
+                   ↓
+        lower fluorescence
+```
+
+#### Duplication
+
+```text
+Chromosome 1:     Region X
+Chromosome 2:     Region X + X
+
+                   ↓
+             3 copies of X
+                   ↓
+       approximately 1.5× DNA
+                   ↓
+        higher fluorescence
+```
+
+As a simplified model:
+
+| Copy number | Relative amount of DNA | Approximate relative signal |
+|---:|---:|---:|
+| 1 | 0.5× | Lower |
+| 2 | 1.0× | Normal |
+| 3 | 1.5× | Higher |
+| 4 | 2.0× | Higher |
+
+In real SNP-array analysis, raw signal intensity is affected by many technical factors, including probe sequence, GC content, hybridization efficiency, DNA quality, batch effects, and normalization procedures. Therefore, copy number is inferred from **normalized signal patterns**, rather than simply taking raw fluorescence values at face value.
+
+### LRR: How Total DNA Dosage Is Quantified
+
+The normalized total signal intensity is commonly summarized by the **Log R Ratio (LRR)**.
+
+Conceptually:
+
+```text
+                 observed intensity
+LRR = log2( --------------------------- )
+                 expected intensity
+```
+
+The exact normalization procedure is platform- and software-dependent, but the basic interpretation is straightforward.
+
+#### Normal diploid copy number
+
+If observed intensity is approximately equal to expected intensity:
+
+```text
+Observed / Expected ≈ 1
+
+LRR ≈ log2(1)
+    ≈ 0
+```
+
+Therefore:
+
+> **Normal diploid regions generally have LRR around 0.**
+
+#### Deletion
+
+If the signal is approximately half of normal:
+
+```text
+Observed / Expected ≈ 0.5
+
+LRR ≈ log2(0.5)
+    ≈ -1
+```
+
+Therefore:
+
+> **A sustained negative LRR can indicate reduced copy number.**
+
+#### Duplication
+
+If the signal is approximately 1.5× normal:
+
+```text
+Observed / Expected ≈ 1.5
+
+LRR ≈ log2(1.5)
+    ≈ +0.58
+```
+
+Therefore:
+
+> **A sustained positive LRR can indicate increased copy number.**
+
+Conceptually:
+
+```text
+LRR
+
+ +0.6 |              ┌──────┐
+      |              │      │
+  0   |──────────────┘      └──────────
+      |
+ -1.0 |        ┌─────────────┐
+      |        │             │
+      +────────────────────────────────→
+                   genomic position
+```
+
+A long region with negative LRR may represent a deletion, while a long region with positive LRR may represent a duplication.
+
+### SNP Arrays Add Allele-Specific Information
+
+This is what makes **SNP arrays** particularly useful compared with a simple intensity-only array.
+
+A conventional copy-number array primarily asks:
+
+> **How much DNA is present?**
+
+A SNP array can additionally ask:
+
+> **What is the relative contribution of the two alleles?**
+
+This is summarized by **B-allele frequency (BAF)**.
+
+#### A single SNP with two alleles
+
+Suppose a SNP has two alleles:
+
+```text
+A ↔ B
+```
+
+A diploid individual can have:
+
+```text
+AA
+AB
+BB
+```
+
+SNP arrays use allele-specific probes or probe sets to measure signals associated with the two alleles.
+
+Conceptually:
+
+```text
+Probe A → detects allele A
+Probe B → detects allele B
+```
+
+The sample generates two corresponding signals:
+
+```text
+A-associated signal
+B-associated signal
+```
+
+BAF is a normalized measure of the relative contribution of the B allele.
+
+A simplified conceptual formula is:
+
+```text
+             B-associated signal
+BAF ≈ ───────────────────────────────
+       A-associated + B-associated signal
+```
+
+Actual BAF calculation is platform-specific and uses normalization and transformation, but this simple equation captures the underlying idea.
+
+### Normal BAF Patterns
+
+Consider the three normal diploid genotypes.
+
+#### AA
+
+```text
+A A
+```
+
+Almost all allele-specific signal is from A:
+
+```text
+BAF ≈ 0
+```
+
+#### AB
+
+```text
+A B
+```
+
+Approximately equal amounts of A and B:
+
+```text
+BAF ≈ 0.5
+```
+
+#### BB
+
+```text
+B B
+```
+
+Almost all signal is from B:
+
+```text
+BAF ≈ 1
+```
+
+Therefore, normal diploid SNPs produce three characteristic clusters:
+
+```text
+BAF
+
+1.0 |       ● ● ● ●
+    |
+0.5 |       ● ● ● ●
+    |
+0.0 |       ● ● ● ●
+    +────────────────────
+```
+
+Corresponding approximately to:
+
+```text
+BAF ≈ 0       → AA
+BAF ≈ 0.5     → AB
+BAF ≈ 1       → BB
+```
+
+This is one of the most important patterns to recognize when looking at SNP-array data.
+
+### How Allelic Imbalance Appears in a Deletion
+
+Now consider an individual who originally has:
+
+```text
+A / B
+```
+
+Suppose the chromosome carrying B is deleted:
+
+```text
+Before:
+
+Chromosome 1: A
+Chromosome 2: B
+
+        A / B
+```
+
+After deletion:
+
+```text
+Chromosome 1: A
+Chromosome 2: -
+
+        A / -
+```
+
+There is now only one physical copy.
+
+The sample is no longer heterozygous at this SNP.
+
+Therefore, instead of:
+
+```text
+BAF ≈ 0.5
+```
+
+the signal shifts toward one of the homozygous states:
+
+```text
+BAF ≈ 0 or 1
+```
+
+For a region containing many SNPs, this produces a characteristic pattern:
+
+```text
+Normal:
+
+BAF
+1.0 | ● ● ●
+    |
+0.5 | ● ● ●
+    |
+0.0 | ● ● ●
+
+
+Deletion:
+
+BAF
+1.0 | ● ● ●
+    |
+0.5 |
+    |
+0.0 | ● ● ●
+```
+
+The disappearance of the heterozygous BAF cluster is important evidence for loss of one chromosome copy.
+
+### How Duplication Changes BAF
+
+BAF becomes especially informative when there are **three copies**.
+
+Suppose a duplicated region has genotype:
+
+```text
+A A B
+```
+
+There are:
+
+```text
+2 copies of A
+1 copy of B
+```
+
+The B allele contributes approximately:
+
+```text
+1 / 3 ≈ 0.33
+```
+
+and A contributes approximately:
+
+```text
+2 / 3 ≈ 0.67
+```
+
+Therefore, a three-copy region can generate additional BAF clusters around:
+
+```text
+0
+0.33
+0.67
+1
+```
+
+rather than the normal:
+
+```text
+0
+0.5
+1
+```
+
+Conceptually:
+
+```text
+BAF
+
+1.00 | ● ● ●
+0.67 |   ● ●
+0.50 |
+0.33 |   ● ●
+0.00 | ● ● ●
+     +──────────────────
+```
+
+This provides allele-specific evidence that complements the positive LRR signal.
+
+### Why LRR and BAF Should Be Interpreted Together
+
+This is perhaps the most important conceptual point in SNP-array analysis.
+
+**LRR tells you about total DNA dosage.**
+
+**BAF tells you about allelic composition.**
+
+Together:
+
+```text
+                    SNP array
+                       │
+              ┌────────┴────────┐
+              ↓                 ↓
+             LRR               BAF
+              │                 │
+       "How much DNA?"    "Which alleles?"
+              │                 │
+              └────────┬────────┘
+                       ↓
+              Copy-number / LOH
+                  interpretation
+```
+
+This allows different genomic states to be distinguished.
+
+### Deletion vs Copy-Neutral LOH
+
+A particularly useful example is distinguishing **deletion** from **copy-neutral loss of heterozygosity (LOH)**.
+
+Suppose heterozygosity disappears:
+
+```text
+BAF:
+0
+1
+
+with no cluster around 0.5
+```
+
+This tells us that heterozygosity has been lost, but it does not by itself tell us whether DNA has been physically deleted.
+
+#### Deletion
+
+For example:
+
+```text
+A / B
+ ↓
+A / -
+```
+
+There is one remaining copy.
+
+Expected pattern:
+
+```text
+LRR ↓
+BAF heterozygosity disappears
+```
+
+#### Copy-neutral LOH
+
+Alternatively:
+
+```text
+A / B
+ ↓
+A / A
+```
+
+There are still two copies, but both are now A.
+
+Expected pattern:
+
+```text
+LRR ≈ 0
+BAF heterozygosity disappears
+```
+
+Therefore:
+
+| Genomic state | LRR | BAF |
+|---|---|---|
+| Normal diploid | ~0 | 0, 0.5, 1 |
+| Heterozygous deletion | Decreased | ~0, 1 |
+| Copy-neutral LOH | ~0 | ~0, 1 |
+| Duplication | Increased | Additional clusters such as ~0.33 and ~0.67 |
+
+This illustrates why **LRR and BAF are complementary rather than redundant**.
+
+### What Does "Allelic Imbalance" Mean?
+
+Allelic imbalance means that the two alleles do not contribute equally to the observed DNA signal.
+
+#### Normal heterozygote
+
+```text
+A : B = 1 : 1
+
+≈ 50% A
+≈ 50% B
+```
+
+#### Three-copy duplication
+
+```text
+A : A : B = 2 : 1
+
+≈ 67% A
+≈ 33% B
+```
+
+#### Single-copy state after deletion
+
+```text
+A : - = 1 : 0
+
+≈ 100% A
+≈ 0% B
+```
+
+Thus, SNP arrays can detect changes in **allelic proportions** in addition to total DNA dosage.
+
+### Important terminology
+
+BAF should not be confused with population allele frequency.
+
+```text
+Population allele frequency
+          ≠
+B-allele frequency (BAF)
+```
+
+BAF is a **sample-level measurement of relative allele-specific signal at a particular SNP**. It is not the frequency of an allele in the population.
+
+### The Complete SNP-Array Process
+
+The entire process can now be summarized from physical DNA to computational output:
+
+```text
+Patient blood / tissue
+        ↓
+Genomic DNA extraction
+        ↓
+DNA preparation
+        ↓
+Fragmentation / labeling
+        ↓
+Hybridization to millions of
+immobilized SNP probes
+        ↓
+Complementary DNA binds to probes
+        ↓
+Washing
+        ↓
+Fluorescence scanning
+        ↓
+Raw probe intensities
+        ↓
+ ┌───────────────┬────────────────┐
+ ↓               ↓
+Total signal     Allele-specific
+intensity        signal
+ ↓               ↓
+LRR              BAF
+ └───────────────┴────────────────┘
+                 ↓
+       CNV / LOH inference
+```
+
+The conceptual chain is:
+
+> **Hybridization → fluorescence → signal intensity → LRR + BAF → copy-number and allelic-state inference.**
+
+## Array-CGH vs SNP Array
+
+It is useful to distinguish these two related technologies.
+
+### Array-CGH
+
+Array-CGH primarily measures **relative DNA dosage** between a test sample and a reference.
+
+```text
+Test DNA
+   +
+Reference DNA
+   ↓
+Hybridization
+   ↓
+Relative intensity
+   ↓
+Copy-number estimate
+```
+
+Its major strength is genome-wide CNV detection.
+
+### SNP Array
+
+SNP arrays provide both:
+
+```text
+Total signal
+     ↓
+   LRR
+     ↓
+Copy number
+
++
+
+Allele-specific signal
+     ↓
+   BAF
+     ↓
+Allelic state / LOH / CNV
+```
+
+Therefore, SNP arrays can provide more information about allele-specific genomic states.
+
+# Whole-Genome Sequencing
+
+Whole-genome sequencing (WGS) provides a fundamentally different type of evidence: **millions or billions of sequencing reads are mapped to the reference genome**.
+
+CNVs can then be inferred from several complementary signals:
+
+1. **Read depth**
+2. **Paired-end mapping**
+3. **Split reads**
+4. **Allele-specific information**
+5. **Local assembly or breakpoint analysis**
+
+## Read-Depth Signal
+
+The most intuitive WGS approach is to examine sequencing coverage.
+
+Suppose a normal diploid region has approximately 30× coverage.
+
+```text
+Normal:
+
+████████████████████
+~30× coverage
+```
+
+If one copy is deleted:
+
+```text
+Heterozygous deletion:
+
+██████████
+~15× coverage
+```
+
+If the region is duplicated:
+
+```text
+Duplication:
+
+██████████████████████████████
+~45× coverage
+```
+
+After correcting for technical factors such as GC content and mapping bias:
+
+```text
+~50% of normal coverage → possible heterozygous deletion
+~100% of normal coverage → normal copy number
+~150% of normal coverage → possible duplication
+~0% coverage → possible homozygous deletion
+```
+
+These are conceptual expectations rather than strict thresholds.
+
+## Paired-End Evidence
+
+WGS often generates paired-end reads.
+
+For a normal genomic region, the two reads from a pair have an expected orientation and insert size.
+
+```text
+Normal:
+
+Read 1 →──────────────← Read 2
+        expected distance
+```
+
+Structural rearrangements can produce abnormal read-pair configurations, including:
+
+- Unexpected insert size
+- Unexpected orientation
+- Reads mapping to unexpected genomic locations
+
+These abnormalities can provide evidence for structural variants and CNV breakpoints.
+
+## Split-Read Evidence
+
+Some sequencing reads may span a structural-variant breakpoint.
+
+For example:
+
+```text
+Reference:
+
+AAAAAAA | BBBBBBB
+        ↑
+     breakpoint
+```
+
+A sequencing read may contain sequence from both sides:
+
+```text
+AAAAAAA BBBBBBB
+------- -------
+ part 1   part 2
+```
+
+When aligned:
+
+```text
+Part 1 → region A
+Part 2 → region B
+```
+
+This is called **split-read evidence**.
+
+Split reads can provide much more precise breakpoint information than read-depth methods alone.
+
+## Allele-Specific Evidence in WGS
+
+WGS also provides information about individual variants within a CNV.
+
+For example:
+
+```text
+Normal:
+
+A/B
+A/B
+A/B
+```
+
+A deletion of one chromosome can produce:
+
+```text
+A/-
+A/-
+A/-
+```
+
+The expected allele balance therefore changes.
+
+This is conceptually analogous to BAF on a SNP array, but WGS derives the information directly from sequencing reads.
+
+# Comparison of the Three Methods
+
+| Feature | FISH | Microarray / SNP array | WGS |
+|---|---|---|---|
+| Genome-wide | No | Yes | Yes |
+| Requires predefined target | Usually yes | No, but limited to probes | No |
+| Direct measurement | Fluorescent DNA signals | Hybridization intensity | Sequencing reads |
+| Copy-number information | Yes | Yes | Yes |
+| Allele information | Limited | SNP arrays: Yes | Yes |
+| Breakpoint resolution | Limited | Usually limited | Potentially high |
+| Small CNVs | Limited | Depends on probe density | Potentially detectable |
+| Complex SVs | Limited | Limited | Much better |
+| Single-cell analysis | Yes | Usually bulk DNA | Usually bulk DNA |
+| Mosaicism | Can be very useful | Can detect some mosaicism | Can detect some mosaicism |
+| Main strength | Targeted confirmation | Genome-wide CNV screening + allelic information | Discovery + characterization |
+| Main limitation | Targeted | Probe-dependent | More computationally complex |
+
+# Conceptual Relationship Between the Methods
+
+The three methods can be viewed as measuring increasingly detailed genomic information.
+
+```text
+                         CNV detection
+                              │
+              ┌───────────────┼───────────────┐
+              │               │               │
+             FISH           Array            WGS
+              │               │               │
+              ↓               ↓               ↓
+        Fluorescent       Hybridization    Sequencing
+          signals           intensity         reads
+              │               │               │
+              ↓               ↓               ↓
+        Count copies      Infer dosage    Infer dosage
+                                              │
+                              ┌───────────────┼───────────────┐
+                              ↓               ↓               ↓
+                          Read depth      Paired reads    Split reads
+                              │               │               │
+                              └───────────────┼───────────────┘
+                                              ↓
+                                      CNV / SV characterization
+```
+
+A useful way to remember the distinction is:
+
+> **FISH counts copies.**  
+> **Arrays measure DNA dosage and, for SNP arrays, allelic balance.**  
+> **WGS sequences the genome and reconstructs copy-number/structural changes from multiple sequencing signals.**
+
+# Example: Detecting a Gene Deletion
+
+Suppose a researcher suspects that gene **X** is deleted.
+
+## FISH
+
+A fluorescent probe is designed against gene X.
+
+```text
+Normal cell:
+●     ●
+2 signals
+
+Deletion:
+●
+1 signal
+```
+
+Interpretation:
+
+> Evidence for a deletion of gene X.
+
+However, FISH may not tell us exactly where the deletion starts and ends.
+
+## SNP Array
+
+Multiple probes surrounding gene X are examined.
+
+```text
+Chromosome:
+
+───────████████████████───────
+       ↓↓↓↓↓↓↓↓↓↓↓↓↓
+       reduced signal
+```
+
+A continuous region of reduced LRR suggests a deletion.
+
+If the region also shows loss of the normal BAF heterozygous cluster, the allelic evidence strengthens the interpretation.
+
+## WGS
+
+WGS can provide multiple lines of evidence:
+
+```text
+Reduced read depth
+        +
+Abnormal paired-end reads
+        +
+Split reads
+        +
+Allele-specific evidence
+        ↓
+High-confidence structural variant
+```
+
+This may allow the researcher to identify the **precise genomic architecture and breakpoint**.
+
+# Application to SIGLEC14 Null Genotype Analysis
+
+For genes such as **SIGLEC14**, CNV analysis can be more complicated than simply asking whether sequencing coverage is reduced.
+
+SIGLEC14 is located in a genomic region involving highly similar sequences, and its relationship with **SIGLEC5** makes paralog-specific analysis particularly important.
+
+Therefore, a robust WGS strategy should ideally combine several independent sources of evidence.
+
+## Read-depth evidence
+
+First examine sequencing coverage across the SIGLEC14 region.
+
+```text
+Normal:
+
+SIGLEC14
+████████████████████
+normal coverage
+
+
+Possible deletion:
+
+SIGLEC14
+████████
+reduced coverage
+```
+
+This provides evidence for a possible copy-number loss.
+
+## Structural-variant evidence
+
+Search for:
+
+- Abnormal paired-end mappings
+- Split reads
+- Structural-variant calls
+- Breakpoint-supporting reads
+
+These can help determine whether the reduced coverage is caused by a genuine genomic deletion.
+
+## Paralog-specific evidence
+
+Because highly similar sequences can create mapping ambiguity, variants that uniquely distinguish **SIGLEC14** from its paralogous sequence can provide additional evidence.
+
+Conceptually:
+
+```text
+SIGLEC14-specific sequence
+          ↓
+Does sequencing support its presence?
+          ↓
+Yes → evidence for SIGLEC14 copy
+No  → supports SIGLEC14 loss
+```
+
+## Combining evidence
+
+The strongest conclusion comes from integrating multiple signals:
+
+```text
+                SIGLEC14 analysis
+                       │
+       ┌───────────────┼────────────────┐
+       ↓               ↓                ↓
+   Read depth      Structural SV    Paralog-specific
+       │               │                variants
+       ↓               ↓                ↓
+ Coverage loss    Breakpoint/SV     SIGLEC14-specific
+   evidence          evidence          evidence
+       └───────────────┼────────────────┘
+                       ↓
+              Integrated evidence
+                       ↓
+             SIGLEC14 copy-number
+                  classification
+```
+
+This is preferable to relying on read depth alone.
+
+# SNP Array vs WGS: A Useful Conceptual Analogy
+
+One particularly useful way to connect the two technologies is:
+
+```text
+SNP ARRAY                         WGS
+
+Hybridization intensity           Read depth
+        ↓                              ↓
+      LRR                       Coverage ratio
+        │                              │
+        └──────────┐      ┌────────────┘
+                   ↓      ↓
+                Copy number
+                   ↑
+                   │
+BAF ───────────────┘
+
+Allelic balance                 Allele-specific reads
+        ↓                              ↓
+    LOH / CNV                    Paralog-specific
+                                 sequence evidence
+```
+
+Thus:
+
+> **LRR in a SNP array and read depth in WGS are conceptually related. Both ask, "How much DNA from this genomic region is present?"**
+
+The difference is the physical measurement:
+
+- **SNP array:** hybridization-derived signal intensity
+- **WGS:** sequencing-derived coverage
+
+And for allele-specific information:
+
+- **SNP array:** BAF
+- **WGS:** allele-specific sequencing reads
+
+# Practical Selection of Methods
+
+The choice of method depends on the scientific question.
+
+### If the question is:
+
+> "Does this particular genomic region have one or two copies?"
+
+**FISH** may be appropriate.
+
+### If the question is:
+
+> "Does this patient have genome-wide pathogenic CNVs and regions of LOH?"
+
+**SNP array / microarray** is often appropriate.
+
+### If the question is:
+
+> "What CNVs and structural variants are present, and can I characterize their genomic structure?"
+
+**WGS** is generally more informative.
+
+A practical workflow can therefore be:
+
+```text
+Clinical / suspected CNV
+        ↓
+SNP array / FISH
+        ↓
+CNV identified
+        ↓
+WGS
+        ↓
+Breakpoint + sequence-level characterization
+```
+
+Alternatively, when WGS data are already available, WGS can be used as the primary discovery method, followed by an orthogonal assay such as FISH or array-based testing for validation.
+
+# Summary
+
+The three technologies detect CNVs using fundamentally different physical signals.
+
+## FISH
+
+> Fluorescent probes hybridize to a specific genomic region, and CNV is inferred by counting fluorescent signals.
+
+## Microarray / SNP array
+
+> Genomic DNA fragments hybridize to immobilized probes on the array. The amount of hybridized DNA produces fluorescence that is measured as signal intensity. Total intensity is normalized into **LRR**, which reflects DNA dosage. SNP-specific signals are used to estimate **BAF**, which reflects allelic composition.
+
+## WGS
+
+> Sequencing reads are aligned to the reference genome, and CNVs are inferred from read depth, paired-end abnormalities, split reads, and allele-specific information.
+
+The overall hierarchy is:
+
+```text
+FISH
+Targeted
+   ↓
+Direct copy counting
+
+Array
+Genome-wide
+   ↓
+Probe-based dosage measurement
+   ↓
+LRR + BAF
+   ↓
+Copy number + allelic state
+
+WGS
+Genome-wide
+   ↓
+Sequence-based copy-number inference
+   ↓
+Structural-variant characterization
+   ↓
+Potential breakpoint-level resolution
+```
+
+For complex loci such as **SIGLEC14**, the most reliable strategy is generally not to depend on a single CNV signal. Instead, **read depth + structural-variant evidence + paralog-specific sequence evidence** should be integrated to establish a high-confidence null genotype.
