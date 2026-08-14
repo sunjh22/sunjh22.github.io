@@ -20,3 +20,8 @@ Planned: Louvain, Leiden, dynamic programming, integer linear programming, minim
 ## Sequence and probabilistic models
 
 Planned: BWT/FM-index, hidden Markov models, MCMC, and Bayesian inference.
+
+### Pairwise sequence alignment
+
+- [Global sequence alignment: Needleman–Wunsch](algorithms/needleman-wunsch-global-alignment.qmd): optimal end-to-end alignment, scoring, traceback, affine gaps, and interpretation
+- [Local sequence alignment: Smith–Waterman](algorithms/smith-waterman-local-alignment.qmd): optimal subsequence alignment, local restart, statistical meaning, and practical diagnostics

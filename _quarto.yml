@@ -5,6 +5,7 @@ project:
     - "*.qmd"
     - "knowledge/**/*.qmd"
     - "blog/**/*.qmd"
+    - "!knowledge/**/template.qmd"
 
 execute:
   freeze: auto

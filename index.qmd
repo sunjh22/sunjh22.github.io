@@ -8,6 +8,7 @@ listing:
   contents:
     - "knowledge/**/*.qmd"
     - "blog/**/*.qmd"
+    - "!knowledge/**/template.qmd"
   sort: "date desc"
   type: default
   categories: true
