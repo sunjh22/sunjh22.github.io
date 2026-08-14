@@ -8,6 +8,11 @@ categories: [Bioinformatics, Algorithms]
 
 Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical clustering.
 
+### Database sequence search
+
+- [BLAST seed-and-extend search](algorithms/blast-seed-and-extend-search.qmd): word seeds, candidate extension, HSPs, and E-value interpretation
+- [FASTA sequence-search algorithm](algorithms/fasta-sequence-search-algorithm.qmd): diagonal word clustering and staged local-alignment refinement
+
 ## Graphs and optimization
 
 Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.

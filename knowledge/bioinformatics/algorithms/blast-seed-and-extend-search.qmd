@@ -1,0 +1,119 @@
+---
+title: "BLAST Seed-and-Extend Search"
+subtitle: "Heuristic local similarity search against sequence databases"
+description: "How BLAST finds statistically interpretable local sequence matches quickly through word hits and extension."
+author: "Jiahong Sun"
+date: "2026-08-14"
+date-modified: "2026-08-14"
+categories: [Bioinformatics, Algorithms, Sequence Search, Database Indexing]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** BLAST finds high-scoring local alignments by locating short exact or high-scoring word matches, extending promising candidates, and assigning a database-search significance estimate.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which database sequences contain regions plausibly homologous to a query? |
+| **Computational problem** | Fast approximate local alignment of one query against many targets |
+| **Method type** | Heuristic seed-and-extend search |
+| **Typical input** | DNA or protein query plus a formatted sequence database |
+| **Typical output** | Ranked local hits (HSPs), alignments, bit scores, E-values, and coordinates |
+| **Prerequisites** | [Smith-Waterman local alignment](smith-waterman-local-alignment.qmd), scoring matrices, probability |
+
+# Why seed and extend?
+
+Exact [Smith-Waterman local alignment](smith-waterman-local-alignment.qmd) is valuable for one pair of sequences, but repeating quadratic dynamic programming for every database entry is too slow for routine searches. BLAST (Basic Local Alignment Search Tool) sacrifices exhaustive optimality to identify a small set of candidates likely to contain a good local alignment.
+
+The key observation is that a sufficiently strong local alignment usually contains at least one short high-scoring word pair. BLAST uses those words as seeds, then spends more work only around seed locations. It is therefore a search method, not a proof that no unreported homolog exists.
+
+# Core algorithm
+
+## From query to candidate alignments
+
+```text
+query -> generate words / neighboring words -> find database word hits
+      -> ungapped extension -> threshold -> gapped extension -> rank and report
+```
+
+1. **Choose words.** For nucleotide searches, a word can be an exact $w$-mer. For proteins, BLASTP also includes neighboring words whose substitution-matrix score with the query word exceeds a threshold $T$.
+2. **Find seed hits.** The database is scanned or indexed to identify target positions matching a query word. Modern BLAST implementations use a two-hit criterion: nearby hits on the same diagonal make an extension more credible.
+3. **Extend ungapped.** Starting from a seed, extend in both directions while tracking the best running score; stop when the score falls sufficiently below its best value (the drop-off rule).
+4. **Extend selected HSPs with gaps.** Promising high-scoring segment pairs (HSPs) receive a gapped local-alignment refinement and are filtered, merged, and reported.
+
+An HSP is a local alignment segment identified by the search; one database record can contain multiple HSPs. It is not necessarily a full-length or global alignment.
+
+## Why the heuristic is fast
+
+For a query of length $m$, there are only roughly $m-w+1$ query words. Seed lookup discards nearly all target positions before extension. Increasing word size makes searches faster but can reduce sensitivity; lowering the word threshold or using smaller words does the reverse.
+
+# Statistical interpretation
+
+BLAST reports both a raw alignment score $S$ and a normalized bit score. Under the Karlin-Altschul local-alignment model, the expected number of chance hits at least as good as $S$ is approximately
+
+$$
+E = Kmn e^{-\lambda S},
+$$
+
+where $m$ and $n$ are effective query and database lengths, and $K$ and $\lambda$ depend on the scoring system and sequence composition. A smaller E-value means fewer chance matches are expected in a database of that size. It is not the probability that two sequences are homologous.
+
+Database size matters: the same alignment has a less striking E-value when searched against a larger effective database. Bit scores provide a more comparable score scale across scoring systems, whereas E-values additionally reflect search space.
+
+# Toy example
+
+Suppose the query is `ACGTTAC` and a target contains `GGACGTTACAA`. With nucleotide word size $w=4$, the query words include `ACGT`, `CGTT`, `GTTA`, and `TTAC`.
+
+```text
+query:   ACGTTAC
+target: GGACGTTACAA
+           ACGTTAC       <- adjacent seed hits extend into one HSP
+```
+
+The seed `ACGT` identifies a candidate position; neighboring word hits support it. Ungapped extension recovers the long exact run. Real searches use scoring, thresholds, masking, and potentially gapped extension, so a seed hit alone is never the final biological conclusion.
+
+# Practical workflow
+
+## Selecting a BLAST program
+
+| Question | Usual program |
+|---|---|
+| Nucleotide query against nucleotide database | `blastn` |
+| Protein query against protein database | `blastp` |
+| Translated nucleotide query against protein database | `blastx` |
+| Protein query against translated nucleotide database | `tblastn` |
+
+For a local database, construct an appropriate database and search it:
+
+```bash
+makeblastdb -in proteins.faa -dbtype prot -out proteins_db
+blastp -query query.faa -db proteins_db -evalue 1e-5 \
+  -outfmt '6 qseqid sseqid pident length evalue bitscore' > hits.tsv
+```
+
+Inspect alignment coverage as well as E-value. A short exact region, a low-complexity sequence, or a shared domain can produce a convincing E-value without supporting a full-length orthology claim. NCBI's [BLAST command-line guide](https://www.ncbi.nlm.nih.gov/books/NBK279690/) documents program options and output formats.
+
+# Pitfalls and limitations
+
+- **Low-complexity or repeat-driven hits:** Masking can prevent compositionally biased regions from dominating a search, but masking choices should be reported.
+- **E-value without context:** Check query and subject coverage, alignment length, taxonomic plausibility, and independent evidence. Do not use an E-value as a homology probability.
+- **Parameter mismatch:** Use protein searches and a protein substitution matrix for remote protein similarity; nucleotide identity searches are often less sensitive across deep divergence.
+- **Heuristic misses:** A weak, interrupted, or seed-poor homolog can be missed. More sensitive alternatives include iterative PSI-BLAST or a [profile HMM](https://www.ebi.ac.uk/Tools/hmmer/).
+
+For expected end-to-end counterparts, follow a search hit with [Needleman-Wunsch global alignment](needleman-wunsch-global-alignment.qmd). For one manageable candidate pair, exact [Smith-Waterman local alignment](smith-waterman-local-alignment.qmd) can validate the local optimum.
+
+# Take-home Messages
+
+1. BLAST narrows database search using word seeds, then refines only promising local candidates.
+2. An HSP is a local segment; coverage and domain architecture determine what it means biologically.
+3. E-values depend on score, scoring model, composition, and effective search space.
+4. BLAST is fast and powerful, but its heuristic filtering means absence of a hit is not proof of absence of homology.
+
+# References
+
+- Altschul, S. F. et al. 1990. [Basic local alignment search tool](https://doi.org/10.1016/S0022-2836(05)80360-2). *Journal of Molecular Biology* 215:403-410.
+- Altschul, S. F. et al. 1997. [Gapped BLAST and PSI-BLAST](https://doi.org/10.1093/nar/25.17.3389). *Nucleic Acids Research* 25:3389-3402.
+- [NCBI BLAST documentation](https://blast.ncbi.nlm.nih.gov/doc/blast-help/).

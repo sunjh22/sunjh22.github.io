@@ -1,0 +1,114 @@
+---
+title: "FASTA Sequence-Search Algorithm"
+subtitle: "Diagonal word clustering and local alignment refinement"
+description: "How the FASTA algorithm identifies likely local sequence similarities before calculating detailed alignments."
+author: "Jiahong Sun"
+date: "2026-08-14"
+date-modified: "2026-08-14"
+categories: [Bioinformatics, Algorithms, Sequence Search, Local Alignment]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** FASTA accelerates sequence-database search by finding dense runs of matching words on alignment diagonals and refining only the strongest candidate regions.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which database sequences share a locally similar region with a query? |
+| **Computational problem** | Sensitively rank local sequence matches without aligning every query-target pair in full |
+| **Method type** | Heuristic word-based local search |
+| **Typical input** | Nucleotide or protein query and sequence database |
+| **Typical output** | Ranked candidate sequences, local alignments, scores, and significance estimates |
+| **Prerequisites** | [Smith-Waterman local alignment](smith-waterman-local-alignment.qmd), k-mers, substitution scores |
+
+# The central idea
+
+FASTA, introduced by Lipman and Pearson, searches for short exact word matches and asks whether several occur on the same alignment diagonal. A diagonal represents a fixed offset between query and target positions; clustered hits on one diagonal are evidence for an ungapped similar region. The algorithm then applies increasingly expensive refinements to only the best regions.
+
+```text
+query words -> word positions in target -> diagonal clusters
+            -> best ungapped regions -> joined regions -> banded local alignment
+```
+
+This is a different route to the same broad goal as [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd): identify good local alignments without performing full dynamic programming against every database sequence.
+
+# How FASTA works
+
+## 1. Find matching words
+
+Choose a word length $k$ (historically `ktup`). For each exact query word, locate matching words in a target sequence. Protein searches can use a substitution-scoring neighborhood rather than only identical words.
+
+For a query word beginning at position $i$ and a target word beginning at $j$, the diagonal is identified by $j-i$. Hits with the same value lie on a possible ungapped alignment path.
+
+## 2. Score dense diagonal segments
+
+FASTA identifies short high-density regions on each diagonal, using the word matches as anchors. The first score, often called `init1`, summarizes the strongest ungapped segment. This quickly distinguishes targets with a coherent run of word hits from targets with isolated chance matches.
+
+## 3. Join compatible segments
+
+Nearby high-scoring segments can be joined while charging a gap penalty. The resulting `initn` score captures a longer candidate alignment that may include gaps between word-rich islands.
+
+## 4. Refine the best candidates
+
+Only top-ranked sequences are passed to a more detailed, band-limited Smith-Waterman calculation, producing an optimized local alignment score (`opt` in classic FASTA terminology). Restricting the dynamic-programming band around candidate diagonals retains speed while allowing gaps near the likely alignment path.
+
+# Toy example: diagonal clustering
+
+With $k=3$, consider a query and target containing the same internal motif:
+
+```text
+query:  TTACGTAAG
+target: GGACGTAACT
+             ACG  CGT  GTA  TAA
+```
+
+The words `ACG`, `CGT`, `GTA`, and `TAA` occur at a constant query-target offset. Rather than treating them as four independent matches, FASTA groups their positions on one diagonal and promotes that region for extension. Random word hits on several unrelated diagonals would receive much less support.
+
+# Sensitivity, speed, and parameters
+
+The word length is the principal speed-sensitivity trade-off. Shorter words generate more candidates and improve the chance of detecting divergent similarities, but cost more time and admit more random matches. Longer words are faster and work well for near-identical sequences, but can miss a true alignment whose substitutions break every word.
+
+| Choice | Effect |
+|---|---|
+| Smaller `ktup` | More sensitive, slower, more background hits |
+| Larger `ktup` | Faster, less sensitive to divergence |
+| Wider refinement band | Accommodates more indels, increases computation |
+| Protein substitution matrix | Controls which amino-acid changes count as plausible |
+
+The relevant database size and scoring assumptions also affect statistical interpretation. Like BLAST, FASTA-style tools report significance estimates to contextualize a score against chance matches, but those values should be interpreted alongside alignment length, coverage, composition, and biological knowledge.
+
+# Practical use
+
+The actively maintained FASTA package provides `fasta36` and related programs. A protein database search can be run as follows after installing the package by a suitable platform-specific method:
+
+```bash
+fasta36 -m 8C query.faa proteins.faa > fasta_hits.txt
+```
+
+The exact options and availability vary by distribution; consult the [FASTA36 documentation and source](https://github.com/wrpearson/fasta36) for current installation and output details. Treat the output as a ranked candidate list, then inspect alignments and metadata for the hits important to the biological question.
+
+# Failure modes and relationships
+
+- **Highly diverged homologs:** Their matching words may be too sparse to seed a strong diagonal. A smaller word size, a protein-level search, iterative search, or a profile method may be more appropriate.
+- **Repeats and low complexity:** Repeated words create many diagonal candidates and can yield misleading local matches. Examine composition and use masking where justified.
+- **Rearrangements or multiple domains:** One best local hit can describe only part of the relationship; inspect additional high-scoring regions and domain architecture.
+- **Overinterpreting a heuristic score:** FASTA narrows the alignment search and can miss candidates outside its word-and-diagonal filters.
+
+Use [Needleman-Wunsch global alignment](needleman-wunsch-global-alignment.qmd) after a candidate has been chosen when full-length correspondence is expected. Use exact [Smith-Waterman local alignment](smith-waterman-local-alignment.qmd) when a pairwise local optimum is required without database-scale screening.
+
+# Take-home Messages
+
+1. FASTA turns word matches into evidence by clustering them on shared alignment diagonals.
+2. Its staged refinement concentrates dynamic programming on the few targets most likely to contain a meaningful local alignment.
+3. Word size sets a direct sensitivity-versus-speed trade-off.
+4. A reported local hit requires the same coverage, composition, and biological checks as other sequence-search results.
+
+# References
+
+- Lipman, D. J., & Pearson, W. R. 1985. [Rapid and sensitive protein similarity searches](https://doi.org/10.1126/science.2983426). *Science* 227:1435-1441.
+- Pearson, W. R., & Lipman, D. J. 1988. [Improved tools for biological sequence comparison](https://doi.org/10.1073/pnas.85.8.2444). *Proceedings of the National Academy of Sciences* 85:2444-2448.
+- [FASTA36 official repository and documentation](https://github.com/wrpearson/fasta36).
