@@ -1,0 +1,119 @@
+---
+title: "k-mers and Sequence Composition"
+subtitle: "Fixed-length sequence words as a foundation for genomic algorithms"
+description: "How k-mers represent sequence content, enable fast counting and comparison, and introduce statistical and practical trade-offs."
+author: "Jiahong Sun"
+date: "2026-08-15"
+date-modified: "2026-08-15"
+categories: [Bioinformatics, Algorithms, Sequence Analysis, Genomics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A k-mer is a contiguous sequence word of length $k$; counting and comparing these words turns many sequence-analysis tasks into scalable operations on short strings or integer hashes.
+
+| Item | Description |
+|---|---|
+| **Biological question** | What sequence content is shared, enriched, or absent across reads, genomes, or samples? |
+| **Computational problem** | Extract, count, index, and compare all length-$k$ substrings efficiently |
+| **Method type** | String representation and counting algorithm |
+| **Typical input** | FASTA/FASTQ reads or assembled sequences |
+| **Typical output** | k-mer counts, spectra, frequencies, or a set of distinct k-mers |
+| **Prerequisites** | DNA alphabet, reverse complements, hashing |
+| **Related topics** | [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), [FASTA sequence-search algorithm](fasta-sequence-search-algorithm.qmd), [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd) |
+
+# Definition and intuition
+
+For a sequence $S$ of length $L$, its k-mers are the overlapping substrings
+
+$$
+S[i:i+k),\qquad 0 \leq i \leq L-k.
+$$
+
+Thus a sequence contains $L-k+1$ positional k-mers when $L\geq k$. For `ACGTT`, the 3-mers are `ACG`, `CGT`, and `GTT`.
+
+```text
+ACGTT
+---    ACG
+ ---   CGT
+  ---  GTT
+```
+
+This representation deliberately forgets long-range order when only counts are retained. In exchange, identical short words can be counted, indexed, and intersected quickly. k-mers therefore underpin read-error correction, genome-size estimation, taxonomic classification, alignment seeding, and assembly graphs.
+
+# Counting and representation
+
+## Canonical DNA k-mers
+
+Double-stranded DNA has two orientations. A common convention stores the **canonical k-mer**, the lexicographically smaller of a word and its reverse complement. For example, `ACG` and its reverse complement `CGT` contribute to one canonical key. This avoids counting the two strands separately, but orientation information must be retained elsewhere when an algorithm needs it.
+
+For unambiguous DNA, there are $4^k$ possible k-mers. Two-bit encodings can pack short DNA words into machine integers; larger $k$ values typically use multiple words or hashes. Ambiguous bases must be skipped, expanded, or handled as separators according to the question.
+
+## A basic counting algorithm
+
+```text
+for each sequence:
+    for each valid window of length k:
+        key = canonicalize(window)       # optional for DNA
+        counts[key] += 1
+```
+
+A hash table gives expected $O(N)$ time over $N$ observed windows, with memory proportional to the number of distinct keys. Sorting encoded k-mers is another practical route: it has different memory and I/O behavior and makes equal keys adjacent. Tools such as [Jellyfish](https://github.com/gmarcais/Jellyfish) use compact, concurrent hash-table techniques to make high-throughput counting feasible.
+
+# Choosing $k$: specificity versus robustness
+
+A small $k$ makes words common. This improves overlap between noisy or divergent reads but creates many repeated, non-specific matches. A large $k$ is more specific, yet a single sequencing error destroys every overlapping k-mer that contains that base.
+
+For a uniformly random sequence, a particular exact k-mer has expected occurrence roughly proportional to $L/4^k$ in a genome of length $L$. Real genomes violate this simple model through repeats, GC bias, and biological sequence structure, but it captures why larger words become more unique.
+
+| Choice | Main benefit | Main cost |
+|---|---|---|
+| Smaller $k$ | Tolerates errors and short reads better | More collisions and repeats |
+| Larger $k$ | More unique, discriminating seeds | More memory and sensitivity to errors |
+| Canonicalization | Strand-invariant counting | Loses orientation in the key |
+
+# k-mer spectra and composition
+
+A **k-mer spectrum** is a histogram whose horizontal axis is k-mer abundance and whose vertical axis is the number of distinct k-mers with that abundance. In sequencing reads, error k-mers usually appear at very low abundance, whereas genuine genomic k-mers form coverage-related modes. Heterozygosity, repeats, contamination, and uneven coverage complicate that picture, so a spectrum is diagnostic evidence rather than a direct genome-size measurement by itself.
+
+Composition can also be summarized as a vector of normalized k-mer frequencies. Such vectors support alignment-free comparison: sequences with similar word distributions tend to be close under measures such as cosine distance or Jensen--Shannon divergence. They are useful for broad classification and quality control, but they do not establish homology or preserve genomic rearrangements.
+
+# Toy example
+
+Consider three reads with $k=3$:
+
+```text
+r1  ACGTTA  -> ACG, CGT, GTT, TTA
+r2  ACGTCA  -> ACG, CGT, GTC, TCA
+r3  ACGTTA  -> ACG, CGT, GTT, TTA
+```
+
+The observed counts are `ACG:3`, `CGT:3`, `GTT:2`, `TTA:2`, `GTC:1`, and `TCA:1`. The two one-count k-mers could arise from a true low-coverage sequence, an alternate allele, or an error. Their count alone cannot decide which; base quality, coverage, and neighboring graph structure supply crucial context.
+
+# Practical cautions
+
+- **Do not mix alphabets or preprocessing rules.** Trimming, masking, case handling, and whether reverse complements are canonicalized all change the result.
+- **Do not equate a shared k-mer with homology.** Repetitive or compositionally biased words are shared by chance.
+- **Account for sequencing error.** One substitution affects up to $k$ consecutive k-mers; indels can disrupt a longer run.
+- **Report $k$ and counting convention.** They are analysis parameters, not incidental implementation details.
+
+# Connections
+
+Exact k-mers act as seeds in [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), although protein BLAST can also use high-scoring neighboring words. The [FASTA sequence-search algorithm](fasta-sequence-search-algorithm.qmd) similarly uses word hits and their diagonal arrangement to locate candidates. Selecting only a representative subset of k-mers leads to [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd), a central idea in modern read mapping and assembly.
+
+# Take-home Messages
+
+1. **Representation:** k-mers are overlapping length-$k$ sequence words.
+2. **Trade-off:** $k$ controls a fundamental balance between specificity and resilience to errors or divergence.
+3. **Practice:** Canonicalization, ambiguity handling, and preprocessing materially affect counts.
+4. **Interpretation:** k-mer abundance is informative but not self-explanatory biological evidence.
+
+# References
+
+* Marçais, G., & Kingsford, C. 2011. [A fast, lock-free approach for efficient parallel counting of occurrences of k-mers](https://doi.org/10.1093/bioinformatics/btr011). *Bioinformatics* 27:764--770.
+* Chikhi, R., et al. 2020. [On the representation of de Bruijn graphs](https://doi.org/10.1146/annurev-biodatasci-021920-102635). *Annual Review of Biomedical Data Science* 3:39--59.
+* [Jellyfish documentation and source](https://github.com/gmarcais/Jellyfish).

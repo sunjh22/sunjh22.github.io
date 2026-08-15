@@ -13,6 +13,11 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 - [BLAST seed-and-extend search](algorithms/blast-seed-and-extend-search.qmd): word seeds, candidate extension, HSPs, and E-value interpretation
 - [FASTA sequence-search algorithm](algorithms/fasta-sequence-search-algorithm.qmd): diagonal word clustering and staged local-alignment refinement
 
+### k-mer representations and sketches
+
+- [k-mers and sequence composition](algorithms/k-mers-and-sequence-composition.qmd): sequence words, counting, spectra, and the specificity--robustness trade-off
+- [Minimizers and sequence sketching](algorithms/minimizers-and-sequence-sketching.qmd): sparse local seeds for scalable sequence indexing, mapping, and assembly
+
 ## Graphs and optimization
 
 Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.

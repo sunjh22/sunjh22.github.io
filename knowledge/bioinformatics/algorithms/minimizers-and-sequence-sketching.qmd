@@ -1,0 +1,103 @@
+---
+title: "Minimizers and Sequence Sketching"
+subtitle: "Selecting stable representative k-mers for scalable sequence comparison"
+description: "How minimizers subsample k-mers while preserving shared local sequence context for indexing, mapping, and assembly."
+author: "Jiahong Sun"
+date: "2026-08-15"
+date-modified: "2026-08-15"
+categories: [Bioinformatics, Algorithms, Sequence Analysis, Genome Assembly]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A minimizer is the lowest-ranked k-mer within a moving window, providing a sparse sequence sketch that nearby identical regions are likely to share.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which reads or reference regions are plausible candidates for an overlap or alignment? |
+| **Computational problem** | Reduce the number of sequence seeds without discarding local shared context |
+| **Method type** | Deterministic local sampling / sketching |
+| **Typical input** | Reads, contigs, or a reference genome represented as k-mers |
+| **Typical output** | Ordered minimizer positions and an index from minimizer to occurrences |
+| **Prerequisites** | [k-mers and sequence composition](k-mers-and-sequence-composition.qmd), hashing, reverse complements |
+| **Related topics** | [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), read mapping, de Bruijn graphs |
+
+# Core idea
+
+Start with k-mers, then consider every window of $w$ consecutive k-mers. Assign each k-mer a reproducible rank, usually from a hash value or a chosen ordering. The minimizer for a window is its lowest-ranked k-mer; if adjacent windows choose the same k-mer, emit it once.
+
+```text
+k-mers:     ACG  CGT  GTT  TTA  TAC
+ranks:       7    2    9    4    6
+w = 3:     [7,2,9] -> CGT
+           [2,9,4] -> CGT  (already selected)
+           [9,4,6] -> TTA
+sketch:     CGT, TTA
+```
+
+The selected words remain tied to positions and orientation. An index maps each minimizer to the reference positions containing it. A query can then retrieve candidate locations using only its sketch, before chaining or alignment refinement.
+
+# Why minimizers work
+
+Two identical sequence intervals have identical k-mers, ranks, and minimizers (provided the same parameters and tie-breaking rule are used). A local substitution affects only the k-mers that overlap it, so windows far enough away still select the same minimizers. This **locality** makes minimizers suitable for seed-based algorithms.
+
+They are not a similarity score: an error, mutation, low-complexity region, or a different window boundary can remove expected shared seeds. Conversely, common minimizers can retrieve many unrelated repetitive locations.
+
+# Algorithm and implementation details
+
+## Basic algorithm
+
+```text
+for each valid sequence position:
+    form the next canonical k-mer and compute its rank
+    maintain a deque of candidate k-mers with increasing rank
+    remove candidates that fall outside the current w-k-mer window
+    emit the deque front when it differs from the previously emitted minimizer
+```
+
+A naive implementation rescans all $w$ ranks in each window. A monotonic deque updates the current minimum in amortized constant time, so sketch construction is $O(N)$ for $N$ k-mers. Production tools also need a clear policy for ambiguous bases, canonical orientation, duplicate emissions, and ties. Leftmost or rightmost tie-breaking is valid, but it must be consistent between index and query; different rules choose different sketches.
+
+## Parameters
+
+Here $k$ governs seed specificity, as described in [k-mers and sequence composition](k-mers-and-sequence-composition.qmd). The window width $w$ governs sampling density: larger windows emit fewer minimizers, lowering storage and lookup cost but making the sketch less robust to changes.
+
+Under an idealized random-order model with a random tie-breaking order, the expected density is approximately $2/(w+1)$. Real DNA and hash/tie choices can depart substantially from this expectation, especially in repetitive or low-complexity sequence.
+
+# From sketch to mapper
+
+```text
+reference -> minimizers -> minimizer index
+query     -> minimizers -> retrieve matching reference positions
+          -> group by diagonal/orientation -> chain seeds -> align candidate regions
+```
+
+This is a more aggressive candidate-reduction strategy than using every k-mer. It has the same broad seed-and-extend logic as [BLAST](blast-seed-and-extend-search.qmd), but its local sampling scheme is optimized for large-scale mapping and assembly. Minimap2, for example, uses minimizer-like seeds and then chains and aligns candidate mappings; its [manual](https://lh3.github.io/minimap2/minimap2.html) documents the user-facing presets and options.
+
+# Pitfalls and refinements
+
+- **Frequent minimizers dominate work.** Repetitive keys must often be filtered, down-weighted, or capped; otherwise a small sketch can still create huge candidate sets.
+- **Classic minimizers can be unevenly spaced.** A minimum may persist across many adjacent windows, leaving large gaps between selected seeds. Weighted minimizers, syncmers, and alternative sampling schemes aim to improve conservation or spacing.
+- **Parameters are data dependent.** Long accurate reads can use more selective seeds than short, error-prone reads. Evaluate sensitivity, runtime, and memory together.
+- **Hashing is an implementation assumption.** A strong, deterministic hash avoids systematic lexical-order bias; collisions are unlikely with wide hashes but are not mathematically impossible.
+
+# When to use minimizers
+
+Use them when an application needs a compact, position-aware candidate index for long sequences: reference mapping, read overlap discovery, or large-scale assembly. Use every k-mer when high sensitivity on short inputs is worth the cost. Use a global sketch such as MinHash when the goal is an approximate whole-sequence or whole-sample resemblance rather than local alignment candidates.
+
+# Take-home Messages
+
+1. **Sampling:** A minimizer is a representative lowest-ranked k-mer in a local window.
+2. **Guarantee:** Identical sequence windows share minimizers only when the selection details match.
+3. **Efficiency:** A deque computes the sketch in linear time and greatly reduces index size.
+4. **Limitation:** Subsampling loses seeds and repetitive minimizers still create ambiguous candidates.
+
+# References
+
+* Roberts, M., Hayes, W., Hunt, B. R., Mount, S. M., & Yorke, J. A. 2004. [Reducing storage requirements for biological sequence comparison](https://doi.org/10.1093/bioinformatics/bth408). *Bioinformatics* 20:3363--3369.
+* Marçais, G., et al. 2018. [Improving the performance of minimizers and winnowing schemes](https://doi.org/10.1093/bioinformatics/bty188). *Bioinformatics* 34:i110--i117.
+* Li, H. 2018. [Minimap2: pairwise alignment for nucleotide sequences](https://doi.org/10.1093/bioinformatics/bty191). *Bioinformatics* 34:3094--3100.
+* [Minimap2 manual](https://lh3.github.io/minimap2/minimap2.html).
