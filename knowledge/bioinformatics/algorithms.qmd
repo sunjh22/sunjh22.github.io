@@ -18,6 +18,11 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 - [k-mers and sequence composition](algorithms/k-mers-and-sequence-composition.qmd): sequence words, counting, spectra, and the specificity--robustness trade-off
 - [Minimizers and sequence sketching](algorithms/minimizers-and-sequence-sketching.qmd): sparse local seeds for scalable sequence indexing, mapping, and assembly
 
+### Genome assembly graphs
+
+- [de Bruijn graphs for genome assembly](algorithms/de-bruijn-graphs-for-genome-assembly.qmd): k-mer overlap graphs, unitigs, graph simplification, and repeat ambiguity
+- [Overlap--layout--consensus assembly](algorithms/overlap-layout-consensus-assembly.qmd): explicit read overlaps, graph layout, consensus polishing, and long-read assembly
+
 ## Graphs and optimization
 
 Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.

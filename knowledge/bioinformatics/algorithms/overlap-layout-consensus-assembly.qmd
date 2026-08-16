@@ -1,0 +1,114 @@
+---
+title: "Overlap--Layout--Consensus Assembly"
+subtitle: "Assembling genomes by connecting whole-read overlaps"
+description: "How overlap--layout--consensus assembly finds reliable read overlaps, resolves their layout, and derives a consensus sequence."
+author: "Jiahong Sun"
+date: "2026-08-16"
+date-modified: "2026-08-16"
+categories: [Bioinformatics, Algorithms, Genome Assembly, Graphs]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Overlap--layout--consensus (OLC) assembly builds a graph of reliable whole-read overlaps, chooses coherent paths through it, then calls a sequence consensus from the supporting reads.
+
+| Item | Description |
+|---|---|
+| **Biological question** | What long genomic sequences are supported by reads that overlap one another? |
+| **Computational problem** | Find and reconcile a consistent layout among many noisy reads |
+| **Method type** | Overlap graph assembly and consensus calling |
+| **Typical input** | Long reads, or historically Sanger reads, with quality information |
+| **Typical output** | Contigs, read layouts, consensus sequences, and assembly graph |
+| **Prerequisites** | Local alignment, [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd), graph paths |
+
+# The OLC decomposition
+
+OLC separates assembly into three questions that should not be conflated:
+
+```text
+reads -> candidate overlaps -> validated overlaps -> layout graph -> consensus contigs
+          overlap              layout               consensus
+```
+
+**Overlap** asks whether a suffix/prefix or dovetail alignment between two reads is sufficiently long and accurate to reflect the same genomic locus. **Layout** asks which overlaps can coexist in a genomic ordering, despite repeats and chimeras. **Consensus** asks what bases are best supported after reads have been placed on that ordering.
+
+This representation keeps each read as a long observation. That becomes especially helpful when a read spans a repeat or connects unique flanks that short k-mers alone cannot distinguish.
+
+# How the algorithm works
+
+## 1. Propose and validate overlaps
+
+Naively aligning all $n(n-1)/2$ read pairs is prohibitive. Modern OLC assemblers use shared seeds, often minimizers, to retrieve plausible pairs before performing an overlap alignment. The seed stage follows the same broad candidate-reduction idea as [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), but the goal is read-to-read dovetail overlap rather than database reporting.
+
+An accepted overlap records orientation, aligned intervals, identity or error rate, and an implied displacement. Contained reads (one read entirely within another) can often be removed from the layout graph after preserving their evidence for consensus.
+
+## 2. Construct and simplify the layout
+
+Make reads vertices and accepted overlaps directed edges. A simple non-branching chain indicates a candidate contig; branches can arise from repeats, heterozygosity, coverage variation, or false overlaps.
+
+```text
+R1 ---> R2 ---> R3
+             \
+              ---> R4
+```
+
+Layout algorithms remove edges inconsistent with stronger evidence, detect transitive edges, and identify coherent paths. If `R1` overlaps `R2` and `R2` overlaps `R3`, a weaker direct `R1`--`R3` edge can be transitive and need not remain. Repeat-induced branches often cannot be resolved without reads that bridge the repeat, supplementary linkage, or a haplotype-aware strategy.
+
+## 3. Derive consensus and polish
+
+For a chosen layout, align participating reads to a draft coordinate system and call the most supported sequence. A simple per-column majority is insufficient when reads contain indels or systematic errors, so modern assemblers use partial-order alignment, probabilistic models, or iterative polishing. Keep the layout graph: a polished base sequence alone does not communicate unresolved alternatives.
+
+# Toy example
+
+Suppose three reads are accurate enough to overlap by four bases:
+
+```text
+R1  AACCTG
+R2    CCTGGA
+R3      TGGATC
+
+layout: R1 -> R2 -> R3
+contig: AACCTGGATC
+```
+
+Each overlap narrows the possible placement. If another read also overlapped the end of `R1` but continued with a different repeated sequence, the graph would branch; choosing one continuation without spanning evidence would be an assembly assumption, not a deduction.
+
+# Why long reads changed OLC
+
+Classical OLC was practical for relatively few, long Sanger reads but scaled poorly for immense short-read collections. de Bruijn graphs reduced the all-pairs burden for short reads by merging k-mer overlaps. Long-read platforms again made OLC attractive: although individual reads can be noisy, their length can span repeats and their overlap graph contains long-range context. Tools such as [Canu](https://canu.readthedocs.io/) and [Flye](https://github.com/mikolmogorov/Flye) use overlap- or repeat-graph-based approaches with specialized error handling.
+
+| Situation | Often useful approach |
+|---|---|
+| Many short reads | [de Bruijn graphs for genome assembly](de-bruijn-graphs-for-genome-assembly.qmd) |
+| Long reads spanning repeats | OLC or related string/repeat graph methods |
+| Very high read error | Strong seed filtering, overlap correction, and consensus polishing |
+| Mixed haplotypes or strains | Preserve graph alternatives; use phasing-aware methods where possible |
+
+# Failure modes and diagnostics
+
+- **False overlaps:** repeats, low-complexity sequence, and contamination can connect unrelated reads. Require adequate overlap length, identity, and unique flanking support.
+- **Chimeric reads:** a read joining distant loci can create a misleading bridge. Look for inconsistent overlap neighborhoods and coverage changes.
+- **Uncollapsed variation:** mixing distinct haplotypes or strains can fragment layouts or duplicate contigs. Interpret graph bubbles and coverage instead of assuming a single haploid genome.
+- **Consensus bias:** coverage imbalance and systematic sequencing errors can survive polishing; remap reads and inspect quality, coverage, and structural consistency.
+
+# Connections
+
+Minimizers make candidate overlap detection feasible at scale; see [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd). OLC overlap alignment relies on local-alignment principles from [Smith-Waterman local alignment](smith-waterman-local-alignment.qmd), usually in heuristic or banded form. The alternative [de Bruijn graph assembly](de-bruijn-graphs-for-genome-assembly.qmd) represents overlaps through k-mer nodes and edges rather than through explicit read vertices.
+
+# Take-home Messages
+
+1. OLC first determines which read pairs overlap, then which overlaps form a coherent layout, then what sequence they support.
+2. Seed indexing avoids exhaustive all-pairs alignment; long reads provide the context needed to resolve repeats.
+3. Branches and inconsistent edges are biological or technical evidence to investigate, not merely graph clutter.
+4. Consensus accuracy must be checked by read remapping and graph-aware assembly evaluation.
+
+# References
+
+- Myers, E. W. 2005. [The fragment assembly string graph](https://doi.org/10.1093/bioinformatics/bti1114). *Bioinformatics* 21:ii79--ii85.
+- Li, H. 2016. [Minimap and miniasm: fast mapping and de novo assembly for noisy long sequences](https://doi.org/10.1093/bioinformatics/btw152). *Bioinformatics* 32:2103--2110.
+- Koren, S., et al. 2017. [Canu: scalable and accurate long-read assembly via adaptive k-mer weighting and repeat separation](https://doi.org/10.1101/gr.215087.116). *Genome Research* 27:722--736.
+- [Canu documentation](https://canu.readthedocs.io/) and [Flye documentation](https://github.com/mikolmogorov/Flye).

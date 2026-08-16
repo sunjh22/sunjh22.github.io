@@ -1,0 +1,112 @@
+---
+title: "de Bruijn Graphs for Genome Assembly"
+subtitle: "Reconstructing sequence from overlapping k-mer observations"
+description: "How de Bruijn graphs turn sequencing reads into k-mer connectivity, enabling scalable genome assembly while exposing repeats and errors."
+author: "Jiahong Sun"
+date: "2026-08-16"
+date-modified: "2026-08-16"
+categories: [Bioinformatics, Algorithms, Genome Assembly, Graphs]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A de Bruijn graph represents observed k-mer overlaps as graph edges, so assembling a genome becomes finding sequence-consistent paths through that graph.
+
+| Item | Description |
+|---|---|
+| **Biological question** | What genomic sequence is supported by a collection of sequencing reads? |
+| **Computational problem** | Reconstruct long strings from many short, noisy, overlapping substrings |
+| **Method type** | Graph-based assembly |
+| **Typical input** | Quality-controlled short or long reads, usually after error correction |
+| **Typical output** | Contigs, unitigs, assembly graph, and sometimes scaffolds |
+| **Prerequisites** | [k-mers and sequence composition](k-mers-and-sequence-composition.qmd), reverse complements, graph paths |
+
+# From reads to a graph
+
+A read set contains many overlapping observations of the same genome. Comparing every read pair is costly, particularly for short-read data. A de Bruijn graph instead shares the overlaps implicitly through k-mers.
+
+For each observed k-mer, create a directed edge from its prefix of length $k-1$ to its suffix of length $k-1$. Consecutive k-mers overlap by $k-1$ bases, so a walk spells a sequence by appending one base per traversed edge.
+
+```text
+k-mer: ACGT
+node:  ACG  ->  CGT
+
+ACG -> CGT -> GTA
+      spells ACGTA
+```
+
+This is a compact form of the overlap information already present in the read set. It is related to the fixed-word representation in [k-mers and sequence composition](k-mers-and-sequence-composition.qmd), but here each word is placed in a connectivity structure rather than treated as an independent count.
+
+# Assembly as graph traversal
+
+## Build, clean, compact
+
+1. **Extract k-mers.** Split reads at ambiguous bases and apply a defined reverse-complement convention. Usually retain abundance information.
+2. **Build edges.** Add prefix-to-suffix edges for trusted k-mers. Edge multiplicity can approximate coverage.
+3. **Remove likely artifacts.** Sequencing errors create low-abundance tips, bubbles, and disconnected components. Simplification uses coverage, read evidence, and graph topology; it must not automatically erase real low-coverage or heterozygous sequence.
+4. **Compact non-branching paths.** A maximal path whose internal nodes have one incoming and one outgoing edge becomes a **unitig**, reducing the graph while preserving its sequence.
+5. **Traverse resolvable paths.** Branches caused by repeats or variants may remain as alternative paths. Assemblers emit unambiguous contigs and may use paired reads or long reads to resolve remaining connections.
+
+In an ideal error-free graph, reconstructing all edge labels is an Eulerian-path problem: a valid traversal uses each observed k-mer edge in an appropriate multiplicity. Real assembly adds errors, variable coverage, repeats, and diploidy, so production assemblers solve a constrained graph-cleaning and path-selection problem rather than a single textbook Euler tour.
+
+# A toy example
+
+Let $k=3$ and suppose the trusted k-mers are `ATG`, `TGA`, and `GAT`.
+
+```text
+AT -> TG -> GA -> AT
+ edge  edge  edge
+
+one circular spelling: ATGAT
+```
+
+Each edge supplies the next base after a two-base overlap. If a second genomic region also contains `TGA`, its evidence merges at the same graph edge. Such merging is valuable compression, but it is also why repeats longer than the available unique context create unresolved branches.
+
+# Choosing $k$ and interpreting branches
+
+The choice of $k$ controls a familiar trade-off:
+
+| Choice | Benefit | Cost |
+|---|---|---|
+| Smaller $k$ | Connects through lower coverage and errors more readily | Collapses more repeats and increases spurious connectivity |
+| Larger $k$ | Separates more repeats and reduces accidental overlaps | Breaks paths at errors or low coverage; needs more memory |
+
+A branch is not automatically an error. It can represent a repeat, a heterozygous allele, strain variation, or contamination. Coverage, read-pair orientation, long-read spans, and biological expectations help distinguish these cases. In diploid or metagenomic samples, forcing every bubble into one path can destroy meaningful variation.
+
+# Practical workflow
+
+Short-read assemblers such as [SPAdes](https://ablab.github.io/spades/) and [MEGAHIT](https://github.com/voutcn/megahit) use de Bruijn-graph ideas, typically with multi-$k$ strategies and extensive graph processing. A minimal conceptual workflow is:
+
+```text
+reads -> adapter/quality control -> error-aware k-mers -> de Bruijn graph
+      -> simplify + compact -> contigs -> evaluate graph and assembly
+```
+
+Evaluate more than total assembly length. Inspect contiguity, read support, duplication, taxonomic contamination, and reference-based correctness where a suitable reference exists. Graph visualizers and assembly-graph formats can reveal repeat or heterozygosity structure that a contig-only FASTA hides.
+
+# Limitations and connections
+
+- **Repeats:** a repeat longer than the usable k-mer context creates ambiguity; long reads may bridge it.
+- **Errors and uneven coverage:** both fragment or clutter the graph, especially with low-depth samples.
+- **Memory:** storing many distinct k-mers is demanding for large or complex datasets; compact graph representations address this directly.
+- **Loss of read linkage:** the basic graph forgets which distant k-mers came from the same read. Read pairs, long reads, and linked reads restore some of that information.
+
+de Bruijn graphs are usually preferable to all-pairs overlap construction for large short-read collections. For long, accurate reads, [overlap--layout--consensus assembly](overlap-layout-consensus-assembly.qmd) can preserve long-range read structure more naturally. Minimizer sketches from [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd) are often used to make overlap discovery or graph indexing scalable.
+
+# Take-home Messages
+
+1. A de Bruijn graph turns k-mer overlaps into directed edges and spells sequences as paths.
+2. Unitigs preserve unambiguous sequence while exposing unresolved repeat and variant structure.
+3. $k$, error handling, and graph simplification are biological as well as computational choices.
+4. A contig is a path supported by the graph, not proof that every repeat or haplotype was resolved.
+
+# References
+
+- Pevzner, P. A., Tang, H., & Waterman, M. S. 2001. [An Eulerian path approach to DNA fragment assembly](https://doi.org/10.1073/pnas.171285098). *Proceedings of the National Academy of Sciences* 98:9748--9753.
+- Compeau, P. E. C., Pevzner, P. A., & Tesler, G. 2011. [How to apply de Bruijn graphs to genome assembly](https://doi.org/10.1038/nbt.2023). *Nature Biotechnology* 29:987--991.
+- Chikhi, R., et al. 2020. [On the representation of de Bruijn graphs](https://doi.org/10.1146/annurev-biodatasci-021920-102635). *Annual Review of Biomedical Data Science* 3:39--59.
+- [SPAdes documentation](https://ablab.github.io/spades/) and [MEGAHIT documentation](https://github.com/voutcn/megahit).
