@@ -1,0 +1,93 @@
+---
+title: "Burrows--Wheeler Transform"
+subtitle: "Reordering sequence text to expose repeated context"
+description: "How the Burrows--Wheeler transform permutes a sequence reversibly, clustering similar characters to support compact genomic indexes."
+author: "Jiahong Sun"
+date: "2026-08-17"
+date-modified: "2026-08-17"
+categories: [Bioinformatics, Algorithms, Sequence Analysis, Data Structures]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** The Burrows--Wheeler transform (BWT) reversibly reorders a sequence so characters preceded by similar context tend to occur together.
+
+| Item | Description |
+|---|---|
+| **Biological question** | How can a reference genome be stored and searched using little memory? |
+| **Computational problem** | Reorder a string reversibly to make its local context more compressible and indexable |
+| **Method type** | String transformation |
+| **Typical input** | A DNA, RNA, or protein sequence terminated by a unique sentinel |
+| **Typical output** | The transformed last column and enough information to invert it |
+| **Prerequisites** | Lexicographic order, suffixes, and [k-mers and sequence composition](k-mers-and-sequence-composition.qmd) |
+| **Related topics** | [FM-index for sequence search](fm-index-for-sequence-search.qmd), read mapping, suffix arrays |
+
+# The key idea
+
+Append a sentinel `$` that is absent from the alphabet and sorts before every ordinary character. List all cyclic rotations of the terminated string in lexicographic order. The BWT is the final character in each sorted rotation. Equivalent implementations sort suffixes, avoiding materializing the rotation matrix.
+
+For `GATTACA$`, the sorted rotations are:
+
+```text
+$GATTACA
+A$GATTAC
+ACA$GATT
+ATTACA$G
+CA$GATTA
+GATTACA$
+TACA$GAT
+TTACA$GA
+```
+
+Reading the final column gives `ACTGA$TA`. This output is not a biological alignment or a hash; it is a permutation of the input characters. Its value comes from grouping characters that occur before similar suffix contexts. In real genomes, those runs can be represented compactly and queried through rank data structures.
+
+# Why the transform is reversible
+
+The first column `F` is simply the BWT characters sorted. Each occurrence of a character in the last column corresponds to the same-numbered occurrence of that character in `F`. This **last-to-first (LF) mapping** moves one position backward in the original cyclic text.
+
+Starting from the row ending in `$`, repeatedly follow LF and collect characters. The sentinel identifies the unique cycle, so the original terminated sequence can be recovered exactly. A practical implementation stores occurrence ranks rather than the full rotation matrix.
+
+This is also why the BWT is useful beyond compression: an interval of rows sharing a suffix can be updated by prepending one character. The [FM-index](fm-index-for-sequence-search.qmd) turns that property into exact pattern search.
+
+# How it is constructed efficiently
+
+## Conceptual construction
+
+1. Append a unique sentinel.
+2. Lexicographically sort all rotations (or suffixes with cyclic handling).
+3. Emit the preceding character for each sorted suffix.
+4. Record the row containing the original text, if a representation requires it explicitly.
+
+The matrix construction costs quadratic space and is only a teaching device. Production tools build a suffix array or a specialized BWT construction; the BWT is then obtained by reading the character just before each suffix start. This connection makes the BWT a compact alternative view of a suffix array rather than a replacement for careful indexing.
+
+## A sequence-search use case
+
+Reference mappers construct a BWT-derived index once for a reference. It is then shared across many reads, in contrast to [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), which uses query words to retrieve and extend candidate database regions. The BWT route is especially effective for exact search over a fixed reference; mappers add seeding, bidirectional search, and alignment logic to handle sequencing errors and variants.
+
+# Assumptions and limitations
+
+- The sentinel must be unique and ordered consistently; otherwise inversion and boundary handling are ambiguous.
+- The transform itself supports neither mismatches nor gaps. Approximate matching requires a search strategy layered on top.
+- Compression depends on repeated context. A random-looking sequence still transforms reversibly but may not form long runs.
+- A BWT is an index component, not a complete mapper: reporting coordinates needs suffix-array samples or another locate mechanism, and biological interpretation still needs alignment scoring.
+
+# Connections and practical implications
+
+The BWT sits between a sequence representation and a searchable data structure. Its lexicographic ordering connects it to suffix arrays; its runs connect it to compression; its LF mapping enables the backward search used by the [FM-index](fm-index-for-sequence-search.qmd). This design underlies the indexing phase of BWA, a widely used short-read aligner. For sparse candidate generation in long-read mapping and assembly, [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd) provide a different trade-off: less index work per query at the cost of relying on sampled seeds.
+
+# Take-home Messages
+
+1. The BWT is a reversible permutation, not a lossy compression method.
+2. Sorting by suffix context clusters preceding characters and creates useful runs.
+3. LF mapping recovers the text and supplies the navigation primitive for FM-index search.
+4. Genome mappers use BWT-based indexes as one component of exact and approximate reference search.
+
+# References
+
+- Burrows, M., & Wheeler, D. J. 1994. [A block-sorting lossless data compression algorithm](https://www.hpl.hp.com/techreports/Compaq-DEC/SRC-RR-124.pdf). *DEC Systems Research Center Research Report 124*.
+- Ferragina, P., & Manzini, G. 2000. [Opportunistic data structures with applications](https://doi.org/10.1109/SFCS.2000.892127). *Proceedings of the 41st Annual Symposium on Foundations of Computer Science*, 390--398.
+- Li, H., & Durbin, R. 2009. [Fast and accurate short read alignment with Burrows--Wheeler transform](https://doi.org/10.1093/bioinformatics/btp324). *Bioinformatics* 25:1754--1760.

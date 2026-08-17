@@ -23,13 +23,18 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 - [de Bruijn graphs for genome assembly](algorithms/de-bruijn-graphs-for-genome-assembly.qmd): k-mer overlap graphs, unitigs, graph simplification, and repeat ambiguity
 - [Overlap--layout--consensus assembly](algorithms/overlap-layout-consensus-assembly.qmd): explicit read overlaps, graph layout, consensus polishing, and long-read assembly
 
+### Compressed sequence indexes
+
+- [Burrows--Wheeler transform](algorithms/burrows-wheeler-transform.qmd): reversible sequence reordering, LF mapping, and context clustering
+- [FM-index for sequence search](algorithms/fm-index-for-sequence-search.qmd): backward search, rank queries, and compact exact reference lookup
+
 ## Graphs and optimization
 
 Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.
 
 ## Sequence and probabilistic models
 
-Planned: BWT/FM-index, hidden Markov models, MCMC, and Bayesian inference.
+Planned: hidden Markov models, MCMC, and Bayesian inference.
 
 ### Pairwise sequence alignment
 

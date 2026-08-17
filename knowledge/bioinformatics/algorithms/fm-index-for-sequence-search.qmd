@@ -1,0 +1,95 @@
+---
+title: "FM-index for Sequence Search"
+subtitle: "Exact pattern matching from the Burrows--Wheeler transform"
+description: "How an FM-index combines the Burrows--Wheeler transform with rank queries to find exact sequence matches in compressed reference indexes."
+author: "Jiahong Sun"
+date: "2026-08-17"
+date-modified: "2026-08-17"
+categories: [Bioinformatics, Algorithms, Sequence Search, Data Structures]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** An FM-index searches a pattern backward through a Burrows--Wheeler-transformed text, narrowing a suffix-array interval without storing every suffix explicitly.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Where does a read or sequence motif occur in a reference genome? |
+| **Computational problem** | Find all exact occurrences of a short pattern in a large fixed text using low memory |
+| **Method type** | Compressed full-text index |
+| **Typical input** | A pre-built reference index and a DNA or protein query pattern |
+| **Typical output** | Match count, suffix-array interval, and optionally reference coordinates |
+| **Prerequisites** | [Burrows--Wheeler transform](burrows-wheeler-transform.qmd), lexicographic order, rank queries |
+| **Related topics** | [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd), read mapping |
+
+# From BWT to searchable index
+
+The FM-index augments the [Burrows--Wheeler transform](burrows-wheeler-transform.qmd) with two operations:
+
+- `C(c)`: the number of text characters lexicographically smaller than character `c`;
+- `Occ(c, i)`: the number of occurrences of `c` in the BWT prefix ending before position `i`.
+
+Together, these tell us where suffixes beginning with `c` lie in the sorted suffix order. Because DNA has a small alphabet, rank queries can be implemented efficiently with sampled counters and compact bit-oriented structures.
+
+# Backward search
+
+Suppose suffix-array rows in the half-open interval `[l, r)` begin with a pattern suffix `P`. To prepend character `c`, update the interval to
+
+$$
+[l', r') = [C(c) + \operatorname{Occ}(c,l),\; C(c) + \operatorname{Occ}(c,r)).
+$$
+
+If `l' = r'`, the extended pattern does not occur. Begin with the interval for the empty pattern, `[0, n)`, and process the query from right to left. After $m$ successful steps, the interval contains exactly the suffix-array rows whose suffixes start with the full length-$m$ pattern. Its width, $r-l$, is the number of exact matches.
+
+```text
+reference BWT + C + Occ
+          |
+last query base: restrict matching suffix interval
+          |
+prepend each earlier base: update [l, r)
+          |
+non-empty final interval: exact occurrences of the query
+```
+
+## Toy example
+
+If an interval represents suffixes beginning with `TA`, prepending `G` produces the interval for `GTA` using the formula above. There is no need to compare `GTA` to every reference position: `Occ` counts the relevant preceding `G` characters in the BWT, and `C(G)` shifts them into the `G` block of sorted suffixes. The same calculation applies to every query base.
+
+# Counting, locating, and mapping
+
+Backward search gives a count or suffix-array interval cheaply, but an interval row is not automatically a genomic coordinate. To **locate** a match, implementations store selected suffix-array values. They repeatedly apply the LF mapping until reaching a sampled row, then add the number of steps. The sampling rate trades memory for coordinate-recovery time.
+
+To map noisy reads, a mapper must go beyond exact matching. BWA introduced a BWT-based alignment strategy for short reads; its descendants combine seed intervals, extension, and scoring to accommodate substitutions and indels. This differs from [FASTA sequence-search algorithm](fasta-sequence-search-algorithm.qmd) and BLAST, which use heuristic word hits to shortlist candidate local alignments. All three approaches reduce the work relative to running full [Smith-Waterman local alignment](smith-waterman-local-alignment.qmd) against every target, but their index and sensitivity trade-offs differ.
+
+# Practical considerations and limitations
+
+| Situation | Consequence |
+|---|---|
+| Repetitive reference sequence | A wide interval can represent many locations; coordinate reporting and mapping confidence become difficult. |
+| Sequencing errors or real variants | Exact backward search can fail early; approximate matching or seed-and-extend is needed. |
+| Very long reads with many differences | FM-index backtracking can grow rapidly; minimizer-based chaining is often more practical. |
+| Many reference contigs | Separators must prevent matches from crossing contig boundaries. |
+
+The index should be built for the exact reference assembly and contig naming scheme used downstream. A coordinate from a different assembly is not made comparable by the search algorithm itself.
+
+# When to use an FM-index
+
+Use an FM-index when a reference is relatively fixed, exact occurrences or compact storage matter, and many queries will be searched. It is a powerful reference-indexing building block for short-read alignment and exact motif lookup. Consider [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd) for sparse candidate generation in large long-read workloads, or a suffix-array/hash design when its update, locate, or engineering properties fit the application better.
+
+# Take-home Messages
+
+1. The FM-index combines BWT order with `C` and `Occ` rank information.
+2. Backward search narrows a suffix interval one query character at a time in reverse order.
+3. A non-empty final interval proves exact matches; suffix-array samples recover their coordinates.
+4. Exact FM-index search is an index primitive, so practical mappers add strategies for errors, gaps, repeats, and scoring.
+
+# References
+
+- Ferragina, P., & Manzini, G. 2000. [Opportunistic data structures with applications](https://doi.org/10.1109/SFCS.2000.892127). *Proceedings of the 41st Annual Symposium on Foundations of Computer Science*, 390--398.
+- Ferragina, P., Manzini, G., Mäkinen, V., & Navarro, G. 2007. [Compressed representations of sequences and full-text indexes](https://doi.org/10.1145/1216370.1216372). *ACM Transactions on Algorithms* 3(2):20.
+- Li, H., & Durbin, R. 2009. [Fast and accurate short read alignment with Burrows--Wheeler transform](https://doi.org/10.1093/bioinformatics/btp324). *Bioinformatics* 25:1754--1760.
+- [BWA manual](https://bio-bwa.sourceforge.net/bwa.shtml).
