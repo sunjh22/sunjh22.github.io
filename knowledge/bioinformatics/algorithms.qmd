@@ -27,6 +27,8 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 
 - [Burrows--Wheeler transform](algorithms/burrows-wheeler-transform.qmd): reversible sequence reordering, LF mapping, and context clustering
 - [FM-index for sequence search](algorithms/fm-index-for-sequence-search.qmd): backward search, rank queries, and compact exact reference lookup
+- [Suffix trees and suffix arrays](algorithms/suffix-trees-and-suffix-arrays.qmd): lexicographic full-text indexes for exact matches, repeats, and shared substrings
+- [Hash-based sequence indexing](algorithms/hash-based-sequence-indexing.qmd): k-mer lookup tables for seed retrieval and candidate generation
 
 ## Graphs and optimization
 

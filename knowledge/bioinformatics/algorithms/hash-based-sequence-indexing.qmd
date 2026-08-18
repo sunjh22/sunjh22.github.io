@@ -1,0 +1,85 @@
+---
+title: "Hash-Based Sequence Indexing"
+subtitle: "Direct lookup of sequence seeds by hash table"
+description: "How hash tables index k-mer seeds and their reference positions for fast candidate generation in sequence search and read mapping."
+author: "Jiahong Sun"
+date: "2026-08-18"
+date-modified: "2026-08-18"
+categories: [Bioinformatics, Algorithms, Sequence Search, Data Structures]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Hash-based sequence indexing maps a sequence seed, usually a $k$-mer, to reference positions so matching seeds can be retrieved in expected constant time.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which reference regions are plausible origins or homologs of a read or query sequence? |
+| **Computational problem** | Retrieve locations sharing short exact sequence words without scanning the whole reference |
+| **Method type** | Hash-table seed index |
+| **Typical input** | Reference sequence(s), a seed scheme, and read or query sequences |
+| **Typical output** | Candidate reference positions, diagonals, or chains for later alignment |
+| **Prerequisites** | [k-mers and sequence composition](k-mers-and-sequence-composition.qmd) and sequence orientation |
+| **Related topics** | [Minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd), [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), suffix arrays |
+
+# From reference words to candidate locations
+
+Choose a seed length $k$. During indexing, extract each reference $k$-mer (or a selected subset) and insert a key--value entry:
+
+```text
+key: canonical hash(k-mer)
+value: one or more (contig, position, strand) occurrences
+```
+
+**Canonical** DNA keys treat a $k$-mer and its reverse complement as one key, typically by choosing the smaller encoded value. The stored orientation records how a query seed must be aligned. A query is decomposed into seeds; each seed hash probes the table and retrieves reference occurrences. Nearby hits with a consistent offset or orientation become candidate regions, which are then extended and scored.
+
+For example, suppose a reference index contains `ACGTA -> chr1:100` and `CGTAA -> chr1:101`. A read containing both words returns two adjacent anchors. Their consistent displacement is stronger evidence than either word alone; an aligner can restrict expensive local alignment to that neighborhood.
+
+# Why hashing is useful
+
+A well-designed hash table performs a lookup in expected $O(1)$ time, so the query cost is driven by its number of seeds and the number of retrieved occurrences rather than reference length. This made direct-address and hash-table approaches practical for large DNA databases, including the SSAHA family of search methods.
+
+The speed claim is not a guarantee of a small result: a frequent seed may have thousands of occurrences. Indexes therefore often suppress or cap high-frequency seeds, use a larger $k$, or sample seeds. These choices reduce work but can discard evidence, especially in repeats or error-prone reads.
+
+## Seed choices change the index
+
+| Seed scheme | Index behavior | Typical trade-off |
+|---|---|---|
+| All $k$-mers | Maximum local seed coverage | Large table and many repetitive hits |
+| [Minimizers](minimizers-and-sequence-sketching.qmd) | Store one representative per window | Smaller index; a mutation can remove selected anchors |
+| Spaced seeds | Use selected positions within a longer pattern | Can improve tolerance of mismatches at unselected positions |
+| Syncmers or other sampled seeds | Select seeds by an internal rule | More regular sampling properties, with scheme-specific sensitivity |
+
+Hashing encodes the seed for lookup; it does not make unequal sequences match. A substitution inside an exact seed normally prevents that seed hit, which is why multiple, overlapping, or sampled seeds are used before an extension stage.
+
+# Practical design decisions and pitfalls
+
+- **Choose $k$ for the genome and error rate.** Short seeds improve sensitivity but retrieve more random and repetitive hits. Long seeds are more specific but are more easily disrupted by sequencing errors and variation.
+- **Handle ambiguous bases explicitly.** A seed containing `N` is commonly skipped or treated by a documented policy; silently hashing it as an ordinary base can create false anchors.
+- **Keep contig boundaries separate.** Do not generate seeds that span records or chromosomes.
+- **Budget repetitive keys.** Dropping every frequent key accelerates mapping but can harm sensitivity in duplicated genes, mobile elements, and low-complexity sequence.
+- **Separate lookup from alignment.** A hash hit is a candidate, not an alignment, coordinate certainty, or homology conclusion. Use extension and scoring; [Smith--Waterman local alignment](smith-waterman-local-alignment.qmd) provides the exact local-alignment reference for an individual candidate pair.
+
+# Relation to other sequence indexes
+
+Hash indexes are often attractive when a tool needs simple direct seed retrieval and can afford a memory-resident occurrence table. [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd) follows the same broad candidate-then-extension strategy but has program-specific word-neighborhood and statistical reporting machinery. Suffix arrays and the [FM-index](fm-index-for-sequence-search.qmd) organize a full reference lexicographically instead; they can count exact occurrences without enumerating a hash bucket, while BWT-derived indexes can be more memory efficient for fixed references.
+
+Modern long-read mappers commonly hash minimizers and then chain collinear hits. Thus the hash table is an enabling data structure rather than the complete mapping algorithm: seed selection, occurrence filtering, chaining, alignment, and mapping-quality estimation determine the final behavior.
+
+# Take-home Messages
+
+1. A hash-based index maps sequence seeds to their reference occurrences for fast candidate retrieval.
+2. Seed length, sampling, and repeat filtering determine the sensitivity--memory--speed balance.
+3. Multiple coherent hits are more informative than a single hash match.
+4. Hash lookup generates candidates; alignment and statistical interpretation still occur afterward.
+
+# References
+
+- Ning, Z., Cox, A. J., & Mullikin, J. C. 2001. [SSAHA: A fast search method for large DNA databases](https://doi.org/10.1093/nar/29.2.373). *Nucleic Acids Research* 29:373--376.
+- Roberts, M. et al. 2004. [Reducing storage requirements for biological sequence comparison](https://doi.org/10.1093/bioinformatics/bth408). *Bioinformatics* 20:3363--3369.
+- Li, H. 2018. [Minimap2: Pairwise alignment for nucleotide sequences](https://doi.org/10.1093/bioinformatics/bty191). *Bioinformatics* 34:3094--3100.
+- [SeqAn 3 seed documentation](https://docs.seqan.de/seqan3/main_user/group__search__configuration.html).

@@ -1,0 +1,93 @@
+---
+title: "Suffix Trees and Suffix Arrays"
+subtitle: "Lexicographic indexes for finding sequence substrings"
+description: "How suffix trees and suffix arrays index every suffix of a biological sequence to support exact substring search and related sequence analyses."
+author: "Jiahong Sun"
+date: "2026-08-18"
+date-modified: "2026-08-18"
+categories: [Bioinformatics, Algorithms, Sequence Search, Data Structures]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A suffix tree or suffix array stores all suffixes of a reference in lexicographic order, making a query sequence's shared prefix with those suffixes directly searchable.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Where does an exact read, motif, or subsequence occur in a reference or database sequence? |
+| **Computational problem** | Index a fixed text so exact substrings can be found without scanning every position |
+| **Method type** | Full-text string index |
+| **Typical input** | A terminated DNA, RNA, or protein reference and a query pattern |
+| **Typical output** | A match interval, count, or reference coordinates |
+| **Prerequisites** | Lexicographic order and [k-mers and sequence composition](k-mers-and-sequence-composition.qmd) |
+| **Related topics** | [Burrows--Wheeler transform](burrows-wheeler-transform.qmd), [FM-index for sequence search](fm-index-for-sequence-search.qmd), hash indexes |
+
+# The central representation
+
+For a terminated text $T$ of length $n$, suffix $i$ is $T[i..n-1]$. A **suffix tree** is a rooted, edge-labelled trie in which every suffix ends at a leaf; path compression collapses non-branching paths. A **suffix array** is the simpler array $SA$ of suffix start positions sorted by the suffix strings:
+
+$$
+T[SA[0]..] < T[SA[1]..] < \cdots < T[SA[n-1]..].
+$$
+
+Both representations expose the same fact: all suffixes beginning with a query $P$ occur together in lexicographic order. In a tree, follow the characters of $P$ from the root. In an array, binary-search for the first and last suffix with prefix $P$. The resulting interval contains every exact occurrence; its width is the match count.
+
+## A small example
+
+For `GATAGACA$`, sorted suffixes begin:
+
+```text
+8  $
+7  A$
+3  AGACA$
+5  ACA$
+1  ATAGACA$
+6  CA$
+0  GATAGACA$
+4  GACA$
+2  TAGACA$
+```
+
+The suffixes beginning with `GA` are `GATAGACA$` and `GACA$`; they are adjacent in the suffix array. Thus `GA` occurs at positions 0 and 4. A suffix tree reaches the same two leaves by following the path labelled `G` then `A`.
+
+# Construction and auxiliary information
+
+Naively comparing all suffix strings is expensive. Linear-time suffix-tree algorithms, notably Ukkonen's online construction, maintain active suffixes and suffix links while processing the text. Modern suffix-array construction algorithms avoid storing all suffix strings explicitly and often use prefix-doubling, induced sorting, or specialized external-memory methods.
+
+Suffix arrays are commonly paired with a longest-common-prefix (LCP) array, where `LCP[i]` is the shared-prefix length of adjacent suffixes `SA[i-1]` and `SA[i]`. LCP values make repeated-substring and maximal-match calculations efficient. They also show why suffix arrays are useful for genome comparison, not only exact lookup: shared prefixes summarize repeated sequence context.
+
+| Representation | Strength | Cost or limitation |
+|---|---|---|
+| Suffix tree | Pattern traversal and some interval operations are direct | Pointer-rich representation can use substantial memory |
+| Suffix array + LCP | Compact contiguous arrays; binary search is simple | Coordinate lookup and richer queries may need auxiliary structures |
+| [FM-index](fm-index-for-sequence-search.qmd) | Compresses suffix order via BWT and supports backward search | Requires rank data structures and sampled suffix-array values for locating |
+
+# Bioinformatics uses and limits
+
+Generalized suffix trees or arrays concatenate several sequences using distinct separators. They can identify exact shared substrings, maximal repeats, or candidate anchors between genomes. A production reference must include separators that prevent a match from crossing contig boundaries.
+
+These indexes answer **exact** substring questions. A sequencing error, allele, or indel can break a query's path or make its interval empty. Approximate matching needs backtracking, dynamic programming, or seed-and-extend logic. For fixed genomic references, compressed suffix-order indexes are widely used in mappers; for sparse candidate generation, [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd) trade exhaustive indexing for fewer sampled seeds.
+
+Repetitive genomes add an interpretive limitation: a nonempty interval can contain many valid coordinates. The index correctly reports multiplicity but does not decide which locus produced a read. Alignment scoring and mapping-quality models are needed downstream.
+
+# Connections
+
+Suffix arrays are the ordered backbone behind the [Burrows--Wheeler transform](burrows-wheeler-transform.qmd): reading the character preceding each suffix in suffix-array order produces the BWT (with careful sentinel handling). The [FM-index](fm-index-for-sequence-search.qmd) then retains the ability to search suffix intervals while using compressed rank queries. In contrast, [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd) uses short words to avoid a full exact index of every suffix and spends alignment effort only near candidate hits.
+
+# Take-home Messages
+
+1. Suffix trees and suffix arrays organize every suffix of a sequence by lexicographic order.
+2. Exact matches of a pattern form one contiguous suffix-array interval or one suffix-tree subtree.
+3. LCP information supports repeat and shared-substring analyses in addition to lookup.
+4. The indexes do not by themselves solve approximate alignment or ambiguity in repetitive regions.
+
+# References
+
+- Weiner, P. 1973. [Linear pattern matching algorithms](https://doi.org/10.1109/SWAT.1973.13). *14th Annual Symposium on Switching and Automata Theory*, 1--11.
+- Manber, U., & Myers, G. 1993. [Suffix arrays: A new method for on-line string searches](https://doi.org/10.1137/0221028). *SIAM Journal on Computing* 22:935--948.
+- Ukkonen, E. 1995. [On-line construction of suffix trees](https://doi.org/10.1007/BF01206331). *Algorithmica* 14:249--260.
+- Kurtz, S. et al. 2004. [Versatile and open software for comparing large genomes](https://doi.org/10.1101/gr.1238404). *Genome Biology* 5:R12.
