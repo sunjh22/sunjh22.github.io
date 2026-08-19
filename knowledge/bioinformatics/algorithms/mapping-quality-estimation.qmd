@@ -1,0 +1,102 @@
+---
+title: "Mapping Quality Estimation"
+subtitle: "Phred-scaled confidence in a read placement"
+description: "How aligners summarize uncertainty that a reported read alignment is at the correct reference location."
+author: "Jiahong Sun"
+date: "2026-08-19"
+date-modified: "2026-08-19"
+categories: [Bioinformatics, Algorithms, Read Mapping, Statistical Inference]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Mapping quality (MAPQ) is a Phred-scaled estimate of the probability that a reported alignment is wrong, combining evidence for the chosen locus with evidence for competing loci.
+
+| Item | Description |
+|---|---|
+| **Biological question** | How much should a downstream analysis trust this read's genomic origin? |
+| **Computational problem** | Convert competing alignment evidence into a calibrated placement-confidence score |
+| **Method type** | Probabilistic or empirical confidence estimation |
+| **Input** | Primary and alternative alignment scores, seeds/chains, read properties, and reference context |
+| **Output** | The `MAPQ` field in a SAM/BAM alignment record |
+| **Prerequisites** | [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd), probability, Phred scores |
+
+# What MAPQ means
+
+For an alignment reported at locus $L$, the intended interpretation is
+
+$$
+\mathrm{MAPQ} = -10\log_{10} P(\text{reported placement is incorrect}).
+$$
+
+Thus MAPQ 10 corresponds to an estimated error probability of 0.1, MAPQ 20 to 0.01, and MAPQ 30 to 0.001. It concerns the **locus**, not whether every aligned base is correct: base qualities and the `QUAL` values in a variant call answer different questions.
+
+MAPQ is an estimate, not a universal measurement. The SAM specification permits any integer 0--254 and reserves 255 for unavailable information. Different aligners use different models, caps, and conventions, so equal MAPQ values from different tools or modes need not be identically calibrated.
+
+# From alignment competition to probability
+
+If candidate loci $L_1,\ldots,L_k$ have likelihoods $P(R\mid L_i)$ for read $R$ and priors $P(L_i)$, a model-based posterior is
+
+$$
+P(L_1\mid R)=\frac{P(R\mid L_1)P(L_1)}{\sum_{i=1}^{k}P(R\mid L_i)P(L_i)}.
+$$
+
+The ideal MAPQ for the selected $L_1$ would use $1-P(L_1\mid R)$. In real mappers, enumerating every locus and modeling sequencing error, polymorphism, reference incompleteness, and paired-read evidence exactly is expensive. They therefore approximate this quantity from features such as the best-versus-second-best alignment or chain score, aligned length, seed uniqueness, base qualities, and whether candidates were filtered.
+
+## Score separation is the central signal
+
+Consider two otherwise comparable candidates. If the primary alignment score is 100 and the next is 99, either may be the true locus; MAPQ should be low. If the next best score is 40, the primary is much more distinctive. A short perfect read in a repeat can still have low MAPQ because many unreported candidates may tie it. Conversely, a long read may contain enough unique anchors to earn high MAPQ despite base errors.
+
+The exact mapping from score differences to MAPQ is aligner-specific. For example, minimap2 estimates primary-chain MAPQ from the best chain score, the strongest competing secondary chain, and the number of anchors, then applies additional heuristics. Treat its score as its documented empirical confidence signal, not as a generic posterior recomputed from the displayed CIGAR alone.
+
+# Interpretation in SAM/BAM workflows
+
+```text
+MAPQ 0       no distinction from an alternative placement (or an explicitly ambiguous placement)
+MAPQ 20      approximately 1% estimated placement error under the aligner's model
+MAPQ 30      approximately 0.1% estimated placement error under the aligner's model
+MAPQ 255     unavailable, not exceptionally high confidence
+```
+
+An alignment flag identifies whether a record is primary, secondary, or supplementary; MAPQ does not replace those flags. A supplementary record may be meaningful evidence for a split read but is not an independent observation. Secondary-alignment reporting is configurable, so absence of a secondary record does not prove unique mapping.
+
+## Minimal inspection
+
+```bash
+samtools view -q 30 -F 0x904 alignments.bam
+```
+
+This selects records with MAPQ at least 30 while excluding unmapped (`0x4`), secondary (`0x100`), and supplementary (`0x800`) records. It is a common starting point, not a universally valid quality-control rule: RNA-seq, ancient DNA, metagenomics, duplicated genes, or structural-variant evidence may require a different treatment. Always retain an unfiltered file for auditability.
+
+# Pitfalls and calibration
+
+| Pitfall | Why it matters | Better practice |
+|---|---|---|
+| Equating MAPQ with base quality | One describes locus uncertainty; the other describes base-call uncertainty | Filter and model each at its appropriate stage |
+| Treating 255 as high confidence | It means unavailable in SAM | Handle it explicitly according to tool documentation |
+| Comparing MAPQ across aligners as a universal probability | Heuristics and caps differ | Validate within the mapper, version, reference, and read type used |
+| Removing every low-MAPQ read | Discards real signal from duplicated or polymorphic loci | Match the filtering rule to the biological question |
+
+MAPQ can be overconfident when the true source is absent from the reference, when alternate haplotypes are missing, or when a mapper fails to generate a close competitor. It can be underconfident in biologically duplicated regions where multi-mapping is expected but aggregate evidence is still useful. Benchmark calibration with simulated reads or a truth set whenever the downstream decision is sensitive to placement uncertainty.
+
+# Connections
+
+MAPQ follows the candidate generation and alignment described in [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd). Its ambiguity arises especially from repeated seeds in [k-mers and sequence composition](k-mers-and-sequence-composition.qmd) and sparse-seed collisions with [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd). Variant callers later combine mapping quality with base quality, allele balance, and local realignment evidence; a high MAPQ alone does not establish a variant.
+
+# Take-home Messages
+
+1. MAPQ quantifies estimated error in the read's *placement*, on a Phred scale.
+2. Near-tied candidate loci, especially repeats, should yield low MAPQ even for a clean alignment.
+3. MAPQ is mapper- and context-dependent; 255 means unavailable.
+4. Use MAPQ with alignment flags and other quality evidence, and validate a threshold for the analysis at hand.
+
+# References
+
+- Li, H. et al. 2008. [Mapping short DNA sequencing reads and calling variants using mapping quality scores](https://doi.org/10.1101/gr.078212.108). *Genome Research* 18:1851--1858.
+- Li, H. 2018. [Minimap2: pairwise alignment for nucleotide sequences](https://doi.org/10.1093/bioinformatics/bty191). *Bioinformatics* 34:3094--3100.
+- [Sequence Alignment/Map Format Specification](https://samtools.github.io/hts-specs/SAMv1.pdf), §1.4 (MAPQ field).
+- [minimap2 documentation](https://lh3.github.io/minimap2/minimap2.html).

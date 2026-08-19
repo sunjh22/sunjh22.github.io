@@ -1,0 +1,98 @@
+---
+title: "Read Mapping and Seed Chaining"
+subtitle: "From sparse exact anchors to a candidate genomic alignment"
+description: "How modern read mappers use seeds, collinear chaining, and local alignment to place sequencing reads on a reference."
+author: "Jiahong Sun"
+date: "2026-08-19"
+date-modified: "2026-08-19"
+categories: [Bioinformatics, Algorithms, Read Mapping, Sequence Alignment]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Seed chaining converts many short exact read--reference matches into a few coherent candidate loci, so expensive base-level alignment is performed only where a read is likely to belong.
+
+| Item | Description |
+|---|---|
+| **Biological question** | At which reference locus did this sequenced fragment originate? |
+| **Computational problem** | Rapid approximate alignment of millions of reads to a large, repetitive reference |
+| **Method type** | Seed-and-extend mapping with dynamic-programming chaining |
+| **Input** | Reads and a reference index, usually FASTQ and FASTA |
+| **Output** | SAM/BAM alignment records, coordinates, CIGAR strings, flags, and mapping qualities |
+| **Prerequisites** | [k-mers and sequence composition](k-mers-and-sequence-composition.qmd), [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd), local alignment |
+
+# Why mapping needs chains
+
+A read mapper needs an approximate alignment, but applying [Smith--Waterman local alignment](smith-waterman-local-alignment.qmd) against every genomic position is impractical. It first identifies short exact matches called **seeds** (or anchors). A [hash-based sequence index](hash-based-sequence-indexing.qmd), suffix-based index, or FM-index can retrieve their reference locations quickly.
+
+One seed is weak evidence: a 15-mer can recur many times in a repeat-rich genome, and a sequencing error or variant can destroy a seed. A true placement instead tends to produce several anchors that are **collinear**: their positions increase in the same order on the read and reference, with compatible gaps. Chaining scores that pattern, suppressing isolated or conflicting seeds before base-level refinement.
+
+# Core workflow
+
+```text
+reference -> build seed index
+read      -> collect seeds -> retrieve anchors -> chain compatible anchors
+          -> choose candidate loci -> align around each chain -> rank/report
+```
+
+## Anchors and collinearity
+
+For a forward-strand anchor $i$, let $(x_i,y_i,w_i)$ denote the ending reference coordinate, ending read coordinate, and seed length. Anchor $j$ can precede $i$ only if $x_j < x_i$ and $y_j < y_i$. Their coordinate increments should be similar for an ordinary match; a large difference can indicate an indel, a splice, or a spurious connection.
+
+Many mappers use a dynamic program of the form
+
+$$
+f(i) = \max\left\{w_i,\; \max_{j<i}\left[f(j)+\alpha(j,i)-\beta(j,i)\right]\right\},
+$$
+
+where $f(i)$ is the best chain ending at anchor $i$, $\alpha$ rewards nonredundant anchored sequence, and $\beta$ penalizes incompatible reference/read gaps. The best predecessor is retained for traceback. In practice, implementations limit the predecessor search by genomic distance or a heuristic, since checking every earlier anchor can be quadratic.
+
+## Toy example
+
+Suppose a 100-bp read yields these 15-bp anchors (coordinates shown as read, reference):
+
+```text
+A: ( 5, 1005)    B: (25, 1025)    C: (50, 1050)
+D: (65, 80000)  E: (75, 1075)
+```
+
+`A -> B -> C -> E` advances by about the same distance on both sequences, so it is a strong chain at reference locus 1000. `D` is not collinear with `C` and receives a large gap/inconsistency penalty. The mapper then aligns the read near the first chain, rather than blindly treating all five anchors as evidence for one locus.
+
+# Base-level alignment and special structures
+
+The chain is an approximate placement, not the final CIGAR string. Mappers extend from or between anchors using banded dynamic programming; the band relies on the chain's expected diagonal and makes alignment far cheaper than a full matrix. Affine or concave gap costs allow indels without connecting arbitrary distant seeds.
+
+The meaning of a large coordinate gap depends on the mapping mode. Genomic DNA mapping may represent it as a deletion or insertion. RNA-to-genome mapping can score a long reference gap as an intron and use splice-site evidence. Split alignment allows separate chains for a read spanning a structural variant, fusion, or chimeric molecule; it must not be mistaken automatically for a biological rearrangement.
+
+# Practical choices and failure modes
+
+| Choice | Consequence |
+|---|---|
+| Longer or rarer seeds | Fewer candidate loci and faster mapping, but lower tolerance of errors/divergence |
+| Shorter or more seeds | Higher sensitivity, but more repeat-derived anchors and computation |
+| Wider chaining/alignment gap limits | Can recover long indels or introns, but can join unrelated anchors |
+| Repeat masking or high-frequency-seed filtering | Controls workload, but may reduce sensitivity in repetitive sequence |
+
+Reads from segmental duplications can produce near-equal chains at several loci; chaining cannot create information absent from the read. Reference bias, unrepresented haplotypes, contamination, and low-complexity sequence similarly cause plausible-looking but wrong placements. Inspect alignment score, soft clipping, mismatch/indel pattern, secondary/supplementary records, and [mapping quality estimation](mapping-quality-estimation.qmd) before using placements for variants or quantification.
+
+# Connections
+
+Minimizer-based mappers such as minimap2 hash sparse [minimizers](minimizers-and-sequence-sketching.qmd), retrieve exact anchors, and chain them before optional base-level alignment. This is a mapper-specific realization of the seed-and-extend idea used by [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), adapted to a fixed reference and many reads. FM-index mappers instead derive seeds by backward search over the [FM-index](fm-index-for-sequence-search.qmd); both approaches still need to resolve multi-mapping and align candidates.
+
+# Take-home Messages
+
+1. Seeds quickly generate possible loci; a chain tests whether several seeds tell one coordinate-consistent story.
+2. Chaining reduces the number of regions needing expensive base-level alignment.
+3. A chain is a candidate placement, not proof of a unique origin or an accurate base-level alignment.
+4. Repeats, error, variants, and structural events require downstream scoring and uncertainty reporting.
+
+# References
+
+- Li, H. 2018. [Minimap2: pairwise alignment for nucleotide sequences](https://doi.org/10.1093/bioinformatics/bty191). *Bioinformatics* 34:3094--3100.
+- Li, H. & Durbin, R. 2009. [Fast and accurate short read alignment with Burrows-Wheeler transform](https://doi.org/10.1093/bioinformatics/btp324). *Bioinformatics* 25:1754--1760.
+- Langmead, B. & Salzberg, S. L. 2012. [Fast gapped-read alignment with Bowtie 2](https://doi.org/10.1038/nmeth.1923). *Nature Methods* 9:357--359.
+- [minimap2 documentation](https://lh3.github.io/minimap2/minimap2.html).

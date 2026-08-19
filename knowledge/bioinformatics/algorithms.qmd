@@ -30,6 +30,11 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 - [Suffix trees and suffix arrays](algorithms/suffix-trees-and-suffix-arrays.qmd): lexicographic full-text indexes for exact matches, repeats, and shared substrings
 - [Hash-based sequence indexing](algorithms/hash-based-sequence-indexing.qmd): k-mer lookup tables for seed retrieval and candidate generation
 
+### Read mapping and placement confidence
+
+- [Read mapping and seed chaining](algorithms/read-mapping-and-seed-chaining.qmd): sparse anchors, collinear chains, and local alignment of candidate loci
+- [Mapping quality estimation](algorithms/mapping-quality-estimation.qmd): Phred-scaled placement confidence, competitor alignments, and SAM/BAM interpretation
+
 ## Graphs and optimization
 
 Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.
