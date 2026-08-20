@@ -1,0 +1,108 @@
+---
+title: "Pairwise Hidden Markov Models"
+subtitle: "A probabilistic model for sequence alignment paths"
+description: "How pairwise HMMs turn substitution and indel assumptions into probabilities for alignments and alignment uncertainty."
+author: "Jiahong Sun"
+date: "2026-08-20"
+date-modified: "2026-08-20"
+categories: [Bioinformatics, Algorithms, Sequence Alignment, Hidden Markov Models]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A pairwise hidden Markov model (pair HMM) represents an alignment as an unobserved path through match and gap states, assigning probabilities to both the path and the emitted sequence pair.
+
+| Item | Description |
+|---|---|
+| **Biological question** | How likely are two sequences to be related through substitutions and insertions/deletions? |
+| **Computational problem** | Score or infer a gapped alignment while representing uncertainty in alternative alignments |
+| **Method type** | Generative probabilistic model and dynamic programming |
+| **Input** | Two DNA or protein sequences plus transition and emission probabilities |
+| **Output** | Best alignment, total likelihood, or posterior alignment probabilities |
+| **Prerequisites** | [Needleman--Wunsch global alignment](needleman-wunsch-global-alignment.qmd), [Smith--Waterman local alignment](smith-waterman-local-alignment.qmd), conditional probability |
+
+# From alignment scores to a generative model
+
+Classical dynamic-programming alignment has three possible column types: a paired residue, a residue from the first sequence opposite a gap, or a gap opposite a residue from the second. A basic pair HMM makes these three events hidden states:
+
+```text
+M (match)       emits x_i, y_j
+X (gap in Y)    emits x_i, -
+Y (gap in X)    emits -, y_j
+```
+
+Transitions determine how often a gap starts or extends; emissions specify whether a residue pair is likely under the model. For example, a high $P(M\rightarrow M)$ favors long aligned runs, while $P(X\rightarrow X)$ controls the expected gap length. A path consumes zero, one, or two sequence characters at each transition, so its emitted columns are an alignment.
+
+The probability of a particular path $\pi$ and observed sequences $X,Y$ factors as
+
+$$
+P(X,Y,\pi)=P(\pi_1)\prod_t P(\pi_t\mid\pi_{t-1})\prod_t P(\text{emission}_t\mid\pi_t).
+$$
+
+Taking logarithms turns products into sums. With suitable transition and emission parameters, Viterbi decoding therefore has the same recurrence structure as affine-gap sequence alignment; the difference is that its scores have an explicit probabilistic interpretation.
+
+# Three questions, three dynamic programs
+
+| Question | Algorithm | Result |
+|---|---|---|
+| What is the single most probable alignment path? | Viterbi | One best alignment |
+| How probable are the sequences under the model across *all* paths? | Forward | Likelihood $P(X,Y)$ |
+| How credible is a residue pair or gap event? | Forward--backward | Posterior state/column probabilities |
+
+For a state $s$ at matrix cell $(i,j)$, the forward value $F_s(i,j)$ sums probabilities of all partial paths ending there. The backward value $B_s(i,j)$ sums all compatible suffix paths. Their product gives an alignment-event posterior after normalization:
+
+$$
+P(s,i,j\mid X,Y)=\frac{F_s(i,j)B_s(i,j)}{P(X,Y)}.
+$$
+
+This is a crucial distinction from merely tracing one optimal path. Two alignments can have similar probability even when one is selected by Viterbi; posterior probabilities reveal columns whose placement is intrinsically ambiguous.
+
+# Toy example
+
+Consider `ACG` and `AG`. The path
+
+```text
+state:  M  X  M
+X:      A  C  G
+Y:      A  -  G
+```
+
+aligns the first and last bases and uses `X` for a gap in the second sequence. A competing path could instead use a mismatch followed by a terminal gap. Viterbi chooses the path with the larger product of transition and emission probabilities. The forward algorithm retains both possibilities in the total likelihood, so it does not pretend that the rejected path had probability zero.
+
+# Boundary conditions and model choice
+
+The same state topology supports different alignment scopes. Begin/end transitions that require both sequences to be consumed produce a global model, analogous to [Needleman--Wunsch](needleman-wunsch-global-alignment.qmd). Allowing entry and exit at internal positions creates a local model, analogous to [Smith--Waterman](smith-waterman-local-alignment.qmd). Specialized pair HMMs can add states for context-dependent substitutions, long indels, or sequencing errors.
+
+Pair HMMs are also central to likelihood-based read analysis. A read-to-haplotype pair HMM can sum over possible base-level alignments while using base-call error probabilities in its emissions. That likelihood is richer than an alignment score alone, but it still depends on the supplied haplotypes, error model, and independence assumptions.
+
+# Practical interpretation and pitfalls
+
+| Pitfall | Why it misleads | Better practice |
+|---|---|---|
+| Treating the Viterbi path as certain | Nearby gap placements may have comparable probability | Inspect posterior probabilities when alignment confidence matters |
+| Using arbitrary transition probabilities | They set indel frequency and length distributions | Calibrate or state the intended evolutionary/error model |
+| Confusing pair HMMs with profile HMMs | A pair HMM emits two sequences; a profile models a family against one query | Use [profile HMMs for protein families](profile-hidden-markov-models-for-protein-families.qmd) for family/domain models |
+| Equating a likelihood with homology proof | Chance, composition bias, and model misspecification remain | Compare null models and biological context |
+
+Standard implementations use log probabilities or scaling to prevent numerical underflow. The basic algorithms are $O(mn)$ in time for sequences of lengths $m$ and $n$; banding or anchoring can reduce practical cost but may exclude valid paths.
+
+# Connections
+
+Pair HMMs give a probabilistic foundation for the match/gap recurrences used by [global alignment](needleman-wunsch-global-alignment.qmd) and [local alignment](smith-waterman-local-alignment.qmd). They complement [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd): seeds and chains find promising loci, whereas a pair HMM can assess base-level alignment likelihood at a candidate locus. The forward--backward and Viterbi algorithms introduced here lead directly to the next topic, [profile HMMs for protein families](profile-hidden-markov-models-for-protein-families.qmd).
+
+# Take-home Messages
+
+1. A pair HMM makes alignment columns hidden states and writes the alignment model as transitions plus emissions.
+2. Viterbi finds one best alignment; forward and forward--backward quantify total and local uncertainty.
+3. Global versus local behavior is controlled by state topology and boundary transitions.
+4. Model parameters are scientific assumptions about substitutions, indels, or sequencing error—not neutral defaults.
+
+# References
+
+- Durbin, R., Eddy, S. R., Krogh, A., & Mitchison, G. 1998. [*Biological Sequence Analysis: Probabilistic Models of Proteins and Nucleic Acids*](https://www.cambridge.org/core/books/biological-sequence-analysis/0B2F104C00544DBF850BC08B6C3C042A). Cambridge University Press. See the pair-HMM treatment of pairwise alignment.
+- Thorne, J. L., Kishino, H., & Felsenstein, J. 1991. [An evolutionary model for maximum likelihood alignment of DNA sequences](https://doi.org/10.1007/BF00134540). *Journal of Molecular Evolution* 33:114--124.
+- Holmes, I., & Durbin, R. 1998. [Dynamic programming alignment accuracy](https://doi.org/10.1006/jmbi.1998.2441). *Journal of Molecular Biology* 284:449--461.

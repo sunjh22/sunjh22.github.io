@@ -1,0 +1,117 @@
+---
+title: "Profile HMMs for Protein Families"
+subtitle: "Probabilistic family models for remote-homology search and alignment"
+description: "How profile hidden Markov models represent conserved protein-family positions, insertions, and deletions for sensitive sequence annotation."
+author: "Jiahong Sun"
+date: "2026-08-20"
+date-modified: "2026-08-20"
+categories: [Bioinformatics, Algorithms, Protein Families, Hidden Markov Models]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A profile HMM compresses a protein-family multiple alignment into position-specific probabilities for residues, insertions, and deletions, then uses dynamic programming to detect and align homologous domains.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Does this protein contain a domain from a known family, including a remotely related one? |
+| **Computational problem** | Compare a query sequence with a variable-length, position-specific family model |
+| **Method type** | Generative probabilistic model, profile search, and sequence alignment |
+| **Input** | Curated multiple-sequence alignment or an existing profile, plus query/database sequences |
+| **Output** | Domain hits, E-values, model-to-sequence alignments, and optional posterior confidences |
+| **Representative software** | HMMER `hmmbuild`, `hmmsearch`, `hmmscan`; Pfam profiles |
+| **Prerequisites** | [pairwise hidden Markov models](pairwise-hidden-markov-models.qmd), multiple alignment, [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd) |
+
+# The profile model
+
+For each consensus column $k$ of a family alignment, a canonical profile HMM includes three state types:
+
+```text
+... -> M_k -> M_(k+1) -> ...     M_k emits one residue at position k
+       |  \
+       D_k  I_k                     D_k emits no residue; I_k emits inserted residues
+```
+
+`M_k` has a position-specific emission distribution. A catalytic glycine-rich column might give high probability to glycine, whereas a solvent-exposed column can tolerate many amino acids. `D_k` allows a query to skip the consensus position; `I_k` allows residues between consensus positions. Transition probabilities encode which insertions and deletions are common in the family.
+
+This differs from a single consensus string. A consensus usually loses residue frequencies and gap patterns, but a profile keeps them. It also differs from a [pair HMM](pairwise-hidden-markov-models.qmd): the profile is a model learned from many family members and emits one query sequence, rather than jointly emitting two sequences.
+
+# Building and searching a profile
+
+```text
+trusted homologs -> multiple alignment -> choose consensus columns
+                 -> estimate emissions/transitions + priors -> profile HMM
+query/database   -> filter candidates -> Viterbi/Forward scoring -> calibrated hits and alignments
+```
+
+## Step 1: define a trustworthy family
+
+Profile quality begins with its seed alignment. Inputs should represent homologous domains with a defensible common architecture; unrelated regions, fragments, and poor alignments teach the model the wrong constraints. Alignment columns designated as consensus positions produce match states, while non-consensus material informs insertion states.
+
+## Step 2: estimate probabilities without overfitting
+
+Observed counts alone assign zero probability to amino acids absent from a small seed. Profile methods therefore use pseudocounts or mixture priors to share information between chemically similar residues. The log-odds score for matching residue $a$ at position $k$ compares the profile emission with a background distribution $q(a)$:
+
+$$
+s_k(a)=\log\frac{e_k(a)}{q(a)},
+$$
+
+where $e_k(a)$ is the position-specific emission probability. Conserved, surprising residues score strongly; common background residues contribute less.
+
+## Step 3: score a query and assess significance
+
+Viterbi gives the highest-scoring model-to-sequence path; Forward sums over paths and can support posterior alignment confidence. In a database search, a raw score alone is not enough: a long query or large database creates many opportunities for chance hits. HMMER reports statistical significance such as E-values after calibration and filtering. Interpret the E-value in the specific profile/database/search context, and inspect domain boundaries and competing annotations.
+
+# Minimal HMMER workflow
+
+Given a curated protein multiple alignment in Stockholm format:
+
+```bash
+hmmbuild family.hmm family.sto
+hmmsearch --tblout hits.tbl family.hmm proteins.faa
+```
+
+`hmmbuild` creates a profile HMM; `hmmsearch` searches that profile against a sequence database. To annotate one protein against a pressed profile library such as Pfam, use `hmmscan` instead. The HMMER tutorial documents the corresponding profile-build and search commands.
+
+# How to read results
+
+| Output concept | What it means | What to check |
+|---|---|---|
+| Sequence hit | A target sequence has evidence for the profile | Full-sequence E-value and biological plausibility |
+| Domain hit | An interval in a target aligns to the profile | Domain E-value, boundaries, overlap with other domains |
+| Model-to-sequence alignment | Proposed correspondence of profile states and residues | Conserved motifs and suspicious long insertions/deletions |
+| Posterior probability | Confidence in an alignment event under the model | Low-confidence regions, not only the best path |
+
+Profile HMMs often detect remote homologs missed by a pairwise query because they pool conservation across a family. They do not eliminate false positives: low-complexity sequence, coiled coils, compositional bias, partial proteins, and an overly broad model can create plausible-looking hits.
+
+# Practical limits and choices
+
+| Situation | Recommended response |
+|---|---|
+| A well-curated public family is available | Search its released profile database and retain version/provenance |
+| Building a new family model | Curate the seed alignment, remove nonhomologous flanks, and validate against known positives/negatives |
+| Multiple overlapping domain calls | Evaluate architecture, domain-level significance, and clan/family relationships rather than accepting every hit independently |
+| Very divergent or structurally complex family | Consider iterative search, structure-aware evidence, or a more expressive model |
+
+The model assumes that the family can be represented as a mostly linear sequence of consensus positions with independent emissions conditional on state. It does not directly model residue-residue contacts, domain order rearrangements, or the full phylogeny. Computationally, full dynamic programming is proportional to model length times sequence length, so high-throughput tools use fast filters before the exact profile calculation.
+
+# Connections
+
+Profile HMMs are a family-level extension of the hidden-state idea in [pairwise HMMs](pairwise-hidden-markov-models.qmd). Like [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), they search a query or database for homologous sequence, but a profile represents position-specific constraints collected from many homologs. Their domain alignments can seed functional annotation, guide multiple-sequence analyses, and define informative regions for downstream phylogenetic work.
+
+# Take-home Messages
+
+1. Match, insert, and delete states turn a multiple alignment into a variable-length probabilistic family model.
+2. Position-specific residue distributions are why profiles can identify remote homologs more sensitively than a single-sequence query.
+3. Pseudocounts, background models, and E-value calibration are necessary parts of a usable profile search.
+4. A significant hit is evidence for a modeled domain, not automatic proof of a protein's complete function.
+
+# References
+
+- Krogh, A., Brown, M., Mian, I. S., Sjölander, K., & Haussler, D. 1994. [Hidden Markov models in computational biology: Applications to protein modeling](https://doi.org/10.1006/jmbi.1994.1104). *Journal of Molecular Biology* 235:1501--1531.
+- Eddy, S. R. 1998. [Profile hidden Markov models](https://doi.org/10.1093/bioinformatics/14.9.755). *Bioinformatics* 14:755--763.
+- [HMMER documentation](https://www.ebi.ac.uk/Tools/hmmer/help) and [HMMER User's Guide tutorial](https://github.com/EddyRivasLab/hmmer/blob/master/documentation/userguide/tutorial.tex).
