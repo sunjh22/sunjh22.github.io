@@ -39,6 +39,8 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 
 - [Pairwise hidden Markov models](algorithms/pairwise-hidden-markov-models.qmd): probabilistic match/gap paths, Viterbi decoding, likelihoods, and alignment uncertainty
 - [Profile HMMs for protein families](algorithms/profile-hidden-markov-models-for-protein-families.qmd): position-specific family models for domain detection, alignment, and remote-homology search
+- [Viterbi and Forward--Backward algorithms](algorithms/viterbi-and-forward-backward-algorithms.qmd): best hidden-state paths, model likelihoods, and posterior state confidence
+- [Expectation--maximization](algorithms/expectation-maximization.qmd): iterative parameter learning from soft latent-state assignments, including Baum--Welch HMM training
 
 ## Graphs and optimization
 

@@ -1,0 +1,133 @@
+---
+title: "Viterbi and Forward--Backward Algorithms"
+subtitle: "Dynamic programming for decoding, likelihoods, and uncertainty in hidden-state sequence models"
+description: "How the Viterbi, Forward, and Backward recurrences extract best paths, total likelihoods, and posterior state probabilities from hidden Markov models."
+author: "Jiahong Sun"
+date: "2026-08-21"
+date-modified: "2026-08-21"
+categories: [Bioinformatics, Algorithms, Hidden Markov Models, Dynamic Programming]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Viterbi selects the single most probable hidden-state path, whereas Forward--Backward sums across all paths to compute likelihoods and posterior state uncertainty.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which latent biological state best explains each observation, and how certain is that assignment? |
+| **Computational problem** | Infer paths and probabilities in a hidden Markov model without enumerating exponentially many state sequences |
+| **Method type** | Dynamic programming for probabilistic sequence models |
+| **Input** | An HMM's start, transition, and emission probabilities plus an observed sequence |
+| **Output** | Best path, sequence likelihood, and/or posterior probability for each state and position |
+| **Bioinformatics uses** | Pairwise alignment, profile-HMM domain search, gene prediction, read-to-haplotype likelihoods |
+| **Prerequisites** | [pairwise hidden Markov models](pairwise-hidden-markov-models.qmd), conditional probability, logarithms |
+
+# One model, three inference questions
+
+An HMM contains hidden states $z_1,\ldots,z_T$ and observations $x_1,\ldots,x_T$. With transition probability $a_{ij}=P(z_t=j\mid z_{t-1}=i)$ and emission probability $e_j(x_t)=P(x_t\mid z_t=j)$, a particular path has probability
+
+$$
+P(x,z)=P(z_1)e_{z_1}(x_1)\prod_{t=2}^{T}a_{z_{t-1},z_t}e_{z_t}(x_t).
+$$
+
+There are $K^T$ possible paths for $K$ states, so directly evaluating all paths is infeasible for realistic sequences. The shared-prefix structure makes dynamic programming possible.
+
+| Question | Recurrence family | Result |
+|---|---|---|
+| Which one path is most probable? | Viterbi (max-product) | MAP state path and traceback |
+| How probable are the observations under the model? | Forward (sum-product) | Likelihood $P(x)$ |
+| How likely is state $j$ at position $t$? | Forward--Backward | Posterior $P(z_t=j\mid x)$ |
+
+The distinction matters: a Viterbi label is a decision, not a probability that competing explanations vanished.
+
+# The recurrences
+
+## Viterbi decoding: retain the best predecessor
+
+Let $\delta_t(j)$ be the probability of the most probable partial path that ends in state $j$ after observing $x_1,\ldots,x_t$. Then
+
+$$
+\delta_t(j)=e_j(x_t)\max_i\left[\delta_{t-1}(i)a_{ij}\right].
+$$
+
+Store the maximizing predecessor $\psi_t(j)$ for every cell. The largest final $\delta_T(j)$ identifies the final state; following the stored predecessors backward gives the path. In software, calculations usually use log probabilities, replacing products by sums and avoiding underflow.
+
+## Forward likelihood: add every compatible predecessor
+
+The Forward quantity $\alpha_t(j)$ is the probability of all partial paths ending in $j$:
+
+$$
+\alpha_t(j)=e_j(x_t)\sum_i\alpha_{t-1}(i)a_{ij}.
+$$
+
+Summing the final forward values gives $P(x)$. The recurrence looks like Viterbi, but replacing `max` with `sum` changes the scientific question: Forward rewards a model with many plausible paths, not only its best one.
+
+## Backward pass and posterior states
+
+The Backward value $\beta_t(i)$ is the probability of the remaining observations $x_{t+1:T}$ given state $i$ at time $t$:
+
+$$
+\beta_t(i)=\sum_j a_{ij}e_j(x_{t+1})\beta_{t+1}(j).
+$$
+
+Combining the two directions gives a normalized posterior:
+
+$$
+\gamma_t(j)=P(z_t=j\mid x)=\frac{\alpha_t(j)\beta_t(j)}{P(x)}.
+$$
+
+This quantity supports confidence tracks: for example, it can flag a weakly assigned profile-HMM alignment column even when Viterbi picks one state.
+
+# Toy example: best path versus uncertainty
+
+Imagine an HMM with states `C` (coding) and `N` (noncoding) that emits DNA bases. For the observations `A G`, suppose the model favors staying in the same state, while `A` slightly favors `N` and `G` slightly favors `C`.
+
+```text
+candidate paths:  N -> N     N -> C     C -> C     C -> N
+Viterbi output:   chooses the single largest of these four probabilities
+Forward output:   adds all four probabilities
+Posterior at G:   asks how much of that total ends in C versus N
+```
+
+If `N -> C` barely beats `N -> N`, Viterbi reports a state transition at the second base. A posterior near 0.5 for `C` at that base communicates the more useful conclusion: the transition is uncertain. Conversely, a posterior can be high even if the globally best path contains a locally surprising choice, because it aggregates support across nearby paths.
+
+# Bioinformatics applications
+
+| Setting | Hidden states | Typical inference |
+|---|---|---|
+| [Pairwise HMM](pairwise-hidden-markov-models.qmd) | match and gap states | Viterbi alignment; Forward likelihood; column posteriors |
+| [Profile HMM](profile-hidden-markov-models-for-protein-families.qmd) | match, insert, delete positions in a family | domain alignment and posterior confidence |
+| Gene finding | coding frame, intron, intergenic states | best gene structure and state posterior track |
+| Read likelihood models | alignment/error states | likelihood of a read under a candidate haplotype |
+
+For an HMM with $K$ states and a length-$T$ sequence, the basic algorithms cost $O(TK^2)$ time. Sparse transitions, bands, and filtering reduce practical work. Forward values can underflow on long sequences, so implementations use scaling factors or log-space `log-sum-exp`; mixing unscaled Forward values with scaled Backward values produces incorrect posteriors.
+
+# Practical interpretation and pitfalls
+
+| Pitfall | Consequence | Better practice |
+|---|---|---|
+| Reporting only a Viterbi path | Ambiguous positions look falsely certain | Use posterior probabilities when the local assignment matters |
+| Calling $P(x)$ a probability without context | Likelihoods are not normalized across different models or data lengths | Compare explicitly defined models or use calibrated scores |
+| Decoding each position by its largest posterior state | The resulting labels may violate legal HMM transitions | Use Viterbi for one valid global path; use posterior decoding as a confidence summary |
+| Ignoring model assumptions | A precise recurrence can still answer the wrong biological question | Inspect emissions, transitions, background model, and state topology |
+
+# Connections
+
+These recurrences provide the inference engine behind [pairwise HMMs](pairwise-hidden-markov-models.qmd) and [profile HMMs](profile-hidden-markov-models-for-protein-families.qmd). They also set up [expectation--maximization](expectation-maximization.qmd): Forward--Backward supplies expected hidden-state and transition counts, which are then used to re-estimate HMM parameters. Viterbi is analogous to a maximum-score dynamic program, while Forward--Backward is the probabilistic alternative that preserves uncertainty.
+
+# Take-home Messages
+
+1. Viterbi uses maximization to return one legal, most probable state path.
+2. Forward sums over paths to compute the observation likelihood; Backward supplies compatible suffix probabilities.
+3. Forward times Backward, normalized by the likelihood, yields posterior state confidence.
+4. Dynamic programming replaces exponential path enumeration with $O(TK^2)$ computation, but it cannot compensate for a poorly specified HMM.
+
+# References
+
+- Viterbi, A. J. 1967. [Error bounds for convolutional codes and an asymptotically optimum decoding algorithm](https://doi.org/10.1109/TIT.1967.1054010). *IEEE Transactions on Information Theory* 13:260--269.
+- Baum, L. E., Petrie, T., Soules, G., & Weiss, N. 1970. [A maximization technique occurring in the statistical analysis of probabilistic functions of Markov chains](https://doi.org/10.1214/aoms/1177697196). *Annals of Mathematical Statistics* 41:164--171.
+- Durbin, R., Eddy, S. R., Krogh, A., & Mitchison, G. 1998. [*Biological Sequence Analysis*](https://www.cambridge.org/core/books/biological-sequence-analysis/0B2F104C00544DBF850BC08B6C3C042A). Cambridge University Press.

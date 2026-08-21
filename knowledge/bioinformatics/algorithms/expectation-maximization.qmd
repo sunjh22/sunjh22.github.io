@@ -1,0 +1,133 @@
+---
+title: "Expectation--Maximization"
+subtitle: "Learning probabilistic model parameters when key variables are unobserved"
+description: "How expectation--maximization alternates between soft latent-variable assignments and parameter updates, with applications to hidden Markov models and mixture models in bioinformatics."
+author: "Jiahong Sun"
+date: "2026-08-21"
+date-modified: "2026-08-21"
+categories: [Bioinformatics, Algorithms, Statistical Inference, Hidden Markov Models]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Expectation--maximization (EM) fits a model with unobserved variables by repeatedly estimating their probabilistic assignments and optimizing parameters against those weighted assignments.
+
+| Item | Description |
+|---|---|
+| **Biological question** | What hidden classes, states, or evolutionary/error parameters best explain incomplete biological observations? |
+| **Computational problem** | Maximize likelihood when direct optimization is obstructed by unobserved assignments |
+| **Method type** | Iterative maximum-likelihood estimation with latent variables |
+| **Input** | Observed data, a probabilistic generative model, and initialized parameters |
+| **Output** | Locally optimized parameter estimates plus responsibilities or expected latent counts |
+| **Bioinformatics uses** | HMM training, mixture models, transcript/isoform abundance estimation, genotype and error models |
+| **Prerequisites** | Likelihood, conditional probability, [Viterbi and Forward--Backward algorithms](viterbi-and-forward-backward-algorithms.qmd) |
+
+# Why missing assignments complicate likelihood
+
+Suppose observations $X$ arise with unobserved variables $Z$: a read's source transcript, a sample's mixture component, or an HMM's state path. If $Z$ were known, estimating parameters $\theta$ could be straightforward using counts. But the observed-data likelihood
+
+$$
+\ell(\theta)=\log P(X\mid\theta)=\log\sum_Z P(X,Z\mid\theta)
+$$
+
+contains a log of a sum over many possible hidden explanations. Assigning every observation once to its most likely class discards uncertainty and can lock the procedure into early mistakes. EM uses *soft* assignments instead.
+
+# The EM cycle
+
+Starting from parameters $\theta^{(r)}$, EM alternates two steps:
+
+## E-step: quantify hidden-variable uncertainty
+
+Compute the posterior distribution of latent variables under the current parameters,
+
+$$
+P(Z\mid X,\theta^{(r)}),
+$$
+
+and its expected complete-data log likelihood:
+
+$$
+Q(\theta\mid\theta^{(r)})=
+\mathbb{E}_{Z\mid X,\theta^{(r)}}[\log P(X,Z\mid\theta)].
+$$
+
+The expectation yields fractional counts. An ambiguously assigned read might contribute 0.7 to one transcript and 0.3 to another rather than being counted once in only one place.
+
+## M-step: update the parameters
+
+Choose parameters that maximize that weighted complete-data objective:
+
+$$
+\theta^{(r+1)}=\arg\max_\theta Q(\theta\mid\theta^{(r)}).
+$$
+
+For many models this is a normalized-count update; for others it requires a numerical optimizer. Repeating E and M steps does not decrease the observed-data likelihood. It converges to a stationary point, which can be a local rather than global maximum.
+
+```text
+initialize parameters
+        -> E-step: soft assignments / expected counts
+        -> M-step: parameters fitted to those counts
+        -> test convergence
+        -> repeat
+```
+
+# Toy example: a two-component expression mixture
+
+Consider measured expression values $x_1,\ldots,x_n$ from two latent groups, each modeled by a Gaussian. The hidden variable $z_i$ says which group produced sample $i$.
+
+1. Initialize two means, for example $\mu_1=2$ and $\mu_2=8$.
+2. **E-step:** calculate each responsibility $r_{ik}=P(z_i=k\mid x_i,\theta)$; a sample at 5 may be split almost equally between the groups.
+3. **M-step:** update each mean with the responsibility-weighted average,
+
+$$
+\mu_k\leftarrow\frac{\sum_i r_{ik}x_i}{\sum_i r_{ik}}.
+$$
+
+4. Update mixture weights and variances similarly, then repeat.
+
+Hard k-means-like assignments are a limiting special case, but EM preserves uncertainty. This is valuable when biological populations overlap or measurements are noisy.
+
+# Baum--Welch: EM for hidden Markov models
+
+For an HMM, the latent variable is an entire state path. Enumerating paths is unnecessary: [Forward--Backward](viterbi-and-forward-backward-algorithms.qmd) computes the needed expected counts efficiently.
+
+| E-step quantity | Meaning | M-step use |
+|---|---|---|
+| $\gamma_t(i)$ | posterior probability of state $i$ at position $t$ | expected state occupancy and emissions |
+| $\xi_t(i,j)$ | posterior probability of transition $i\to j$ at $t$ | expected transition count |
+| expected emissions | posterior-weighted symbols emitted by each state | emission-probability update |
+
+The Baum--Welch algorithm normalizes these expected counts to update start, transition, and emission probabilities. This can train a gene-finding HMM or refine a sequence model, but unsupervised fitting does not guarantee that learned states have the intended biological meaning.
+
+# Convergence, validation, and failure modes
+
+| Issue | Why it matters | Practical response |
+|---|---|---|
+| Local optima | EM improves from its initialization, not necessarily to the global solution | Use several scientifically plausible starts and compare held-out likelihood/interpretability |
+| Degenerate mixture components | A Gaussian component can collapse onto one point with near-zero variance | Constrain variances, use priors/regularization, and check component sizes |
+| Non-identifiability | Different parameter labels or combinations can fit equally well | Treat labels consistently; report uncertainty and biological validation |
+| Overfitting | More components/states can always improve training likelihood | Select model complexity with held-out data, information criteria, or prior knowledge |
+| Premature convergence | A small parameter change may still hide poor fit | Monitor likelihood, parameter changes, and application-specific diagnostics |
+
+Likelihood increase is an optimization property, not proof of biological correctness. Batch effects, composition bias, missing covariates, and a misspecified error distribution can all lead EM to a stable but misleading explanation.
+
+# Connections
+
+EM is a general latent-variable framework. In [profile HMMs](profile-hidden-markov-models-for-protein-families.qmd) and [pairwise HMMs](pairwise-hidden-markov-models.qmd), it can estimate probabilities from sequences or alignments; Forward--Backward supplies the E-step for HMMs. It differs from [Viterbi and Forward--Backward algorithms](viterbi-and-forward-backward-algorithms.qmd): those algorithms infer hidden states for fixed parameters, while EM uses such inference inside parameter learning. The following Bayesian-inference topics replace point estimates with distributions over parameters when that added uncertainty matters.
+
+# Take-home Messages
+
+1. EM addresses latent variables by alternating posterior-weighted expected counts with parameter updates.
+2. The E-step is inference under current parameters; the M-step is optimization given that inferred uncertainty.
+3. EM monotonically improves (or preserves) observed-data likelihood, but it can converge to a poor local or biologically implausible solution.
+4. Baum--Welch is EM for HMMs, powered by Forward--Backward expected state and transition counts.
+
+# References
+
+- Dempster, A. P., Laird, N. M., & Rubin, D. B. 1977. [Maximum likelihood from incomplete data via the EM algorithm](https://doi.org/10.1111/j.2517-6161.1977.tb01600.x). *Journal of the Royal Statistical Society: Series B* 39:1--38.
+- Baum, L. E., Petrie, T., Soules, G., & Weiss, N. 1970. [A maximization technique occurring in the statistical analysis of probabilistic functions of Markov chains](https://doi.org/10.1214/aoms/1177697196). *Annals of Mathematical Statistics* 41:164--171.
+- McLachlan, G. J., & Krishnan, T. 2008. [*The EM Algorithm and Extensions*](https://doi.org/10.1002/9780470191613). Wiley.
