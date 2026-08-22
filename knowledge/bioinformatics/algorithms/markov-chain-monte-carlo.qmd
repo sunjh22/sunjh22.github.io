@@ -1,0 +1,126 @@
+---
+title: "Markov Chain Monte Carlo"
+subtitle: "Sampling difficult posterior distributions in bioinformatics"
+description: "How Markov chain Monte Carlo approximates posterior distributions with dependent samples, and how to diagnose whether biological inferences are reliable."
+author: "Jiahong Sun"
+date: "2026-08-22"
+date-modified: "2026-08-22"
+categories: [Bioinformatics, Algorithms, Statistical Inference, Bayesian Methods]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Markov chain Monte Carlo (MCMC) constructs a dependent random walk whose long-run samples represent a posterior distribution that is too complex to calculate directly.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which parameter values, evolutionary histories, or latent assignments remain plausible after accounting for uncertainty? |
+| **Computational problem** | Approximate integrals and summaries of a high-dimensional posterior distribution |
+| **Method type** | Stochastic sampling algorithm |
+| **Input** | An unnormalized posterior, proposal mechanism, initial state, and run length |
+| **Output** | Correlated posterior samples and estimates such as intervals, probabilities, and expectations |
+| **Bioinformatics uses** | Bayesian phylogenetics, demographic inference, haplotype inference, and hierarchical count models |
+| **Prerequisites** | [Bayesian inference](bayesian-inference-in-bioinformatics.qmd), probability, likelihood |
+
+# Why sample instead of integrate?
+
+Bayesian inference often needs an expectation under a posterior distribution $p(\theta\mid D)$, such as a mean branch length, probability of a clade, or credible interval for an allele frequency. For a function $f$,
+
+$$
+\mathbb{E}[f(\theta)\mid D]=\int f(\theta)p(\theta\mid D)\,d\theta.
+$$
+
+That integral becomes intractable when $\theta$ includes many continuous parameters, discrete latent variables, or tree topologies. MCMC replaces it with an average over samples $\theta^{(1)},\ldots,\theta^{(N)}$:
+
+$$
+\mathbb{E}[f(\theta)\mid D]\approx\frac{1}{N}\sum_{s=1}^{N}f(\theta^{(s)}).
+$$
+
+Unlike independent Monte Carlo draws, successive MCMC samples are deliberately correlated. A **Markov chain** proposes the next state using only the current state, and is designed so that its stationary distribution is the target posterior. The target is often known only up to a constant because the difficult evidence $p(D)$ cancels in probability ratios.
+
+# Metropolis--Hastings: accept or reject a proposal
+
+At state $\theta$, propose $\theta'\sim q(\theta'\mid\theta)$. Metropolis--Hastings accepts it with probability
+
+$$
+\alpha(\theta,\theta')=\min\left(1,
+\frac{p(D\mid\theta')p(\theta')q(\theta\mid\theta')}
+{p(D\mid\theta)p(\theta)q(\theta'\mid\theta)}\right).
+$$
+
+If rejected, the chain repeats $\theta$. This accept/reject rule corrects for the proposal distribution and makes the desired posterior stationary under suitable conditions.
+
+```text
+initialize theta
+      -> propose theta'
+      -> compute posterior ratio and proposal correction
+      -> accept with probability alpha; otherwise retain theta
+      -> record state; repeat; diagnose mixing and convergence
+```
+
+For a symmetric random-walk proposal, $q(\theta'\mid\theta)=q(\theta\mid\theta')$, so the proposal terms cancel. Proposals that are too small accept frequently but move slowly; proposals that are too large reject frequently. Good MCMC design balances movement with acceptance rather than targeting acceptance alone.
+
+# Toy example: estimating an allele frequency
+
+Suppose $x$ alternate alleles are observed among $n$ independent chromosomes, with allele frequency $p$. A binomial likelihood and a Beta$(a,b)$ prior give
+
+$$
+p\mid x,n\sim\operatorname{Beta}(a+x,b+n-x),
+$$
+
+which is available exactly--so MCMC is unnecessary here. It is nevertheless a useful check: a Metropolis chain proposing nearby values of $p$ should reproduce the analytic posterior mean and interval. In a realistic extension with genotype uncertainty, contamination, allele-specific bias, and several populations, direct calculation may cease to be practical; the same model can then be sampled.
+
+The lesson is not to use MCMC whenever a posterior exists. Use exact calculations, conjugate models, dynamic programming, or deterministic approximations when they answer the question reliably and more efficiently.
+
+# Sampling phylogenetic trees
+
+In Bayesian phylogenetics, a state can include a tree topology, branch lengths, substitution-model parameters, clock rates, and demographic parameters. A proposal might rescale a branch, swap a subtree, or change a clock rate. Its posterior score combines the alignment likelihood with priors. Sampling produces a distribution over trees rather than a single best tree; a clade's posterior probability is the fraction of retained sampled trees containing it.
+
+Tree space illustrates why diagnostics matter. Different topological regions can be separated by low-probability barriers. A single chain may remain in one region and report a narrow but misleading summary. Independent chains with dispersed starts, trace plots, and topology-aware summaries help reveal this failure.
+
+# Diagnostics: when samples are not enough
+
+| Diagnostic | What it checks | Warning sign |
+|---|---|---|
+| Trace plot | Whether chains explore a stable region | Drift, abrupt regime changes, or chains at different levels |
+| Multiple chains | Whether dispersed starts reach compatible distributions | Chains disagree after an apparently long run |
+| Effective sample size (ESS) | Independent-sample-equivalent information after autocorrelation | A long chain with low ESS for key parameters |
+| Split $\hat R$ | Agreement of within- and between-chain variation | Value meaningfully above 1 for a scalar summary |
+| Autocorrelation | How strongly each draw depends on nearby draws | Slow decay; estimates change with retained spacing |
+| Posterior-predictive checks | Whether fitted models reproduce relevant data features | Simulations systematically differ from observations |
+
+Discarding an initial **warm-up** or burn-in can remove obvious dependence on the initial state, but it cannot repair a chain that has not mixed. Thinning usually wastes draws; extending, improving parameterization, or redesigning proposals is generally more useful when storage is not the constraint.
+
+# Practical pitfalls
+
+| Pitfall | Consequence | Better practice |
+|---|---|---|
+| Treating iterations as independent samples | Intervals are too narrow and Monte Carlo error is understated | Use ESS and autocorrelation for every important estimand |
+| One chain, one seed | A local region can look convincing | Run independent chains from overdispersed starts |
+| Monitoring only easy parameters | A difficult tree or latent variable can remain unconverged | Diagnose the scientific quantities used for conclusions |
+| Poorly scaled or correlated parameters | Random-walk proposals mix extremely slowly | Reparameterize, block updates, or use gradient-informed samplers where valid |
+| Ignoring model adequacy | Well-mixed samples can represent the wrong posterior | Check priors, likelihood assumptions, and posterior predictions |
+
+MCMC convergence is never proved merely by a finite diagnostic. Diagnostics supply evidence that approximation error is acceptably small for the stated biological conclusion.
+
+# Connections
+
+MCMC is an approximation engine for [Bayesian inference](bayesian-inference-in-bioinformatics.qmd), not a replacement for specifying the prior or likelihood. It contrasts with [expectation--maximization](expectation-maximization.qmd), which optimizes a point estimate rather than sampling a full parameter distribution. In sequence models, [Viterbi and Forward--Backward algorithms](viterbi-and-forward-backward-algorithms.qmd) can exactly sum or optimize over certain latent paths; MCMC becomes useful when the model is too coupled or high-dimensional for those recurrences.
+
+# Take-home Messages
+
+1. MCMC estimates posterior quantities by averaging correlated samples from a chain whose stationary distribution is the posterior.
+2. Metropolis--Hastings needs only relative posterior density, so intractable normalizing constants often cancel.
+3. Trace plots, multiple chains, ESS, and model checks are requirements for trustworthy inference, not optional decoration.
+4. A converged chain answers only the model it targets; prior and likelihood assumptions remain central scientific choices.
+
+# References
+
+- Metropolis, N. et al. 1953. [Equation of state calculations by fast computing machines](https://doi.org/10.1063/1.1699114). *The Journal of Chemical Physics* 21:1087--1092.
+- Hastings, W. K. 1970. [Monte Carlo sampling methods using Markov chains and their applications](https://doi.org/10.1093/biomet/57.1.97). *Biometrika* 57:97--109.
+- Drummond, A. J., & Rambaut, A. 2007. [BEAST: Bayesian evolutionary analysis by sampling trees](https://doi.org/10.1186/1471-2148-7-214). *BMC Evolutionary Biology* 7:214.
+- [BEAST 2 tutorials](https://www.beast2.org/tutorials/): official workflows and diagnostics for Bayesian phylogenetic analyses.

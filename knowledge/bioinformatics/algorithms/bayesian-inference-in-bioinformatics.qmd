@@ -1,0 +1,120 @@
+---
+title: "Bayesian Inference in Bioinformatics"
+subtitle: "Combining biological prior knowledge with uncertain observations"
+description: "How Bayesian inference turns prior assumptions and data likelihoods into posterior distributions for biological parameters, hypotheses, and latent states."
+author: "Jiahong Sun"
+date: "2026-08-22"
+date-modified: "2026-08-22"
+categories: [Bioinformatics, Algorithms, Statistical Inference, Bayesian Methods]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Bayesian inference combines a model of how biological data arise with explicit prior assumptions to quantify what remains plausible after observing the data.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which variants, lineages, expression levels, or evolutionary parameters are supported, and how uncertain are they? |
+| **Computational problem** | Update uncertainty about unobserved quantities using noisy, incomplete observations |
+| **Method type** | Probabilistic inference |
+| **Input** | Observations, likelihood model, parameter prior, and competing hypotheses or latent variables |
+| **Output** | Posterior distributions, credible intervals, posterior probabilities, or posterior-predictive checks |
+| **Bioinformatics uses** | Variant calling, phylogenetics, expression quantification, population genetics, and differential analysis |
+| **Prerequisites** | Conditional probability, likelihood, [expectation--maximization](expectation-maximization.qmd) |
+
+# From a biological model to a posterior
+
+Let $D$ be observed data and $\theta$ an unknown quantity: an allele frequency, a phylogenetic tree, an error rate, or a transcript abundance. Bayes' rule is
+
+$$
+p(\theta\mid D)=\frac{p(D\mid\theta)p(\theta)}{p(D)}.
+$$
+
+The **likelihood** $p(D\mid\theta)$ says how compatible the data are with a proposed value. The **prior** $p(\theta)$ records assumptions before the current data: for example, plausible sequencing-error rates or a population-genetic distribution of allele frequencies. Their product, normalized over all possible $\theta$, is the **posterior**. The denominator
+
+$$
+p(D)=\int p(D\mid\theta)p(\theta)\,d\theta
+$$
+
+is the marginal likelihood (or evidence) for continuous parameters; it ensures that the posterior integrates to one.
+
+```text
+prior biological assumptions + observation/error model + data
+                         -> posterior uncertainty about theta
+                         -> decisions, intervals, predictions, or model comparison
+```
+
+The posterior is not an automatic guarantee of objectivity. It is conditional on the likelihood, prior, and data-preparation choices. Bayesian analysis makes these commitments visible, which makes sensitivity analysis possible.
+
+# Toy example: is a site variant?
+
+At a genomic position, compare two hypotheses: $H_0$ (homozygous reference) and $H_1$ (a heterozygous variant). Suppose a high-quality read base supports the alternate allele. The posterior odds satisfy
+
+$$
+\frac{P(H_1\mid D)}{P(H_0\mid D)}=
+\frac{P(D\mid H_1)}{P(D\mid H_0)}\times\frac{P(H_1)}{P(H_0)}.
+$$
+
+The first factor is the **Bayes factor** for this comparison; the second is the prior odds. If the read has a base-call error probability $e$, a simplified model might assign $P(D\mid H_0)=e/3$ and $P(D\mid H_1)\approx 1/2$. Multiple independent reads multiply likelihood contributions, while shared artifacts (strand bias, mapping ambiguity, PCR duplicates) violate that independence and need a richer error model.
+
+This example shows why a posterior variant probability is not merely a read count. It depends on base qualities, mapping information, genotype prior, contamination assumptions, and the candidate allele set. It also differs from a frequentist $p$-value: $P(H_1\mid D)$ is a probability about the hypothesis *under the specified model*, whereas a $p$-value is a tail probability calculated under a null sampling model.
+
+# What Bayesian outputs mean
+
+| Output | Meaning | Common misuse to avoid |
+|---|---|---|
+| Posterior mean or median | A point summary of the posterior | Hiding skewness or multimodality behind one number |
+| 95% credible interval | An interval containing 95% posterior probability under the model | Calling it model-free coverage |
+| Posterior probability | Probability of an event or hypothesis conditional on the model | Treating it as a universal truth score |
+| Posterior predictive distribution | Distribution of future/replicated data implied by the fitted model | Skipping checks that the model can reproduce salient data patterns |
+| Bayes factor | Relative evidence for two models through their marginal likelihoods | Using it without checking prior sensitivity |
+
+Posterior predictive checking is especially useful in biology: simulate replicated reads, allele counts, or sequences from the fitted model and compare summaries with the observed data. Systematic disagreement can reveal an unmodeled batch effect, overdispersion, reference bias, or an implausible evolutionary model.
+
+# Typical bioinformatics workflows
+
+## Variant and genotype inference
+
+Read observations are evaluated under candidate genotypes using base and mapping quality information. Priors can incorporate allele frequencies or de novo mutation rates. The resulting genotype posterior supports calls and calibrated uncertainty; it does not remove systematic sequencing or alignment errors. Pair-HMM read likelihoods provide one likelihood component in modern variant callers, linking this topic to [pairwise hidden Markov models](pairwise-hidden-markov-models.qmd).
+
+## Phylogenetics and evolutionary parameters
+
+A substitution model supplies the likelihood of an alignment under a tree, while priors may cover trees, branch lengths, molecular-clock rates, and population-size histories. The desired posterior is enormous and rarely has a closed form, so it is often approximated with [Markov chain Monte Carlo](markov-chain-monte-carlo.qmd). A high posterior clade support is conditional on the alignment and evolutionary model; it does not validate an incorrect alignment or substitution process.
+
+## Hierarchical models for biological replicates
+
+Hierarchical priors let related samples share information while retaining sample-specific variation. For example, a model may partially pool expression effects across genes or conditions, reducing unstable estimates when counts are sparse. The degree of pooling is itself an assumption that should be checked against the study design.
+
+# Practical checks and failure modes
+
+| Risk | Why it matters | Good practice |
+|---|---|---|
+| Prior dominates sparse data | Results can reflect assumptions more than observations | Show prior and posterior together; repeat with defensible alternative priors |
+| Likelihood misspecification | A precise posterior can be precisely wrong | Model error, dependence, and bias; use posterior-predictive checks |
+| Confusing posterior with certainty | Every probability is conditional on a model and candidate space | State assumptions, data filters, and excluded hypotheses |
+| Summarizing only a point estimate | Important uncertainty or multiple explanations can disappear | Report intervals, posterior probabilities, and relevant joint structure |
+| Computation has not converged | Approximate samples may not represent the posterior | Diagnose chains and effective sample sizes when using MCMC |
+
+Bayesian inference also needs an identifiable model. With insufficient information, a broad or multimodal posterior is an honest result rather than a failure to be optimized away.
+
+# Connections
+
+[Expectation--maximization](expectation-maximization.qmd) commonly returns a maximum-likelihood or maximum-a-posteriori point estimate. Bayesian inference instead retains a distribution over $\theta$, which can propagate parameter uncertainty to downstream quantities. In hidden-state models, [Viterbi and Forward--Backward algorithms](viterbi-and-forward-backward-algorithms.qmd) calculate likelihoods and state posteriors for fixed parameters; Bayesian models can additionally put priors on those parameters. When exact integration is impossible, [Markov chain Monte Carlo](markov-chain-monte-carlo.qmd) is a central approximation strategy.
+
+# Take-home Messages
+
+1. Bayesian inference multiplies a likelihood by an explicit prior to obtain a posterior distribution.
+2. Posterior probabilities and credible intervals are conditional on the data model, prior, and candidate space.
+3. Posterior-predictive checks and prior-sensitivity analyses test whether conclusions depend on fragile assumptions.
+4. Biological uncertainty can be propagated rather than collapsed to one estimate, but only if the likelihood and computation are credible.
+
+# References
+
+- Bayes, T. 1763. [An essay towards solving a problem in the doctrine of chances](https://doi.org/10.1098/rstl.1763.0053). *Philosophical Transactions of the Royal Society of London* 53:370--418.
+- Felsenstein, J. 1981. [Evolutionary trees from DNA sequences: a maximum likelihood approach](https://doi.org/10.1016/0022-5193(81)90004-1). *Journal of Molecular Evolution* 17:368--376.
+- Gelman, A. et al. 2020. [Bayesian workflow](https://doi.org/10.48550/arXiv.2011.01808). *arXiv* 2011.01808.
+- [BEAST 2 documentation](https://www.beast2.org/): official documentation for Bayesian evolutionary analysis by sampling trees.

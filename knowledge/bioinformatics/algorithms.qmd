@@ -42,13 +42,18 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 - [Viterbi and Forward--Backward algorithms](algorithms/viterbi-and-forward-backward-algorithms.qmd): best hidden-state paths, model likelihoods, and posterior state confidence
 - [Expectation--maximization](algorithms/expectation-maximization.qmd): iterative parameter learning from soft latent-state assignments, including Baum--Welch HMM training
 
+### Bayesian posterior inference
+
+- [Bayesian inference in bioinformatics](algorithms/bayesian-inference-in-bioinformatics.qmd): priors, likelihoods, posterior uncertainty, predictive checks, and biological model assumptions
+- [Markov chain Monte Carlo](algorithms/markov-chain-monte-carlo.qmd): posterior sampling, Metropolis--Hastings, phylogenetic tree sampling, and convergence diagnostics
+
 ## Graphs and optimization
 
 Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.
 
 ## Sequence and probabilistic models
 
-Planned: hidden Markov models, MCMC, and Bayesian inference.
+Planned: further probabilistic sequence models and approximate-inference methods.
 
 ### Pairwise sequence alignment
 
