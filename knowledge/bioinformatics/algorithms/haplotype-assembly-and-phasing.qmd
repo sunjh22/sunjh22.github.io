@@ -1,0 +1,128 @@
+---
+title: "Haplotype Assembly and Phasing"
+subtitle: "Assigning alleles to the chromosome copies that carry them"
+description: "How read-backed haplotype assembly and statistical phasing recover which heterozygous alleles occur together on the same chromosome."
+author: "Jiahong Sun"
+date: "2026-08-23"
+date-modified: "2026-08-23"
+categories: [Bioinformatics, Algorithms, Genomics, Haplotype Phasing]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Phasing resolves a diploid genotype list into chromosome-length allele sequences by using read links, family transmission, and population haplotype patterns.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which heterozygous alleles are on the same homologous chromosome? |
+| **Computational problem** | Partition or order alleles across many heterozygous sites despite errors, gaps, and ambiguous reads |
+| **Method type** | Graph optimization, dynamic programming, and probabilistic inference |
+| **Input** | Heterozygous variants plus reads, linked reads, long reads, pedigrees, or reference-panel genotypes |
+| **Output** | Phased genotypes such as `0|1`, phase sets (`PS`), haplotype blocks, or chromosome-scale haplotypes |
+| **Prerequisites** | [Variant-calling likelihood models](variant-calling-likelihood-models.qmd), [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd), [Bayesian inference](bayesian-inference-in-bioinformatics.qmd) |
+
+# Genotypes are not haplotypes
+
+At two biallelic heterozygous sites, unphased genotypes `0/1` and `0/1` allow two biologically different configurations:
+
+```text
+cis:        haplotype 1: 0 - 0       trans:      haplotype 1: 0 - 1
+            haplotype 2: 1 - 1                   haplotype 2: 1 - 0
+```
+
+The slash means that both alleles are present but their chromosome assignment is unknown; the bar in `0|1` records an inferred assignment. This distinction matters when two pathogenic alleles might be on the same copy (*cis*) or opposite copies (*trans*), when compound heterozygosity is assessed, and when allele-specific expression or imputation is analyzed.
+
+A phase assignment is identifiable only where data connect sites. A short-read fragment can link nearby variants it spans, while long reads or linked-read barcodes can form longer blocks. Population and pedigree information can bridge gaps but adds model assumptions. A valid output therefore includes both phase orientation and the block or confidence to which it applies.
+
+# Read-backed haplotype assembly
+
+## The fragment matrix
+
+After variant calling, represent every read (or read pair) as a row and every heterozygous variant as a column. Entries are the allele observed by that fragment; a dash means the fragment does not cover the site.
+
+```text
+              site 1   site 2   site 3   site 4
+fragment A       0        0        -        -
+fragment B       -        0        1        -
+fragment C       -        -        1        1
+fragment D       1        1        -        -
+```
+
+Rows A--C support one haplotype `0-0-1-1`; row D supports its complement at the two sites it covers. A read error or a wrong alignment produces a conflicting entry, so algorithms need a global rule rather than trusting each link independently.
+
+## Minimum-error correction and graphs
+
+The classic **minimum-error correction** (MEC) formulation seeks two haplotypes whose predicted alleles require the fewest changes to the observed fragment matrix. Equivalently, many read-based methods form a weighted graph in which variant alleles or sites are connected when reads observe them together. A cut or partition separates the two haplotypes while minimizing disagreement with high-confidence links.
+
+In a weighted version, let $w_{ij}^{\mathrm{same}}$ and $w_{ij}^{\mathrm{diff}}$ summarize evidence that sites $i$ and $j$ have the same or opposite phase. For phase labels $x_i\in\{0,1\}$, a conceptual objective is
+
+$$
+\max_x\sum_{i<j}
+\begin{cases}
+w_{ij}^{\mathrm{same}}, & x_i=x_j,\\
+w_{ij}^{\mathrm{diff}}, & x_i\ne x_j.
+\end{cases}
+$$
+
+This captures the tension in the data but is difficult to optimize exactly at genome scale. Practical tools use graph decomposition, heuristics, likelihood scoring, and confidence thresholds. HapCUT2, for example, uses an assembly-based optimization to produce blocks from sequencing fragments.
+
+# Statistical and family phasing
+
+Read links are local. Statistical phasing uses the fact that nearby alleles are correlated through shared ancestry: a new sample haplotype is modeled as a mosaic of haplotypes in a reference panel. Hidden Markov models can efficiently represent the copying state along a chromosome, making very long-range phase possible even when one read never spans the gap.
+
+Pedigree phasing adds transmission constraints. A parent and child reveal which parental haplotype was inherited, subject to recombination and genotype error. Combining population, pedigree, and read evidence is powerful, but the sources have different failure modes: population phasing can be poor for underrepresented ancestry or rare variants, and read phasing can be broken by mapping error or sparse coverage.
+
+| Evidence source | Main strength | Main limitation |
+|---|---|---|
+| Short paired-end reads | Accurate local allele links | Blocks usually end at unspanned gaps |
+| Long reads / linked reads | Longer physical links | Per-read error and coverage can create switch errors |
+| Trio or pedigree | Transmission gives strong long-range constraints | Requires related, correctly identified samples |
+| Reference panel | Chromosome-scale phase at common variants | Depends on ancestry match and panel representation |
+
+# What to measure: block length and switch error
+
+Phasing quality is not just the fraction of correctly oriented alleles. The labels of the two haplotypes can be globally swapped without changing the biological answer; the important local error is a **switch error**, where the assignment changes incorrectly between adjacent heterozygous sites. Reported phase sets should also be assessed by their span, number of phased variants, and the fraction of variants phased.
+
+```text
+truth:      0|1  0|1  1|0  1|0
+prediction: 0|1  0|1  0|1  0|1
+                           ^ switch error begins here
+```
+
+A single erroneous bridge can flip the remainder of a long block, so a visually impressive block length is not sufficient evidence of accuracy. Benchmark with truth data when possible, keep read-backed phase-set boundaries, and avoid claiming chromosome-scale phase from disconnected blocks.
+
+# Practical workflow and pitfalls
+
+1. Generate high-quality, preferably jointly called heterozygous variants; erroneous sites become misleading graph vertices.
+2. Use [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd) outputs with duplicates, low mapping-quality reads, and known problematic regions handled appropriately.
+3. Choose a phaser suited to the evidence: read-backed assembly for local physical phase, a reference-panel HMM for statistical phase, or a combined approach when justified.
+4. Preserve `PS` and phasing-quality fields in the VCF, then evaluate switch error and block statistics rather than converting all calls to hard phased genotypes without provenance.
+
+| Pitfall | Consequence | Mitigation |
+|---|---|---|
+| Incorrect heterozygous variant | Creates a false link or conflict | Filter genotype likelihoods and inspect suspect loci |
+| Multi-mapping or chimeric read | Connects distant, unrelated alleles | Require appropriate MAPQ and supplementary-alignment handling |
+| Assuming every `|` is chromosome-wide phase | Overstates what the data prove | Respect phase sets and confidence fields |
+| Reference-panel mismatch | Biased or inaccurate statistical phase | Use suitable panels; quantify accuracy by ancestry and allele frequency |
+
+# Connections
+
+Phasing starts from genotype uncertainty produced by [variant-calling likelihood models](variant-calling-likelihood-models.qmd). Its fragment matrix depends on trustworthy placements from [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd), while long-read alignment benefits from [minimizers and sequence sketching](minimizers-and-sequence-sketching.qmd). Statistical and pedigree phasing make the same kind of explicit probabilistic assumptions discussed in [Bayesian inference](bayesian-inference-in-bioinformatics.qmd); haplotype-resolved calls then support compound-heterozygosity analysis, allele-specific analyses, and population-genetic inference.
+
+# Take-home Messages
+
+1. Unphased heterozygous genotypes do not specify which alleles share a chromosome; phasing supplies that missing relationship.
+2. Read-backed assembly uses fragments that span multiple variants, commonly through weighted graph or MEC-like optimization.
+3. Population and family information extend phase beyond physical read links, but their assumptions and reference representation affect accuracy.
+4. Phase blocks, switch errors, and provenance are essential: a phase symbol alone does not establish chromosome-wide truth.
+
+# References
+
+- Bansal, V., Bafna, V., & Halpern, A. L. 2008. [An integrative framework for SNP detection and genotype calling from population sequencing data](https://doi.org/10.1101/gr.078667.108). *Genome Research* 18:1633--1645.
+- Edge, P., Bafna, V., & Bansal, V. 2017. [HapCUT2: robust and accurate haplotype assembly for diverse sequencing technologies](https://doi.org/10.1101/gr.213462.116). *Genome Research* 27:801--812.
+- Delaneau, O., Zagury, J.-F., & Marchini, J. 2013. [Improved whole-chromosome phasing for disease and population genetic studies](https://doi.org/10.1038/nmeth.2307). *Nature Methods* 10:5--6.
+- [HapCUT2 documentation](https://github.com/vibansal/HapCUT2): official software repository and usage guidance.

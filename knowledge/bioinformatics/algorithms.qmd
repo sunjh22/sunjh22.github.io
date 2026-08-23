@@ -47,6 +47,11 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 - [Bayesian inference in bioinformatics](algorithms/bayesian-inference-in-bioinformatics.qmd): priors, likelihoods, posterior uncertainty, predictive checks, and biological model assumptions
 - [Markov chain Monte Carlo](algorithms/markov-chain-monte-carlo.qmd): posterior sampling, Metropolis--Hastings, phylogenetic tree sampling, and convergence diagnostics
 
+### Variant and haplotype inference
+
+- [Variant-calling likelihood models](algorithms/variant-calling-likelihood-models.qmd): read and haplotype likelihoods, genotype uncertainty, VCF confidence fields, and calibration
+- [Haplotype assembly and phasing](algorithms/haplotype-assembly-and-phasing.qmd): physical read links, graph partitioning, statistical phase, phase blocks, and switch errors
+
 ## Graphs and optimization
 
 Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.

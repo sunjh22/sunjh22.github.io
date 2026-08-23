@@ -1,0 +1,134 @@
+---
+title: "Variant-Calling Likelihood Models"
+subtitle: "From error-prone read evidence to genotype probabilities"
+description: "How variant callers turn aligned bases and their uncertainty into genotype likelihoods, posterior calls, and calibrated quality scores."
+author: "Jiahong Sun"
+date: "2026-08-23"
+date-modified: "2026-08-23"
+categories: [Bioinformatics, Algorithms, Variant Calling, Statistical Inference]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A variant-calling likelihood model asks how probable the observed reads would be under each possible genotype, then combines that evidence with priors and filters to report a call and its uncertainty.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Does a sample carry a non-reference allele at this genomic locus, and if so, which genotype? |
+| **Computational problem** | Compare many candidate genotypes while accounting for base errors, alignment uncertainty, and allele-specific read evidence |
+| **Method type** | Probabilistic generative model and Bayesian or likelihood-ratio inference |
+| **Input** | Aligned reads, base and mapping qualities, candidate alleles, and often population information |
+| **Output** | Genotype likelihoods (GL), genotype posterior/probability (GP), genotype quality (GQ), and VCF calls |
+| **Prerequisites** | [Mapping quality estimation](mapping-quality-estimation.qmd), [pairwise hidden Markov models](pairwise-hidden-markov-models.qmd), [Bayesian inference](bayesian-inference-in-bioinformatics.qmd) |
+
+# The inference problem behind a VCF record
+
+At a candidate site, the apparent bases in a BAM file are observations, not alleles. A reference-looking base can be wrong; an alternate-looking base can arise from a sequencing error, a misplacement in a repeat, a PCR artifact, contamination, or an alignment that mishandled an indel. The caller therefore compares hypotheses such as $g\in\{0/0,0/1,1/1\}$ rather than simply counting alternate bases.
+
+For observed read data $D=(d_1,\ldots,d_n)$, a basic genotype likelihood is
+
+$$
+P(D\mid g)=\prod_{i=1}^{n}P(d_i\mid g).
+$$
+
+The product is convenient, but its conditional-independence assumption is only approximate: duplicate reads, systematic cycle effects, and shared mapping ambiguity can make observations correlated. Good callers model important sources of error and use post-calling filters instead of treating this equation as a guarantee.
+
+# From per-read evidence to genotype likelihoods
+
+## A simple SNP model
+
+Suppose a read reports base $b_i$ with base-error probability $e_i=10^{-Q_i/10}$, where $Q_i$ is its Phred base quality. Under a haploid allele $a$,
+
+$$
+P(b_i\mid a)=
+\begin{cases}
+1-e_i, & b_i=a,\\
+e_i/3, & b_i\ne a.
+\end{cases}
+$$
+
+For a diploid genotype $g=(a_1,a_2)$, an idealized model averages the two homologous alleles:
+
+$$
+P(b_i\mid g)=\tfrac{1}{2}P(b_i\mid a_1)+\tfrac{1}{2}P(b_i\mid a_2).
+$$
+
+Thus alternate observations support $0/1$ or $1/1$ relative to $0/0$, but their contribution depends on quality. The VCF `PL` field commonly stores normalized, Phred-scaled likelihoods: $PL(g)=-10\log_{10}P(D\mid g)$, shifted so the best genotype has value zero. Lower `PL` means a more compatible genotype; it is not itself a posterior probability.
+
+## Mapping and alignment uncertainty
+
+Base quality alone is insufficient. A read with mapping quality $M$ has an approximate placement-error probability $10^{-M/10}$; variants within a duplicated region may have alternate-supporting reads that belong elsewhere. Indels and complex substitutions require likelihoods over alternative *haplotypes*, because the same read can align differently around nearby variants. In the GATK HaplotypeCaller design, locally assembled candidate haplotypes are compared with reads using a [pairwise HMM](pairwise-hidden-markov-models.qmd), which yields a read--haplotype likelihood before genotype likelihoods are calculated.
+
+```text
+aligned reads + qualities + candidate alleles/haplotypes
+       -> per-read likelihood under each allele or haplotype
+       -> likelihood for each sample genotype
+       -> prior/population model and posterior or likelihood-ratio score
+       -> VCF genotype, GQ, annotations, and filters
+```
+
+# Toy example: quality changes the conclusion
+
+Consider three independent reads at a biallelic site: two report `A` and one reports `G`. Treat `A` as reference, `G` as alternate, and all base errors as substitutions to one of the other three bases with equal probability.
+
+| Read | Base quality | Observation | Effect on inference |
+|---|---:|---|---|
+| 1 | Q30 | `A` | Strong evidence against `G/G` |
+| 2 | Q30 | `A` | More reference support |
+| 3 | Q30 | `G` | Strong alternate support; `A/G` can explain all three observations |
+
+With all three at Q30, the heterozygous model gives each observed base roughly probability $1/2$, whereas `A/A` must explain the `G` through a roughly $1/3000$ error. If the `G` instead has Q3, its error probability is about one half, so it provides little evidence for a variant. If it has Q30 but mapping quality 0, it also should not be trusted as uniquely locus-specific evidence. The algorithm’s job is to retain these distinctions rather than turn every observed `G` into an equal vote.
+
+# Priors, joint calling, and reported confidence
+
+Likelihoods are updated to posterior genotype probabilities through
+
+$$
+P(g\mid D) \propto P(D\mid g)P(g).
+$$
+
+The prior $P(g)$ can reflect allele frequency, ploidy, pedigree structure, or a mutation model. In joint calling, evidence from many samples helps estimate allele frequencies and distinguish a rare real allele from isolated noise. This can improve sparse or low-depth calls, but also makes assumptions about cohort composition and population structure consequential.
+
+Useful VCF quantities are easily confused:
+
+| Field/concept | Meaning | Do not infer |
+|---|---|---|
+| `GL`/`PL` | Relative compatibility of read data with sample genotypes | A calibrated posterior without a stated prior |
+| `GP` | Posterior genotype probabilities, when emitted | That all systematic errors were modeled |
+| `GQ` | Phred-scaled confidence that the chosen genotype is correct | Confidence in the site across all samples |
+| `QUAL` | Evidence that a site is non-reference under the caller's model | That the individual genotype is high quality |
+| `FILTER` | Whether site-level criteria passed | That a passing call is biologically true |
+
+# Failure modes and diagnostics
+
+| Failure mode | Why likelihoods are misled | Useful check or response |
+|---|---|---|
+| Reference or mapping bias | Alternate haplotypes map less well, especially near indels or divergence | Inspect allele balance, local realignment/assembly, and [MAPQ](mapping-quality-estimation.qmd) |
+| Correlated artifacts | PCR duplicates and strand/cycle effects violate independent-read reasoning | Mark duplicates; use strand, position, and orientation annotations |
+| Wrong ploidy or allele set | The true genotype is absent from the hypothesis space | Set contig/sample ploidy and include plausible alternate alleles |
+| Low depth | Several genotypes have similar likelihood | Retain likelihoods or no-call rather than overinterpreting a hard call |
+| Complex local variation | One reference alignment cannot represent competing haplotypes | Use haplotype-aware callers and inspect local assembly evidence |
+
+Calibration must be checked empirically. Compare calls with truth sets appropriate to the technology and genome context, stratify by variant type and difficult regions, and inspect precision--recall or calibration curves. A high score measures confidence under a particular model and benchmark definition; it does not repair an absent reference haplotype or systematic laboratory bias.
+
+# Connections
+
+Variant calling combines the placement uncertainty summarized by [mapping quality estimation](mapping-quality-estimation.qmd) with base-level likelihoods. Haplotype-aware callers use [pairwise hidden Markov models](pairwise-hidden-markov-models.qmd) to score reads against assembled local haplotypes. The posterior step is a concrete instance of [Bayesian inference](bayesian-inference-in-bioinformatics.qmd), and the resulting heterozygous calls can be linked across loci by [haplotype assembly and phasing](haplotype-assembly-and-phasing.qmd).
+
+# Take-home Messages
+
+1. A variant call is a comparison of genotype hypotheses, not an alternate-base count.
+2. Base quality, mapping uncertainty, and local alignment/haplotype ambiguity determine how much each read contributes.
+3. Genotype likelihoods, posterior probabilities, genotype quality, and site quality describe different quantities and should not be interchanged.
+4. Filters and benchmark-based calibration are necessary because real sequencing artifacts violate simplified likelihood assumptions.
+
+# References
+
+- DePristo, M. A. et al. 2011. [A framework for variation discovery and genotyping using next-generation DNA sequencing data](https://doi.org/10.1038/ng.806). *Nature Genetics* 43:491--498.
+- Li, H. 2011. [A statistical framework for SNP calling, mutation discovery, association mapping and population genetical parameter estimation from sequencing data](https://doi.org/10.1093/bioinformatics/btr509). *Bioinformatics* 27:2987--2993.
+- McKenna, A. et al. 2010. [The Genome Analysis Toolkit: a MapReduce framework for analyzing next-generation DNA sequencing data](https://doi.org/10.1101/gr.107524.110). *Genome Research* 20:1297--1303.
+- [GATK HaplotypeCaller documentation](https://gatk.broadinstitute.org/hc/en-us/articles/360037225632-HaplotypeCaller): official description of local assembly and likelihood calculation.
