@@ -1,0 +1,104 @@
+---
+title: "Copy-Number Segmentation Algorithms"
+subtitle: "Converting noisy genomic measurements into regions of shared dosage"
+description: "How segmentation detects change-points in ordered copy-number measurements and reports coherent genomic gains, losses, and copy-neutral regions."
+author: "Jiahong Sun"
+date: "2026-08-24"
+date-modified: "2026-08-24"
+categories: [Bioinformatics, Algorithms, Genomics, Copy Number Variation]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Copy-number segmentation partitions an ordered genome-wide signal into contiguous intervals whose measurements are consistent with one underlying copy-number state.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which genomic regions are deleted, gained, amplified, or copy-neutral in this sample? |
+| **Computational problem** | Locate true changes in mean signal along chromosomes while avoiding segments caused by noise and technical bias |
+| **Method type** | Change-point detection and statistical model selection |
+| **Input** | Ordered, normalized log-ratio depths or array intensities; often B-allele frequencies and a matched normal |
+| **Output** | Genomic segments with estimated mean log ratio, copy-number state, and confidence or quality annotations |
+| **Prerequisites** | [k-mers and sequence composition](k-mers-and-sequence-composition.qmd), [variant-calling likelihood models](variant-calling-likelihood-models.qmd), [Bayesian inference](bayesian-inference-in-bioinformatics.qmd) |
+
+# Why a genomic signal needs segmentation
+
+Read depth and array intensity are observed at many ordered loci, but neither is itself a copy number. GC content, mappability, capture design, and sampling noise make adjacent measurements fluctuate even when the underlying chromosome has not changed. The desired biological answer is usually regional: a deletion might cover exons, a whole arm, or a focal interval, not one isolated low-coverage bin.
+
+After normalization, a common representation is a log ratio $y_i=\log_2(\text{sample}_i/\text{reference}_i)$ at locus or bin $i$. Segmentation replaces the noisy series with a piecewise-constant approximation. A negative segment suggests reduced dosage and a positive segment increased dosage, but the conversion from ratio to absolute integer copy number also depends on purity, ploidy, and subclonality.
+
+```text
+normalized measurements ordered by genomic coordinate
+        -> detect statistically supported change-points
+        -> estimate one level per interval
+        -> interpret segments with allelic and sample context
+```
+
+# Core idea: trade fit against fragmentation
+
+For a proposed partition into segments $S_1,\ldots,S_K$, a simple least-squares objective is
+
+$$
+\min_{S_1,\ldots,S_K,\,\mu_1,\ldots,\mu_K}
+\sum_{k=1}^{K}\sum_{i\in S_k}(y_i-\mu_k)^2+\lambda K.
+$$
+
+Here $\mu_k$ is the estimated mean signal in segment $k$, and $\lambda$ penalizes adding segments. With $\lambda=0$, the algorithm can explain every noisy point by making tiny intervals; with an excessive penalty, it misses real focal changes. Different methods encode this balance through a significance test, a likelihood penalty, a hidden Markov model, or a fused regularizer rather than this exact equation.
+
+## Circular binary segmentation
+
+**Circular binary segmentation (CBS)** is a classic recursive approach. For the current interval, it examines candidate pairs of breakpoints and asks whether the mean signal in the arc between them differs from the rest of the interval. A permutation procedure calibrates whether the strongest difference is more than expected under no change. If it is, CBS splits the interval and repeats on the children; otherwise it stops. Treating the ordered measurements as circular avoids privileging an endpoint while searching for two change-points.
+
+CBS was introduced for array comparative genomic hybridization, but the change-point idea remains useful for bin-level sequencing depth. Modern callers frequently add allele-specific information, explicit normal/tumor modeling, or global constraints that CBS alone does not provide.
+
+# Toy example
+
+Suppose six consecutive bins have normalized log ratios:
+
+```text
+bin:       1      2      3      4      5      6
+log2 ratio 0.04  -0.03   0.02  -0.89  -1.02  -0.95
+```
+
+One-segment fit: the mean is about $-0.47$, which describes neither the first three bins nor the last three. A split after bin 3 gives means near $0.01$ and $-0.95$, so the reduction in residual error is large. A segmentation algorithm can report two intervals, then a later calling step may label the latter a likely loss. It should *not* infer a one-copy deletion solely from $-0.95$: tumor purity, ploidy, and the baseline model can shift the expected ratio.
+
+# Data, assumptions, and failure modes
+
+| Assumption or issue | Consequence | Practical response |
+|---|---|---|
+| Measurements have been normalized | Waves from GC bias or coverage can become false segments | Correct GC/mappability and inspect sample-wide residuals |
+| Most adjacent loci share a state | Extremely short events can be smoothed away | Use bin/probe resolution appropriate to the event size and validate focal calls |
+| Coordinates and reference are correct | Gaps and low-mappability repeats create unstable breakpoints | Mask problematic intervals and retain reference-build metadata |
+| Signal represents a homogeneous sample | Mixed normal/tumor cells attenuate segment means | Estimate purity/ploidy; report uncertainty and subclonal interpretations |
+| One signal is enough | Copy-neutral LOH has little depth change | Combine B-allele frequency or phased heterozygous SNP evidence |
+
+Paired tumor--normal analysis reduces many germline and technical confounders, but it does not make every ratio a somatic event. Batch-matched references, duplicate handling, sex-chromosome-aware baselines, and independent validation matter. Segment boundaries are estimates: breakpoint precision is limited by probe spacing or bin width and can be much worse in repeats.
+
+# Practical interpretation
+
+Segmentation and copy-number calling are related but distinct. Segmentation says where the signal changes; calling attaches labels such as loss, neutral, gain, or amplification using a sample model. In cancer, a log ratio can be compatible with several combinations of total copy number, tumor purity, and subclonal fraction. Allele-specific callers additionally use the imbalance of germline heterozygous alleles to estimate major and minor copy number.
+
+| Goal | Useful evidence beyond depth | Caution |
+|---|---|---|
+| Germline CNV | Matched controls, population frequency, split-read evidence | Exome coverage has uneven target spacing |
+| Somatic copy number | Matched normal, B-allele frequency, purity/ploidy model | Aneuploidy changes the baseline |
+| Focal rearrangement | Split reads or local assembly | A depth step alone seldom identifies the rearrangement class |
+
+Copy-number changes overlap conceptually with [structural-variant discovery algorithms](structural-variant-discovery-algorithms.qmd): a deletion or duplication can have both a dosage signal and breakpoint evidence. They also affect the allele fractions that feed [variant-calling likelihood models](variant-calling-likelihood-models.qmd), and phased SNPs can make allele-specific segmentation more informative through [haplotype assembly and phasing](haplotype-assembly-and-phasing.qmd).
+
+# Take-home Messages
+
+1. Segmentation turns noisy, ordered genomic measurements into intervals with a shared estimated level.
+2. It is a change-point problem: the crucial trade-off is detecting real dosage shifts without fragmenting noise.
+3. A segment mean is not automatically an integer copy number, especially in impure, aneuploid, or heterogeneous samples.
+4. Depth, allelic imbalance, and breakpoint evidence answer complementary parts of the copy-number question.
+
+# References
+
+- Olshen, A. B., Venkatraman, E. S., Lucito, R., & Wigler, M. 2004. [Circular binary segmentation for the analysis of array-based DNA copy number data](https://doi.org/10.1093/biostatistics/kxh008). *Biostatistics* 5:557--572.
+- Venkatraman, E. S., & Olshen, A. B. 2007. [A faster circular binary segmentation algorithm for the analysis of array CGH data](https://doi.org/10.1093/bioinformatics/btl646). *Bioinformatics* 23:657--663.
+- [DNAcopy Bioconductor documentation](https://bioconductor.org/packages/DNAcopy/): implementation of CBS for array and sequencing-derived copy-number data.

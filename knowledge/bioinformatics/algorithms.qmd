@@ -52,6 +52,11 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 - [Variant-calling likelihood models](algorithms/variant-calling-likelihood-models.qmd): read and haplotype likelihoods, genotype uncertainty, VCF confidence fields, and calibration
 - [Haplotype assembly and phasing](algorithms/haplotype-assembly-and-phasing.qmd): physical read links, graph partitioning, statistical phase, phase blocks, and switch errors
 
+### Copy number and structural variation
+
+- [Copy-number segmentation algorithms](algorithms/copy-number-segmentation-algorithms.qmd): change-points in noisy genomic signal, circular binary segmentation, and copy-number interpretation
+- [Structural-variant discovery algorithms](algorithms/structural-variant-discovery-algorithms.qmd): discordant pairs, split reads, depth, assembly, and breakpoint confidence
+
 ## Graphs and optimization
 
 Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.

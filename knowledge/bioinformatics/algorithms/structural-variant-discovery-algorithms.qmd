@@ -1,0 +1,104 @@
+---
+title: "Structural-Variant Discovery Algorithms"
+subtitle: "Inferring rearranged chromosomes from discordant sequencing evidence"
+description: "How structural-variant callers combine anomalous read pairs, split reads, depth shifts, and assemblies to locate and genotype genomic rearrangements."
+author: "Jiahong Sun"
+date: "2026-08-24"
+date-modified: "2026-08-24"
+categories: [Bioinformatics, Algorithms, Genomics, Structural Variation]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Structural-variant discovery finds genomic breakpoints by clustering sequence reads whose placement, orientation, span, or sequence disagrees with a linear reference genome.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Has a segment been deleted, duplicated, inserted, inverted, or rearranged, and where are its breakpoints? |
+| **Computational problem** | Distinguish coordinated breakpoint evidence from mapping artifacts in a large, repetitive reference genome |
+| **Method type** | Evidence clustering, probabilistic integration, local assembly, and genotyping |
+| **Input** | Reference-aligned short or long reads; optionally a matched normal, assembly, or cohort evidence |
+| **Output** | SV records with type, breakpoint intervals, orientation, support, genotype/allele fraction, and filters |
+| **Prerequisites** | [Read mapping and seed chaining](read-mapping-and-seed-chaining.qmd), [mapping quality estimation](mapping-quality-estimation.qmd), [copy-number segmentation algorithms](copy-number-segmentation-algorithms.qmd) |
+
+# One rearrangement, several observable signatures
+
+The reference describes one possible chromosome sequence. A sample deletion creates a new adjacency between the reference bases on either side of the removed segment. No short read need span the entire deletion: different read patterns provide partial evidence for that new adjacency.
+
+| Signal | Observation in an aligned library | Strength | Limitation |
+|---|---|---|---|
+| Discordant pair | Mates map too far apart, too close, or in an unexpected orientation | Detects events larger than a read | Breakpoints are interval-sized, set by insert distribution |
+| Split read | One read aligns in pieces to distant reference positions | Can resolve a breakpoint near base precision | Needs an alignable sequence across the junction |
+| Read depth | Coverage falls or rises over an interval | Strong for unbalanced CNVs | Cannot locate balanced inversions/translocations reliably |
+| Local assembly / contig | Assembled sequence crosses a novel adjacency | Resolves complex sequence and insertions | Coverage, repeats, and computation can limit assembly |
+
+Integrated callers are powerful because these signals fail differently. A depth decrease supports a deletion's dosage; discordant pairs bracket it; split reads can refine its ends. Conversely, an inversion is usually copy-neutral, so depth may be uninformative while orientation anomalies and split reads are decisive.
+
+# From anomalous alignments to a call
+
+## Candidate generation and clustering
+
+The caller first removes or downweights dubious alignments, then converts each remaining observation into a *breakpoint interval*: the range of genomic coordinates consistent with its alignment. It groups observations whose intervals and orientations agree. For paired-end reads, the expected insert-size distribution makes a pair's evidence inherently broad; split reads often narrow the range.
+
+```text
+sorted, duplicate-marked alignments + reference
+       -> discordant-pair, split-read, depth, or assembly evidence
+       -> cluster compatible breakpoint intervals and orientations
+       -> classify the proposed adjacency / SV type
+       -> genotype, score, filter, and write VCF or BCF
+```
+
+Some frameworks represent each signal as a probability distribution over the two breakpoints and combine compatible distributions. This is preferable to treating all supporting reads as equally precise or independent. A call's quality should also consider the strongest alternative placement, local repeat structure, strand/orientation balance, and matched-normal evidence where relevant.
+
+## A deletion toy example
+
+Assume a paired-end library normally has inward-facing mates about 350 bp apart. Near a true 1 kb deletion relative to the reference, several inward-facing pairs map about 1,350 bp apart, with left mates upstream and right mates downstream of the missing interval. Their different start sites form a cluster, so a caller proposes a deletion bracketed by the cluster. If split reads cross the two novel junctions, their clipped portions map across the gap and can refine the breakpoint. A coverage drop across the same interval adds support.
+
+The evidence is not proof by itself: repeats can produce the same pattern when reads map to the wrong copy. A robust pipeline records support and filters, rather than translating every discordant pair into a high-confidence variant.
+
+# Calling, genotyping, and representation
+
+Discovery proposes candidate breakpoints; genotyping asks whether the sample supports reference and/or alternate adjacency. In a diploid germline analysis, reads may be compared under 0/0, 0/1, and 1/1-like hypotheses, much like [variant-calling likelihood models](variant-calling-likelihood-models.qmd), although independence and coverage assumptions are even more fragile for SVs. Somatic analysis additionally needs normal contamination, tumor purity, subclonality, and matched-normal artifact control.
+
+VCF can describe simple events with `SVTYPE`, `END`, `SVLEN`, confidence intervals such as `CIPOS`/`CIEND`, and supporting-read fields. Translocations and other junctions may use paired breakend records (`BND`). These coordinates and symbols are a representation of a hypothesis, not an assembled chromosome sequence; preserve the caller's filters and reference build.
+
+# Failure modes and validation
+
+| Failure mode | Why it creates error | Useful response |
+|---|---|---|
+| Segmental duplications and repeats | Reads have multiple plausible loci | Use [mapping quality](mapping-quality-estimation.qmd), repeat annotations, and long reads or assembly for resolution |
+| Library artifacts / duplicates | A few molecules yield apparently repeated anomalous pairs | Mark duplicates; inspect unique molecule support and orientation |
+| Reference mismatch | Sample sequence absent from or divergent from reference | Use appropriate reference/decoys; interpret population-specific regions carefully |
+| Low allele fraction | Few supporting reads compete with noise | Integrate signals, use matched normal, and report sensitivity limits |
+| Complex rearrangement | One simple SV label cannot represent the event | Use local or whole-genome assembly and examine breakpoint graphs |
+
+Benchmark by SV class, size, genomic context, and technology. A deletion caller can have excellent performance on large unique-region deletions yet be weak for insertions or tandem repeats. Orthogonal evidence--long reads, assemblies, PCR, optical mapping, or a curated truth set--is especially valuable for clinically or biologically consequential calls.
+
+# Connections and method choice
+
+Short-read mapping creates the anchors from which SV evidence is inferred, so [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd) and mapping confidence directly affect discovery. [Copy-number segmentation algorithms](copy-number-segmentation-algorithms.qmd) supplies dosage evidence for deletions and duplications but cannot by itself establish an adjacency. Haplotype-aware evaluation can use [haplotype assembly and phasing](haplotype-assembly-and-phasing.qmd) to distinguish alleles and avoid double-counting a complex event.
+
+| Data / goal | Prefer | Reason |
+|---|---|---|
+| Short-read germline WGS | Integrated pair + split-read + depth caller | Complementary signals cover common simple SVs |
+| Somatic tumor/normal WGS | Matched-pair caller with allele-fraction modeling | Helps separate germline variation and artifacts |
+| Novel insertions or repetitive loci | Long reads and local/whole-genome assembly | Direct sequence can resolve junctions absent from the reference |
+| Copy-number burden | Depth plus allele-specific segmentation | Measures dosage even when exact junction is unresolved |
+
+# Take-home Messages
+
+1. Structural variants are new genomic adjacencies or dosage changes inferred indirectly from alignments and sequence.
+2. Discordant pairs, split reads, depth, and assembly offer complementary resolution and sensitivity.
+3. Repeats, ambiguous mapping, library artifacts, and sample mixture make support counts insufficient without context-aware scoring and validation.
+4. A reported SV type and coordinate are model-based hypotheses; retain confidence intervals, filters, reference build, and supporting evidence.
+
+# References
+
+- Rausch, T. et al. 2012. [DELLY: structural variant discovery by integrated paired-end and split-read analysis](https://doi.org/10.1093/bioinformatics/bts378). *Bioinformatics* 28:i333--i339.
+- Layer, R. M., Chiang, C., Quinlan, A. R., & Hall, I. M. 2014. [LUMPY: a probabilistic framework for structural variant discovery](https://doi.org/10.1186/gb-2014-15-6-r84). *Genome Biology* 15:R84.
+- Sedlazeck, F. J. et al. 2018. [Accurate detection of complex structural variations using single-molecule sequencing](https://doi.org/10.1038/s41592-018-0001-7). *Nature Methods* 15:461--468.
+- [DELLY documentation](https://github.com/dellytools/delly): official usage guidance for integrated SV and CNV discovery.
