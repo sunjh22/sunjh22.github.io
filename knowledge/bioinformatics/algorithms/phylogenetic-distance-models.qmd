@@ -1,0 +1,117 @@
+---
+title: "Phylogenetic Distance Models"
+subtitle: "Correcting observed sequence differences into evolutionary distances"
+description: "How substitution models turn an alignment's observed mismatches into evolutionary distance estimates for phylogenetic inference."
+author: "Jiahong Sun"
+date: "2026-08-25"
+date-modified: "2026-08-25"
+categories: [Bioinformatics, Algorithms, Phylogenetics, Evolution]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A phylogenetic distance model estimates the expected number of substitutions separating two aligned sequences, including changes hidden by repeated mutation at the same site.
+
+| Item | Description |
+|---|---|
+| **Biological question** | How evolutionarily separated are two homologous sequences? |
+| **Computational problem** | Convert an observed fraction of aligned differences into a comparable distance despite unobserved substitutions |
+| **Method type** | Stochastic substitution model and pairwise estimation |
+| **Input** | Homologous multiple-sequence alignment, with a stated treatment of gaps and ambiguous bases |
+| **Output** | Pairwise distance matrix, often used to infer a tree |
+| **Prerequisites** | [Needleman--Wunsch global alignment](needleman-wunsch-global-alignment.qmd), [Smith--Waterman local alignment](smith-waterman-local-alignment.qmd), [neighbor-joining trees](neighbor-joining-trees.qmd) |
+
+# Why mismatch fraction is not an evolutionary distance
+
+For two aligned sequences, the *p-distance* is the fraction $p$ of comparable columns with different symbols. It is a useful descriptive quantity, but it is not generally the expected number of substitutions per site. A site can mutate from A to G and later from G to A; the observed bases then match even though two changes occurred. Different substitutions can also occur successively at one site, a phenomenon called **multiple hits**.
+
+As sequences diverge, observed mismatch fraction saturates while actual evolutionary change continues. A distance model supplies a probabilistic relationship between the unobserved substitution process and the alignment. Its estimate is meaningful only relative to the model, alignment, and filtering choices used to obtain it.
+
+```text
+homologous alignment
+       -> count comparable matching and differing columns
+       -> fit / apply a substitution model
+       -> corrected pairwise distances
+       -> distance-based tree or exploratory analysis
+```
+
+# A simple correction: Jukes--Cantor
+
+The Jukes--Cantor (JC69) model assumes four nucleotides have equal equilibrium frequencies and that every one-base change has the same instantaneous rate. Under those restrictive assumptions, the corrected distance is
+
+$$
+d_{\mathrm{JC69}}=-\frac{3}{4}\ln\left(1-\frac{4p}{3}\right).
+$$
+
+Here $p$ is the observed mismatch fraction and $d_{\mathrm{JC69}}$ is the estimated expected substitutions per site. For small $p$, $d$ is close to $p$. As $p$ approaches $0.75$, the logarithm becomes unstable: the alignment no longer contains enough information under this model to estimate a finite distance reliably.
+
+## Toy example
+
+If 8 of 100 comparable nucleotide columns differ, then $p=0.08$ and
+
+$$
+d_{\mathrm{JC69}}=-\frac{3}{4}\ln(1-4\times0.08/3)\approx0.085.
+$$
+
+The correction is modest because a second mutation at the same site is unlikely at this divergence. If 60 of 100 columns differ, the same calculation gives about $1.21$ substitutions per site, far larger than $0.60$; uncertainty and model misspecification are also much more consequential there.
+
+# Models add biological realism
+
+JC69 is often too simple for real DNA. More flexible models distinguish the changes and base compositions that data support.
+
+| Model | Main extra feature | Typical use and caution |
+|---|---|---|
+| JC69 | Equal base frequencies and equal rates | Pedagogy or closely related sequences; rarely a sufficient final model |
+| K80 / K2P | Separate transition and transversion rates | Useful when transition bias matters; still assumes equal base frequencies |
+| F81 | Unequal equilibrium base frequencies | Addresses composition, but not transition bias |
+| HKY85 | Unequal frequencies plus transition/transversion bias | Common interpretable DNA model |
+| GTR | A distinct reversible rate for each substitution pair | Flexible baseline; needs enough information and is often combined with rate heterogeneity |
+
+Sites do not necessarily evolve at one rate. A gamma-distributed rate model ($+\Gamma$), a proportion of invariant sites, or an explicit codon/protein model can better match a dataset. These additions are models of an average process; they do not repair poor homology, recombination, contamination, or a mixture of unrelated evolutionary histories.
+
+# Estimating and using distances
+
+For a fixed model, software can estimate a pairwise distance by maximizing the probability of the two sequences separated by a branch length. This uses all observed substitution categories, rather than only mismatch fraction. From $n$ taxa, the result is an $n\times n$ symmetric matrix; diagonal entries are zero.
+
+Distance methods such as [neighbor-joining trees](neighbor-joining-trees.qmd) use this matrix directly. The matrix is a lossy summary of the alignment: it is fast and useful, but it does not retain site-pattern information that likelihood- and Bayesian-tree methods use. When comparing distances, retain the alignment coordinates, model, gap policy, and any column filtering because changing them changes the estimate.
+
+## Assumptions and diagnostics
+
+| Issue | Why it matters | Practical response |
+|---|---|---|
+| Homologous alignment | Misaligned columns are treated as substitutions | Inspect alignment quality; align coding regions by codon where appropriate |
+| One history across sites | Recombination can make one tree and its distances misleading | Screen or partition recombinant/heterogeneous regions |
+| Adequate model | Composition bias and rate variation distort branch lengths | Compare plausible models and report the selected one |
+| Moderate divergence | Saturation erases historical signal | Examine distances and use richer data/markers rather than overinterpreting large corrections |
+| Independent sampling | Duplicate or contaminated sequences can dominate apparent similarity | Curate taxon identity, metadata, and sequence quality |
+
+Gaps and ambiguous bases require an explicit policy. Pairwise deletion uses all usable columns for each pair but makes pairs based on different site sets; complete deletion uses one common set but may discard much information. Neither is universally right, and both should be reported.
+
+# Connections and method choice
+
+Distance models begin after an alignment has defined which residues are compared. They provide the matrix that [neighbor-joining trees](neighbor-joining-trees.qmd) converts into an unrooted tree. Tree topology alone is not a biological conclusion: bootstrap or other resampling assessments, alternative alignments, and model sensitivity should accompany it.
+
+| Goal | Good starting point | Important limitation |
+|---|---|---|
+| Quick visualization of many related sequences | Model-corrected distances plus neighbor joining | Pairwise compression loses site-pattern information |
+| Very close sequences | p-distance or simple correction | Still verify alignment and coverage comparability |
+| Deeply divergent nucleotide sequences | Composition- and rate-aware model; consider amino acids/codons | Saturation and alignment uncertainty can remain limiting |
+| Gene with recombination | Partition or use a recombination-aware analysis | One distance matrix cannot represent several local histories |
+
+# Take-home Messages
+
+1. Observed differences undercount substitutions when sites experience repeated mutation.
+2. A distance is a model-based estimate, not a property of a sequence pair alone.
+3. Transition bias, base composition, and among-site rate variation motivate models beyond JC69.
+4. Distance matrices are fast, useful inputs to tree algorithms, but they discard alignment-level information and depend on sound homology and model choices.
+
+# References
+
+- Jukes, T. H., & Cantor, C. R. 1969. [Evolution of protein molecules](https://doi.org/10.1016/B978-1-4832-3211-9.50009-7). In *Mammalian Protein Metabolism*.
+- Kimura, M. 1980. [A simple method for estimating evolutionary rates of base substitutions through comparative studies of nucleotide sequences](https://doi.org/10.1007/BF01731581). *Journal of Molecular Evolution* 16:111--120.
+- Hasegawa, M., Kishino, H., & Yano, T. 1985. [Dating of the human-ape splitting by a molecular clock of mitochondrial DNA](https://doi.org/10.1016/0040-5809(85)90020-3). *Journal of Molecular Evolution* 22:160--174.
+- [IQ-TREE documentation: substitution models](https://iqtree.github.io/doc/Substitution-Models): model definitions and selection guidance.

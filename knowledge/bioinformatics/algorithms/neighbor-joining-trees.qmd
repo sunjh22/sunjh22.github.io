@@ -1,0 +1,111 @@
+---
+title: "Neighbor-Joining Trees"
+subtitle: "Building an unrooted phylogeny from corrected pairwise distances"
+description: "How the neighbor-joining algorithm repeatedly joins taxa that are close after accounting for their average distance to all other taxa."
+author: "Jiahong Sun"
+date: "2026-08-25"
+date-modified: "2026-08-25"
+categories: [Bioinformatics, Algorithms, Phylogenetics, Evolution]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Neighbor joining constructs an unrooted phylogenetic tree by joining the pair whose distance is unusually small relative to all other taxa, then replacing that pair with an internal node.
+
+| Item | Description |
+|---|---|
+| **Biological question** | What branching pattern and relative evolutionary separation best summarize these sequences? |
+| **Computational problem** | Reconstruct an approximately additive tree from a pairwise distance matrix |
+| **Method type** | Greedy agglomerative phylogenetic tree algorithm |
+| **Input** | Symmetric, model-corrected distance matrix from homologous sequences |
+| **Output** | Unrooted tree with estimated branch lengths |
+| **Prerequisites** | [Phylogenetic distance models](phylogenetic-distance-models.qmd), [Bayesian inference in bioinformatics](bayesian-inference-in-bioinformatics.qmd) |
+
+# Why closest pairs are not necessarily neighbors
+
+If two taxa have the smallest raw distance, joining them may seem natural. It can be wrong when one or both have long branches: a taxon can be far from every other taxon, including its true sister, while still having an accidentally small raw distance to another long-branch taxon. Neighbor joining corrects raw pair distance by each taxon's average distance to the rest of the current set.
+
+The method is particularly valuable because it is fast, returns branch lengths, and exactly recovers the correct unrooted topology when the input distances are perfectly additive--that is, when they can be represented by a tree with nonnegative branch lengths. Real distances are noisy and model-dependent, so the returned tree is an estimate rather than a proof of history.
+
+# The neighbor-joining criterion
+
+With $n$ current nodes and distance $d(i,j)$, calculate
+
+$$
+Q(i,j)=(n-2)d(i,j)-\sum_k d(i,k)-\sum_k d(j,k).
+$$
+
+The pair with the smallest $Q(i,j)$ is selected as a neighbor pair. The two summed terms penalize taxa that are generally distant from all others, which is the key distinction from simply choosing the smallest $d(i,j)$.
+
+For selected nodes $i$ and $j$, create an internal node $u$. Its branch length to $i$ is
+
+$$
+L(i,u)=\frac{1}{2}d(i,j)+\frac{1}{2(n-2)}\left[\sum_kd(i,k)-\sum_kd(j,k)\right],
+$$
+
+and $L(j,u)=d(i,j)-L(i,u)$. Update each remaining node $k$ with
+
+$$
+d(u,k)=\frac{d(i,k)+d(j,k)-d(i,j)}{2}.
+$$
+
+Repeat until two or three nodes remain, then connect the final nodes. Negative estimated branch lengths can occur with non-additive noisy distances; implementations may retain them, set them to zero, or use a constrained refinement, so the policy should be checked before interpretation.
+
+# A small four-taxon example
+
+Suppose the distance matrix is:
+
+| | A | B | C | D |
+|---|---:|---:|---:|---:|
+| **A** | 0 | 2 | 8 | 8 |
+| **B** | 2 | 0 | 8 | 8 |
+| **C** | 8 | 8 | 0 | 2 |
+| **D** | 8 | 8 | 2 | 0 |
+
+For four nodes, each $Q$ value is $2d(i,j)-r_i-r_j$, where $r_i$ is row $i$'s total. All row totals are 18. Thus $Q(A,B)=Q(C,D)=-32$, whereas $Q(A,C)=-20$. Neighbor joining may first join A and B (or C and D; the tie is harmless here), then joins the other pair and connects the two internal nodes. The inferred split is $(A,B)|(C,D)$.
+
+This tidy matrix is additive. With real alignments, nearly tied $Q$ values and small changes in sites, taxa, or distance model may produce a different order and sometimes a different topology.
+
+# Workflow and uncertainty
+
+```text
+homologous multiple-sequence alignment
+       -> choose substitution model and compute pairwise distances
+       -> neighbor joining tree
+       -> resample alignment columns and rebuild trees
+       -> summarize branch support, inspect conflicts, root only with justified information
+```
+
+Neighbor joining is intrinsically **unrooted**. Adding an outgroup can root the displayed tree, but only if the outgroup is homologous, appropriately chosen, and not so divergent that it destabilizes the inference. A rooted-looking drawing without a stated rooting method should not be read as a direction of evolution.
+
+Bootstrap analysis commonly resamples alignment columns, recalculates the distance matrix, and reconstructs a tree for each replicate. The proportion of replicates containing a split is a stability measure under that resampling procedure; it is not the posterior probability that a clade is true. Keep the alignment and model choices fixed or explicitly vary them in sensitivity analysis.
+
+# Assumptions, failure modes, and alternatives
+
+| Issue | Consequence | Practical response |
+|---|---|---|
+| Distances approximate one tree | Recombination or gene transfer can give incompatible local histories | Analyze regions separately or use a network/recombination-aware method |
+| Distance correction is adequate | Saturation or composition bias distorts topology and length | Use and report an appropriate [distance model](phylogenetic-distance-models.qmd) |
+| Alignment is homologous | Misaligned or low-quality regions introduce spurious distance | Curate, trim, and inspect the alignment |
+| Sampling is informative | Missing close relatives and uneven sampling can alter apparent relationships | State taxon selection and test sensitivity |
+| Sequence evolution is tree-like | Introgression and incomplete lineage sorting complicate species interpretation | Compare genes and use species-tree/population approaches when needed |
+
+Neighbor joining is a strong exploratory and starting method, especially for many sequences. Maximum-likelihood and Bayesian approaches instead evaluate site patterns under an explicit tree model, which can yield more detailed model-based inference but generally cost more computation. The Bayesian concepts behind posterior tree sampling connect to [Markov chain Monte Carlo](markov-chain-monte-carlo.qmd); that does not turn a neighbor-joining bootstrap value into a Bayesian probability.
+
+# Take-home Messages
+
+1. Neighbor joining builds an unrooted tree from corrected pairwise evolutionary distances.
+2. Its $Q$ criterion chooses pairs that are close relative to their overall divergence, not merely pairs with the smallest raw distance.
+3. The algorithm is exact for additive distances but real results inherit uncertainty from alignment, model, sampling, and non-tree-like evolution.
+4. Bootstrap resampling assesses stability of splits; an outgroup or other justified information is required to root the tree.
+
+# References
+
+- Saitou, N., & Nei, M. 1987. [The neighbor-joining method: a new method for reconstructing phylogenetic trees](https://doi.org/10.1093/oxfordjournals.molbev.a040454). *Molecular Biology and Evolution* 4:406--425.
+- Studier, J. A., & Keppler, K. J. 1988. [A note on the neighbor-joining algorithm of Saitou and Nei](https://doi.org/10.1093/oxfordjournals.molbev.a040527). *Molecular Biology and Evolution* 5:729--731.
+- Felsenstein, J. 1985. [Confidence limits on phylogenies: an approach using the bootstrap](https://doi.org/10.2307/2408678). *Evolution* 39:783--791.
+- [PHYLIP Neighbor documentation](https://evolution.genetics.washington.edu/phylip/doc/neighbor.html): official implementation notes for neighbor joining and related distance methods.

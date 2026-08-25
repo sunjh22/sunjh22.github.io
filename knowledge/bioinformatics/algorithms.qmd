@@ -57,6 +57,11 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 - [Copy-number segmentation algorithms](algorithms/copy-number-segmentation-algorithms.qmd): change-points in noisy genomic signal, circular binary segmentation, and copy-number interpretation
 - [Structural-variant discovery algorithms](algorithms/structural-variant-discovery-algorithms.qmd): discordant pairs, split reads, depth, assembly, and breakpoint confidence
 
+### Phylogenetic distance and tree reconstruction
+
+- [Phylogenetic distance models](algorithms/phylogenetic-distance-models.qmd): correction for multiple substitutions, model assumptions, saturation, and distance-matrix construction
+- [Neighbor-joining trees](algorithms/neighbor-joining-trees.qmd): distance-corrected agglomerative tree building, branch lengths, rooting, and bootstrap stability
+
 ## Graphs and optimization
 
 Planned: Louvain, Leiden, dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.
