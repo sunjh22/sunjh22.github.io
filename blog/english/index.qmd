@@ -1,6 +1,15 @@
 ---
 title: "English Learning"
 description: "English vocabulary, writing, speaking, and academic communication."
+listing:
+  contents:
+    - "*.qmd"
+    - "!index.qmd"
+  sort: "date desc"
+  type: default
+  categories: true
+  sort-ui: false
+  filter-ui: true
 ---
 
 Notes on academic writing, professional communication, vocabulary, pronunciation, and lifelong language learning.
