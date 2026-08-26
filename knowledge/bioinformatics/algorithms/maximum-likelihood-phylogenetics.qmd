@@ -1,0 +1,140 @@
+---
+title: "Maximum-Likelihood Phylogenetics"
+subtitle: "Selecting a tree by the probability of an aligned sequence dataset"
+description: "How maximum-likelihood phylogenetics evaluates tree topologies, branch lengths, and substitution models using the probability of observed alignment columns."
+author: "Jiahong Sun"
+date: "2026-08-26"
+date-modified: "2026-08-26"
+categories: [Bioinformatics, Algorithms, Phylogenetics, Evolution]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Maximum-likelihood phylogenetics chooses the tree, branch lengths, and model parameters that make an observed homologous alignment most probable under an explicit model of sequence evolution.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which evolutionary tree best explains the observed homologous sequences? |
+| **Computational problem** | Search a huge space of tree topologies while optimizing branch lengths and substitution-model parameters |
+| **Method type** | Statistical model fitting and combinatorial optimization |
+| **Input** | Curated multiple-sequence alignment and a stated substitution model/partition scheme |
+| **Output** | Usually an unrooted maximum-likelihood tree, branch lengths, fitted parameters, and support summaries |
+| **Prerequisites** | [Phylogenetic distance models](phylogenetic-distance-models.qmd), [neighbor-joining trees](neighbor-joining-trees.qmd), [Bayesian inference in bioinformatics](bayesian-inference-in-bioinformatics.qmd) |
+
+# From distances to site-pattern likelihoods
+
+Distance methods first compress an alignment into one estimated separation per pair, then build a tree from that matrix. Maximum likelihood (ML) instead uses the observed pattern at every alignment column. For a candidate tree $T$ with branch lengths $b$ and model parameters $\theta$, it asks for
+
+$$
+L(T,b,\theta)=P(D\mid T,b,\theta),
+$$
+
+where $D$ is the aligned dataset. The preferred estimate maximizes this likelihood (or, equivalently, its log). This is not the probability that the tree is true: without a prior, likelihood compares how well competing parameter settings predict the data.
+
+For independent sites, the log-likelihood is a sum:
+
+$$
+\log L=\sum_{s=1}^{S}\log P(D_s\mid T,b,\theta).
+$$
+
+Each site can have an unobserved ancestral nucleotide or amino acid at internal nodes. A naive calculation would enumerate all internal-state assignments, which grows exponentially. The pruning algorithm makes likelihood practical by reusing partial probabilities from the tips toward a chosen root.
+
+# Computing likelihood with pruning
+
+For a nucleotide model, let $P_{xy}(t)$ be the probability that state $x$ changes to $y$ along a branch of length $t$. At a tip observed as A, its conditional-likelihood vector is $(1,0,0,0)$ for $(A,C,G,T)$; ambiguous observations can have more than one nonzero entry.
+
+At an internal node $v$ with children $a$ and $c$, the conditional likelihood for state $x$ is
+
+$$
+CL_v(x)=\left[\sum_y P_{xy}(t_{va})CL_a(y)\right]
+          \left[\sum_z P_{xz}(t_{vc})CL_c(z)\right].
+$$
+
+At the arbitrarily chosen computational root, sum over its possible states using equilibrium frequencies $\pi_x$:
+
+$$
+P(D_s\mid T,b,\theta)=\sum_x\pi_x CL_{\mathrm{root}}(x).
+$$
+
+The likelihood calculation is rooted for convenience, but a standard time-reversible model gives the same likelihood for every placement of that root. Thus ordinary nucleotide ML inference estimates an **unrooted** tree unless a clock model, an outgroup, or other directional information supplies a root.
+
+```text
+alignment columns + substitution model
+       -> conditional likelihoods at tips
+       -> postorder pruning through internal nodes
+       -> per-site likelihoods and total log-likelihood
+       -> compare and improve candidate trees
+```
+
+# Searching tree space
+
+The number of unrooted bifurcating trees is $(2n-5)!!$ for $n$ labeled taxa, so exhaustive search soon becomes impossible. ML software therefore alternates numerical optimization and topology-changing heuristics.
+
+| Search operation | What changes | Typical role |
+|---|---|---|
+| Branch-length optimization | Continuous branch lengths, sometimes model parameters | Improve likelihood on a fixed topology |
+| NNI | A local interchange around one internal edge | Fast local improvement |
+| SPR | Prune one subtree and regraft it elsewhere | Broader exploration |
+| Multiple starting trees | Initial topologies, often including a distance tree | Reduce dependence on one local optimum |
+
+A typical workflow begins with a starting tree, optimizes branch lengths, proposes rearrangements that improve likelihood, and repeats until no tested move helps. Different programs make different approximation and search choices; a high reported log-likelihood is conditional on the model, data treatment, and explored search space, not a guarantee of the global optimum.
+
+# A compact example
+
+Consider one four-taxon alignment column with A and B carrying A, and C and D carrying G. Under a modest-rate model, the split $(A,B)|(C,D)$ can explain this pattern with few changes: an A-like ancestral state on one side and a G-like state on the other. A topology that groups A with C can still generate the pattern, but normally needs extra or less probable substitutions.
+
+One column is weak evidence: stochastic change can create any compatible or incompatible pattern. ML gains power by multiplying the probabilities across many sites, while allowing different sites to have different observed patterns. Strongly supported branches are those repeatedly favored by the full alignment under plausible model and data choices, not merely those that make one conspicuous column parsimonious.
+
+# Models, partitions, and support
+
+The substitution model determines the transition probabilities used by pruning. Choices can include nucleotide frequencies, exchangeability rates, among-site rate variation (often $+\Gamma$), invariant-site components, codon models, and protein replacement matrices. Partitions let, for example, codon positions or genes have separate parameter sets. More flexibility can reduce model misspecification, but it also requires enough information and a defensible partitioning plan.
+
+Model selection compares fitted alternatives, commonly with information criteria such as AIC or BIC. It should be performed within a biologically sensible candidate set; an information criterion cannot make a nonhomologous alignment, unmodeled recombination, or biased taxon sampling valid.
+
+For branch support, the nonparametric bootstrap resamples alignment columns, refits a tree for each replicate, and reports how often a split occurs. Modern ML programs also implement approximate likelihood-ratio support measures. These values summarize stability or model-based evidence under their procedures; they are not automatically the probability that a clade is correct.
+
+```text
+raw sequences
+       -> establish homology and curate alignment
+       -> select/partition substitution model
+       -> ML tree search and parameter optimization
+       -> bootstrap or likelihood-based branch support
+       -> inspect model, alignment, and biological sensitivity
+```
+
+# Assumptions and failure modes
+
+| Issue | Why it matters | Practical response |
+|---|---|---|
+| Alignment columns are homologous | ML treats a column as descended from one process | Inspect, trim, or use alignment-aware sensitivity analyses |
+| One tree is a useful summary | Recombination, introgression, and gene transfer yield conflicting histories | Analyze loci/regions separately or use network/population methods |
+| Model is adequate | Composition bias and rate heterogeneity can distort topology and lengths | Compare biologically plausible models and conduct sensitivity checks |
+| Sites are conditionally independent | Linkage and structural constraints affect uncertainty | Avoid overstating support; use appropriate partitions and resampling interpretation |
+| Taxa are representative | Long branches and missing relatives can mislead inference | Improve taxon sampling and check influential sequences |
+
+Long-branch attraction is often discussed as a parsimony problem, but ML can also be inconsistent when its model is seriously wrong. Likewise, very large bootstrap values do not rescue a contaminated alignment or show that a gene tree is necessarily the species tree.
+
+# Tools and connections
+
+[IQ-TREE](https://iqtree.github.io/), [RAxML-NG](https://github.com/amkozlov/raxml-ng), and [PhyML](https://github.com/stephaneguindon/phyml) are widely used ML phylogeny programs. Their documentation should guide executable options and interpretation; command lines and defaults evolve.
+
+ML uses the same substitution-process ideas as [phylogenetic distance models](phylogenetic-distance-models.qmd), but retains site patterns rather than reducing them to a distance matrix. [Neighbor joining](neighbor-joining-trees.qmd) is therefore useful as a fast exploratory or starting-tree method, whereas ML directly optimizes a tree likelihood. [Bayesian phylogenetic inference](bayesian-phylogenetic-inference.qmd) uses the same likelihood machinery together with priors and posterior sampling.
+
+# Take-home Messages
+
+1. ML selects the tree and parameters that make the observed alignment most probable under a specified evolutionary model.
+2. Felsenstein's pruning algorithm efficiently sums over unknown ancestral states at every site.
+3. Tree-space heuristics and model selection are central practical parts of the method; neither is automatic proof of a unique history.
+4. Alignment quality, recombination, model fit, taxon sampling, and support interpretation are as important as the final tree drawing.
+
+# References
+
+- Felsenstein, J. 1981. [Evolutionary trees from DNA sequences: a maximum likelihood approach](https://doi.org/10.1016/0022-5193(81)90004-1). *Journal of Molecular Evolution* 17:368--376.
+- Felsenstein, J. 1973. [Maximum likelihood and minimum-steps methods for estimating evolutionary trees from data on discrete characters](https://doi.org/10.2307/2407154). *Systematic Zoology* 22:240--249.
+- Yang, Z. 1994. [Maximum likelihood phylogenetic estimation from DNA sequences with variable rates over sites: approximate methods](https://doi.org/10.1007/BF00160154). *Journal of Molecular Evolution* 39:306--314.
+- Minh, B. Q., et al. 2020. [IQ-TREE 2: new models and efficient methods for phylogenetic inference in the genomic era](https://doi.org/10.1093/molbev/msaa015). *Molecular Biology and Evolution* 37:1530--1534.
+- [IQ-TREE documentation](https://iqtree.github.io/doc/): model selection, tree search, and branch-support guidance.

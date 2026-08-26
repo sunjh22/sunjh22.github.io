@@ -61,6 +61,8 @@ Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical cluste
 
 - [Phylogenetic distance models](algorithms/phylogenetic-distance-models.qmd): correction for multiple substitutions, model assumptions, saturation, and distance-matrix construction
 - [Neighbor-joining trees](algorithms/neighbor-joining-trees.qmd): distance-corrected agglomerative tree building, branch lengths, rooting, and bootstrap stability
+- [Maximum-likelihood phylogenetics](algorithms/maximum-likelihood-phylogenetics.qmd): site-pattern likelihoods, pruning, tree-space search, evolutionary models, and branch support
+- [Bayesian phylogenetic inference](algorithms/bayesian-phylogenetic-inference.qmd): posterior tree distributions, priors, MCMC diagnostics, calibrations, and credible uncertainty
 
 ## Graphs and optimization
 

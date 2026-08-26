@@ -1,0 +1,121 @@
+---
+title: "Bayesian Phylogenetic Inference"
+subtitle: "Estimating a posterior distribution over evolutionary trees"
+description: "How Bayesian phylogenetics combines an alignment likelihood with prior assumptions and MCMC sampling to report posterior uncertainty over trees and evolutionary parameters."
+author: "Jiahong Sun"
+date: "2026-08-26"
+date-modified: "2026-08-26"
+categories: [Bioinformatics, Algorithms, Phylogenetics, Evolution]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Bayesian phylogenetics combines a sequence-evolution likelihood with prior distributions and uses sampling to describe which trees, clades, dates, and model parameters remain plausible after observing an alignment.
+
+| Item | Description |
+|---|---|
+| **Biological question** | What evolutionary histories and parameter values are supported, and how uncertain are they? |
+| **Computational problem** | Integrate over a high-dimensional space containing discrete tree topologies and continuous evolutionary parameters |
+| **Method type** | Bayesian statistical inference, usually Markov chain Monte Carlo |
+| **Input** | Homologous alignment, substitution/clock/tree prior choices, and optional calibration data |
+| **Output** | Posterior samples of trees and parameters; clade probabilities and credible intervals |
+| **Prerequisites** | [Bayesian inference in bioinformatics](bayesian-inference-in-bioinformatics.qmd), [Markov chain Monte Carlo](markov-chain-monte-carlo.qmd), [maximum-likelihood phylogenetics](maximum-likelihood-phylogenetics.qmd) |
+
+# Posterior distributions, not one best tree
+
+Let $D$ be an alignment, $T$ a tree topology with branch lengths, and $\theta$ the substitution-model, clock, and other parameters. Bayesian inference targets
+
+$$
+P(T,\theta\mid D)=\frac{P(D\mid T,\theta)P(T,\theta)}{P(D)}.
+$$
+
+The likelihood $P(D\mid T,\theta)$ is calculated with the same substitution models and pruning logic used in [maximum-likelihood phylogenetics](maximum-likelihood-phylogenetics.qmd). The prior $P(T,\theta)$ encodes assumptions before looking at the alignment. The denominator $P(D)$ is the marginal likelihood: it normalizes the posterior but is generally too difficult to compute by direct enumeration.
+
+Rather than returning only a maximum, Bayesian analysis represents uncertainty with samples from the posterior. A clade's posterior probability is the proportion of sampled trees containing that clade. A branch length, substitution rate, or divergence time can likewise be summarized by a posterior distribution and credible interval.
+
+```text
+alignment + evolutionary model + priors
+       -> posterior distribution over trees and parameters
+       -> MCMC samples after convergence checks
+       -> posterior tree summary, clade frequencies, parameter intervals
+```
+
+# Priors are part of the model
+
+Priors are not a cosmetic preliminary step. In sparse or weakly informative data they can materially influence the result; with abundant, informative data their influence may be smaller but should still be examined. Common examples include branch-length priors, substitution-rate priors, tree-topology priors, and tree-generating priors such as a Yule, birth--death, or coalescent process.
+
+For time-calibrated analyses, a molecular-clock model relates branch length to elapsed time and substitution rate. Tip dates, fossils, geological constraints, or other calibrations can inform absolute times, but their uncertainty and interpretation must be represented explicitly. A posterior dated tree cannot be more reliable than the calibration assumptions and temporal signal supporting it.
+
+| Model component | Question it formalizes | Typical diagnostic |
+|---|---|---|
+| Substitution model | How do residues change along branches? | Compare plausible models; check composition and rate assumptions |
+| Tree prior | What branching process is plausible before sequence data? | Prior-predictive simulations and sensitivity analysis |
+| Clock model | Are rates shared or allowed to vary among branches? | Compare clock assumptions; assess temporal signal |
+| Calibration prior | What is known about absolute time? | Inspect calibration density and report its source/meaning |
+
+# Sampling a changing tree space
+
+The posterior includes both continuous parameters and discrete topologies, so analytic integration is rarely feasible. MCMC constructs a chain that proposes changes such as adjusting a branch length, changing a substitution rate, or rearranging part of the tree. A proposal is accepted with a probability chosen so the chain's stationary distribution is the posterior.
+
+The chain does not make independent draws. Early states are affected by initialization, adjacent states are correlated, and a chain can become stuck in one region of tree space. For this reason, several dispersed runs or chains, sufficient effective sample sizes (ESS), trace plots, and agreement among independent runs are practical necessities, not optional decoration. The general mechanics are introduced in [Markov chain Monte Carlo](markov-chain-monte-carlo.qmd).
+
+## A toy interpretation
+
+Imagine 10,000 retained posterior tree samples. If 9,400 contain the split $(A,B)|(C,D)$, its estimated posterior clade probability is $0.94$. If the samples yield a 95% credible interval of 0.10--0.18 substitutions/site for a branch, that interval contains 95% of the posterior probability **under the stated data, likelihood, and priors**.
+
+Neither number says the analysis has discovered an unquestionable biological fact. A misleading alignment, an unsuitable substitution model, hidden recombination, or a highly influential calibration can yield a precise-looking posterior around the wrong model of the system.
+
+# Summarizing and checking the analysis
+
+The posterior can be summarized by a majority-rule consensus tree, which displays clades above a chosen frequency threshold. A maximum clade credibility tree selects one sampled tree with high product or sum of clade probabilities; it is a convenient representative, not "the posterior tree." Keep access to the full posterior when topology uncertainty matters.
+
+Posterior-predictive checks simulate data from posterior parameter draws and compare salient features with the observed alignment. They test whether the fitted model can generate data resembling what was observed, complementing MCMC convergence diagnostics. A converged chain only shows that the sampler explored its stated posterior; it does not validate the model.
+
+```text
+Before: define data curation, partitions, priors, and calibrations
+During: inspect trace mixing, ESS, independent-run agreement
+After: inspect posterior tree uncertainty and posterior-predictive fit
+Then: report priors, run length, sampling, burn-in policy, and sensitivity results
+```
+
+# Bayesian and likelihood support are different quantities
+
+Maximum-likelihood bootstrap support asks how often a split appears after resampling alignment columns under a fitted procedure. Bayesian posterior probability asks for the posterior mass of that clade given a likelihood and explicit priors. They can agree or differ, especially with limited data or model misspecification, and should not be translated into each other.
+
+| Goal | Useful approach | Essential caution |
+|---|---|---|
+| Fast best-fitting tree | ML search, possibly with bootstrap support | Reports an optimum, not a posterior distribution |
+| Quantify parameter and topology uncertainty | Bayesian posterior sampling | Requires convergence and prior/model sensitivity checks |
+| Date divergences | Bayesian clock model with justified calibrations | Calibration assumptions can dominate absolute dates |
+| Compare complex models | Marginal-likelihood methods or predictive assessment | Do not use a posterior summary as a model-fit test |
+
+# Failure modes and responsible use
+
+| Problem | Consequence | Practical response |
+|---|---|---|
+| Chains have not mixed | Posterior frequencies depend on starting state | Run longer/independent chains; inspect ESS and traces |
+| Prior is unintentionally influential | Apparent certainty reflects assumptions more than data | Plot prior versus posterior and vary defensible priors |
+| Alignment is not homologous | Likelihood models artifacts as evolutionary signal | Curate alignment and test filtering choices |
+| One tree is inadequate | Recombination or gene flow produces incompatible histories | Partition data or use methods designed for reticulation/population history |
+| Calibration is misinterpreted | Dates and rates are biased | Document calibration evidence, uncertainty, and placement |
+
+Tools such as [MrBayes](https://nbisweden.github.io/MrBayes/), [BEAST 2](https://www.beast2.org/), and [RevBayes](https://revbayes.github.io/) offer different model languages and workflows. Their models and diagnostics must be selected for the biological question; an MCMC run should never be accepted solely because it finished without an error.
+
+# Take-home Messages
+
+1. Bayesian phylogenetics estimates a posterior distribution over trees and evolutionary parameters, not merely one optimum tree.
+2. The posterior combines likelihood, priors, and—when relevant—clock and calibration assumptions.
+3. MCMC convergence diagnostics establish sampler behavior, whereas posterior-predictive and sensitivity checks assess whether the model is adequate and robust.
+4. Posterior clade probabilities and bootstrap values answer different conditional questions and should not be interchanged.
+
+# References
+
+- Yang, Z., & Rannala, B. 1997. [Bayesian phylogenetic inference using DNA sequences: a Markov Chain Monte Carlo method](https://doi.org/10.1093/molbev/14.7.717). *Molecular Biology and Evolution* 14:717--724.
+- Huelsenbeck, J. P., & Ronquist, F. 2001. [MRBAYES: Bayesian inference of phylogenetic trees](https://doi.org/10.1093/bioinformatics/17.8.754). *Bioinformatics* 17:754--755.
+- Drummond, A. J., & Rambaut, A. 2007. [BEAST: Bayesian evolutionary analysis by sampling trees](https://doi.org/10.1186/1471-2148-7-214). *BMC Evolutionary Biology* 7:214.
+- Bouckaert, R., et al. 2019. [BEAST 2.5: an advanced software platform for Bayesian evolutionary analysis](https://doi.org/10.1371/journal.pcbi.1006650). *PLoS Computational Biology* 15:e1006650.
+- [BEAST 2 documentation](https://www.beast2.org/tutorials/): official tutorials and analysis guidance.
