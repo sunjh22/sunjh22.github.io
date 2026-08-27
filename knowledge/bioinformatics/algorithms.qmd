@@ -4,9 +4,12 @@ description: "Algorithms and mathematical ideas behind biological data analysis.
 categories: [Bioinformatics, Algorithms]
 ---
 
-## Geometry and neighborhoods
+## Low-dimensional omics representations
 
-Planned: PCA, t-SNE, UMAP, k-nearest neighbors, k-means, and hierarchical clustering.
+- [Principal component analysis for omics data](algorithms/principal-component-analysis-for-omics-data.qmd): variance-maximizing orthogonal components for QC, exploration, and covariate discovery
+- [Non-negative matrix factorization](algorithms/non-negative-matrix-factorization.qmd): additive nonnegative feature programs, sample exposures, rank selection, and stability
+
+Planned: k-means and k-medoids clustering, hierarchical clustering, k-nearest-neighbor graphs, t-SNE, UMAP, diffusion maps, Louvain, and Leiden.
 
 ### Database sequence search
 

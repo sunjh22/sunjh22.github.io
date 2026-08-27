@@ -1,0 +1,128 @@
+---
+title: "Non-negative Matrix Factorization"
+subtitle: "Learning additive parts-based patterns from nonnegative omics measurements"
+description: "How non-negative matrix factorization decomposes a nonnegative omics matrix into additive feature programs and sample exposures, with practical interpretation and validation guidance."
+author: "Jiahong Sun"
+date: "2026-08-27"
+date-modified: "2026-08-27"
+categories: [Bioinformatics, Algorithms, Omics, Matrix Factorization]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Non-negative matrix factorization (NMF) approximates nonnegative measurements as additive combinations of nonnegative components, making each sample's signal interpretable as exposures to feature programs.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which recurring molecular programs or mutational processes combine to produce each sample's profile? |
+| **Computational problem** | Approximate a large nonnegative matrix with a small number of additive factors |
+| **Method type** | Unsupervised low-rank matrix factorization |
+| **Input** | A nonnegative feature-by-sample matrix, a chosen rank, and preprocessing choices |
+| **Output** | Component signatures/programs, sample exposures, reconstruction error, and stability diagnostics |
+| **Bioinformatics uses** | Mutational-signature extraction, expression programs, cell-type deconvolution, and spectral-pattern analysis |
+| **Prerequisites** | Matrix multiplication, optimization, and [principal component analysis](principal-component-analysis-for-omics-data.qmd) |
+
+# The additive-factor model
+
+Given a nonnegative matrix $V\in\mathbb{R}_{\geq0}^{m\times n}$, NMF seeks nonnegative matrices
+
+$$
+V\approx WH,
+$$
+
+where $W\in\mathbb{R}_{\geq0}^{m\times r}$ contains $r$ feature patterns and $H\in\mathbb{R}_{\geq0}^{r\times n}$ contains their sample-specific exposures. Element $V_{ij}$ is reconstructed as
+
+$$
+\widehat V_{ij}=\sum_{k=1}^{r}W_{ik}H_{kj}.
+$$
+
+Because negative cancellation is forbidden, a high value is explained by adding component contributions. For example, in a mutation-count matrix, a column of $W$ can be a spectrum over substitution contexts and a row of $H$ can quantify how strongly that spectrum contributes to each tumor.
+
+```text
+nonnegative measurements V
+    -> choose rank r and loss model
+    -> optimize nonnegative W and H
+    -> inspect signatures/programs and sample exposures
+    -> assess stability, residuals, and biological reproducibility
+```
+
+# What the algorithm optimizes
+
+Two common objectives are:
+
+| Loss | Objective | Suitable intuition |
+|---|---|---|
+| Squared Frobenius loss | $\min_{W,H\geq0}\lVert V-WH\rVert_F^2$ | Approximately homoscedastic continuous measurements |
+| Generalized Kullback--Leibler divergence | $\min_{W,H\geq0}\sum_{ij}\left[V_{ij}\log\frac{V_{ij}}{(WH)_{ij}}-V_{ij}+(WH)_{ij}\right]$ | Count-like data with a Poisson-model connection |
+
+The original multiplicative-update algorithms alternate updates of $W$ and $H$ while preserving nonnegativity. Coordinate descent, alternating least squares, and probabilistic factor models are other useful solvers. The optimization is non-convex jointly in $W$ and $H$, so different random starts can reach different factorizations with similar error.
+
+# Toy example: mixtures of two programs
+
+Imagine three genes measured in two samples:
+
+$$
+V=\begin{bmatrix}8&2\\8&2\\1&7\end{bmatrix}.
+$$
+
+One plausible rank-two factorization has a program enriched for genes 1 and 2 and another enriched for gene 3. The first sample has high exposure to the first program; the second has high exposure to the second. NMF does not prove that those programs are separate cell types or pathways. It says an additive low-rank explanation fits the observed matrix; annotations, replicates, and external validation give that explanation biological meaning.
+
+# Choosing data and rank
+
+## Ensure the input is genuinely nonnegative
+
+Raw counts, nonnegative abundances, and mutation counts are natural inputs. Centering or z-scoring creates negative values and is incompatible with ordinary NMF. Log transformations preserve nonnegativity only with a suitable offset, but change the error model. Match the loss function and preprocessing to the measurement process rather than treating NMF as a generic replacement for PCA.
+
+## Rank is a scientific and statistical choice
+
+Increasing rank always permits a better in-sample reconstruction. It can also split one real program into unstable fragments or fit batch effects and noise. Compare candidate ranks using repeated runs, held-out reconstruction where appropriate, component stability, residual structure, and interpretability against known controls. There is rarely one rank justified by a single elbow plot.
+
+## Scaling ambiguity is normal
+
+For any positive diagonal matrix $D$, $(WD)(D^{-1}H)=WH$. Therefore a component's signature and exposure magnitudes are not separately identifiable until a normalization convention is chosen, such as scaling each column of $W$ to sum to one. Component order is arbitrary as well; compare components by their patterns, not their numeric labels.
+
+# A practical bioinformatics workflow
+
+1. Define rows, columns, and their units; retain metadata and feature annotations.
+2. Filter features or samples only with a recorded, biologically defensible rule.
+3. Select a nonnegative representation and loss model appropriate to counts or abundances.
+4. Fit several ranks from multiple randomized starts with fixed, reported seeds.
+5. Normalize factors for interpretation, then examine exposures alongside sample metadata.
+6. Validate components in held-out samples, independent cohorts, known controls, or orthogonal assays.
+
+For cancer mutational signatures, counts are commonly arranged by mutation context and tumor. A signature can be compared with a curated reference, while its exposure should be interpreted with sequencing depth, tumor purity, treatment history, and the opportunity spectrum in mind. The COSMIC signature resource is useful for comparison, not evidence that every fitted component corresponds exactly to a reference signature.
+
+# Pitfalls and diagnostics
+
+| Risk | Why it matters | Practical check |
+|---|---|---|
+| Unstable components across starts | Multiple local solutions fit nearly equally well | Cluster components across restarts and report stability |
+| Rank too large | Noise or technical effects become apparent "programs" | Inspect reproducibility and residuals, not reconstruction error alone |
+| Batch-driven factor | A component may encode library protocol or depth | Associate exposures with QC and batch metadata before biological labeling |
+| Missing process or feature bias | Residual structure can distort fitted components | Examine residuals and coverage/opportunity effects |
+| Overinterpreting a signature match | Similar profiles may have different causes | Treat matches as hypotheses; use context and independent evidence |
+
+NMF also cannot uniquely identify factors without additional conditions. Near-duplicate programs, correlated cell states, and limited samples can make components exchangeable or mixed. Sparsity constraints, supervised references, or probabilistic priors may improve identifiability, but each introduces further assumptions.
+
+# Connections
+
+[Principal component analysis](principal-component-analysis-for-omics-data.qmd) also gives a low-rank approximation, but its components are signed and orthogonal, whereas NMF components are additive and not generally orthogonal. This often makes NMF attractive for count-based signatures; PCA is often convenient for global QC and geometry. Future clustering methods can group NMF exposure profiles, but factorization is not itself a clustering algorithm. NMF also connects to probabilistic latent-variable models: a Poisson factorization makes explicit distributional assumptions that basic NMF leaves implicit.
+
+# Take-home Messages
+
+1. NMF explains a nonnegative matrix as nonnegative feature patterns multiplied by nonnegative sample exposures.
+2. Its additive representation can be interpretable, but component identity and scale are not automatically unique.
+3. The input scale, loss function, rank, initialization, and stability assessment are central modeling decisions.
+4. A biologically named component needs external validation and technical-confounder checks, not just a low reconstruction error.
+
+# References
+
+- Lee, D. D., & Seung, H. S. 1999. [Learning the parts of objects by non-negative matrix factorization](https://doi.org/10.1038/44565). *Nature* 401:788--791.
+- Lee, D. D., & Seung, H. S. 2001. [Algorithms for non-negative matrix factorization](https://doi.org/10.48550/arXiv.cs/0101006). *Advances in Neural Information Processing Systems* 13.
+- Brunet, J.-P. et al. 2004. [Metagenes and molecular pattern discovery using matrix factorization](https://doi.org/10.1073/pnas.0308531101). *Proceedings of the National Academy of Sciences* 101:4164--4169.
+- Alexandrov, L. B. et al. 2020. [The repertoire of mutational signatures in human cancer](https://doi.org/10.1038/s41586-020-1943-3). *Nature* 578:94--101.
+- [COSMIC mutational signatures](https://cancer.sanger.ac.uk/signatures/): reference signatures and documentation.

@@ -1,0 +1,124 @@
+---
+title: "Principal Component Analysis for Omics Data"
+subtitle: "Summarizing correlated molecular measurements with orthogonal axes of variation"
+description: "How principal component analysis projects high-dimensional omics measurements into variance-maximizing components for exploration, quality control, and covariate discovery."
+author: "Jiahong Sun"
+date: "2026-08-27"
+date-modified: "2026-08-27"
+categories: [Bioinformatics, Algorithms, Omics, Dimensionality Reduction]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Principal component analysis (PCA) replaces many correlated molecular features with a small number of mutually orthogonal directions that explain as much variation in the measured samples as possible.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which broad sources of variation separate samples or features, and do technical factors dominate the data? |
+| **Computational problem** | Represent an $n\times p$ measurement matrix with a few informative axes without using class labels |
+| **Method type** | Unsupervised linear dimensionality reduction |
+| **Input** | A normalized, transformed sample-by-feature matrix plus sample and feature metadata |
+| **Output** | Sample scores, feature loadings, explained-variance fractions, and diagnostic plots |
+| **Bioinformatics uses** | RNA-seq and single-cell QC, population structure, proteomics, methylation, and batch-effect diagnosis |
+| **Prerequisites** | Matrix multiplication, variance, centering, and a stated normalization procedure |
+
+# The variation PCA captures
+
+An omics experiment can measure thousands of genes, proteins, peaks, or variants for each sample. Plotting all dimensions is impossible, and many features co-vary because they share cell type, pathway activity, ancestry, sequencing depth, or batch. PCA finds linear combinations of features that describe the largest remaining variation in the matrix.
+
+For a centered data matrix $X\in\mathbb{R}^{n\times p}$, where rows are samples and columns are features, the first loading vector $v_1$ is chosen to maximize the variance of the projected samples:
+
+$$
+v_1=\arg\max_{\lVert v\rVert=1}\lVert Xv\rVert^2.
+$$
+
+Later vectors maximize the remaining variation while being orthogonal to earlier vectors. With the singular-value decomposition
+
+$$
+X=U\Sigma V^\mathsf{T},
+$$
+
+the columns of $V$ are **feature loadings**, $U\Sigma$ gives **sample scores**, and the squared singular values describe variance along each component. A PC is an axis of measured variation, not automatically a biological factor or a causal explanation.
+
+```text
+feature matrix
+    -> normalize, transform, and center features
+    -> singular-value decomposition
+    -> sample scores + feature loadings + variance explained
+    -> QC, exploration, and covariate investigation
+```
+
+# A small example
+
+Suppose four bulk-RNA-seq samples have expression measurements for two genes after a suitable variance-stabilizing transform:
+
+| Sample | gene A | gene B |
+|---|---:|---:|
+| control 1 | 2 | 2 |
+| control 2 | 3 | 3 |
+| treated 1 | 8 | 8 |
+| treated 2 | 9 | 9 |
+
+Both genes change together. After centering each gene, the dominant direction is approximately $(1,1)/\sqrt{2}$: PC1 separates controls from treated samples. The perpendicular direction $(1,-1)/\sqrt{2}$ has essentially no variation here. In real data, a PC can instead track library size, mitochondrial RNA fraction, donor ancestry, cell cycle, or a mixture of these effects. Metadata are necessary to interpret it.
+
+# Preparing omics data matters more than the eigensolver
+
+PCA is deterministic for a fixed matrix, but the matrix is a modeling choice.
+
+| Choice | Why it matters | Typical practice |
+|---|---|---|
+| Feature filtering | Thousands of uninformative or sparse features can obscure structure | Remove features with too little expression/variation; record the rule |
+| Normalization | Raw counts mainly reflect library size and composition | Use an assay-appropriate normalization before PCA |
+| Transformation | Count variance increases with the mean | Use a log-like or variance-stabilizing transform where appropriate |
+| Centering | PCA otherwise points toward the mean abundance profile | Center every feature unless a justified alternative is used |
+| Scaling | High-variance features otherwise dominate | Scale to unit variance only when features should contribute equally |
+
+For RNA-seq counts, PCA on raw counts is usually misleading. A common workflow filters low-expression genes, accounts for sequencing depth, then uses a variance-stabilizing or regularized-log transformation. For single-cell data, sparsity, depth variation, and feature-selection choices are particularly consequential; PCA is often applied to selected highly variable genes rather than every gene.
+
+# Reading a PCA result
+
+## Scores: where samples lie
+
+A PC1-versus-PC2 scatterplot places each sample by its scores. Color and shape points using *pre-specified* metadata such as condition, donor, library-preparation batch, or run. Separation can identify a biologically useful pattern, but it can also expose confounding: if every treated sample was sequenced in one batch, condition and batch cannot be disentangled from that plot alone.
+
+## Loadings: which features define an axis
+
+Large positive or negative loadings identify features associated with a PC direction. Their signs are arbitrary: multiplying both a component's scores and loadings by $-1$ produces the identical solution. Enrichment analysis of ranked loadings can help form a hypothesis, but it is exploratory and should not replace a preregistered differential-expression test.
+
+## Explained variance: how much the projection loses
+
+The proportion for PC $k$ is $\sigma_k^2/\sum_j\sigma_j^2$. It describes reconstruction variance in the supplied matrix, not biological importance. A low-variance component may distinguish a clinically important group; a high-variance component may simply represent RNA quality.
+
+# Diagnostics and failure modes
+
+| Observation | Possible explanation | Response |
+|---|---|---|
+| One sample is far from all others | Mislabeling, contamination, low depth, or a real outlier | Inspect QC metrics and provenance before excluding it |
+| PC1 follows library size or mitochondrial fraction | Incomplete normalization or damaged cells | Revisit QC and transformation; do not silently regress it away |
+| Groups separate exactly by batch | Technical confounding | Check study design; use a justified batch-aware analysis, not PCA alone |
+| Interpretation changes after adding samples | PCA axes are data-dependent | Refit and report the cohort and preprocessing used |
+| A crisp two-dimensional plot misses known biology | Signal lies in later or nonlinear structure | Inspect more PCs and consider methods such as UMAP only after QC |
+
+PCA assumes linear structure and emphasizes directions of large variance. It does not supply clusters, adjusted treatment effects, or a batch correction. Removing PCs because they correlate with a variable can discard genuine biology when that variable is confounded with the signal of interest.
+
+# Connections
+
+PCA is a geometric view of the same matrix that later methods may model differently. [Non-negative matrix factorization](non-negative-matrix-factorization.qmd) learns additive, nonnegative components rather than orthogonal signed axes, which can be more interpretable for nonnegative abundance data. Upcoming neighborhood and clustering methods use low-dimensional representations to build sample graphs or groups, but should inherit PCA's preprocessing and QC scrutiny. In population genetics, PCA of genotype-derived matrices is often used to visualize ancestry structure; the axes still reflect sampling and demographic history as well as biology.
+
+# Take-home Messages
+
+1. PCA summarizes a centered matrix using orthogonal directions ordered by captured variance.
+2. Scores locate samples; loadings identify the features associated with each direction; neither is self-interpreting.
+3. Filtering, normalization, transformation, centering, and scaling define the analysis as much as the PCA calculation does.
+4. PCA is an exploratory QC and covariate-discovery tool, not a substitute for a designed statistical comparison or causal inference.
+
+# References
+
+- Pearson, K. 1901. [On lines and planes of closest fit to systems of points in space](https://doi.org/10.1080/14786440109462720). *Philosophical Magazine* 2:559--572.
+- Hotelling, H. 1933. [Analysis of a complex of statistical variables into principal components](https://doi.org/10.1037/h0071325). *Journal of Educational Psychology* 24:417--441.
+- Patterson, N., Price, A. L., & Reich, D. 2006. [Population structure and eigenanalysis](https://doi.org/10.1371/journal.pgen.0020190). *PLoS Genetics* 2:e190.
+- Love, M. I., Huber, W., & Anders, S. 2014. [Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2](https://doi.org/10.1186/s13059-014-0550-8). *Genome Biology* 15:550.
