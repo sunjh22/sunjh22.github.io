@@ -4,12 +4,14 @@ description: "Algorithms and mathematical ideas behind biological data analysis.
 categories: [Bioinformatics, Algorithms]
 ---
 
-## Low-dimensional omics representations
+## Low-dimensional omics representations and clustering
 
 - [Principal component analysis for omics data](algorithms/principal-component-analysis-for-omics-data.qmd): variance-maximizing orthogonal components for QC, exploration, and covariate discovery
 - [Non-negative matrix factorization](algorithms/non-negative-matrix-factorization.qmd): additive nonnegative feature programs, sample exposures, rank selection, and stability
+- [k-means and k-medoids clustering](algorithms/k-means-and-k-medoids-clustering.qmd): flat prototype-based partitions, robust medoids, choice of $k$, and stability checks
+- [Hierarchical clustering](algorithms/hierarchical-clustering.qmd): linkage-based nested partitions, dendrogram interpretation, and branch validation
 
-Planned: k-means and k-medoids clustering, hierarchical clustering, k-nearest-neighbor graphs, t-SNE, UMAP, diffusion maps, Louvain, and Leiden.
+Planned: k-nearest-neighbor graphs, t-SNE, UMAP, diffusion maps, Louvain, and Leiden.
 
 ### Database sequence search
 

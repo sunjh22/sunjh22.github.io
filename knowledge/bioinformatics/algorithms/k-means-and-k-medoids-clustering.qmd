@@ -1,0 +1,143 @@
+---
+title: "k-means and k-medoids Clustering"
+subtitle: "Partitioning biological profiles around representative centers"
+description: "How k-means and k-medoids partition omics profiles, what their objectives assume, and how to validate clusters without mistaking an algorithmic partition for biology."
+author: "Jiahong Sun"
+date: "2026-08-28"
+date-modified: "2026-08-28"
+categories: [Bioinformatics, Algorithms, Clustering, Omics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** k-means assigns observations to the nearest mean-like center, whereas k-medoids assigns them to the nearest observed representative, producing a requested number of clusters.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which samples, cells, genes, or sequence-derived profiles have similar measured patterns? |
+| **Computational problem** | Partition $n$ observations into $k$ non-overlapping groups that are compact under a chosen distance or loss |
+| **Method type** | Unsupervised partitioning / prototype clustering |
+| **Input** | Feature matrix, distance or preprocessing choice, and a prespecified $k$ |
+| **Output** | Cluster labels, centers or medoids, within-cluster loss, and diagnostics |
+| **Prerequisites** | Feature scaling, distance, and [principal component analysis](principal-component-analysis-for-omics-data.qmd) |
+
+# Two related objectives
+
+For observations $x_1,\ldots,x_n\in\mathbb{R}^p$, k-means seeks clusters $C_1,\ldots,C_k$ and centroids $\mu_1,\ldots,\mu_k$ that minimize the within-cluster sum of squared Euclidean distances,
+
+$$
+\min_{C_1,\ldots,C_k}\sum_{r=1}^{k}\sum_{i\in C_r}\lVert x_i-\mu_r\rVert_2^2,
+\qquad
+\mu_r=\frac{1}{|C_r|}\sum_{i\in C_r}x_i.
+$$
+
+The centroid need not be an observed sample or cell. This objective favors compact, roughly spherical clusters of similar size in the space actually supplied to the algorithm. It is not a generic definition of biological identity.
+
+k-medoids instead chooses a medoid $m_r$ from the observed data in each cluster and minimizes a general dissimilarity:
+
+$$
+\min_{C_1,\ldots,C_k;\,m_r\in C_r}\sum_{r=1}^{k}\sum_{i\in C_r}d(x_i,x_{m_r}).
+$$
+
+Because a medoid is an actual observation and a non-Euclidean $d$ is allowed, k-medoids is often more resistant to extreme observations and more natural for a precomputed biological distance. It still requires that the chosen distance meaningfully represents similarity.
+
+# How the algorithms work
+
+## Lloyd's k-means algorithm
+
+Lloyd's algorithm alternates two simple updates:
+
+1. Initialize $k$ centroids, preferably with the spread-out **k-means++** seeding rule.
+2. Assign every observation to its nearest centroid.
+3. Replace each centroid by the arithmetic mean of its assigned observations.
+4. Repeat steps 2--3 until assignments or the objective stop changing appreciably.
+
+Each full iteration does not increase the objective, but the joint optimization is non-convex. Different starts can converge to different local optima, so repeated seeded runs and a documented selection rule matter.
+
+```text
+scaled feature matrix
+    -> initialize k centers
+    -> assign each point to its nearest center
+    -> recompute centers
+    -> repeat to a local optimum
+    -> examine stability and biological covariates
+```
+
+## k-medoids and PAM
+
+The classical Partitioning Around Medoids (PAM) procedure starts from $k$ medoids, assigns observations to the closest one, then evaluates swaps between a current medoid and a non-medoid. A swap is accepted if it lowers total dissimilarity. PAM is robust but can be expensive for large $n$; CLARA samples observations to make PAM practical, and CLARANS searches proposed swaps more selectively. These approximations trade some optimization accuracy for scale.
+
+# A toy example
+
+Suppose each sample has two normalized expression features:
+
+| Sample | Feature 1 | Feature 2 |
+|---|---:|---:|
+| A | 0 | 0 |
+| B | 0 | 1 |
+| C | 1 | 0 |
+| D | 8 | 8 |
+| E | 9 | 8 |
+| F | 8 | 9 |
+
+With $k=2$, a reasonable k-means assignment is $\{A,B,C\}$ and $\{D,E,F\}$. The first centroid is $(1/3,1/3)$ and the second is $(25/3,25/3)$. After reassignment, every point remains closer to its present centroid, so this is a fixed point.
+
+For k-medoids under Euclidean distance, A and E could serve as representatives: they are real samples close to their respective groups. If sample F instead had an extreme value $(80,9)$, the k-means centroid would shift strongly, while a medoid is less affected because it must remain an observed, centrally located sample.
+
+# Bioinformatics workflow
+
+1. Define the unit of clustering: cells, samples, genes, contigs, or another entity.
+2. Choose features and normalization that align with the scientific question. Library size, sequencing depth, and high-variance features can otherwise dominate a distance.
+3. Reduce noise or collinearity when appropriate, often by clustering a selected low-dimensional representation rather than every raw feature. [PCA](principal-component-analysis-for-omics-data.qmd) is common for this purpose.
+4. Fit several values of $k$ and multiple initializations; retain seeds, preprocessing, and the criterion used to select a solution.
+5. Inspect cluster sizes, within-cluster dispersion, separation, stability under resampling, and association with technical metadata.
+6. Interpret clusters with marker features, external labels, replicates, and experimental knowledge rather than label numbers alone.
+
+For single-cell RNA-seq, direct Euclidean k-means on unnormalized counts often groups cells by library size. A typical analysis instead normalizes counts, selects informative genes, forms a reduced representation, and then uses clustering as one step among QC, neighborhood analysis, and marker assessment. The same caveat applies to bulk expression: a cluster can reflect batch, tissue composition, or unmeasured confounding rather than a discrete molecular subtype.
+
+# Choosing $k$ and checking results
+
+There is no universally correct $k$. The elbow in within-cluster sum of squares is descriptive, not a hypothesis test: loss must decrease as $k$ grows. Silhouette widths compare within-cluster and nearest-other-cluster distances, but inherit the chosen metric and favor particular geometries. Resampling stability asks a different, valuable question: does a similar partition recur after perturbing samples, features, or random seeds?
+
+| Diagnostic | What it can reveal | Important limitation |
+|---|---|---|
+| Objective or elbow curve | Diminishing improvement as $k$ increases | No automatic biological cutoff |
+| Silhouette width | Compactness relative to nearest alternative cluster | Can reward artificial separation or small $k$ |
+| Restart agreement | Sensitivity to local optima | Does not test preprocessing choices |
+| Bootstrap/subsample stability | Reproducibility under perturbation | Unstable rare populations may be real |
+| Technical-metadata association | Batch or depth-driven partitions | Absence of association is not proof of biology |
+
+# Failure modes and alternatives
+
+| Situation | Why these methods struggle | Consider |
+|---|---|---|
+| Curved or branching trajectories | Nearest-center partitions cut continuous manifolds into arbitrary pieces | [k-nearest-neighbor graphs](../algorithms.qmd), diffusion methods, or trajectory models |
+| Unequal densities or nonconvex groups | k-means' geometry is poorly matched | Density-based or graph community methods |
+| Outliers or a meaningful custom distance | Means are sensitive and may be undefined for the distance | k-medoids, robust preprocessing, or distance-based methods |
+| Hierarchical relationships are important | A flat $k$-way partition discards nested structure | Hierarchical clustering |
+| $k$ is not scientifically defensible | Every run forces a partition | Report sensitivity, use a different model, or avoid discrete labels |
+
+Neither method supplies p-values for cluster existence or automatically makes clusters comparable across datasets. Cluster labels are arbitrary, and a visually separated embedding is not validation: embeddings may distort distances. A responsible analysis reports the exact input representation, distance, $k$, initialization policy, and validation evidence.
+
+# Connections
+
+k-means can be viewed as a restricted matrix-factorization problem: each observation has one hard cluster assignment and each cluster has a centroid. In contrast, [non-negative matrix factorization](non-negative-matrix-factorization.qmd) permits additive exposures to multiple programs. The next topic, hierarchical clustering, preserves a nested sequence of merges or splits instead of choosing one flat partition at the outset. Neighborhood-based approaches use a local graph rather than a single global center; they are particularly useful when omics data have complex geometry.
+
+# Take-home Messages
+
+1. k-means minimizes squared Euclidean distance to mean centroids; k-medoids minimizes a chosen dissimilarity to observed representatives.
+2. Both require a chosen $k$, preprocessing, and similarity definition; those choices often drive the biological meaning.
+3. Repeated starts, resampling stability, and technical-confounder checks are essential diagnostics.
+4. A mathematical partition is a hypothesis about structure, not evidence by itself for discrete cell types or disease subgroups.
+
+# References
+
+- MacQueen, J. 1967. [Some methods for classification and analysis of multivariate observations](https://projecteuclid.org/euclid.bsmsp/1200512992). *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability* 1:281--297.
+- Lloyd, S. 1982. [Least squares quantization in PCM](https://doi.org/10.1109/TIT.1982.1056489). *IEEE Transactions on Information Theory* 28:129--137.
+- Arthur, D., & Vassilvitskii, S. 2007. [k-means++: The advantages of careful seeding](https://doi.org/10.1145/1283383.1283494). *Proceedings of SODA*.
+- Kaufman, L., & Rousseeuw, P. J. 1987. [Clustering by means of medoids](https://wis.kuleuven.be/stat/robust/papers/1987/ClusteringByMeansOfMedoids.pdf). In *Statistical Data Analysis Based on the L1-Norm and Related Methods*.
+- [scikit-learn clustering documentation](https://scikit-learn.org/stable/modules/clustering.html): implementation details and clustering-evaluation guidance.

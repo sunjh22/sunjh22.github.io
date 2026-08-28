@@ -1,0 +1,124 @@
+---
+title: "Hierarchical Clustering"
+subtitle: "Building nested groups from pairwise similarity"
+description: "A practical guide to agglomerative and divisive hierarchical clustering, linkage choices, dendrogram interpretation, and validation for omics and sequence-derived data."
+author: "Jiahong Sun"
+date: "2026-08-28"
+date-modified: "2026-08-28"
+categories: [Bioinformatics, Algorithms, Clustering, Omics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Hierarchical clustering converts pairwise similarities into a tree of nested groups, allowing a researcher to examine structure at several resolutions before choosing any cut.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which profiles group together, and are those groups nested within broader molecular or evolutionary patterns? |
+| **Computational problem** | Construct a hierarchy from pairwise distances or similarities |
+| **Method type** | Unsupervised agglomerative or divisive clustering |
+| **Input** | Observations, features or a pairwise distance matrix, and linkage rule |
+| **Output** | A dendrogram, merge heights, and optional labels after cutting the tree |
+| **Prerequisites** | Distance, correlation, feature scaling, and [k-means and k-medoids clustering](k-means-and-k-medoids-clustering.qmd) |
+
+# From distances to a dendrogram
+
+In agglomerative hierarchical clustering, every observation starts as its own cluster. The algorithm repeatedly merges the two clusters judged closest by a **linkage** rule, recording the merge order and height. The resulting dendrogram contains all nested partitions from $n$ singleton clusters to one cluster.
+
+```text
+observations or distance matrix
+    -> choose distance and linkage
+    -> merge the closest current clusters
+    -> update inter-cluster distances
+    -> repeat until one cluster remains
+    -> inspect or cut the dendrogram
+```
+
+The tree is an algorithmic summary of the supplied distances. Its branch heights usually represent dissimilarity at merge time, not elapsed evolutionary time, statistical confidence, or effect size unless a method explicitly defines them that way.
+
+# Linkage is a modeling decision
+
+Let $A$ and $B$ be clusters and $d(i,j)$ a distance between observations. Common agglomerative linkage rules are:
+
+| Linkage | Distance between clusters | Typical behavior |
+|---|---|---|
+| Single | $\min_{i\in A,j\in B}d(i,j)$ | Can form long chains through intermediate observations |
+| Complete | $\max_{i\in A,j\in B}d(i,j)$ | Favors compact groups; sensitive to distant members |
+| Average (UPGMA-style) | Average of all cross-cluster distances | A compromise between chaining and compactness |
+| Ward | Increase in within-cluster squared error after merging | Often compact groups; requires Euclidean geometry in its standard form |
+
+Single linkage is closely related to connecting components as a distance threshold grows, so one bridge point can join otherwise separated groups. Complete linkage resists such chaining but can split diffuse populations. Average linkage is commonly useful for correlation-derived expression distances. Ward's criterion often gives visually compact heatmap blocks, but applying it to an arbitrary distance matrix is not automatically valid.
+
+Divisive methods run in the opposite direction, starting with all observations and recursively splitting them. They are less commonly used in routine omics workflows but embody the same key idea: a hierarchy depends on the splitting or merging criterion.
+
+# A toy example
+
+Consider four profiles with distances
+
+$$
+d(A,B)=1,\quad d(C,D)=1,\quad d(B,C)=4,
+$$
+
+and all remaining between-pair distances near 5. An agglomerative procedure first merges $A$ with $B$ and $C$ with $D$. The two pairs merge later, at a height determined by the linkage rule. Cutting the dendrogram below that final merge yields two groups, $\{A,B\}$ and $\{C,D\}$.
+
+If one additional point lies moderately close to both pairs, single linkage may connect all five observations early. Complete and average linkage can retain two groups longer. Thus an apparent biological split can be a consequence of linkage choice, not a stable fact in the data.
+
+# Practical omics use
+
+Hierarchical clustering is widely used to arrange heatmap rows and columns, discover expression modules, and summarize similarity among samples. A typical expression workflow is:
+
+1. Define the observation type and select biologically meaningful features; remove features with no informative variation by a recorded rule.
+2. Normalize and transform measurements appropriately. For expression profiles, correlation distance can emphasize shared patterns while Euclidean distance emphasizes absolute levels.
+3. Compute a distance matrix and choose linkage deliberately.
+4. Cluster rows and columns separately if creating a heatmap; annotate the display with batch, phenotype, and other metadata.
+5. Inspect whether major branches reproduce across feature sets, cohorts, or resamples before naming them as subtypes or programs.
+
+For gene expression, a frequent choice is $d(i,j)=1-r_{ij}$, where $r_{ij}$ is a Pearson or Spearman correlation between profiles. This makes profiles with the same shape close even if their magnitudes differ. It also inherits correlation's sensitivity to outliers, missingness, and preprocessing. Do not treat a default heatmap distance as a biological model.
+
+# Cutting, validating, and reporting the tree
+
+There is no single mandatory cut height. A horizontal cut makes a flat partition, but selecting it after viewing the data can overstate certainty. Predefined clinical or experimental objectives can justify a resolution; otherwise report the hierarchy, explore a defensible range of cuts, and validate salient branches.
+
+| Check | Question answered | Caution |
+|---|---|---|
+| Cophenetic correlation | How well do dendrogram-induced distances reproduce the input distances? | A good summary can still reflect the wrong preprocessing |
+| Resampling / bootstrap support | Do clusters recur after perturbing data? | Support depends on the resampling scheme |
+| Linkage and distance sensitivity | Does a branch persist under reasonable choices? | Do not use this to search indefinitely for a preferred result |
+| External metadata | Does a branch align with independent biology or technical factors? | Association is not causal validation |
+
+For molecular phylogenetics, a dendrogram from generic hierarchical clustering is not a substitute for an inferred evolutionary tree: phylogenetic distance models and tree-building procedures use evolutionary assumptions and branch-length interpretations. See [phylogenetic distance models](phylogenetic-distance-models.qmd) and [neighbor-joining trees](neighbor-joining-trees.qmd) for that distinct setting.
+
+# Common pitfalls
+
+| Pitfall | Consequence | Response |
+|---|---|---|
+| Unequal feature scales | High-variance features dominate distance | Transform or standardize with a justified rule |
+| Reading leaf order as unique | Many rotations give the same tree | Interpret branches, not adjacency in one drawing |
+| Calling every branch a subtype | A tree always has branches, even for continuous variation | Use stability and external evidence |
+| Overlooking batch effects | Technical similarity produces clean-looking blocks | Add metadata annotations and correct/design for batch where appropriate |
+| Clustering too many noisy features | Distances become unstable or uninformative | Select features and assess sensitivity |
+
+The method also has computational limits: storing all pairwise distances requires $O(n^2)$ memory, and standard implementations can be costly for very large cell atlases. Graph-based approaches are often more scalable and better suited to local manifold structure.
+
+# Connections
+
+Unlike [k-means and k-medoids clustering](k-means-and-k-medoids-clustering.qmd), hierarchical clustering does not require choosing one $k$ before building the structure; a later cut creates a flat partition. It does, however, commit to distance and linkage choices throughout construction. [Principal component analysis](principal-component-analysis-for-omics-data.qmd) can provide a denoised representation before distance calculation, while a future k-nearest-neighbor graph represents local relationships without forcing a global nested tree. The dendrogram is related to phylogenetic visualizations, but its merge heights should not be interpreted evolutionarily without an appropriate phylogenetic model.
+
+# Take-home Messages
+
+1. Hierarchical clustering builds a nested dendrogram from pairwise distances; a flat clustering is obtained only after choosing a cut.
+2. Distance, preprocessing, and linkage rule define the result and must be reported.
+3. Dendrogram height is usually a dissimilarity scale, not confidence or time.
+4. Validate important branches with resampling, sensitivity analysis, and independent biological information.
+
+# References
+
+- Sneath, P. H. A., & Sokal, R. R. 1973. *Numerical Taxonomy: The Principles and Practice of Numerical Classification*. W. H. Freeman.
+- Ward, J. H. 1963. [Hierarchical grouping to optimize an objective function](https://doi.org/10.1080/01621459.1963.10500845). *Journal of the American Statistical Association* 58:236--244.
+- Eisen, M. B. et al. 1998. [Cluster analysis and display of genome-wide expression patterns](https://doi.org/10.1073/pnas.95.25.14863). *Proceedings of the National Academy of Sciences* 95:14863--14868.
+- Langfelder, P., & Horvath, S. 2008. [WGCNA: an R package for weighted correlation network analysis](https://doi.org/10.1186/1471-2105-9-559). *BMC Bioinformatics* 9:559.
+- [SciPy hierarchical-clustering documentation](https://docs.scipy.org/doc/scipy/reference/cluster.hierarchy.html): linkage definitions and dendrogram utilities.
