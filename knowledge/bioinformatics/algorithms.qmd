@@ -10,8 +10,10 @@ categories: [Bioinformatics, Algorithms]
 - [Non-negative matrix factorization](algorithms/non-negative-matrix-factorization.qmd): additive nonnegative feature programs, sample exposures, rank selection, and stability
 - [k-means and k-medoids clustering](algorithms/k-means-and-k-medoids-clustering.qmd): flat prototype-based partitions, robust medoids, choice of $k$, and stability checks
 - [Hierarchical clustering](algorithms/hierarchical-clustering.qmd): linkage-based nested partitions, dendrogram interpretation, and branch validation
+- [k-nearest-neighbor graphs](algorithms/k-nearest-neighbor-graphs.qmd): sparse local neighborhoods, graph construction choices, and downstream use in omics workflows
+- [t-SNE dimensionality reduction](algorithms/t-sne-dimensionality-reduction.qmd): probability-preserving local visualization, parameter sensitivity, and responsible interpretation
 
-Planned: k-nearest-neighbor graphs, t-SNE, UMAP, diffusion maps, Louvain, and Leiden.
+Planned: UMAP, diffusion maps, Louvain, and Leiden.
 
 ### Database sequence search
 

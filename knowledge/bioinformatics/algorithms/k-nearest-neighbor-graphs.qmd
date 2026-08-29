@@ -1,0 +1,130 @@
+---
+title: "k-Nearest-Neighbor Graphs for Omics Data"
+subtitle: "Representing local sample relationships as a sparse graph"
+description: "How k-nearest-neighbor graphs turn an omics embedding into local neighborhoods for visualization, clustering, trajectory analysis, and batch-aware diagnostics."
+author: "Jiahong Sun"
+date: "2026-08-29"
+date-modified: "2026-08-29"
+categories: [Bioinformatics, Algorithms, Graphs, Omics, Single-Cell]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A k-nearest-neighbor (kNN) graph connects every observation to a small set of its most similar observations, preserving local structure without claiming that all samples belong to a global geometry or a fixed set of clusters.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which cells, samples, or molecular profiles have similar local states? |
+| **Computational problem** | Build a sparse neighborhood graph from high-dimensional observations or an embedding |
+| **Method type** | Graph construction and nonparametric neighborhood modeling |
+| **Input** | Feature matrix or usually a preprocessed low-dimensional representation, a metric, and $k$ |
+| **Output** | A sparse adjacency/weight matrix, connected components, and neighborhoods for downstream algorithms |
+| **Uses** | Single-cell neighbors, label transfer, graph clustering, manifold learning, and trajectory inference |
+| **Prerequisites** | Distance metrics, normalization, and [principal component analysis](principal-component-analysis-for-omics-data.qmd) |
+
+# From profiles to local neighborhoods
+
+An expression profile, genotype vector, or protein embedding has many coordinates, but many analyses only need to know which observations are nearby. A kNN graph keeps that information compactly. For each observation $i$, compute its distances to the other observations and add edges from $i$ to the $k$ closest ones.
+
+```text
+normalized feature matrix
+    -> choose representation and distance metric
+    -> find k nearest neighbors of each observation
+    -> symmetrize and optionally weight edges
+    -> sparse neighborhood graph
+    -> clustering, visualization, smoothing, or trajectories
+```
+
+The word *nearest* is meaningful only relative to the chosen representation and metric. In single-cell RNA-seq, Euclidean neighbors in a PCA representation of selected variable genes are common; nearest neighbors of raw counts or an uncorrected batch-dominated embedding can instead reflect sequencing depth or technical batch.
+
+# The graph definition and its choices
+
+Let $z_i$ denote the representation of observation $i$ and $d(z_i,z_j)$ a distance. Its directed neighbor set is
+
+$$
+N_k(i)=\operatorname*{arg\,min}_{S\subseteq\{1,\ldots,n\}\setminus\{i\},\,|S|=k}\sum_{j\in S}d(z_i,z_j).
+$$
+
+Set $A_{ij}=1$ when $j\in N_k(i)$ to obtain a directed graph. Downstream software often makes it undirected using either rule below.
+
+| Rule | Edge retained when | Effect |
+|---|---|---|
+| Union / symmetric kNN | $i$ chooses $j$ **or** $j$ chooses $i$ | Retains more links and can connect varying-density regions |
+| Mutual kNN | $i$ chooses $j$ **and** $j$ chooses $i$ | Removes one-sided links but can fragment sparse populations |
+| Weighted kNN | An edge is assigned a similarity from distance or shared neighbors | Lets close neighbors contribute more than marginal ones |
+
+Many modern single-cell workflows use a shared-nearest-neighbor or fuzzy-simplicial weight rather than a binary edge. This reduces the influence of a pair that is close in isolation but does not share a neighborhood. It does not eliminate the need to inspect preprocessing and batch structure.
+
+# A toy example
+
+Suppose six cells have already been projected onto one informative coordinate:
+
+| Cell | Coordinate |
+|---|---:|
+| A | 0.0 |
+| B | 0.2 |
+| C | 0.4 |
+| D | 2.0 |
+| E | 2.1 |
+| F | 2.3 |
+
+With $k=2$, A connects to B and C; B connects to A and C; D connects to E and F; and so on. The graph has two dense local components, suggesting two separated neighborhoods. If an additional cell at 1.1 is included, it can link the groups depending on $k$ and the symmetrization rule. That bridge may represent a biological transition, a doublet, or simply an undersampled gap; the graph alone cannot decide.
+
+# Choosing the representation, metric, and $k$
+
+The graph is a modeling layer, not a neutral preprocessing convenience.
+
+| Choice | Consequence | Practical check |
+|---|---|---|
+| Features / embedding | Defines which differences count as nearby | Compare neighbors with known QC and biological metadata |
+| Metric | Euclidean, cosine, correlation, and other metrics favor different shapes | State the metric and match it to the representation |
+| $k$ | Small $k$ emphasizes fine local detail; large $k$ smooths across neighborhoods | Examine stability over a modest, predeclared range |
+| Edge weighting | Changes graph connectivity and downstream optimization | Record whether edges are binary, distance-based, or shared-neighbor weights |
+| Approximate search | Speeds large datasets but can miss some true neighbors | Measure recall or repeat with a controlled exact subset when feasible |
+
+There is no universally correct $k$. Too small a value can leave many disconnected components and magnify sampling noise. Too large a value can create edges across distinct cell states, rare populations, or batches. Density also matters: a fixed $k$ reaches farther in sparse regions than in dense ones, so graph edges do not have a uniform biological scale.
+
+# What kNN graphs enable
+
+Once a graph is built, many methods operate on its adjacency $A$ or graph Laplacian $L=D-A$, where $D$ is the diagonal degree matrix.
+
+| Downstream task | How the graph is used | Important caveat |
+|---|---|---|
+| Graph clustering | Find densely connected communities | A community is algorithm- and resolution-dependent, not automatically a cell type |
+| UMAP or t-SNE preparation | Preserve selected local relationships in two dimensions | A display is not an independent validation of the graph |
+| Diffusion / trajectory methods | Propagate local transitions across paths | Branches can reflect density, batch, or missing states |
+| Label transfer | Assign labels by neighboring reference observations | Transfer uncertainty and detect out-of-reference cells |
+| Smoothing / imputation | Average signal over neighbors | Can blur real boundaries and inflate apparent gene coexpression |
+
+The graph complements global approaches. [PCA](principal-component-analysis-for-omics-data.qmd) describes axes of variation across all samples; [hierarchical clustering](hierarchical-clustering.qmd) builds a global nested tree; kNN graphs concentrate on local adjacency. The next note, [t-SNE dimensionality reduction](t-sne-dimensionality-reduction.qmd), uses neighbor probabilities to create a two-dimensional visualization.
+
+# Diagnostics and failure modes
+
+| Observation | Likely issue | Response |
+|---|---|---|
+| Neighbors are dominated by batch or library size | Representation retained technical variation | Revisit QC, normalization, integration strategy, and study design |
+| Many tiny components | $k$ too small, sparse sampling, or a poor metric | Inspect component size and neighbor distances before increasing $k$ blindly |
+| Rare group disappears after graph-based smoothing or clustering | Neighborhood spans the rare group into a larger population | Inspect the original graph and marker evidence at several settings |
+| Nearly all nodes connect across known distinct controls | $k$ too large or embedding over-compressed | Reduce $k$, examine more PCs/features, and check distances |
+| Different software gives different graphs | Different approximate search, metric, symmetrization, or weights | Record software version and all graph-construction parameters |
+
+Neighbor graphs also suffer in high dimensions: distances can become less discriminative, and nuisance features can dominate. Dimensionality reduction can help, but reducing too aggressively can remove rare or continuous biology. A graph should therefore be audited with the representation and metadata from which it was made.
+
+# Take-home Messages
+
+1. A kNN graph is a sparse statement about local similarity, defined by representation, metric, $k$, and edge construction.
+2. It is a central intermediate object for modern single-cell clustering, visualization, trajectory, and label-transfer workflows.
+3. Small and large $k$ values trade local sensitivity against robustness and connectivity; report and assess the choice.
+4. Graph structure can reflect technical variation or sampling density, so biological labels require independent evidence.
+
+# References
+
+- Fix, E., & Hodges, J. L. 1951. [Discriminatory analysis: Nonparametric discrimination: Consistency properties](https://apps.dtic.mil/sti/citations/AD0102618). USAF School of Aviation Medicine Technical Report 4.
+- Cover, T., & Hart, P. 1967. [Nearest neighbor pattern classification](https://doi.org/10.1109/TIT.1967.1053964). *IEEE Transactions on Information Theory* 13:21--27.
+- Maaten, L. van der. 2014. [Accelerating t-SNE using tree-based algorithms](https://jmlr.org/papers/v15/vandermaaten14a.html). *Journal of Machine Learning Research* 15:3221--3245.
+- McInnes, L., Healy, J., & Melville, J. 2018. [UMAP: Uniform manifold approximation and projection for dimension reduction](https://arxiv.org/abs/1802.03426).
+- [Scanpy neighbor-graph documentation](https://scanpy.readthedocs.io/en/stable/api/scanpy.pp.neighbors.html): representation, neighbor search, and graph outputs.

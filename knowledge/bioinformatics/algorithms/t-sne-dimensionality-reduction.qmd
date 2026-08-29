@@ -1,0 +1,120 @@
+---
+title: "t-SNE Dimensionality Reduction"
+subtitle: "Visualizing local neighborhoods from high-dimensional biological data"
+description: "How t-distributed stochastic neighbor embedding constructs a two-dimensional view of local similarities, how to interpret it, and why it should not be used as evidence for cluster size or global distance."
+author: "Jiahong Sun"
+date: "2026-08-29"
+date-modified: "2026-08-29"
+categories: [Bioinformatics, Algorithms, Dimensionality Reduction, Omics, Single-Cell]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** t-distributed stochastic neighbor embedding (t-SNE) maps high-dimensional observations to two or three dimensions by making nearby pairs remain probable neighbors, creating an exploratory display of local structure rather than a metrically faithful global map.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which cells or samples form locally similar neighborhoods, and are there possible rare states or transitions to investigate? |
+| **Computational problem** | Produce a low-dimensional layout whose neighborhood probabilities resemble those in the input space |
+| **Method type** | Nonlinear, stochastic dimensionality reduction for visualization |
+| **Input** | A filtered, normalized feature matrix or, commonly, a PCA representation; perplexity and optimization settings |
+| **Output** | Two- or three-dimensional coordinates for each observation |
+| **Bioinformatics uses** | Exploratory views of single-cell, cytometry, proteomic, and population-genetic data |
+| **Prerequisites** | [PCA](principal-component-analysis-for-omics-data.qmd), distances, conditional probabilities, and [k-nearest-neighbor graphs](k-nearest-neighbor-graphs.qmd) |
+
+# What t-SNE preserves—and what it does not
+
+t-SNE turns high-dimensional pairwise closeness into probabilities. In the input space, each observation $i$ assigns high conditional probability to close observations $j$. In the map, nearby points are also assigned high probability. The layout is optimized so these distributions agree as well as possible.
+
+```text
+quality-controlled high-dimensional data
+    -> usually reduce noise with PCA
+    -> convert local distances to neighbor probabilities
+    -> initialize 2D/3D points
+    -> optimize probability matching
+    -> inspect local neighborhoods with metadata and markers
+```
+
+The map is especially useful for asking, “which observations are local neighbors?” It is not reliable for reading the distance between well-separated islands, their area, their density, or the apparent width of a trajectory. Different runs can rotate, reflect, or rearrange global positions while preserving useful local neighborhoods.
+
+# The probability model
+
+For high-dimensional points $x_i$, t-SNE uses a Gaussian conditional neighborhood distribution
+
+$$
+p_{j\mid i}=\frac{\exp\left(-\lVert x_i-x_j\rVert^2/(2\sigma_i^2)\right)}{\sum_{k\ne i}\exp\left(-\lVert x_i-x_k\rVert^2/(2\sigma_i^2)\right)}.
+$$
+
+The bandwidth $\sigma_i$ is chosen separately for each observation so that the distribution has a user-selected **perplexity**, an effective neighborhood size. Symmetrized pair probabilities $p_{ij}$ define the similarities t-SNE tries to retain.
+
+For low-dimensional coordinates $y_i$, t-SNE uses a heavy-tailed Student $t$ distribution,
+
+$$
+q_{ij}=\frac{(1+\lVert y_i-y_j\rVert^2)^{-1}}{\sum_{k\ne l}(1+\lVert y_k-y_l\rVert^2)^{-1}},
+$$
+
+and minimizes the Kullback--Leibler divergence
+
+$$
+\mathrm{KL}(P\parallel Q)=\sum_{i\ne j}p_{ij}\log\frac{p_{ij}}{q_{ij}}.
+$$
+
+The heavy tail supplies stronger long-range repulsion than a Gaussian map, helping prevent the “crowding problem” in which many moderately distant neighbors must fit into a small visual area. Because the objective weights preserving high $p_{ij}$ strongly, local errors matter more than global geometry.
+
+# A small mental model
+
+Imagine three groups of cells: a compact group A, a compact group B, and a gradual set of intermediate cells. Each cell distributes most of its input-space probability among its close neighbors. During optimization, the map pulls high-probability pairs together and pushes all points apart.
+
+If A and B have few cross-neighbor pairs, they may appear as distinct islands. The gap between those islands is not an estimate of biological divergence: t-SNE can enlarge or shrink it with optimization settings. If intermediate cells lack enough sampled neighbors, the map may break a continuous biological process into islands. Conversely, an apparent bridge may arise from doublets or technical mixing. Inspect original-space neighbors, known markers, and experimental provenance before making either claim.
+
+# Parameters and reproducible use
+
+| Setting | Role | Practical interpretation |
+|---|---|---|
+| Perplexity | Effective neighborhood size used to set $\sigma_i$ | Test values appropriate to sample size; small values emphasize very local structure |
+| Learning rate | Gradient-descent step scale | Too low can converge slowly; too high can destabilize the layout |
+| Early exaggeration | Temporarily strengthens attractive forces early in optimization | Often improves separation, but changes visual appearance |
+| Iterations / convergence | Optimization budget | Check objective behavior and repeat from several seeds |
+| Initialization | Starting coordinates, often PCA-based | Affects reproducibility and sometimes global arrangement |
+| Input dimensions | Representation supplied to t-SNE | PCA on appropriate features commonly denoises and accelerates the analysis |
+
+Use the same preprocessing and random seed when a layout must be reproduced. Re-run a small set of justified parameter values and compare local neighbor preservation, not whether a desired picture looks most separated. Barnes--Hut and interpolation-based approximations make large datasets feasible, but software choices can change the exact optimization.
+
+# Reading an omics t-SNE responsibly
+
+1. Start with assay-appropriate QC, normalization, transformation, and feature selection. For single-cell RNA-seq, run t-SNE on a documented PCA representation rather than raw count vectors.
+2. Overlay pre-existing metadata and independent features, such as batch, donor, cell-cycle score, or canonical markers. These distinguish hypotheses from visual artifacts.
+3. Cross-check a proposed local group in the input-space [kNN graph](k-nearest-neighbor-graphs.qmd) and quantify it with an appropriate downstream analysis.
+4. Use a separate statistical design for differential expression, abundance changes, or clinical association. A two-dimensional layout is not a significance test.
+
+| Tempting interpretation | Why it fails | Better question |
+|---|---|---|
+| “This larger island contains more cells.” | Layout area and density are optimization artifacts | How many cells are in the group? Count them directly. |
+| “A wider gap means more different cell types.” | Global distances are weakly constrained | Are the groups separated in the original representation and supported by markers? |
+| “Each island is a cell type.” | t-SNE can separate continuous or batch-driven variation | Do replicated samples, markers, and graph neighborhoods support the label? |
+| “No overlap means no transition.” | Sampling and perplexity can create gaps | Examine trajectories and local neighborhoods in original space. |
+
+# Limitations and alternatives
+
+t-SNE is mainly a visualization method. It does not provide an inverse transform for placing future samples in the original formulation, a unique global coordinate system, or an automatic cluster count. It can be computationally expensive and its stochastic objective permits several visually different yet similarly good solutions.
+
+UMAP is often selected for fast large-data embeddings and can support transform-like workflows in common implementations, but it has its own graph and parameter dependencies. Diffusion maps model connectivity through a diffusion operator and can be useful for continuous processes. [PCA](principal-component-analysis-for-omics-data.qmd) remains the more directly interpretable linear baseline. For grouping observations, use a validated clustering method on a documented representation or graph, rather than drawing cluster boundaries from a t-SNE image.
+
+# Take-home Messages
+
+1. t-SNE preserves local neighborhood probabilities for exploratory visualization, not global distances, cluster areas, or density.
+2. Perplexity, input preprocessing, initialization, and optimization settings materially affect the display and must be reported.
+3. A visually separated island is a hypothesis to validate with original-space neighbors, metadata, marker evidence, and replication.
+4. Use t-SNE alongside—not instead of—QC, graph analysis, clustering validation, and statistical inference.
+
+# References
+
+- van der Maaten, L., & Hinton, G. 2008. [Visualizing data using t-SNE](https://www.jmlr.org/papers/v9/vandermaaten08a.html). *Journal of Machine Learning Research* 9:2579--2605.
+- van der Maaten, L. 2014. [Accelerating t-SNE using tree-based algorithms](https://jmlr.org/papers/v15/vandermaaten14a.html). *Journal of Machine Learning Research* 15:3221--3245.
+- Kobak, D., & Berens, P. 2019. [The art of using t-SNE for single-cell transcriptomics](https://doi.org/10.1038/s41467-019-13056-x). *Nature Communications* 10:5416.
+- Linderman, G. C. et al. 2019. [Fast interpolation-based t-SNE for improved visualization of single-cell RNA-seq data](https://doi.org/10.1038/s41592-018-0308-4). *Nature Methods* 16:243--245.
+- [openTSNE documentation](https://opentsne.readthedocs.io/): parameters, initialization, and optimization diagnostics.
