@@ -1,0 +1,114 @@
+---
+title: "UMAP Dimensionality Reduction"
+subtitle: "Graph-based nonlinear embeddings for exploring local structure in omics data"
+description: "How UMAP builds a weighted neighbor graph and optimizes a low-dimensional layout, with practical guidance for single-cell and other omics data."
+author: "Jiahong Sun"
+date: "2026-08-30"
+date-modified: "2026-08-30"
+categories: [Bioinformatics, Algorithms, Dimensionality Reduction, Graphs, Omics, Single-Cell]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Uniform Manifold Approximation and Projection (UMAP) makes a low-dimensional representation by preserving a weighted graph of local neighbors, providing a useful exploratory view of complex omics data but not a direct measurement of global distance or discrete cell types.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which cells or samples have similar local molecular states, and are there candidate populations or continuous transitions to investigate? |
+| **Computational problem** | Embed high-dimensional observations in two or more dimensions while retaining selected neighborhood relations |
+| **Method type** | Nonlinear graph-based dimensionality reduction and visualization |
+| **Input** | A processed feature matrix or embedding, a distance metric, neighbor count, and optimization settings |
+| **Output** | Low-dimensional coordinates and an underlying weighted neighborhood graph |
+| **Bioinformatics uses** | Single-cell RNA-seq and ATAC-seq displays, cytometry, spatial assays, and sample exploration |
+| **Prerequisites** | [PCA](principal-component-analysis-for-omics-data.qmd), distances, and [k-nearest-neighbor graphs](k-nearest-neighbor-graphs.qmd) |
+
+# From an omics matrix to a layout
+
+High-dimensional molecular profiles are difficult to inspect directly. UMAP first identifies local neighbors, then treats those relationships as a weighted graph. It places points in a low-dimensional space so that graph neighbors tend to remain close while non-neighbors are sampled as repulsive pairs during optimization.
+
+```text
+quality-controlled matrix
+    -> select features and construct a representation, often PCA
+    -> find local neighbors under a stated metric
+    -> assign fuzzy graph memberships
+    -> optimize 2D or 3D coordinates
+    -> inspect neighborhoods with independent metadata and markers
+```
+
+The first three stages matter as much as the final layout. In a single-cell workflow, UMAP usually receives principal components derived from selected variable features, not raw counts. If those components retain batch, library-size, or ambient-RNA effects, the UMAP graph can faithfully display those technical effects.
+
+# The core algorithm
+
+For each observation $i$, UMAP finds a local neighbor set. It converts distance $d(x_i,x_j)$ into a directed membership strength using a locally adjusted distance threshold $\rho_i$ and scale $\sigma_i$:
+
+$$
+w_{j\mid i}=\exp\left[-\frac{\max(0,d(x_i,x_j)-\rho_i)}{\sigma_i}\right].
+$$
+
+The scale is chosen so each point has a comparable effective neighborhood size. Directed strengths are combined into one undirected **fuzzy simplicial-set** edge weight:
+
+$$
+w_{ij}=w_{j\mid i}+w_{i\mid j}-w_{j\mid i}w_{i\mid j}.
+$$
+
+UMAP then assigns low-dimensional coordinates $y_i$ and uses a decreasing similarity curve,
+
+$$
+v_{ij}=\frac{1}{1+a\lVert y_i-y_j\rVert^{2b}},
+$$
+
+where $a$ and $b$ are selected from the requested spacing parameters. Optimizing a cross-entropy-like objective brings high-weight graph edges together and separates sampled non-edges. Negative sampling makes the procedure practical for large datasets, but the result is stochastic unless the random seed and implementation are recorded.
+
+## A small mental model
+
+Imagine a dataset with two dense cell populations and a sparsely sampled differentiation path between them. With a modest neighborhood size, cells on the path may connect chiefly to their immediate developmental neighbors, and an embedding can display a continuum. If the path is undersampled, noisy, or removed during QC, the graph can instead split it into islands. Conversely, a large neighborhood setting can add edges across a real boundary. The display cannot decide whether a bridge or gap is biological; inspect the graph, marker genes, batch labels, and replicate samples.
+
+# Parameters that change the question
+
+| Setting | Main effect | Practical interpretation |
+|---|---|---|
+| `n_neighbors` | Size of the local neighborhood used to form the graph | Smaller values emphasize fine local structure; larger values admit broader structure and can connect distinct states |
+| `min_dist` | How tightly nearby points may pack in the embedding | Lower values produce denser-looking islands; they do not prove tighter biology |
+| Metric | Defines similarity before graph construction | Match it to the representation; Euclidean distance on PCA coordinates is common but not automatic |
+| Input dimensions | Sets the information available to the graph | Record feature selection, normalization, PCA dimensions, and integration choices |
+| Random seed / initialization | Affects stochastic optimization and visual orientation | Fix and report it for a reproducible figure; repeat runs for sensitive claims |
+
+UMAP implementations can also fit a model that places new observations into an existing embedding. That convenience does not make coordinates comparable across arbitrary separately fitted analyses: the reference representation, preprocessing, graph parameters, and fitted model must be retained.
+
+# Responsible use in single-cell analysis
+
+1. Apply assay-appropriate QC, normalization, transformation, and feature selection before creating the representation.
+2. Build and audit the [kNN graph](k-nearest-neighbor-graphs.qmd) separately from the plot. Check neighbor composition for batch, donor, depth, and known controls.
+3. Overlay pre-specified metadata and independent markers. Treat apparent groups, gaps, and trajectories as hypotheses.
+4. Perform clustering, differential testing, trajectory analysis, or label transfer on their appropriate representations and statistical designs—not on UMAP coordinates alone.
+
+| Tempting reading | Why it is unsafe | Better check |
+|---|---|---|
+| “Farther islands are more biologically different.” | UMAP prioritizes graph relationships; global geometry is not a calibrated distance scale | Compare original-space distances and relevant molecular evidence |
+| “A dense island is a frequent or homogeneous population.” | Point packing depends on `min_dist`, sampling, and optimization | Count observations and examine graph connectivity and markers |
+| “Every visible island is a cell type.” | Graph partitions can reflect batch, density, or a continuous process | Validate with replicated samples, markers, and domain knowledge |
+| “A bridge proves a lineage transition.” | Edges may arise from doublets, integration, or parameter choices | Examine local neighbors, doublet/QC metrics, and orthogonal evidence |
+
+# Limitations and related methods
+
+UMAP is an exploratory representation, not an inferential test, an automatic cluster finder, or an unbiased picture of every pairwise distance. Different sensible preprocessing choices and parameter values can produce different global arrangements. Very rare populations may be absorbed into neighbors, while technical mixing can create misleading connections. The compact output also discards information; it should not be used as the sole input for hypothesis testing.
+
+[t-SNE](t-sne-dimensionality-reduction.qmd) similarly emphasizes local structure through a probability-matching objective and is often useful for visualization, though its optimization and parameter meanings differ. [Diffusion maps](diffusion-maps.qmd) summarize connectivity through repeated graph transitions and can be particularly informative for continuous processes. [PCA](principal-component-analysis-for-omics-data.qmd) is the interpretable linear baseline and is frequently a preprocessing stage for all three.
+
+# Take-home Messages
+
+1. UMAP turns a processed high-dimensional dataset into a weighted local-neighborhood graph and a low-dimensional layout.
+2. The representation, metric, neighbor count, and `min_dist` define what the visualization can show; report them.
+3. UMAP coordinates support exploration, not direct claims about global distance, density, cluster identity, or statistical significance.
+4. Validate visible structure using the original representation, graph diagnostics, independent biological evidence, and replicate-aware analysis.
+
+# References
+
+- McInnes, L., Healy, J., & Melville, J. 2018. [UMAP: Uniform manifold approximation and projection for dimension reduction](https://arxiv.org/abs/1802.03426). *arXiv:1802.03426*.
+- Becht, E. et al. 2018. [Dimensionality reduction for visualizing single-cell data using UMAP](https://doi.org/10.1038/nbt.4314). *Nature Biotechnology* 37:38--44.
+- [UMAP documentation](https://umap-learn.readthedocs.io/en/latest/): graph construction, parameters, reproducibility, and transforms.
+- [Scanpy UMAP documentation](https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.umap.html): UMAP use with an AnnData neighbor graph.

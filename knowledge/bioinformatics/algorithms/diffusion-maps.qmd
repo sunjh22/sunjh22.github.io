@@ -1,0 +1,114 @@
+---
+title: "Diffusion Maps"
+subtitle: "Finding intrinsic geometry through random walks on an omics neighbor graph"
+description: "How diffusion maps use a Markov random walk on local similarities to reveal continuous geometry, denoise omics data, and support trajectory exploration."
+author: "Jiahong Sun"
+date: "2026-08-30"
+date-modified: "2026-08-30"
+categories: [Bioinformatics, Algorithms, Dimensionality Reduction, Graphs, Omics, Single-Cell]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Diffusion maps represent observations using the slow coordinates of a random walk over a local similarity graph, so points linked by many plausible short paths remain close even when their straight-line measurements are noisy or curved.
+
+| Item | Description |
+|---|---|
+| **Biological question** | What continuous molecular programs, developmental progressions, or connected states are supported by local relationships among cells or samples? |
+| **Computational problem** | Learn low-dimensional coordinates that respect connectivity along a nonlinear data manifold |
+| **Method type** | Spectral graph method, nonlinear dimensionality reduction, and diffusion geometry |
+| **Input** | A processed feature representation or affinity graph, a local kernel/neighbor rule, and normalization choices |
+| **Output** | Diffusion components, diffusion distances, eigenvalues, and optionally pseudotime-like coordinates |
+| **Bioinformatics uses** | Single-cell developmental trajectories, cytometry, perturbation responses, and denoising/exploration of continuous states |
+| **Prerequisites** | [PCA](principal-component-analysis-for-omics-data.qmd), [k-nearest-neighbor graphs](k-nearest-neighbor-graphs.qmd), matrices, and eigenvectors |
+
+# Why random walks help
+
+Two cells can be close in a noisy feature space for an uninteresting reason, while two endpoints of a smooth developmental program can be far in ordinary Euclidean distance despite being connected through many intermediate states. Diffusion maps ask a different question: if a random walker can move only through strong local similarities, how easily can it travel between observations after a chosen number of steps?
+
+```text
+quality-controlled representation
+    -> construct local affinities between similar observations
+    -> normalize affinities into a Markov transition matrix
+    -> compute leading eigenvalues and eigenvectors
+    -> use slow diffusion coordinates for visualization or trajectory hypotheses
+    -> validate with time, lineage, perturbation, and marker evidence
+```
+
+Repeated local transitions average over short-scale noise while respecting graph bottlenecks. A low-probability transition between two regions makes them distant in diffusion geometry even if a projection places them nearby. The method is therefore well suited to data expected to vary continuously, but it cannot infer time or lineage direction without extra information.
+
+# Constructing diffusion coordinates
+
+Given observations $x_1,\ldots,x_n$, start with a nonnegative affinity such as a Gaussian kernel
+
+$$
+k_\varepsilon(x_i,x_j)=\exp\left(-\frac{\lVert x_i-x_j\rVert^2}{\varepsilon}\right),
+$$
+
+often restricted to a local neighbor graph for scalability. The bandwidth $\varepsilon$ controls which distances count as local. To reduce sensitivity to uneven sampling density, diffusion-map variants reweight the kernel using each point's degree; the choice encodes whether density itself should affect the geometry.
+
+Row-normalize the resulting affinity matrix to obtain a Markov transition matrix $P$. Its entry $P_{ij}$ is the one-step probability of moving from $i$ to $j$. Let $\lambda_0=1,\lambda_1,\lambda_2,\ldots$ be eigenvalues of $P$ and $\psi_0,\psi_1,\psi_2,\ldots$ corresponding right eigenvectors. The diffusion-map coordinate at time $t$ uses the slow nontrivial modes:
+
+$$
+\Phi_t(x_i)=\bigl(\lambda_1^t\psi_1(i),\lambda_2^t\psi_2(i),\ldots,\lambda_m^t\psi_m(i)\bigr).
+$$
+
+Modes with eigenvalues near one change slowly under the random walk and capture broad connected structure. Raising eigenvalues to $t$ suppresses fast, local modes. The corresponding diffusion distance compares whole $t$-step transition distributions, not merely a direct edge:
+
+$$
+D_t^2(i,j)=\sum_{\ell\ge1}\lambda_\ell^{2t}\bigl(\psi_\ell(i)-\psi_\ell(j)\bigr)^2.
+$$
+
+# A toy trajectory
+
+Consider cells arranged along a noisy sequence
+
+```text
+progenitor -- early intermediate -- late intermediate -- mature cell
+```
+
+and suppose each cell connects strongly to nearby stages but weakly across distant stages. A one-step walk moves only between adjacent stages. After several steps, walkers started at two neighboring intermediates have similar reachable distributions, whereas walkers at the progenitor and mature endpoints remain different. The first nontrivial diffusion component often orders the progression; a second component can capture a branch if the graph has a stable fork.
+
+This is an ordering of graph connectivity, not proof that one observed cell became another. A missing intermediate, doublets, a batch bridge, or unequal sampling can reshape the graph and therefore its diffusion components.
+
+# Choices, diagnostics, and failure modes
+
+| Choice or observation | Why it matters | Practical response |
+|---|---|---|
+| Representation and metric | Define every affinity and random-walk transition | Use assay-appropriate normalization and a documented feature/PCA representation |
+| Kernel scale or neighbor count | Too small can fragment a trajectory; too large can blur boundaries | Inspect graph connectivity and stability across a limited justified range |
+| Density normalization | Can suppress or retain the effect of uneven sampling | State the normalization and check whether components track sampling density or QC variables |
+| Number of components | Later eigenvectors can be noise-dominated | Examine eigenvalue decay and validate a chosen component with independent biology |
+| Disconnected graph | Random walks cannot move between components | Analyze components separately or revisit the input; do not force a shared trajectory |
+
+For single-cell RNA-seq, run the method on a carefully chosen representation, then color components by batch, donor, sequencing depth, cell-cycle measures, known markers, and experimental time. A component that chiefly separates batches is a diagnostic warning, not a developmental axis. Eigenvector signs are arbitrary, so “increasing” versus “decreasing” direction must be oriented using external evidence.
+
+# Diffusion pseudotime and what it does not establish
+
+Diffusion pseudotime (DPT) and related methods use diffusion distances from a chosen root cell or root population to produce a progression score. This can help describe a sampled continuous process when the root is biologically justified and the graph contains the relevant intermediates. It does not turn cross-sectional data into observed lineage tracing, establish event timing, or resolve alternative paths that the graph does not support.
+
+Use independent time points, perturbations, lineage barcodes, RNA velocity assumptions, spatial context, or known marker order to test trajectory hypotheses. Report root selection, graph construction, disconnected components, and uncertainty near branches or poorly sampled regions.
+
+# Connections and alternatives
+
+Diffusion maps operate on the same kind of local structure as a [kNN graph](k-nearest-neighbor-graphs.qmd), but summarize it using Markov transitions and eigenvectors. [UMAP](umap-dimensionality-reduction.qmd) is usually used to make a compact visual layout from a weighted neighbor graph; its coordinates are not diffusion components. [t-SNE](t-sne-dimensionality-reduction.qmd) matches local probability neighborhoods for visualization. [PCA](principal-component-analysis-for-omics-data.qmd) supplies a linear global baseline and is often used before graph construction.
+
+For branch-aware single-cell exploration, diffusion pseudotime, diffusion maps, and other trajectory methods should be compared against the biological question and sampling design. None should be selected solely because its two-dimensional image looks most like an expected lineage.
+
+# Take-home Messages
+
+1. Diffusion maps represent graph connectivity through random walks, emphasizing paths through local molecular neighborhoods.
+2. Slow eigenvectors can reveal continuous progressions and branches, but depend on preprocessing, graph construction, density normalization, and sampling.
+3. Diffusion components and pseudotime are exploratory connectivity summaries, not direct measurements of real time, causality, or lineage.
+4. Validate trajectory interpretations with QC, batch diagnostics, roots grounded in biology, and independent temporal, perturbational, spatial, or lineage evidence.
+
+# References
+
+- Coifman, R. R., & Lafon, S. 2006. [Diffusion maps](https://doi.org/10.1016/j.acha.2006.04.006). *Applied and Computational Harmonic Analysis* 21:5--30.
+- Haghverdi, L. et al. 2016. [Diffusion pseudotime robustly reconstructs lineage branching](https://doi.org/10.1038/nmeth.3971). *Nature Methods* 13:845--848.
+- Moon, K. R. et al. 2019. [Visualizing structure and transitions in high-dimensional biological data](https://doi.org/10.1038/s41587-019-0336-3). *Nature Biotechnology* 37:1482--1492.
+- [Scanpy diffusion-map documentation](https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.diffmap.html): diffusion components calculated from the neighbor graph.

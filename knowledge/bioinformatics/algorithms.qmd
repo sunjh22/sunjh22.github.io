@@ -12,8 +12,10 @@ categories: [Bioinformatics, Algorithms]
 - [Hierarchical clustering](algorithms/hierarchical-clustering.qmd): linkage-based nested partitions, dendrogram interpretation, and branch validation
 - [k-nearest-neighbor graphs](algorithms/k-nearest-neighbor-graphs.qmd): sparse local neighborhoods, graph construction choices, and downstream use in omics workflows
 - [t-SNE dimensionality reduction](algorithms/t-sne-dimensionality-reduction.qmd): probability-preserving local visualization, parameter sensitivity, and responsible interpretation
+- [UMAP dimensionality reduction](algorithms/umap-dimensionality-reduction.qmd): weighted neighbor-graph embeddings, parameter choices, and cautious interpretation of omics layouts
+- [Diffusion maps](algorithms/diffusion-maps.qmd): random-walk geometry, diffusion components, and trajectory-aware exploration of continuous states
 
-Planned: UMAP, diffusion maps, Louvain, and Leiden.
+Planned: Louvain and Leiden.
 
 ### Database sequence search
 
