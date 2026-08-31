@@ -1,0 +1,104 @@
+---
+title: "Leiden Community Detection"
+subtitle: "Refined multilevel graph clustering with well-connected communities"
+description: "How the Leiden algorithm improves multilevel graph community detection through local moves, within-community refinement, and aggregation, with practical guidance for omics graphs."
+author: "Jiahong Sun"
+date: "2026-08-31"
+date-modified: "2026-08-31"
+categories: [Bioinformatics, Algorithms, Graphs, Clustering, Single-Cell]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Leiden is a multilevel graph-community algorithm that alternates local improvement with a refinement step, so its final communities are guaranteed to be internally connected under its optimization framework.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which observations form robustly connected molecular neighborhoods or interaction modules? |
+| **Computational problem** | Optimize a graph-partition quality function without leaving a reported community split into disconnected pieces |
+| **Method type** | Multilevel graph clustering with local optimization and refinement |
+| **Input** | A weighted graph plus a partition objective and resolution parameter |
+| **Output** | A community label for each vertex, with guarantees about the connectivity of final communities |
+| **Bioinformatics uses** | Clustering single-cell neighbor graphs, gene modules, spatial-neighborhood graphs, and interaction networks |
+| **Prerequisites** | [k-nearest-neighbor graphs](k-nearest-neighbor-graphs.qmd), modularity, and [Louvain community detection](louvain-community-detection.qmd) |
+
+# Why refine a Louvain partition?
+
+The [Louvain algorithm](louvain-community-detection.qmd) makes greedy vertex moves and aggregates communities. It is fast, but a community can become internally disconnected: two regions may share a label even though no path between them stays inside that label. That is awkward for biological interpretation, where a “cell population” or “gene module” represented by a disconnected graph component may conceal distinct groups.
+
+Leiden adds a refinement stage between local moving and aggregation. It first improves the current partition, then splits each provisional community into better-connected subcommunities before building the next coarse graph. The implementation can optimize modularity or other quality functions such as the Constant Potts Model (CPM); the objective and its resolution must be reported.
+
+# The three phases
+
+```text
+input weighted graph and starting partition
+  -> local moving: reassign vertices to improve the objective
+  -> refinement: partition each provisional community into well-connected subcommunities
+  -> aggregation: make a coarse graph using refined communities while retaining the improved partition
+  -> repeat until no improvement remains
+```
+
+The local-moving phase resembles Louvain: moving a vertex is considered when it improves the selected partition quality. Refinement is the essential difference. Starting from singleton subcommunities inside each provisional community, Leiden merges only compatible, well-connected pieces, often with randomized selection among acceptable choices. Aggregation then uses the refined subcommunities to form the coarse graph while preserving the broader partition found by local moving.
+
+For the standard modularity objective,
+
+$$
+Q=\frac{1}{2m}\sum_{ij}\left(A_{ij}-\gamma\frac{k_i k_j}{2m}\right)\mathbf{1}\{c_i=c_j\},
+$$
+
+where $A_{ij}$ is edge weight, $k_i$ is weighted degree, $m$ is total edge weight, and $\gamma$ sets resolution. Leiden is an optimization procedure, not a replacement for the modeling judgment embodied in this equation and the input graph.
+
+# A toy graph
+
+Suppose a provisional cluster contains two dense groups joined only through vertices that were moved elsewhere during optimization:
+
+```text
+inside one reported label:    A -- B -- C     D -- E -- F
+                              (no within-label path between C and D)
+```
+
+Louvain can leave this label disconnected after an aggregation sequence. Leiden's refinement phase recognizes that the two pieces cannot be merged into a single well-connected refined community and keeps them separate for aggregation. Later optimization may join them only if the graph and objective support an appropriate connection.
+
+This guarantee concerns graph connectivity and the stated quality function. It does not establish that every Leiden community is one cell type, one lineage, or one causal mechanism.
+
+# Practical use in omics
+
+Leiden is commonly applied to a cell--cell neighbor graph made after quality control and representation learning. In Scanpy, for example, the neighbor graph supplies connectivity weights and `sc.tl.leiden` writes categorical labels; in Seurat, graph-based clusters are calculated from its neighbor graph. The exact graph can differ with normalization, variable features, PCA dimensions, neighbors, metric, integration, and graph weighting.
+
+Run a small, predeclared set of resolutions and assess the result with donor/batch composition, known and novel marker patterns, doublet and QC measures, and stability under modest graph perturbations. Use held-out biological knowledge or independent modalities for annotation. Do not choose the resolution that merely produces the preferred number of clusters or the prettiest [UMAP](umap-dimensionality-reduction.qmd) plot.
+
+| Diagnostic | Interpretation | Action |
+|---|---|---|
+| Many clusters track donor, chemistry, or depth | Technical structure may dominate edges | Revisit QC/integration and report the effect |
+| A tiny cluster has weak, nonspecific markers | It may be a low-quality or doublet-enriched group | Inspect QC/doublet evidence and connectivity |
+| Labels change sharply with neighbor count or seed | The partition is not stable at that scale | Report sensitivity; avoid over-specific claims |
+| One cluster contains disconnected subgraphs | Possible pipeline or graph issue | Confirm graph/implementation choices; Leiden should avoid this in its final partition |
+
+# Choosing between methods
+
+| Method | Core objective | Main distinction | Useful setting |
+|---|---|---|---|
+| [Louvain](louvain-community-detection.qmd) | Often modularity | Fast greedy multilevel moves; can yield disconnected communities | Legacy comparability or exploratory large graphs |
+| Leiden | Modularity, CPM, or related functions | Refines communities before aggregation; improves connectivity and partition quality | Default graph clustering choice in many single-cell workflows |
+| [Hierarchical clustering](hierarchical-clustering.qmd) | Linkage criterion | Produces a dendrogram from a feature/distance matrix | When nested relationships and a transparent distance tree are central |
+| [k-means / k-medoids](k-means-and-k-medoids-clustering.qmd) | Within-cluster dispersion | Prototype-based feature-space partition | Roughly convex clusters in a chosen embedding |
+
+Neither Louvain nor Leiden removes the modularity resolution problem when modularity is used. CPM offers a different resolution behavior, but its parameter still selects a scale and needs biological justification. Graph community detection also makes discrete labels from potentially continuous data; for gradients and trajectories, complement labels with [diffusion maps](diffusion-maps.qmd), marker trends, and experimental design.
+
+# Take-home Messages
+
+1. Leiden improves multilevel graph clustering by refining provisional communities before aggregation.
+2. Its connectivity guarantee addresses a real failure mode of Louvain, but it does not make clusters automatically biological truths.
+3. The graph, objective, resolution, and preprocessing determine the partition as much as the optimizer does.
+4. Treat labels as hypotheses: test technical confounding, stability, markers, and replication before annotation or downstream inference.
+
+# References
+
+- Traag, V. A., Waltman, L., & van Eck, N. J. 2019. [From Louvain to Leiden: guaranteeing well-connected communities](https://doi.org/10.1038/s41598-019-41695-z). *Scientific Reports* 9:5233.
+- Blondel, V. D. et al. 2008. [Fast unfolding of communities in large networks](https://doi.org/10.1088/1742-5468/2008/10/P10008). *Journal of Statistical Mechanics: Theory and Experiment* P10008.
+- [Scanpy `tl.leiden` documentation](https://scanpy.readthedocs.io/en/stable/api/scanpy.tl.leiden.html): Leiden clustering interface and parameters.
+- [leidenalg documentation](https://leidenalg.readthedocs.io/en/stable/): Python implementation and supported partition types.

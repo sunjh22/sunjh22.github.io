@@ -1,0 +1,108 @@
+---
+title: "Louvain Community Detection"
+subtitle: "Greedy multiscale modularity optimization on biological neighbor graphs"
+description: "How the Louvain algorithm finds graph communities by locally optimizing modularity, aggregates them into coarser graphs, and should be diagnosed in bioinformatics workflows."
+author: "Jiahong Sun"
+date: "2026-08-31"
+date-modified: "2026-08-31"
+categories: [Bioinformatics, Algorithms, Graphs, Clustering, Single-Cell]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Louvain detects communities by repeatedly moving graph vertices into neighboring groups when the move increases modularity, then replacing each group by a coarse-grained vertex and repeating.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which cells, samples, genes, or contigs form densely connected groups in a similarity or interaction graph? |
+| **Computational problem** | Partition a large weighted graph into groups with more internal edge weight than expected under a degree-preserving null model |
+| **Method type** | Greedy graph clustering and multilevel optimization |
+| **Input** | An undirected weighted graph, commonly a [k-nearest-neighbor graph](k-nearest-neighbor-graphs.qmd) of cells |
+| **Output** | A community label per vertex and a hierarchy of coarsened graphs |
+| **Bioinformatics uses** | Cell-type/state discovery, gene co-expression modules, protein-interaction modules, and metagenomic graph exploration |
+| **Prerequisites** | Weighted graphs, degree, null models, and [k-nearest-neighbor graphs](k-nearest-neighbor-graphs.qmd) |
+
+# The objective: modularity
+
+For an undirected weighted graph with edge weights $A_{ij}$, weighted degree $k_i=\sum_j A_{ij}$, and total edge weight $m=\tfrac12\sum_{ij}A_{ij}$, modularity of a partition $c$ is
+
+$$
+Q=\frac{1}{2m}\sum_{ij}\left(A_{ij}-\gamma\frac{k_i k_j}{2m}\right)\mathbf{1}\{c_i=c_j\}.
+$$
+
+The first term rewards observed within-community edges. The second is the weight expected if edges were rewired at random while preserving vertex degrees. The resolution parameter $\gamma$ controls scale: increasing it generally favors smaller communities. Thus a community is not an intrinsic label hidden in the data; it is a partition preferred by a specific graph, null model, and resolution.
+
+# How Louvain works
+
+```text
+weighted graph
+  -> place every vertex in its own community
+  -> greedily move each vertex to a neighboring community if modularity increases
+  -> aggregate every resulting community into one weighted super-vertex
+  -> repeat local moves and aggregation until modularity no longer improves
+```
+
+During a local-moving pass, Louvain considers only communities containing a neighbor of the current vertex. It evaluates the modularity gain of moving the vertex and selects a positive-gain move, in an implementation-dependent order. Once no individual move improves $Q$, all vertices in each community are contracted to a super-vertex. Edge weights between super-vertices are summed; internal edges become self-loops. A new pass on that smaller graph can expose a larger-scale improvement.
+
+The method is fast because it uses local gain calculations and graph coarsening rather than enumerating all partitions. It is heuristic: reaching a high modularity score does not prove the global maximum was found.
+
+# A small example
+
+Imagine a cell graph with strong edges inside two groups and one weak cross-edge:
+
+```text
+A -- B -- C       D -- E -- F
+      \             /
+       -- weak edge --
+```
+
+Starting from singleton communities, moves that join $A$, $B$, and $C$ make more internal weight than expected and increase modularity; analogous moves join $D$, $E$, and $F$. Joining the two triples would include the weak bridge but lose the contrast between their dense internal connectivity and the null expectation, so it need not increase $Q$. In real data, edge weights and degree heterogeneity—not a drawing—determine the calculation.
+
+# Using it for single-cell data
+
+In a common workflow, normalize and quality-control the expression matrix, choose a feature representation such as principal components, construct a weighted cell-neighbor graph, then run Louvain at one or more declared resolutions. Software may also use shared-nearest-neighbor weights or a graph after batch-integration; those choices materially alter the result.
+
+```text
+counts and metadata
+  -> QC, normalization, feature/PCA representation
+  -> neighbor graph and edge weights
+  -> Louvain at documented resolution(s) and seed(s)
+  -> inspect markers, batches, donors, and stability
+  -> annotate clusters using independent biological evidence
+```
+
+Community labels are identifiers, not cell types. Inspect marker genes, known controls, donor/batch composition, doublet scores, library size, and reproducibility across plausible graph and resolution settings. A visually separated [UMAP](umap-dimensionality-reduction.qmd) island is not by itself validation: UMAP coordinates are a visualization of graph structure, while Louvain directly optimizes an objective on the graph.
+
+# Important limitations
+
+| Issue | Consequence | Useful response |
+|---|---|---|
+| Resolution limit | Small dense groups can be merged when optimizing global modularity | Explore justified resolutions and validate small groups independently |
+| Random order / ties | Different runs can return different high-scoring partitions | Fix and report seeds; compare partitions across runs |
+| Graph construction | Neighbor count, representation, metric, and integration define the edges | Check stability over scientifically defensible preprocessing choices |
+| Disconnected or poorly sampled states | A cluster may reflect sampling, batch, or graph fragmentation | Inspect connectivity and technical covariates before biological claims |
+| Hierarchical outputs | Coarsening levels are not automatically biological levels | Select and justify a level rather than treating every level as ontology |
+
+Modularity also has many near-optimal solutions, so one reported partition can conceal uncertainty. Perturbing cells, edges, donors, or preprocessing and quantifying agreement is more informative than treating a single label vector as definitive.
+
+# Louvain and related methods
+
+Louvain is a natural follow-on to [k-nearest-neighbor graphs](k-nearest-neighbor-graphs.qmd): the latter decides local neighborhoods, and Louvain partitions the resulting graph. It differs from [k-means and k-medoids](k-means-and-k-medoids-clustering.qmd), which directly optimize feature-space prototypes, and from [hierarchical clustering](hierarchical-clustering.qmd), which builds a linkage tree. The later [Leiden algorithm](leiden-community-detection.qmd) retains a multilevel modularity-style approach but adds refinement designed to avoid internally disconnected communities.
+
+# Take-home Messages
+
+1. Louvain greedily optimizes modularity through local vertex moves and graph aggregation.
+2. The returned communities depend on the graph, null model, resolution, randomization, and optimization path.
+3. In omics, validate labels against technical covariates, replication, markers, and stability—not a two-dimensional plot alone.
+4. Louvain is scalable and useful, but its resolution limit and potentially disconnected communities motivate methods such as Leiden.
+
+# References
+
+- Blondel, V. D. et al. 2008. [Fast unfolding of communities in large networks](https://doi.org/10.1088/1742-5468/2008/10/P10008). *Journal of Statistical Mechanics: Theory and Experiment* P10008.
+- Newman, M. E. J. 2006. [Modularity and community structure in networks](https://doi.org/10.1073/pnas.0601602103). *Proceedings of the National Academy of Sciences* 103:8577--8582.
+- Fortunato, S., & Barthélemy, M. 2007. [Resolution limit in community detection](https://doi.org/10.1073/pnas.0605965104). *Proceedings of the National Academy of Sciences* 104:36--41.
+- [Scanpy `tl.louvain` documentation](https://scanpy.readthedocs.io/en/stable/generated/scanpy.tl.louvain.html): parameters and implementation interface for graph community detection.
