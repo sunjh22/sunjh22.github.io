@@ -1,0 +1,120 @@
+---
+title: "Gene-Set Enrichment Algorithms"
+subtitle: "Testing coordinated pathway-level signal instead of interpreting genes one at a time"
+description: "How over-representation analysis and ranked-list gene-set enrichment test whether predefined biological programs show coordinated signal, with appropriate null models and multiple-testing control."
+author: "Jiahong Sun"
+date: "2026-09-01"
+date-modified: "2026-09-01"
+categories: [Bioinformatics, Algorithms, Statistics, Functional Genomics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Gene-set enrichment algorithms test whether genes belonging to a predefined pathway, ontology term, or signature occur more often or more strongly toward an interesting end of a genome-wide result than expected by a suitable null model.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which biological processes or coordinated molecular programs change between conditions? |
+| **Computational problem** | Aggregate thousands of gene-level measurements into statistically calibrated scores for many overlapping gene sets |
+| **Method type** | Set-based hypothesis testing and permutation-based enrichment |
+| **Input** | A gene universe plus either a selected gene list or a complete ranked gene-level statistic |
+| **Output** | Enrichment scores, p-values, adjusted values, leading genes, and direction when applicable |
+| **Representative resources/tools** | Gene Ontology, MSigDB, g:Profiler, clusterProfiler, fgsea, and GSEA |
+| **Prerequisites** | Gene identifiers, a valid gene-level model, and [multiple-testing correction](multiple-testing-correction.qmd) |
+
+# Why analyze gene sets?
+
+An experiment can produce many modest, correlated changes that are hard to interpret gene by gene. A pathway-level analysis asks whether those changes concentrate in a defined set: for example, genes annotated to a biological process, a transcription-factor target set, or a cell-state signature. This improves interpretability and can gain sensitivity for diffuse coordinated signal.
+
+It does **not** independently prove that a pathway is active. Gene sets overlap, annotations are incomplete and uneven, and an enriched label can be driven by a small subset of genes or by confounding inherited from the upstream analysis.
+
+# Two main algorithm families
+
+## Over-representation analysis (ORA)
+
+ORA starts with a thresholded list, such as up-regulated genes at a stated FDR and effect-size threshold. For each set, it tests whether selected genes are more frequent in the set than expected among all *eligible* genes.
+
+With $N$ eligible genes, $K$ genes in a set, $n$ selected genes, and $k$ selected genes in the set, the upper-tail hypergeometric p-value is
+
+$$
+P(X\geq k)=\sum_{x=k}^{\min(K,n)}
+\frac{\binom{K}{x}\binom{N-K}{n-x}}{\binom{N}{n}}.
+$$
+
+The background $N$ must be the genes that could genuinely have been selected—for example, genes tested after expression filtering—not every identifier in a database. Using the whole genome when half the genes were not measurable can manufacture enrichment.
+
+## Ranked-list enrichment (GSEA)
+
+Ranked-list methods avoid drawing a hard boundary. The original Gene Set Enrichment Analysis (GSEA) ranks all tested genes by a signed statistic, then walks down the list. The running sum increases when a gene belongs to the set (often weighted by the magnitude of its statistic) and decreases otherwise. The largest signed deviation from zero is the enrichment score (ES).
+
+```text
+all eligible genes ranked by signed statistic
+  -> walk from top to bottom
+  -> increase score at set members; decrease it at other genes
+  -> take the largest positive or negative departure as ES
+  -> compare ES with an appropriate permutation null
+  -> normalize, adjust across gene sets, and inspect leading-edge genes
+```
+
+Under phenotype-label permutations, GSEA preserves correlation among genes while breaking the association between expression and phenotype; this is preferable when sample size and experimental design support it. When only a preranked gene list is available, gene-label permutations or analytical approximations are common, but they use a different null and can be anti-conservative if gene-level statistics have heterogeneous correlation or biases. State which null was used.
+
+# A toy example
+
+Suppose 100 expressed genes were tested, 10 were selected as strongly induced, and a 12-gene interferon set contains 5 of those 10. ORA asks whether $k=5$ is unusually large given $N=100$, $K=12$, and $n=10$. It uses only membership in the selected list: genes ranked 11th and 90th contribute equally (not selected).
+
+For a ranked test, imagine the same interferon genes appear disproportionately near the top of a signed differential-expression ranking. The running sum rises at each such gene and falls a little at non-members. The maximum rise is positive ES; the set members encountered before that maximum form the *leading edge*, the genes most directly responsible for the score.
+
+# Practical workflow
+
+1. Define the comparison, gene universe, identifier mapping, gene-set collection and version before interpreting results.
+2. Produce a calibrated gene-level statistic from a model that respects the study design. For a ranked method, preserve direction and a ranking statistic rather than sorting only by p-value.
+3. Choose ORA when a well-justified selected list is central to the question; choose ranked enrichment when a genome-wide ordered signal is available and a threshold would be arbitrary.
+4. Test all selected sets, then control multiplicity across them, commonly with [Benjamini--Hochberg FDR](multiple-testing-correction.qmd). Report the full collection tested, not just the displayed terms.
+5. Inspect leading-edge genes (ranked methods) or overlapping selected genes (ORA), redundancy among terms, effect direction, and whether results replicate in independent cohorts.
+
+For a simple preranked analysis, the [fgsea documentation](https://bioconductor.org/packages/release/bioc/html/fgsea.html) describes a fast implementation; the [MSigDB collections](https://www.gsea-msigdb.org/gsea/msigdb) document curated gene-set sources and versions. Tool defaults do not choose a biologically valid gene universe or fix identifier mismatches.
+
+# Choosing and interpreting a null model
+
+| Question | ORA | Ranked enrichment |
+|---|---|---|
+| What is compared? | Number of selected genes inside versus outside a set | Positions/statistics of all set genes in a full ranking |
+| Main null | Random overlap conditional on the background and list size | No association between set membership and rank under the chosen permutation scheme |
+| Strength | Simple and transparent for a curated list | Uses continuous genome-wide evidence; no arbitrary significance cut-off |
+| Main vulnerability | Selection threshold and wrong background | Permutation choice, small samples, and gene-level statistic bias |
+| Key follow-up | Which selected genes cause overlap? | Which leading-edge genes drive the ES? |
+
+Gene sets are correlated because pathways share genes and annotations are hierarchical. Consequently, several significant labels can reflect one underlying program. Reduce redundant terms for communication, but retain the original test universe and corrected values so the analysis remains auditable.
+
+# Common failure modes
+
+| Failure mode | Consequence | Response |
+|---|---|---|
+| Incorrect identifiers or species | Genes silently fail to map or map to the wrong set | Record identifier type, organism, mapping database, and unmapped fraction |
+| Whole-genome background for a restricted assay | Biased ORA p-values | Use genes measurable and eligible in the primary analysis |
+| Ranking by unsigned p-value | Up- and down-regulation are mixed | Use a signed statistic, or test directions separately with an explicit rationale |
+| One gene family drives many sets | Broad story rests on a few repeated genes | Inspect leading edges/overlaps and quantify redundancy |
+| Treating annotation as mechanism | Association becomes a causal claim | Combine with effect sizes, orthogonal evidence, and perturbation experiments |
+| Ignoring set size | Very small sets are unstable; very large sets are vague | Predefine defensible minimum and maximum sizes and report them |
+
+# Connections in the knowledge map
+
+Enrichment is downstream of a gene-level statistical analysis, and it should inherit the latter's design, covariates, and uncertainty. [Multiple-testing correction](multiple-testing-correction.qmd) controls the many pathway tests; [principal component analysis for omics data](principal-component-analysis-for-omics-data.qmd) can help reveal technical or biological structure that should be considered before differential testing. Pathway scores can also be summarized across samples and explored with [hierarchical clustering](hierarchical-clustering.qmd) or [k-nearest-neighbor graphs](k-nearest-neighbor-graphs.qmd), but those downstream views do not replace a valid enrichment null model.
+
+# Take-home Messages
+
+1. ORA tests overlap with a selected list; ranked enrichment tests whether a set is concentrated at an extreme of a complete ordered statistic.
+2. The eligible-gene universe, gene identifiers, set collection version, and permutation/null model determine what the p-value means.
+3. Correct across all tested gene sets and inspect the genes driving each result; overlapping terms are not independent confirmations.
+4. Enrichment generates pathway-level hypotheses, not proof of causal pathway activation.
+
+# References
+
+- Subramanian, A. et al. 2005. [Gene set enrichment analysis: a knowledge-based approach for interpreting genome-wide expression profiles](https://doi.org/10.1073/pnas.0506580102). *Proceedings of the National Academy of Sciences* 102:15545--15550.
+- Boyle, E. I. et al. 2004. [GO::TermFinder—open source software for accessing Gene Ontology information and finding significantly enriched Gene Ontology terms associated with a list of genes](https://doi.org/10.1093/bioinformatics/bth456). *Bioinformatics* 20:3710--3715.
+- Korotkevich, G. et al. 2021. [Fast gene set enrichment analysis](https://doi.org/10.1101/060012). *bioRxiv* 060012. See also [fgsea](https://bioconductor.org/packages/release/bioc/html/fgsea.html).
+- [MSigDB documentation](https://www.gsea-msigdb.org/gsea/msigdb/docs): gene-set collections, versions, and licensing information.

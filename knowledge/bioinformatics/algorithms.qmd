@@ -17,6 +17,11 @@ categories: [Bioinformatics, Algorithms]
 - [Louvain community detection](algorithms/louvain-community-detection.qmd): greedy multilevel modularity optimization, graph communities, resolution limits, and stability diagnostics
 - [Leiden community detection](algorithms/leiden-community-detection.qmd): refined multilevel graph clustering, well-connected communities, resolution choice, and omics validation
 
+## Multiple comparisons and functional interpretation
+
+- [Multiple-testing correction](algorithms/multiple-testing-correction.qmd): family-wise and false-discovery-rate control, ordered p-value procedures, and responsible omics interpretation
+- [Gene-set enrichment algorithms](algorithms/gene-set-enrichment-algorithms.qmd): over-representation and ranked-list tests, enrichment null models, leading-edge genes, and pathway-level inference
+
 ### Database sequence search
 
 - [BLAST seed-and-extend search](algorithms/blast-seed-and-extend-search.qmd): word seeds, candidate extension, HSPs, and E-value interpretation

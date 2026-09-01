@@ -1,0 +1,122 @@
+---
+title: "Multiple-Testing Correction"
+subtitle: "Controlling false discoveries when one experiment yields many hypotheses"
+description: "How family-wise error rate and false-discovery-rate procedures turn many biological p-values into calibrated, interpretable decisions."
+author: "Jiahong Sun"
+date: "2026-09-01"
+date-modified: "2026-09-01"
+categories: [Bioinformatics, Algorithms, Statistics, Multiple Testing]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Multiple-testing correction converts a collection of p-values into decisions or adjusted values whose expected error rate is controlled across the whole family of hypotheses, rather than separately for every test.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which genes, variants, proteins, pathways, or features have evidence of association without turning chance findings into a long discovery list? |
+| **Computational problem** | Make many simultaneous statistical decisions while bounding a stated aggregate error criterion |
+| **Method type** | Statistical inference and ordered p-value algorithms |
+| **Input** | A predefined family of hypotheses and valid p-values (or test statistics from which they are derived) |
+| **Output** | Rejections and/or adjusted p-values or q-values at a declared threshold |
+| **Common uses** | Differential expression, GWAS, epigenome-wide association, proteomics, and gene-set analysis |
+| **Prerequisites** | Null hypothesis, p-value, power, and the difference between a statistical and biological effect |
+
+# Why one p-value threshold is not enough
+
+If 20,000 truly null genes are each tested at $p<0.05$, about 1,000 p-values are expected to pass by chance. Testing each gene correctly does **not** make the resulting gene list correct as a whole. The relevant error rate is defined over the *family* of tests.
+
+Let $V$ be the number of false rejections, $R$ the total rejections, and $m$ the number of tests.
+
+| Target | Definition | Typical use |
+|---|---|---|
+| Family-wise error rate (FWER) | $P(V\geq1)$ | A false positive is especially costly; small targeted panels or confirmatory claims |
+| False discovery rate (FDR) | $\mathrm{E}[V/\max(R,1)]$ | Large exploratory screens where some false discoveries are tolerable but must be limited on average |
+
+An FDR of 0.05 does not mean every reported feature has a 5% probability of being false, nor does it guarantee exactly 5% false features in one list. It is a long-run expectation under the method's assumptions and the declared analysis family.
+
+# Core algorithms
+
+## Bonferroni and Holm: control FWER
+
+Bonferroni rejects hypothesis $i$ only when $p_i\leq\alpha/m$. It is simple and valid under arbitrary dependence, but can be very conservative when $m$ is large.
+
+Holm's step-down procedure is uniformly at least as powerful while retaining FWER control. Sort p-values $p_{(1)}\leq\dots\leq p_{(m)}$, then compare $p_{(i)}$ with $\alpha/(m-i+1)$ in order. Reject until the first comparison that fails; retain that hypothesis and all later ones.
+
+## Benjamini--Hochberg: control FDR
+
+For a target FDR $q$, the Benjamini--Hochberg (BH) procedure sorts p-values and finds the largest rank $k$ satisfying
+
+$$
+p_{(k)}\leq \frac{k}{m}q.
+$$
+
+It rejects the hypotheses for ranks $1,\ldots,k$. The increasing threshold rewards a collection containing many small p-values: strong signal permits more discoveries than a Bonferroni threshold. BH controls FDR under independence and under certain forms of positive dependence commonly formalized as PRDS; it should not be presented as assumption-free.
+
+For arbitrary dependence, Benjamini--Yekutieli (BY) replaces $q$ by $q/H_m$, where $H_m=\sum_{i=1}^{m}1/i$. This guarantee is often much more conservative. In practice, the dependence structure, the validity of the upstream p-values, and replication are usually more consequential than mechanically choosing BH versus BY.
+
+```text
+valid p-values for a prespecified family
+  -> sort from smallest to largest
+  -> choose an error target (FWER or FDR)
+  -> apply the appropriate ordered threshold rule
+  -> report the procedure, family, threshold, effect sizes, and uncertainty
+```
+
+# A tiny BH example
+
+Suppose $m=5$, $q=0.05$, and the ordered p-values are $0.003, 0.009, 0.021, 0.044, 0.30$.
+
+| Rank $i$ | $p_{(i)}$ | BH boundary $i q/m$ | Passes? |
+|---:|---:|---:|---|
+| 1 | 0.003 | 0.010 | yes |
+| 2 | 0.009 | 0.020 | yes |
+| 3 | 0.021 | 0.030 | yes |
+| 4 | 0.044 | 0.040 | no |
+| 5 | 0.300 | 0.050 | no |
+
+The largest passing rank is 3, so BH rejects the first three hypotheses. The fourth p-value is not rejected even though it is less than 0.05, because that rule would ignore the other four opportunities for a chance result.
+
+Adjusted p-values give the smallest target level at which a hypothesis would be rejected. For BH, software computes them from the sorted values using a reverse cumulative minimum of $m p_{(i)}/i$, then restores the original feature order. This monotonicity step matters: adjusted p-values must not decrease as raw p-values increase.
+
+# A sound omics workflow
+
+1. Define the scientific question and the full testing family before examining results—for example, all genes passing a stated expression filter in one contrast.
+2. Fit a model that accounts for the experimental design, covariates, library properties, and dispersion or measurement error. A correction cannot repair biased or miscalibrated p-values.
+3. Apply an independent, pre-specified filtering rule only when it does not use the same null evidence in a way that invalidates inference; low-information genes are often filtered before testing.
+4. Apply and name the correction, such as BH FDR 5%; report raw p-values, adjusted values, effect sizes, confidence intervals where appropriate, and the number tested.
+5. Validate important findings in independent data and assess biological magnitude. Statistical significance is not an effect-size threshold.
+
+In R, `p.adjust(p, method = "BH")` and `p.adjust(p, method = "holm")` implement common adjusted p-values. Differential-expression packages often expose a BH-adjusted column, but its denominator and which hypotheses were filtered must be understood from that package's documentation.
+
+# Pitfalls and interpretation
+
+| Pitfall | Why it misleads | Better practice |
+|---|---|---|
+| Treating FDR as a posterior probability for each feature | FDR is a property of a procedure over repeated studies | Use local-FDR or Bayesian models only when their assumptions and outputs are explicitly warranted |
+| Changing the test family after seeing p-values | The stated guarantee no longer matches the selection process | Define families and confirmatory versus exploratory analyses in advance |
+| Correcting separately across many related contrasts without justification | It may understate the total selection opportunity | State which tests belong together and why; use a hierarchical plan if appropriate |
+| Ignoring effect size and power | Tiny effects can be significant; meaningful effects can be missed | Show fold changes, intervals, sample sizes, and sensitivity analyses |
+| Assuming correction fixes confounding | Invalid p-values remain invalid after adjustment | Improve the study design and model; inspect controls and diagnostics |
+
+# Connections in the knowledge map
+
+Multiple testing is the uncertainty-control layer for results generated by many algorithms. It commonly follows differential analyses of low-dimensional representations such as [principal component analysis for omics data](principal-component-analysis-for-omics-data.qmd), and it is central to [gene-set enrichment algorithms](gene-set-enrichment-algorithms.qmd), where scores are computed for many pathways. The distinction between likelihood, uncertainty, and decision rules also complements [Bayesian inference in bioinformatics](bayesian-inference-in-bioinformatics.qmd); Bayesian posterior probabilities are not interchangeable with frequentist adjusted p-values.
+
+# Take-home Messages
+
+1. Many individually valid p-values can create many false discoveries; define and control an error rate over the complete testing family.
+2. Bonferroni and Holm target the probability of *any* false discovery; BH usually offers more power by targeting the expected false-discovery proportion.
+3. BH needs valid input p-values and has dependence assumptions; an adjusted value does not rescue a misspecified analysis.
+4. Report the family, method, threshold, number tested, effect sizes, and validation evidence alongside discoveries.
+
+# References
+
+- Benjamini, Y., & Hochberg, Y. 1995. [Controlling the false discovery rate: a practical and powerful approach to multiple testing](https://doi.org/10.1111/j.2517-6161.1995.tb02031.x). *Journal of the Royal Statistical Society: Series B* 57:289--300.
+- Holm, S. 1979. [A simple sequentially rejective multiple test procedure](https://doi.org/10.2307/4615733). *Scandinavian Journal of Statistics* 6:65--70.
+- Benjamini, Y., & Yekutieli, D. 2001. [The control of the false discovery rate in multiple testing under dependency](https://doi.org/10.1214/aos/1013699998). *Annals of Statistics* 29:1165--1188.
+- [R `p.adjust` documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html): definitions and implementation of common multiple-comparison adjustments.
