@@ -80,7 +80,10 @@ categories: [Bioinformatics, Algorithms]
 
 ## Graphs and optimization
 
-Planned: dynamic programming, integer linear programming, minimum spanning trees, and neighbor joining.
+- [Dynamic programming in bioinformatics](algorithms/dynamic-programming-in-bioinformatics.qmd): recursive states, recurrences, traceback, complexity, and exact biological inference
+- [Integer linear programming in bioinformatics](algorithms/integer-linear-programming-in-bioinformatics.qmd): constrained discrete choices, branch-and-cut, solver certificates, and formulation validation
+
+Planned: minimum spanning trees and neighbor joining.
 
 ## Sequence and probabilistic models
 

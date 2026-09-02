@@ -1,0 +1,134 @@
+---
+title: "Integer Linear Programming in Bioinformatics"
+subtitle: "Encoding coupled biological decisions as constrained discrete optimization"
+description: "A practical guide to integer linear programming formulations, solvers, certificates, and pitfalls in bioinformatics."
+author: "Jiahong Sun"
+date: "2026-09-02"
+date-modified: "2026-09-02"
+categories: [Bioinformatics, Algorithms, Optimization, Integer Programming]
+toc: true
+number-sections: true
+code-fold: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Integer linear programming (ILP) chooses a globally optimal set of discrete biological decisions subject to explicit linear constraints.
+
+| Item | Description |
+|---|---|
+| **Domain** | Assembly, haplotyping, network reconstruction, experimental design, and feature selection |
+| **Computational problem** | Select or assign discrete objects while satisfying many coupled rules |
+| **Method type** | Exact combinatorial optimization; often solved by branch-and-cut |
+| **Typical input** | Candidate edges, variants, pathways, samples, costs, and hard constraints |
+| **Typical output** | A feasible selected set/assignment plus objective value and solver status |
+| **Prerequisites** | Graphs, linear constraints, and a carefully stated biological objective |
+| **Related topics** | [Haplotype assembly and phasing](haplotype-assembly-and-phasing.qmd), [de Bruijn graphs](de-bruijn-graphs-for-genome-assembly.qmd), [dynamic programming](dynamic-programming-in-bioinformatics.qmd) |
+
+# The formulation
+
+An ILP has decision vector $x$, a linear objective, linear constraints, and integer variables:
+
+$$
+\begin{aligned}
+\text{maximize or minimize}\quad & c^\top x\\
+\text{subject to}\quad & Ax \le b,\\
+& x_i\in\{0,1\}\ \text{or}\ x_i\in\mathbb{Z}.
+\end{aligned}
+$$
+
+Binary variables are especially useful: $x_i=1$ means a candidate edge, allele assignment, regulator, or sample is selected. The formulation separates three ideas that should be reviewed independently:
+
+| Component | Question |
+|---|---|
+| Variables | What biological choice does each number represent? |
+| Objective | What trade-off is being optimized? |
+| Constraints | Which choices are physically, statistically, or experimentally impossible? |
+
+If all variables are integer, the model is an ILP; with a mix of continuous and integer variables it is a mixed-integer linear program (MILP). Both are commonly solved with the same machinery.
+
+# Toy example: selecting reliable variant links
+
+Suppose three candidate links connect heterozygous variants. Let $x_{12},x_{23},x_{13}$ indicate whether a link is retained, and let their scores be 8, 7, and 3. If laboratory design permits at most two links,
+
+$$
+\max\ 8x_{12}+7x_{23}+3x_{13}\qquad
+\text{subject to}\quad x_{12}+x_{23}+x_{13}\le2,\quad x\in\{0,1\}^3.
+$$
+
+The optimum selects links 12 and 23. A real phasing formulation would add compatibility variables and constraints that tie selected read evidence to one consistent pair of haplotypes; it must also model sequencing and mapping errors. The example shows the important distinction: the solver does not discover biological meaning on its own--the formulation supplies it.
+
+# How solvers find solutions
+
+Dropping integrality gives a linear-programming relaxation, where a binary variable may temporarily take a fractional value. Branch-and-bound splits such cases into subproblems (for example, $x_i=0$ or $x_i=1$); cutting planes add valid inequalities that remove fractional regions without excluding an integer solution. Modern solvers combine these steps in branch-and-cut.
+
+```text
+candidate biology → formulate variables/objective/constraints
+                   → solve LP relaxations + branch/cut
+                   → feasible integer solution and bound
+                   → assess status, gap, and biological validity
+```
+
+An optimality claim requires a solver status and, where applicable, a proved bound. A feasible solution found before a time limit can be useful, but it is not automatically optimal.
+
+# Where ILP helps in bioinformatics
+
+ILP is attractive when local choices interact globally and the hard rules can be linearized.
+
+| Application | Discrete choices | Typical constraints |
+|---|---|---|
+| Haplotype inference | Alleles assigned to haplotypes | Genotype consistency and parsimony |
+| Assembly/scaffolding | Candidate overlaps or adjacencies | Orientation, coverage, and graph consistency |
+| Metabolic network reconstruction | Reactions included | Stoichiometry, evidence, and task requirements |
+| Feature-panel design | Markers selected | Budget, coverage, and redundancy limits |
+| Regulatory-network inference | Candidate edges retained | Sparsity and known biological constraints |
+
+For example, [haplotype assembly and phasing](haplotype-assembly-and-phasing.qmd) can be posed as minimizing disagreements between fragment observations and a pair of haplotypes. Graph algorithms and probabilistic methods are often preferred at genome scale, but ILP can be valuable for exact subproblems, benchmarking, or formulations with additional hard constraints.
+
+# Model construction checklist
+
+1. **Define candidates before optimizing.** Missing candidates cannot be selected; spurious candidates enlarge the search and can distort the answer.
+2. **Use interpretable variables.** State their units and biological meaning in a table.
+3. **Write each hard rule as a testable constraint.** Include every capacity, exclusivity, consistency, and directionality rule.
+4. **Scale objective coefficients sensibly.** Very different magnitudes can cause numerical difficulty and hide the intended trade-off.
+5. **Inspect feasibility first.** An infeasible model often signals conflicting assumptions or data errors, not merely a solver problem.
+6. **Report solver status, time limit, objective, bound, and optimality gap.** These are part of the scientific result.
+
+## Logical constraints
+
+Many biological rules can be expressed with binaries. If selecting candidate $a$ requires selecting $b$, use $x_a\le x_b$. To select at most one from a group $G$, use $\sum_{i\in G}x_i\le1$; for exactly one, replace $\le$ with $=$. More elaborate logic often needs auxiliary variables and a proof that the linear constraints match the intended semantics.
+
+# Pitfalls and limits
+
+ILP is NP-hard in general. Runtime can grow abruptly with more candidates, weak relaxations, or symmetries (multiple equivalent encodings of one biological answer).
+
+| Pitfall | Consequence | Mitigation |
+|---|---|---|
+| Incomplete biological constraints | Formally optimal but impossible solution | Unit-test constraints on small hand-checked cases |
+| Arbitrary objective weights | Unstable conclusions | Sensitivity analysis and domain-justified weights |
+| Time limit treated as proof | Unknown distance from optimum | Report incumbent, bound, and gap |
+| Excessive candidate set | Intractable model | Filter candidates using validated evidence or decompose the problem |
+| Numerical tolerances ignored | Apparent tiny constraint violations | Use reasonable scaling and verify the returned solution |
+
+An exact solver only certifies the formulated model. It does not validate reference bias, sequencing artifacts, or causal interpretation. Compare predictions with held-out or orthogonal biological evidence.
+
+# Tools and alternatives
+
+Open-source solvers include [HiGHS](https://highs.dev/) and [COIN-OR CBC](https://github.com/coin-or/Cbc); commercial solvers include [Gurobi](https://docs.gurobi.com/projects/optimizer/en/current/concepts/modeling.html). Solver choice matters, but formulation quality usually matters more.
+
+Use [dynamic programming](dynamic-programming-in-bioinformatics.qmd) when the problem has compact acyclic optimal substructure. Use network flow or matching for their special polynomial-time cases. Use a heuristic or approximation when the candidate universe is too large and a certified optimum is not required; validate its stability rather than implying exactness.
+
+# Take-home Messages
+
+1. ILP turns discrete biological choices, objectives, and hard rules into one auditable model.
+2. A solver's optimum is meaningful only relative to the candidates, constraints, and weights supplied.
+3. Status, bounds, and optimality gaps distinguish a proven optimum from a time-limited feasible solution.
+4. Formulation validation and biological validation are both essential.
+
+# References
+
+- Schrijver, A. 1986. *Theory of Linear and Integer Programming*. Wiley.
+- Gusfield, D. 2002. [Haplotyping as perfect phylogeny: conceptual framework and efficient solutions](https://doi.org/10.1145/509907.509912). *Proceedings of RECOMB 2002*.
+- Brown, D. G., & Harrower, I. M. 2006. [Integer programming approaches to haplotype inference by pure parsimony](https://doi.org/10.1109/TCBB.2006.22). *IEEE/ACM Transactions on Computational Biology and Bioinformatics* 3:141--154.
+- [Gurobi Optimizer Reference Manual: modeling components](https://docs.gurobi.com/projects/optimizer/en/current/concepts/modeling.html): official documentation on variables, objectives, and constraints.

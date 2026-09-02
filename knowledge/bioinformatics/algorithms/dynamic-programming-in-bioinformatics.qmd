@@ -1,0 +1,137 @@
+---
+title: "Dynamic Programming in Bioinformatics"
+subtitle: "Reusing optimal subproblems to make biological inference tractable"
+description: "How dynamic programming turns recursively structured bioinformatics problems into exact, auditable algorithms."
+author: "Jiahong Sun"
+date: "2026-09-02"
+date-modified: "2026-09-02"
+categories: [Bioinformatics, Algorithms, Dynamic Programming]
+toc: true
+number-sections: true
+code-fold: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Dynamic programming solves a problem by storing solutions to overlapping smaller problems and combining them according to a recurrence.
+
+| Item | Description |
+|---|---|
+| **Domain** | Sequence analysis, RNA structure, gene prediction, and probabilistic models |
+| **Computational problem** | Find an optimal score, path, structure, or likelihood without enumerating all possibilities |
+| **Method type** | Exact optimization or inference when the problem has suitable recursive structure |
+| **Typical input** | Sequences, a scoring/probability model, and boundary conditions |
+| **Typical output** | An optimum value, traceback solution, or marginal/probability summary |
+| **Prerequisites** | Recursion, graphs, and a biological scoring or probability model |
+| **Related topics** | [Needleman--Wunsch](needleman-wunsch-global-alignment.qmd), [Smith--Waterman](smith-waterman-local-alignment.qmd), [Viterbi and Forward--Backward](viterbi-and-forward-backward-algorithms.qmd) |
+
+# Why biological problems need it
+
+Many biological objects admit exponentially many candidate explanations: every placement of gaps in an alignment, every RNA base-pairing pattern, or every hidden-state path through a sequence. Exhaustive enumeration is usually impossible. Dynamic programming (DP) is applicable when a global solution can be assembled from **optimal subsolutions** and the same subproblems recur.
+
+The biology is encoded in the recurrence and its boundary conditions, not in DP itself. A mathematically correct recurrence with an unsuitable substitution matrix, gap model, grammar, or HMM still gives an unhelpful biological answer.
+
+# Core idea
+
+For a maximization problem, define a state that summarizes everything about the past that affects legal future decisions. Store its best score in a table. A recurrence considers the legal final transition into each state; a traceback pointer recovers the choices.
+
+```text
+Biological model + input
+          ↓
+define states and boundary conditions
+          ↓
+fill each state from smaller states
+          ↓
+read optimum and, if needed, traceback
+```
+
+The generic Bellman principle is
+
+$$
+V(s)=\max_{a\in A(s)}\{r(s,a)+V(T(s,a))\},
+$$
+
+where $s$ is a state, $A(s)$ its allowable next decisions, $r$ an immediate score, and $T$ the successor or predecessor state. Minimization replaces $\max$ with $\min$; probabilistic algorithms replace it with summation.
+
+# A small alignment example
+
+For sequences $X=x_1\ldots x_m$ and $Y=y_1\ldots y_n$, let $F(i,j)$ be the best global-alignment score for their prefixes. With linear gap score $g$ and substitution score $s$,
+
+$$
+F(i,j)=\max\{F(i-1,j-1)+s(x_i,y_j),\;F(i-1,j)+g,\;F(i,j-1)+g\}.
+$$
+
+Each alignment ends in exactly one of three column types: residue--residue, residue--gap, or gap--residue. That fact makes the recurrence complete. The [Needleman--Wunsch note](needleman-wunsch-global-alignment.qmd) explains the global boundaries; [Smith--Waterman](smith-waterman-local-alignment.qmd) adds a zero restart for local alignment.
+
+```text
+       -  G  C
+    -  0 -1 -2
+    G -1  1  0
+    A -2  0  0
+```
+
+With match $+1$, mismatch $-1$, and gap $-1$, each entry is computed once rather than by listing every possible gapped alignment. A predecessor pointer at each cell yields an optimal alignment afterward.
+
+# Common bioinformatics patterns
+
+| Problem | State | Recurrence operation | Output |
+|---|---|---|---|
+| Pairwise alignment | Sequence-prefix pair | max/min | Alignment and score |
+| Profile HMM decoding | Position and hidden state | max | Most likely state path |
+| HMM posterior inference | Position and hidden state | sum/product | Likelihoods and state posteriors |
+| RNA secondary structure | Sequence interval | max or sum | Structure or partition function |
+| Gene prediction | Genomic position and model state | max or sum | Gene-state path or posterior |
+
+Changing the algebra changes the question. The Viterbi algorithm selects one best HMM path, whereas Forward--Backward sums over all paths to quantify uncertainty; see [Viterbi and Forward--Backward algorithms](viterbi-and-forward-backward-algorithms.qmd). Affine alignment gaps likewise need extra states to remember whether a gap is open or extending.
+
+# Designing a usable recurrence
+
+1. **Define the output precisely.** Is it a best alignment, a likelihood, a count, or a posterior probability?
+2. **Choose a sufficient state.** It must retain all information needed for future legality and scoring, but no unnecessary history.
+3. **List every legal transition once.** Missing a transition silently excludes valid biological explanations.
+4. **Set boundaries deliberately.** They distinguish global, local, and semi-global alignment and determine what happens at sequence ends.
+5. **Validate with a tiny example.** Manually fill a few states and check traceback, ties, and impossible cases.
+
+In an acyclic dependency graph, a topological ordering supplies the fill order. Sequence DP often fills increasing prefixes or interval lengths. If dependencies form cycles, a straightforward one-pass table is not sufficient.
+
+# Complexity and practical trade-offs
+
+If there are $S$ states and at most $d$ transitions per state, time is commonly $O(Sd)$ and memory is $O(S)$. Pairwise alignment has $mn$ cells, so standard DP costs $O(mn)$ time and memory. Keeping only adjacent rows reduces the score-only memory to $O(\min(m,n))$, but a conventional traceback then needs additional strategy; Hirschberg's divide-and-conquer method recovers an alignment in linear space.
+
+| Challenge | Consequence | Practical response |
+|---|---|---|
+| Long sequences | Quadratic tables become costly | Band the matrix when a near-diagonal alignment is justified; use seeds to identify candidate regions |
+| Repeats or ambiguity | Many tied paths | Retain/report ambiguity or use a model that expresses it |
+| Over-simple state | Incorrect optimum | Add states, e.g. match/insert/delete for affine gaps |
+| Model mismatch | Precise but biologically implausible result | Calibrate scores and inspect sensitivity |
+
+Do not apply banding merely for speed: it can exclude the true optimum when an indel, rearrangement, or poor anchor places the correct path outside the band.
+
+# Connections and decision guide
+
+```text
+Recursive biological model
+        ↓
+overlapping subproblems + optimal substructure
+        ↓
+dynamic programming
+        ├── best path: alignment / Viterbi
+        └── summed paths: Forward--Backward / partition function
+```
+
+Use DP when the state space is manageable and the model decomposes along a natural order. Consider [BLAST seed-and-extend search](blast-seed-and-extend-search.qmd), [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd), heuristics, or approximation when an exact full table is too large. Use integer programming when the central difficulty is a set of coupled discrete choices without a compact acyclic recurrence.
+
+# Take-home Messages
+
+1. DP replaces repeated recursive work with a table of sufficient states.
+2. A recurrence, its boundaries, and its state definition jointly specify the biological algorithm.
+3. Max-product and sum-product variants answer different questions about the same model.
+4. Exactness is conditional on the model and on any pruning or banding choices.
+
+# References
+
+- Bellman, R. 1957. [*Dynamic Programming*](https://press.princeton.edu/books/paperback/9780691146683/dynamic-programming). Princeton University Press.
+- Needleman, S. B., & Wunsch, C. D. 1970. [A general method applicable to the search for similarities in the amino acid sequence of two proteins](https://doi.org/10.1016/0022-2836(70)90057-4). *Journal of Molecular Biology* 48:443--453.
+- Nussinov, R., Pieczenik, G., Griggs, J. R., & Kleitman, D. J. 1978. [Algorithms for loop matchings](https://doi.org/10.1137/0207069). *SIAM Journal on Applied Mathematics* 35:68--82.
+- Hirschberg, D. S. 1975. [A linear space algorithm for computing maximal common subsequences](https://doi.org/10.1145/360825.360861). *Communications of the ACM* 18:341--343.
