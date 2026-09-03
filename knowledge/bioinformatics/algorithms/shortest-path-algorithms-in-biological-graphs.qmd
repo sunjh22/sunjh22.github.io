@@ -1,0 +1,135 @@
+---
+title: "Shortest-Path Algorithms in Biological Graphs"
+subtitle: "Finding the lowest-cost route through sequence, network, and state graphs"
+description: "How shortest-path algorithms turn weighted biological graphs into auditable routes, and how to distinguish path cost from biological mechanism."
+author: "Jiahong Sun"
+date: "2026-09-03"
+date-modified: "2026-09-03"
+categories: [Bioinformatics, Algorithms, Graphs, Optimization]
+toc: true
+number-sections: true
+code-fold: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A shortest-path algorithm finds a route between graph vertices whose summed edge costs are smallest under a stated cost model.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which feasible sequence, molecular interaction route, or state transition has the smallest modeled cost? |
+| **Computational problem** | Find minimum-total-weight paths in a directed or undirected weighted graph |
+| **Method type** | Graph optimization; exact under its edge-cost assumptions |
+| **Typical input** | A graph, edge weights, and source/target vertices (or one source and all targets) |
+| **Typical output** | A path, its cost, and optionally predecessor pointers or distances to every vertex |
+| **Prerequisites** | Graphs, edge semantics, and [dynamic programming](dynamic-programming-in-bioinformatics.qmd) |
+| **Related topics** | [de Bruijn graphs](de-bruijn-graphs-for-genome-assembly.qmd), [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd), [minimum spanning trees](minimum-spanning-trees-in-bioinformatics.qmd) |
+
+# From biological choices to path costs
+
+Let $G=(V,E)$ be a graph with edge cost $c(u,v)$. A path $P=(v_0,v_1,\ldots,v_k)$ has cost
+
+$$
+C(P)=\sum_{i=0}^{k-1}c(v_i,v_{i+1}).
+$$
+
+The single-source shortest-path problem asks for the minimum of $C(P)$ from source $s$ to every reachable vertex; a point-to-point problem asks only for a target $t$. The result is meaningful only when an edge and its cost represent the biological or computational decision of interest. A low-cost path through a protein-interaction network, for example, is a hypothesis under the chosen edge scores—not proof that molecules physically signal through that route.
+
+```text
+biological candidates + a cost for each allowed transition
+                 ↓
+             weighted graph
+                 ↓
+   shortest-path algorithm suited to the weight assumptions
+                 ↓
+    minimum-cost route and its predecessor chain
+```
+
+# The main algorithms and their assumptions
+
+| Algorithm | Weight requirement | Main idea | Typical use |
+|---|---|---|---|
+| Breadth-first search (BFS) | Every edge has equal cost | Visit layers in increasing hop count | Fewest-step paths in unweighted graphs |
+| Dijkstra | All edge costs are nonnegative | Finalize the unsettled vertex with smallest tentative distance | Large sparse graphs with distance/penalty weights |
+| Bellman--Ford | Negative edges allowed; no reachable negative cycle | Relax every edge repeatedly | Models with signed costs; negative-cycle detection |
+| DAG shortest path | Graph is acyclic | Relax edges in topological order | Dynamic-programming-style sequence/state graphs |
+| A* | Usually nonnegative costs; admissible heuristic for optimality | Prioritize estimated total remaining cost | Targeted search when a safe heuristic is available |
+
+Dijkstra maintains tentative distances $d(v)$. Initially $d(s)=0$ and every other value is infinity. When it examines edge $(u,v)$, it performs **relaxation**:
+
+$$
+d(v) \leftarrow \min\{d(v),\ d(u)+c(u,v)\}.
+$$
+
+With nonnegative costs, once the smallest tentative distance is removed from a priority queue, no later route can improve it. A negative edge breaks that proof: a route discovered later can make a supposedly finalized vertex cheaper.
+
+# A small example
+
+Consider a directed graph whose edge labels are costs:
+
+```text
+S --2--> A --2--> T
+ \--1--> B --5--/
+          \--1--> A
+```
+
+Starting at S, Dijkstra first records $d(B)=1$ and $d(A)=2$. It finalizes B, whose route to A costs $1+1=2$, tying the direct route. It then finalizes A and obtains $d(T)=4$. The route S--A--T has total cost 4; S--B--T costs 6. Either tied predecessor for A is valid, so software should specify its tie-breaking rule when the exact displayed path matters.
+
+In a sequence graph, a vertex might represent a reference position plus an alignment state and an edge cost might represent a mismatch or gap penalty. In a reaction or interaction graph, vertices and costs require much more care: an edge can encode confidence, direction, probability, or a transformed score, and those choices are not interchangeable.
+
+# Connections to bioinformatics
+
+## Alignment and read placement
+
+Many dynamic programs can be viewed as shortest (or longest) paths in an acyclic state graph. An alignment matrix has vertices for prefix pairs and edges for match, insertion, and deletion moves. The recurrence in [dynamic programming](dynamic-programming-in-bioinformatics.qmd) is then topological relaxation; [read mapping and seed chaining](read-mapping-and-seed-chaining.qmd) narrows the graph by first finding plausible anchors.
+
+This viewpoint clarifies why an affine-gap model needs multiple states: a graph vertex must retain whether a gap has just opened or is extending so that the correct next-edge cost is available.
+
+## Assembly and pangenome graphs
+
+In a [de Bruijn graph](de-bruijn-graphs-for-genome-assembly.qmd), a path spells a sequence. Assembly is not generally a simple shortest-path problem because coverage, repeats, bubbles, and the requirement to explain read evidence create additional constraints. In variation graphs, path search can instead help locate a read or enumerate a candidate haplotype route, but graph cycles and ambiguous repeats require bounds and scoring safeguards.
+
+## Biological networks
+
+Network analysts sometimes seek shortest paths between disease genes, proteins, or metabolites to generate mechanistic hypotheses. Results can be dominated by highly connected "hub" vertices, missing edges, and database ascertainment. Use degree-aware null models, evidence provenance, and experimental validation; a shortest path is a ranking rule, not a causal model.
+
+# Choosing costs and validating results
+
+1. **Specify direction.** A regulatory or reaction edge may be directed; treating it as undirected permits impossible routes.
+2. **Use costs, not raw confidence, when minimizing.** A high-confidence edge should normally have a low cost, for example a documented monotone transform of a probability. Avoid $-\log p$ when $p=0$ without a defined floor.
+3. **Check edge signs.** Use Dijkstra only when all retained costs are nonnegative. If a model produces negative edges, use Bellman--Ford or reformulate it.
+4. **Detect negative cycles.** If a reachable cycle has negative total cost, one can traverse it indefinitely and no finite shortest path exists.
+5. **Report alternatives.** Nearly equal paths, missing observations, and unmeasured edges often matter more biologically than the winning path itself.
+
+| Symptom | Likely cause | Response |
+|---|---|---|
+| Route contains implausible hubs | Degree bias or incomplete edge semantics | Compare with degree-aware nulls and inspect evidence |
+| Dijkstra returns a surprising result | Negative or mis-scaled cost | Audit weights; use an algorithm matching their signs |
+| No path exists | Disconnected graph or over-restrictive filters | Report disconnection; do not invent a bridge |
+| Many identical-cost paths | Ties or coarse weights | Preserve alternatives or state deterministic tie handling |
+| Long route appears causal | Path criterion mistaken for mechanism | Treat it as a hypothesis and validate experimentally |
+
+# Shortest paths versus spanning trees
+
+A shortest-path tree from source $s$ gives one minimum-cost path from $s$ to every reachable vertex. It is not generally a [minimum spanning tree](minimum-spanning-trees-in-bioinformatics.qmd): the former minimizes distances *from one source*, while the latter minimizes the *sum of selected edge weights* while connecting all vertices. They can share edges but answer different questions.
+
+```text
+Shortest path:  "What is the cheapest route from S to T?"
+Shortest-path tree: "What is the cheapest route from S to each vertex?"
+MST:            "What is the cheapest cycle-free way to connect all vertices?"
+```
+
+# Take-home Messages
+
+1. A shortest path is defined by an explicit graph, source/target, and additive edge-cost model.
+2. Dijkstra's algorithm is fast and exact for nonnegative costs; negative edges require a different method.
+3. Dynamic programming on an acyclic state graph is a shortest/longest-path calculation in a topological order.
+4. In biological networks and graphs, a low-cost path is a model-based hypothesis, not independent evidence of mechanism or ancestry.
+
+# References
+
+- Dijkstra, E. W. 1959. [A note on two problems in connexion with graphs](https://doi.org/10.1007/BF01386390). *Numerische Mathematik* 1:269--271.
+- Bellman, R. 1958. [On a routing problem](https://doi.org/10.1090/qam/102435). *Quarterly of Applied Mathematics* 16:87--90.
+- Cormen, T. H., Leiserson, C. E., Rivest, R. L., & Stein, C. 2022. *Introduction to Algorithms*, 4th ed. MIT Press.
+- [NetworkX shortest-path documentation](https://networkx.org/documentation/stable/reference/algorithms/shortest_paths/index.html): algorithm selection and weight assumptions.

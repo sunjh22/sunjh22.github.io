@@ -1,0 +1,133 @@
+---
+title: "Minimum Spanning Trees in Bioinformatics"
+subtitle: "Connecting biological objects with the least total edge cost"
+description: "How minimum spanning trees summarize weighted biological graphs, and how to use them without mistaking a sparse graph for a unique evolutionary history."
+author: "Jiahong Sun"
+date: "2026-09-03"
+date-modified: "2026-09-03"
+categories: [Bioinformatics, Algorithms, Graphs, Optimization]
+toc: true
+number-sections: true
+code-fold: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A minimum spanning tree (MST) selects enough low-cost edges to connect every vertex of a weighted undirected graph while avoiding cycles and minimizing total cost.
+
+| Item | Description |
+|---|---|
+| **Biological question** | Which sparse set of pairwise similarities or transitions connects the observed samples with the least total dissimilarity? |
+| **Computational problem** | Find a minimum-weight connected acyclic subgraph of a weighted graph |
+| **Method type** | Greedy graph optimization |
+| **Typical input** | Samples, cells, haplotypes, or taxa as vertices; a weighted undirected edge set |
+| **Typical output** | $n-1$ selected edges connecting $n$ vertices, plus total weight |
+| **Prerequisites** | Graphs, distance/similarity choices, and [k-nearest-neighbor graphs](k-nearest-neighbor-graphs.qmd) |
+| **Related topics** | [Phylogenetic distance models](phylogenetic-distance-models.qmd), [neighbor joining](neighbor-joining-trees.qmd), [integer linear programming](integer-linear-programming-in-bioinformatics.qmd) |
+
+# What an MST does—and does not—say
+
+Given an undirected graph $G=(V,E)$ with edge weights $w(e)$, a **spanning tree** touches every vertex and has no cycle. Every spanning tree of $n=|V|$ vertices contains exactly $n-1$ edges. An MST is a spanning tree $T$ that minimizes
+
+$$
+\sum_{e\in T}w(e).
+$$
+
+The word *minimum* concerns the stated edge weights. If weights are genetic distances, the tree minimizes the total retained genetic distance; if they are expression-profile dissimilarities, it minimizes that quantity instead. It does not infer ancestry, direction, time, or a unique developmental trajectory unless those interpretations are justified by external modeling and data.
+
+```text
+weighted graph of biological objects
+          ↓
+choose n - 1 edges that keep every object connected
+          ↓
+forbid cycles and minimize summed edge weight
+          ↓
+minimum spanning tree
+```
+
+# Why greedy selection works
+
+Two complementary rules characterize safe greedy choices.
+
+* **Cut property:** split vertices into two nonempty sets. Any lightest edge crossing that split belongs to at least one MST.
+* **Cycle property:** within a cycle, an edge strictly heavier than every other edge in that cycle cannot belong to an MST.
+
+Kruskal's algorithm repeatedly takes the lightest remaining edge that joins two different components. A disjoint-set (union--find) structure detects whether an edge would close a cycle. Prim's algorithm instead starts from one vertex and repeatedly adds the lightest edge from the current tree to an unvisited vertex. With appropriate sorting or a priority queue, both are efficient on large sparse graphs.
+
+| Algorithm | Greedy step | Typical complexity |
+|---|---|---|
+| Kruskal | Add the lightest edge that joins two components | $O(|E|\log |E|)$ after sorting |
+| Prim with binary heap | Expand one growing tree via its cheapest frontier edge | $O(|E|\log |V|)$ |
+
+Tied weights can produce several valid MSTs. An implementation choosing one deterministic tie order is not evidence that the selected edges are biologically more certain than equally optimal alternatives.
+
+# A small example
+
+Suppose four samples have candidate distances:
+
+| Edge | Distance |
+|---|---:|
+| A--B | 1 |
+| B--C | 2 |
+| A--C | 3 |
+| C--D | 2 |
+| B--D | 5 |
+
+Kruskal considers edges in increasing order. It retains A--B, B--C, and C--D. The next edge, A--C, would form a cycle A--B--C--A, so it is skipped. The tree has three edges for four vertices and total cost $1+2+2=5$.
+
+```text
+A --1-- B --2-- C --2-- D
+ \_______3_______/
+     skipped: cycle-closing edge
+```
+
+An MST deliberately removes redundancy: after it is built there is exactly one path between each pair of vertices. That makes a compact display, but it also means that a single questionable edge can visually imply a connection that was only selected because the graph must be connected.
+
+# Bioinformatics uses
+
+## Population and molecular epidemiology
+
+An MST can display closely related isolates, haplotypes, or genotypes using an allelic or sequence-distance graph. It is useful for exploratory clustering and for spotting short links that merit epidemiological follow-up. It is not automatically a transmission tree: unsampled hosts, within-host diversity, recombination, and a non-clock-like mutation process can all invalidate that reading.
+
+## Single-cell and trajectory workflows
+
+An MST is sometimes fitted to cluster centroids or low-dimensional cell representations to create a sparse backbone. It can summarize a connected continuum, but its topology inherits every earlier decision: normalization, representation, neighborhood graph, root selection, and whether a cell population was sampled. Compare it with local connectivity in the underlying [kNN graph](k-nearest-neighbor-graphs.qmd) and inspect whether alternative preprocessing yields the same backbone.
+
+## Comparing taxa
+
+MSTs are occasionally used as distance-network visualizations. For phylogeny, however, use a method designed for evolutionary trees. [Neighbor joining](neighbor-joining-trees.qmd) corrects a distance criterion for each taxon's overall divergence and estimates branch lengths; likelihood-based methods additionally model site patterns. An MST built from pairwise distances is not a substitute for either.
+
+# Constructing a defensible tree
+
+1. **Define vertices and weights.** State the biological unit, preprocessing, distance metric, and how missing data were handled.
+2. **Check connectivity.** A disconnected input has a minimum spanning **forest**, not one spanning tree. Do not silently add arbitrary long edges merely to force connectivity.
+3. **Choose a sparse candidate graph deliberately.** A complete graph costs $O(n^2)$ edges to store. A kNN graph can be practical, but a too-small $k$ can remove an edge needed for the full-graph MST.
+4. **Record ties and sensitivity.** Re-run with plausible distance and preprocessing choices. Inspect near-tied alternatives when edge identity matters.
+5. **Validate against independent evidence.** Metadata, geography, dates, markers, and replicate assays can test a proposed biological interpretation.
+
+For nonnegative pairwise Euclidean distances, the Euclidean MST is contained in the Delaunay triangulation; specialized geometric algorithms can therefore avoid enumerating every edge. That useful computational fact does not transfer automatically to arbitrary genomic or expression distances.
+
+# Failure modes and alternatives
+
+| Situation | Why an MST can mislead | Better response |
+|---|---|---|
+| Multiple genuine relationships form cycles | The tree must delete all cycle redundancy | Keep a network graph or report alternative edges |
+| Strong batch or sampling effects | Short edges reflect technical rather than biological proximity | Audit QC, batch, and distance components first |
+| Disconnected populations | There is no spanning tree without invented edges | Report a forest and the disconnected components |
+| Need an ancestral/evolutionary tree | Objective has no evolutionary generative model | Use [neighbor joining](neighbor-joining-trees.qmd), maximum likelihood, or Bayesian phylogenetics |
+| Need globally constrained edge selection | Tree constraint is too restrictive | Formulate appropriate constraints with [integer linear programming](integer-linear-programming-in-bioinformatics.qmd) or a network-flow method |
+
+# Take-home Messages
+
+1. An MST is the lowest-total-weight cycle-free connection of all vertices in a weighted undirected graph.
+2. Kruskal's and Prim's greedy choices are justified by cut and cycle properties, not by a generic preference for locally short edges.
+3. Its biological interpretation is only as sound as its vertices, weights, candidate graph, and sampling design.
+4. An MST is a sparse summary; it is not, by itself, a phylogeny, transmission tree, or developmental lineage.
+
+# References
+
+- Kruskal, J. B. 1956. [On the shortest spanning subtree of a graph and the traveling salesman problem](https://doi.org/10.1090/S0025-5718-1956-0078686-7). *Proceedings of the American Mathematical Society* 7:48--50.
+- Prim, R. C. 1957. [Shortest connection networks and some generalizations](https://doi.org/10.1002/j.1538-7305.1957.tb01515.x). *Bell System Technical Journal* 36:1389--1401.
+- Gower, J. C., & Ross, G. J. S. 1969. [Minimum spanning trees and single linkage cluster analysis](https://doi.org/10.2307/2346439). *Applied Statistics* 18:54--64.
+- [igraph minimum-spanning-tree documentation](https://igraph.org/r/doc/mst.html): implementation interface and edge-weight behavior.
