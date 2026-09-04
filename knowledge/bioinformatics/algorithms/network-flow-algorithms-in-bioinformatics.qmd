@@ -1,0 +1,118 @@
+---
+title: "Network-Flow Algorithms in Bioinformatics"
+subtitle: "Routing limited biological evidence through a directed network"
+description: "A guide to max-flow, min-cost flow, residual graphs, and biological interpretations of flow models."
+author: "Jiahong Sun"
+date: "2026-09-04"
+date-modified: "2026-09-04"
+categories: [Bioinformatics, Algorithms, Graphs, Optimization]
+toc: true
+number-sections: true
+code-fold: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Network-flow algorithms optimize how much material, evidence, or capacity can be routed through a directed graph while respecting edge limits.
+
+| Item | Description |
+|---|---|
+| **Computational problem** | Route flow from source to sink subject to capacities, conservation, and optionally costs |
+| **Method type** | Polynomial-time graph optimization |
+| **Typical input** | Directed graph, source/sink, edge capacities, and optional per-unit costs |
+| **Typical output** | A feasible flow, objective value, and sometimes a limiting cut or decomposition into paths |
+| **Related topics** | [shortest paths](shortest-path-algorithms-in-biological-graphs.qmd), [integer linear programming](integer-linear-programming-in-bioinformatics.qmd), [de Bruijn graphs](de-bruijn-graphs-for-genome-assembly.qmd) |
+
+# The flow model
+
+Let $G=(V,E)$ have a source $s$, sink $t$, capacity $u_e\geq0$ on every directed edge, and flow $f_e$. A feasible flow obeys
+
+$$
+0\leq f_e\leq u_e
+$$
+
+and conserves flow at every nonterminal vertex:
+
+$$
+\sum_{(v,w)\in E} f_{vw} - \sum_{(w,v)\in E}f_{wv}=0
+\qquad(v\notin\{s,t\}).
+$$
+
+The **maximum-flow** problem maximizes the amount leaving $s$ (equivalently, entering $t$). The max-flow/min-cut theorem says this value equals the capacity of the smallest set of edges whose removal separates $s$ from $t$. Thus a cut is both an optimality certificate and a way to identify a bottleneck under the stated model.
+
+With per-unit edge costs $c_e$, **minimum-cost flow** instead minimizes $\sum_e c_ef_e$ among flows meeting a requested demand. It is useful when a model needs both feasibility and a preference, such as a penalty for a low-confidence link.
+
+# How algorithms improve a flow
+
+An algorithm maintains a feasible provisional flow and a **residual graph**. A residual edge represents unused forward capacity; a reverse residual edge represents the option to undo earlier flow and re-route it. This reversibility is essential: a locally plausible route can consume capacity needed by a better global solution.
+
+```text
+capacitated graph → provisional flow → residual graph
+                                      ↓
+                        augmenting path or cost-improving cycle
+                                      ↓
+                             updated flow and residual graph
+```
+
+Ford--Fulkerson repeatedly augments along an $s$-to-$t$ residual path. Edmonds--Karp selects the shortest such path in number of edges and has polynomial running time. Dinic's algorithm builds level graphs and sends blocking flows, making it a common practical maximum-flow method. For min-cost flow, successive shortest augmenting path methods find a cheapest residual route while accounting for reverse edges; implementations must handle reduced costs or another valid treatment of negative residual edges.
+
+# Tiny example
+
+Suppose a source has two candidate routes to a sink:
+
+```text
+S --3--> A --2--> T
+ \--2--> B --3--/
+```
+
+The upper path carries at most 2 because $A\mathbin{\to}T$ is its bottleneck; the lower path carries at most 2 because $S\mathbin{\to}B$ is its bottleneck. Sending two units along each gives total flow 4. The two source edges have combined capacity $3+2=5$, so they do not alone prove optimality. Cutting the two edges entering $T$ has capacity $2+3=5$ either; the actual minimum cut is $A\mathbin{\to}T$ plus $S\mathbin{\to}B$, with capacity $2+2=4$, certifying the answer.
+
+# Bioinformatics uses and interpretation
+
+| Setting | Graph meaning | What flow represents | Essential caveat |
+|---|---|---|---|
+| Isoform reconstruction | Exons or splice junctions | Abundance routed through transcript paths | Short reads can leave multiple path decompositions equally valid |
+| Metabolic networks | Reactions and metabolites | Steady-state reaction flux | A feasible flux is not direct evidence of in-vivo activity |
+| Assembly or scaffolding subproblems | Sequence blocks and candidate joins | Consistent use of limited links | Repeats and errors can make the graph model wrong |
+| Pathway/network analysis | Molecules and interactions | Capacity-limited explanatory routes | Database coverage and hub bias affect conclusions |
+
+In transcript assembly, flow conservation naturally encodes that the amount entering an internal exon should equal the amount leaving it. However, a flow solution often needs to be decomposed into paths to report transcript candidates, and that decomposition need not be unique. In metabolic flux-balance analysis, stoichiometric mass balance plays a similar role, but its usual formulation is linear programming rather than a simple source-to-sink network.
+
+# Modeling checklist
+
+1. **Define units.** Capacity may be read support, molecule amount, confidence-derived budget, or merely a computational bound; do not mix these meanings.
+2. **Orient edges correctly.** Splicing, reactions, and regulation can be directional. Adding reverse edges for a solver is not permission to interpret a reverse biological event.
+3. **Separate hard constraints from costs.** A capacity forbids excess; a cost ranks otherwise feasible alternatives.
+4. **Inspect cuts and path decompositions.** They reveal bottlenecks and ambiguities that one aggregate objective hides.
+5. **Test sensitivity.** Small changes in edge construction or capacities can change a discrete path decomposition substantially.
+
+## Common failure modes
+
+| Failure | Consequence | Response |
+|---|---|---|
+| Capacity is mistaken for a measured physical flux | Overstated biological claim | State its derivation and validate with orthogonal data |
+| Flow conservation is imposed at a source/sink-like node | Feasible biology is excluded | Explicitly choose terminals and boundary conditions |
+| Greedy routing without residual reversals | Missed global optimum | Use a proven flow algorithm |
+| Costs have incompatible scales | Arbitrary preferred routes | Normalize or justify each term and run sensitivity checks |
+| Non-unique decomposition is hidden | False certainty in transcript/path calls | Retain alternatives or report equivalence classes |
+
+# Connections and alternatives
+
+Network flow is more structured than [integer linear programming](integer-linear-programming-in-bioinformatics.qmd): a plain single-commodity flow problem has an integral optimum when capacities and demands are integral, so it can often avoid binary variables. Extra biological rules—paired decisions, mutually exclusive paths, or several interacting commodities—can break that simplification and require ILP or another formulation.
+
+Use [shortest-path algorithms](shortest-path-algorithms-in-biological-graphs.qmd) to find one lowest-cost route without capacity competition. Use bipartite matching when each item should be paired at most once. Use dynamic programming on an acyclic state graph when the natural structure is a sequence of states rather than shared network capacity.
+
+# Take-home Messages
+
+1. Flow models combine edge capacities with conservation to express globally coupled routing decisions.
+2. Residual reverse edges let an algorithm repair earlier choices, which is why greedy routing can fail.
+3. A minimum cut certifies a maximum-flow value but only under the graph and capacity model supplied.
+4. Biological interpretation depends on what edges, capacities, terminals, and path decompositions actually represent.
+
+# References
+
+- Ford, L. R., Jr., & Fulkerson, D. R. 1956. [Maximal flow through a network](https://doi.org/10.1137/0108013). *Canadian Journal of Mathematics* 8:399--404.
+- Dinic, E. A. 1970. [Algorithm for solution of a problem of maximum flow in networks with power estimation](https://doi.org/10.1007/BF01114394). *Soviet Mathematics Doklady* 11:1277--1280.
+- Ahuja, R. K., Magnanti, T. L., & Orlin, J. B. 1993. *Network Flows: Theory, Algorithms, and Applications*. Prentice Hall.
+- [NetworkX flow documentation](https://networkx.org/documentation/stable/reference/algorithms/flow.html): algorithm interfaces and assumptions.

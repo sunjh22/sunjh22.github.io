@@ -84,8 +84,8 @@ categories: [Bioinformatics, Algorithms]
 - [Integer linear programming in bioinformatics](algorithms/integer-linear-programming-in-bioinformatics.qmd): constrained discrete choices, branch-and-cut, solver certificates, and formulation validation
 - [Minimum spanning trees in bioinformatics](algorithms/minimum-spanning-trees-in-bioinformatics.qmd): sparse least-cost graph connection, greedy correctness, and cautious biological interpretation
 - [Shortest-path algorithms in biological graphs](algorithms/shortest-path-algorithms-in-biological-graphs.qmd): weighted routes, Dijkstra assumptions, dynamic-programming connections, and network caveats
-
-Planned: further graph and network optimization methods.
+- [Network-flow algorithms in bioinformatics](algorithms/network-flow-algorithms-in-bioinformatics.qmd): capacitated routing, residual graphs, min-cuts, and biological flow-model diagnostics
+- [Bipartite matching algorithms in bioinformatics](algorithms/bipartite-matching-algorithms-in-bioinformatics.qmd): exclusive assignments, augmenting paths, weighted matching, and pairing uncertainty
 
 ## Sequence and probabilistic models
 

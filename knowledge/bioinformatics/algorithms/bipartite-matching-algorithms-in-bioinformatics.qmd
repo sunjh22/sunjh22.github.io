@@ -1,0 +1,123 @@
+---
+title: "Bipartite Matching Algorithms in Bioinformatics"
+subtitle: "Making compatible one-to-one assignments without double use"
+description: "A guide to bipartite graphs, maximum and weighted matching, assignment algorithms, and validation of biological pairings."
+author: "Jiahong Sun"
+date: "2026-09-04"
+date-modified: "2026-09-04"
+categories: [Bioinformatics, Algorithms, Graphs, Optimization]
+toc: true
+number-sections: true
+code-fold: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Bipartite matching selects compatible pairs between two sets while ensuring that no item is used more often than the model permits.
+
+| Item | Description |
+|---|---|
+| **Computational problem** | Choose vertex-disjoint edges between left and right vertex sets |
+| **Method type** | Combinatorial graph optimization; an assignment problem when every item is paired |
+| **Typical input** | Two item sets and allowable pairings, optionally with scores or costs |
+| **Typical output** | A maximum-cardinality or maximum-weight set of non-overlapping pairs |
+| **Related topics** | [network flow](network-flow-algorithms-in-bioinformatics.qmd), [integer linear programming](integer-linear-programming-in-bioinformatics.qmd), [k-nearest-neighbor graphs](k-nearest-neighbor-graphs.qmd) |
+
+# The matching problem
+
+A bipartite graph is $G=(L\cup R,E)$, where every edge joins one left vertex in $L$ to one right vertex in $R$. A **matching** $M\subseteq E$ has no shared endpoints. A maximum-cardinality matching maximizes $|M|$; a weighted matching maximizes
+
+$$
+\sum_{(i,j)\in M}w_{ij},
+$$
+
+where $w_{ij}$ is the score for pairing $i$ and $j$. The square, complete, one-to-one weighted case is the classic assignment problem.
+
+The constraint is the key distinction from independently choosing each item's best edge. Two samples may both prefer the same reference profile, but a one-to-one matching must resolve that competition. Conversely, if the biology permits one item to pair with several partners, ordinary matching is the wrong model; use a capacity-aware flow or a many-to-many model.
+
+# Augmenting paths and the assignment algorithm
+
+For unweighted maximum matching, an **augmenting path** alternates unmatched and matched edges and begins and ends at currently unmatched vertices. Flipping its edges increases the matching size by one. Berge's theorem states that a matching is maximum exactly when no augmenting path exists. Hopcroft--Karp finds many shortest augmenting paths per phase and runs in $O(|E|\sqrt{|V|})$ time.
+
+```text
+candidate compatible pairs
+          ↓
+initial non-overlapping pairs
+          ↓
+find alternating augmenting paths
+          ↓
+flip matched/unmatched status along each path
+          ↓
+maximum number of pairs
+```
+
+For a weighted one-to-one assignment, the Hungarian algorithm uses dual variables and zero reduced-cost edges to obtain an optimum in $O(n^3)$ for an $n\times n$ cost matrix. Rectangular or incomplete cases can be padded carefully, but a dummy pairing must have a clearly documented biological meaning and penalty.
+
+# Toy example
+
+Suppose three query barcodes ($q_1,q_2,q_3$) can be paired with three reference identities ($r_1,r_2,r_3$), with higher scores preferred:
+
+| Query | Allowed scores |
+|---|---|
+| $q_1$ | $r_1:9$, $r_2:8$ |
+| $q_2$ | $r_1:8$ |
+| $q_3$ | $r_2:7$, $r_3:6$ |
+
+A greedy first choice of $q_1\mathbin{-}r_1$ blocks $q_2$, leaving at most two pairs. The matching $q_1\mathbin{-}r_2$, $q_2\mathbin{-}r_1$, and $q_3\mathbin{-}r_3$ produces three pairs. Maximum cardinality therefore differs from taking each row's largest score. If score total, rather than number of pairs, is the objective, the formulation must say whether unmatched items are allowed and what their cost is.
+
+# Where matching appears in bioinformatics
+
+| Application | Left set | Right set | Edge definition | Caution |
+|---|---|---|---|---|
+| Cell or sample label transfer | Query cells/samples | Reference profiles or labels | Similarity after suitable normalization | A label can legitimately serve many queries, so one-to-one matching may be artificial |
+| Orthology candidate selection | Genes in one species | Genes in another | Sequence or synteny evidence | Gene duplication makes one-to-one orthology incomplete |
+| Multi-omic entity alignment | Cells in modality A | Cells in modality B | Cross-modal similarity | Batch effects can dominate scores |
+| Read-pair or fragment assignment subproblems | Observations | Candidate loci | Alignment-derived score | Repeats create many nearly tied edges |
+
+Matching is useful as a precise subroutine when exclusive pairing is genuinely required. For example, two batches of cells that are expected to correspond one-to-one can be aligned through a bipartite assignment, but it should not silently force biological populations with unequal abundance into false pairs.
+
+# Modeling and diagnostics
+
+1. **State why exclusivity is valid.** Is each entity truly available once, or is one-to-many use biologically expected?
+2. **Construct candidate edges conservatively.** An omitted true edge cannot be recovered; a dense set of poor edges can force implausible matches.
+3. **Document score direction and scale.** Convert a distance to a cost or score consistently, and do not compare incomparable metrics.
+4. **Allow unmatched items where appropriate.** Use explicit dummy vertices or a partial-matching objective and report the penalty.
+5. **Inspect margins.** Compare the selected edge with the best competing edges for both endpoints; small margins signal fragile assignments.
+
+| Diagnostic | What it can reveal |
+|---|---|
+| Fraction unmatched | Missing candidates, unequal set sizes, or a legitimate absence of counterparts |
+| Score-margin distribution | Whether pair identities are well separated or exchangeable |
+| Swapped/near-optimal solutions | Global ambiguity hidden by a single optimum |
+| Batch, species, or locus enrichment | Confounding in the edge score rather than a biological match |
+
+# Relationship to flow and other optimizers
+
+Maximum bipartite matching reduces to unit-capacity [network flow](network-flow-algorithms-in-bioinformatics.qmd): connect a source to every left vertex, retain bipartite edges with capacity one, and connect right vertices to a sink. An integral maximum flow corresponds to a matching. This connection permits capacities greater than one when the model needs them.
+
+The same assignment can be written as an [integer linear program](integer-linear-programming-in-bioinformatics.qmd), with binary $x_{ij}$ for every candidate pair and constraints $\sum_jx_{ij}\leq1$ and $\sum_ix_{ij}\leq1$. For plain bipartite matching, specialized flow or assignment algorithms are preferable; ILP becomes useful when adding coupled rules that no longer preserve the simple structure.
+
+# Pitfalls
+
+| Pitfall | Why it misleads | Mitigation |
+|---|---|---|
+| Forced complete matching | Every item gets a partner even when none is credible | Permit unmatched vertices and choose threshold/penalty using validation data |
+| Score-only interpretation | High score ignores the best alternative | Report margins and posterior/probabilistic uncertainty when available |
+| One-to-one assumption after duplication | Paralogues or expanded cell populations are suppressed | Use many-to-many, capacity, or family-level models |
+| Greedy local assignment | Earlier choices block a better global pairing | Use an exact matching/assignment algorithm |
+| Uncorrected technical structure | Matches follow batch or coverage | Normalize, include covariates, and check negative controls |
+
+# Take-home Messages
+
+1. Bipartite matching formalizes exclusive pairing; its one-to-one assumption must be biologically justified.
+2. Augmenting paths repair locally tempting assignments to reach a globally maximum matching.
+3. Weighted assignment requires both a score model and a clear policy for unmatched items.
+4. Near-tied alternatives, unmatched fractions, and confounding checks are as important as the reported pairs.
+
+# References
+
+- Kuhn, H. W. 1955. [The Hungarian method for the assignment problem](https://doi.org/10.1002/nav.3800020109). *Naval Research Logistics Quarterly* 2:83--97.
+- Hopcroft, J. E., & Karp, R. M. 1973. [An $n^{5/2}$ algorithm for maximum matchings in bipartite graphs](https://doi.org/10.1137/0202019). *SIAM Journal on Computing* 2:225--231.
+- Berge, C. 1957. *Théorie des Graphes et ses Applications*. Dunod.
+- [SciPy `linear_sum_assignment` documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.linear_sum_assignment.html): official linear-sum-assignment interface and rectangular matrices.
