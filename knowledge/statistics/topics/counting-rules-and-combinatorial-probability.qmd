@@ -1,0 +1,119 @@
+---
+title: "Counting Rules and Combinatorial Probability"
+subtitle: "Turning equally likely outcomes into exact probabilities"
+description: "Product and sum rules, permutations, combinations, and hypergeometric sampling for finite probability models."
+author: "Jiahong Sun"
+date: "2026-09-06"
+date-modified: "2026-09-06"
+categories: [Statistics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Combinatorial probability counts outcomes carefully, then divides favorable outcomes by all outcomes only when those outcomes are equally likely.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness |
+| Main question | How many distinct outcomes or selections are possible? |
+| Typical data | Finite sets, sampling without replacement, permutations |
+| Key warning | Counting is not itself a probability model; the sampling mechanism supplies probabilities |
+| Prerequisites | [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) |
+
+# Core counting rules
+
+The **sum rule** applies to mutually exclusive alternatives: if a procedure can be completed in $m$ ways by one route or $n$ ways by another disjoint route, it has $m+n$ outcomes. The **product rule** applies to ordered stages: if stage one has $m$ choices and, for every one, stage two has $n$ choices, it has $mn$ outcomes.
+
+For $n$ distinct objects:
+
+$$
+\underbrace{n(n-1)\cdots(n-k+1)}_{(n)_k}=\frac{n!}{(n-k)!}
+$$
+
+counts ordered selections of $k$ objects (permutations). If order does not matter, every selected set has been counted $k!$ times, giving
+
+$$
+\binom{n}{k}=\frac{n!}{k!(n-k)!}.
+$$
+
+The symmetry $\binom nk=\binom n{n-k}$ is a useful check: choosing the $k$ included objects is equivalent to choosing the $n-k$ excluded objects.
+
+# From counts to probability
+
+If every $\omega\in\Omega$ is equally likely, then
+
+$$
+P(A)=\frac{|A|}{|\Omega|}.
+$$
+
+This is a consequence of the probability axioms plus equal masses, not a definition valid for arbitrary samples. When outcomes have unequal selection probabilities, use the actual probability measure instead of a ratio of counts.
+
+## Hypergeometric derivation
+
+An urn contains $N$ items, of which $K$ are marked. Draw $n$ items uniformly *without replacement*, and let $X$ be the number marked. There are $\binom Nn$ equally likely unordered samples. To obtain $X=x$, choose $x$ of the $K$ marked and $n-x$ of the $N-K$ unmarked items:
+
+$$
+P(X=x)=\frac{\binom Kx\binom{N-K}{n-x}}{\binom Nn},
+$$
+
+for $\max(0,n-(N-K))\leq x\leq\min(n,K)$. This is the hypergeometric distribution. Its mean is $E[X]=nK/N$ and its variance includes the finite-population correction,
+
+$$
+\operatorname{Var}(X)=n\frac KN\left(1-\frac KN\right)\frac{N-n}{N-1}.
+$$
+
+The final factor is smaller than one for $n>1$: sampling without replacement creates negative dependence between draws. Replacing this model with a binomial model is an approximation, often adequate only when the sampled fraction $n/N$ is small.
+
+# Biological example: overlap of gene lists
+
+Suppose a genome has $N$ genes and a pathway contains $K$ genes. Under a null model in which a submitted list of $n$ genes is a uniformly chosen set of size $n$, the number of pathway genes follows the hypergeometric distribution. An over-representation test uses the upper-tail probability $P(X\geq x_{obs})$.
+
+This calculation is useful only if the null sampling model reflects the analysis. A gene list generated after filtering, detectability differences, annotation bias, or correlated expression is not a uniform sample of all genes. In enrichment analysis, the appropriate universe is usually the set of genes that could have been selected, and multiple tested pathways require multiplicity control. The experimental unit remains the original biological sample or experiment, not the genes in the list.
+
+# A compact worked calculation
+
+With $N=20{,}000$ eligible genes, $K=200$ pathway genes, and a list of $n=100$ genes, the chance of exactly two pathway genes under the uniform null is
+
+$$
+P(X=2)=\frac{\binom{200}{2}\binom{19{,}800}{98}}{\binom{20{,}000}{100}}.
+$$
+
+The formula identifies the null distribution; it does not establish biological enrichment by itself. Report the observed overlap, effect size (for example, an odds ratio), the tested universe, and the adjusted tail probability.
+
+# Assumptions, diagnostics, and alternatives
+
+| Situation | Counting model | Main assumption | Sensitivity or alternative |
+|---|---|---|---|
+| Ordered draws without replacement | permutations | every ordered sequence is equally likely | model unequal draw probabilities explicitly |
+| Unordered uniform subset | combinations / hypergeometric | exchangeable eligible items | define the eligible universe before testing |
+| Independent trials with common success chance | binomial | independent, identical trial probability | use hypergeometric for finite-population sampling; assess overdispersion |
+| Annotated gene lists | hypergeometric tail | uniform selection within the tested universe | account for selection bias, gene correlation, and multiple testing |
+
+# Common pitfalls
+
+1. **Mixing ordered and unordered outcomes:** use permutations when position matters and combinations when it does not.
+2. **Dividing counts without equiprobability:** a uniform count ratio is invalid for weighted sampling.
+3. **Using all genome genes as the universe by default:** include only features that were measurable and eligible for selection.
+4. **Calling a small enrichment p-value a biological effect:** the null model, bias controls, effect magnitude, and replication determine the scientific claim.
+
+# Connections to the Knowledge Map
+
+- [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) supplies the probability language behind finite counts.
+- [Probability distributions](../distributions.qmd) links this derivation to hypergeometric, binomial, and related distributions.
+- [Statistics overview](../index.qmd) organizes the rest of the Statistics knowledge map.
+
+# Take-home Messages
+
+1. Sum and product rules turn a structured experiment into a count of possible outcomes.
+2. Permutations retain order; combinations do not.
+3. Count ratios become probabilities only under an explicitly uniform sample space.
+4. Hypergeometric sampling describes uniform draws without replacement and underlies common gene-set overlap calculations.
+5. In bioinformatics, the selected-gene universe and the experimental design are part of the statistical model.
+
+# References
+
+- Ross, S. M. *A First Course in Probability*, 9th ed. Pearson, 2014.
+- Boyle, E. I. et al. “GO enrichment analysis: current status and future prospects.” *Bioinformatics* 30(16), 2014. [https://doi.org/10.1093/bioinformatics/btu257](https://doi.org/10.1093/bioinformatics/btu257).

@@ -3,6 +3,28 @@ title: "Statistics"
 description: "Probability, inference, and models for biological variation."
 ---
 
+## Probability & Randomness
+
+- [Probability spaces, events, and probability axioms](topics/probability-spaces-events-and-axioms.qmd)
+- [Counting rules and combinatorial probability](topics/counting-rules-and-combinatorial-probability.qmd)
 - [Probability distributions](distributions.qmd)
-- [Mixture models](mixture-models.qmd)
+
+## Asymptotic Thinking
+
+Foundations for convergence, laws of large numbers, and normal approximations will be added here.
+
+## Statistical Inference
+
+Foundations for estimands, likelihood, uncertainty, and testing will be added here.
+
+## Regression & Statistical Models
+
 - [Statistical modelling](statistical-modelling.qmd)
+
+## Advanced Modeling
+
+- [Mixture models](mixture-models.qmd)
+
+## Real Bioinformatics Problems
+
+Applied designs and omics-specific statistical models will be added here.
