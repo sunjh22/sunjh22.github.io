@@ -1,0 +1,171 @@
+---
+title: "Random Variables and Probability Distributions"
+subtitle: "Mapping random outcomes to quantities that can be modeled"
+description: "Random variables, distribution functions, discrete and continuous laws, quantiles, and mixed distributions."
+author: "Jiahong Sun"
+date: "2026-09-07"
+date-modified: "2026-09-07"
+categories: [Statistics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A random variable converts outcomes in a probability space into numerical values, and its distribution records how probability is allocated across those values.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness |
+| Main question | Which numerical values can occur, and with what probabilities? |
+| Core objects | Random variable, cumulative distribution function, probability mass or density function |
+| Typical applications | Read counts, variant indicators, expression measurements, waiting times |
+| Prerequisites | [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) |
+
+# From Outcomes to Numbers
+
+Let $(\Omega,\mathcal F,P)$ be a probability space. A real-valued **random variable** is a measurable function
+
+$$
+X:\Omega\longrightarrow\mathbb R.
+$$
+
+The word *random* describes which outcome $\omega$ is realized; once $\omega$ is fixed, $X(\omega)$ is an ordinary number. Measurability requires $\{\omega:X(\omega)\leq x\}\in\mathcal F$ for every real $x$, ensuring that statements about $X$ have defined probabilities.
+
+Uppercase $X$ denotes the mapping before observation, while lowercase $x$ commonly denotes a possible or observed value. Confusing the two can hide an important distinction: a model describes the distribution of $X$, whereas data contain realized values $x_1,\ldots,x_n$.
+
+## The induced distribution
+
+The distribution of $X$ is the probability measure on the real line induced by $X$:
+
+$$
+P_X(B)=P(X\in B)=P\{\omega:X(\omega)\in B\}
+$$
+
+for measurable sets $B\subseteq\mathbb R$. Different underlying experiments can therefore give the same distribution. For many statistical questions, the induced distribution contains everything needed about $X$, even when the full sample space is complicated.
+
+# The Cumulative Distribution Function
+
+Every real-valued random variable has a **cumulative distribution function** (CDF)
+
+$$
+F_X(x)=P(X\leq x).
+$$
+
+A function is a CDF exactly when it is nondecreasing, right-continuous, approaches $0$ as $x\to-\infty$, and approaches $1$ as $x\to\infty$. It determines the complete distribution. For $a<b$,
+
+$$
+P(a<X\leq b)=F_X(b)-F_X(a),
+$$
+
+and the jump at $x$ is
+
+$$
+P(X=x)=F_X(x)-F_X(x^-),
+\qquad F_X(x^-)=\lim_{t\uparrow x}F_X(t).
+$$
+
+The CDF works for discrete, continuous, and mixed distributions, which makes it more fundamental than either a probability mass function or a density.
+
+# Discrete, Continuous, and Mixed Laws
+
+## Discrete random variables
+
+If $X$ takes values in a finite or countable set $S$, its **probability mass function** (PMF) is
+
+$$
+p_X(x)=P(X=x),\qquad x\in S,
+$$
+
+with $p_X(x)\geq0$ and $\sum_{x\in S}p_X(x)=1$. Probabilities are sums: $P(X\in A)=\sum_{x\in A\cap S}p_X(x)$.
+
+For example, let $X$ be the number of alternate alleles in a diploid genotype. Under Hardy--Weinberg sampling with alternate-allele frequency $q$,
+
+$$
+P(X=0)=(1-q)^2,\quad P(X=1)=2q(1-q),\quad P(X=2)=q^2.
+$$
+
+This is a numerical distribution on $\{0,1,2\}$; it is not a claim that individuals are independent biological replicates unless the sampling design supports that claim.
+
+## Absolutely continuous random variables
+
+An **absolutely continuous** random variable has a nonnegative probability density function (PDF) $f_X$ satisfying
+
+$$
+F_X(x)=\int_{-\infty}^{x}f_X(t)\,dt,
+\qquad
+P(X\in A)=\int_A f_X(t)\,dt.
+$$
+
+Where differentiable, $f_X(x)=F_X'(x)$. A density is not a probability: it may exceed one, while its integral over a set is between zero and one. A continuous random variable satisfies $P(X=x)=0$ for each fixed $x$, even though its realized value must be some number.
+
+## Mixed and other distributions
+
+Not every distribution is purely discrete or absolutely continuous. A detection-limit model might put positive mass at zero and use a continuous density for positive measurements. Its CDF has a jump at zero and then increases continuously. More generally, distributions can contain discrete, absolutely continuous, and singular components, so “discrete or continuous” is not an exhaustive mathematical dichotomy.
+
+# Quantiles and Simulation
+
+For $0<p<1$, the generalized quantile function is
+
+$$
+F_X^{-1}(p)=\inf\{x:F_X(x)\geq p\}.
+$$
+
+This definition remains valid when the CDF has jumps or flat regions. If $U\sim\operatorname{Uniform}(0,1)$, then
+
+$$
+X=F_X^{-1}(U)
+$$
+
+has CDF $F_X$. To see why, note that $F_X^{-1}(U)\leq x$ exactly when $U\leq F_X(x)$, up to endpoint conventions, so
+
+$$
+P\{F_X^{-1}(U)\leq x\}=P\{U\leq F_X(x)\}=F_X(x).
+$$
+
+This inverse-transform argument is both a constructive proof that CDFs define random variables and a basic simulation method.
+
+# Choosing a Probability Model
+
+A named distribution should encode a plausible data-generating mechanism, not merely resemble a histogram.
+
+| Feature of the process | Distributional question | Example consequence |
+|---|---|---|
+| Support | Can values be negative, fractional, or bounded? | Read counts require a nonnegative integer-valued model |
+| Sampling mechanism | Fixed trials, arrivals, waiting time, or measurement error? | Sampling without replacement differs from independent Bernoulli trials |
+| Dependence | Are observations conditionally or marginally dependent? | Technical reads do not replace biological replication |
+| Heterogeneity | Do units share one parameter value? | Unmodeled rate variation can create overdispersion |
+| Observation process | Are values censored, rounded, or undetected? | A spike at zero may reflect a detection limit rather than a biological absence |
+
+In bioinformatics, the distribution of measurements is only one layer. The biological sampling process, experimental units, library preparation, and measurement pipeline determine which observations may be treated as independent and what population the model describes.
+
+# Common Pitfalls
+
+1. **Calling the PMF or PDF the random variable:** $X$ is a function on outcomes; $p_X$, $f_X$, and $F_X$ describe its induced law.
+2. **Treating a density height as a probability:** probabilities for continuous variables are areas under the density.
+3. **Assuming every distribution has a density:** discrete, mixed, and singular laws need the CDF or a more general probability measure.
+4. **Choosing a model from shape alone:** support, dependence, and the sampling mechanism matter more than visual resemblance.
+5. **Equating observations with independent replicates:** thousands of features or cells from one specimen do not create thousands of independent biological samples.
+
+# Connections to the Knowledge Map
+
+- [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) provides the domain on which random variables are defined.
+- [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd) constructs finite distributions from equally likely outcomes.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) summarizes distributions numerically.
+- [Probability distributions](../distributions.qmd) is the distribution overview.
+- [Statistics overview](../index.qmd) places the topic in the six-level knowledge map.
+
+# Take-home Messages
+
+1. A random variable is a measurable numerical function of an outcome, not an observed number or a density.
+2. The CDF always exists and uniquely determines a real-valued distribution.
+3. PMFs assign point probabilities; PDFs integrate to probabilities; mixed laws may require both.
+4. Quantiles are best defined through the generalized inverse CDF.
+5. A useful probability model reflects support, sampling, dependence, and measurement—not just histogram shape.
+
+# References
+
+- Billingsley, P. *Probability and Measure*, 3rd ed. Wiley, 1995.
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Devroye, L. *Non-Uniform Random Variate Generation*. Springer, 1986. [https://doi.org/10.1007/978-1-4613-8643-8](https://doi.org/10.1007/978-1-4613-8643-8).

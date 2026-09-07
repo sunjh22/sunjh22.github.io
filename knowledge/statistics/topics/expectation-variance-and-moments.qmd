@@ -1,0 +1,212 @@
+---
+title: "Expectation, Variance, and Moments"
+subtitle: "Summarizing location, spread, and shape without losing sight of the full distribution"
+description: "Expectation as probability-weighted integration, variance, covariance identities, higher moments, and their limitations."
+author: "Jiahong Sun"
+date: "2026-09-07"
+date-modified: "2026-09-07"
+categories: [Statistics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Expectation averages a function over a probability distribution, variance measures mean squared deviation, and higher moments describe additional features only when the required integrals exist.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness |
+| Main question | How can important features of a distribution be summarized numerically? |
+| Core quantities | Expected value, variance, raw and central moments |
+| Typical applications | Expected counts, measurement variability, risk, estimator uncertainty |
+| Prerequisites | [Random variables and probability distributions](random-variables-and-probability-distributions.qmd) |
+
+# Expectation Is an Integral
+
+For a random variable $X$ with distribution $P_X$, the expected value of a measurable function $g$ is
+
+$$
+E[g(X)]=\int g(x)\,dP_X(x),
+$$
+
+provided the integral is defined. This single expression covers the familiar cases:
+
+$$
+E[g(X)]=\sum_x g(x)p_X(x)
+$$
+
+for a discrete variable, and
+
+$$
+E[g(X)]=\int_{-\infty}^{\infty}g(x)f_X(x)\,dx
+$$
+
+for an absolutely continuous variable. The identity is often called the law of the unconscious statistician: one can integrate $g(x)$ against the law of $X$ without first deriving the distribution of $g(X)$.
+
+Expectation is a property of a probability model, not necessarily a value the variable can take and not automatically a typical observation. For a fair die, $E[X]=3.5$, although $3.5$ is impossible on one roll.
+
+## Existence matters
+
+For a real-valued $X$, a finite expectation requires $E[|X|]<\infty$. If the positive and negative parts are both infinite, writing $E[X]=\infty-\infty$ is undefined. A standard Cauchy random variable has no mean; averaging more Cauchy observations does not reveal a hidden finite expectation.
+
+# Linearity and Indicators
+
+Whenever the expectations exist,
+
+$$
+E[aX+bY+c]=aE[X]+bE[Y]+c.
+$$
+
+Independence is **not** required for linearity. This fact becomes especially useful with indicator variables. If $I_A=1$ when event $A$ occurs and $0$ otherwise, then
+
+$$
+E[I_A]=P(A).
+$$
+
+For $N=\sum_{i=1}^m I_{A_i}$, the number of events that occur,
+
+$$
+E[N]=\sum_{i=1}^m P(A_i),
+$$
+
+even when the events are dependent.
+
+## Worked example: expected duplicate reads
+
+Suppose $n$ reads are sampled independently and uniformly from $M$ possible source molecules. Let $I_j$ indicate whether molecule $j$ appears at least once, and let $U=\sum_{j=1}^M I_j$ be the number of distinct molecules observed. Since a given molecule is missed by every read with probability $(1-1/M)^n$,
+
+$$
+E[U]
+=\sum_{j=1}^{M}E[I_j]
+=M\left[1-\left(1-\frac1M\right)^n\right].
+$$
+
+Thus the expected number of duplicate reads is $n-E[U]$. This calculation summarizes an idealized sampling model; PCR amplification bias and unequal molecule capture probabilities require a different distribution.
+
+# Variance and Standard Deviation
+
+If $E[X^2]<\infty$, the variance is
+
+$$
+\operatorname{Var}(X)=E\!\left[(X-\mu)^2\right],
+\qquad \mu=E[X].
+$$
+
+Expanding the square gives the computational identity
+
+$$
+\operatorname{Var}(X)=E[X^2]-\{E[X]\}^2.
+$$
+
+Variance is nonnegative and equals zero exactly when $X$ is constant almost surely. For constants $a$ and $b$,
+
+$$
+\operatorname{Var}(aX+b)=a^2\operatorname{Var}(X).
+$$
+
+The standard deviation $\operatorname{SD}(X)=\sqrt{\operatorname{Var}(X)}$ has the same units as $X$; variance has squared units.
+
+## Variance of a sum
+
+For variables with finite second moments,
+
+$$
+\operatorname{Var}\!\left(\sum_{i=1}^n X_i\right)
+=\sum_{i=1}^n\operatorname{Var}(X_i)
++2\sum_{i<j}\operatorname{Cov}(X_i,X_j),
+$$
+
+where
+
+$$
+\operatorname{Cov}(X,Y)=E[(X-E[X])(Y-E[Y])].
+$$
+
+Pairwise independence makes the covariance terms zero, but zero covariance does not generally imply independence. Ignoring positive covariance makes aggregate variability look too small. This is why treating cells, reads, or technical replicates from the same biological sample as independent can produce severely underestimated uncertainty.
+
+# Moments and What They Describe
+
+The $k$th **raw moment** and **central moment** are
+
+$$
+\mu'_k=E[X^k],
+\qquad
+\mu_k=E[(X-E[X])^k],
+$$
+
+when they exist. The first raw moment is the mean and the second central moment is the variance. Common standardized summaries include
+
+$$
+\text{skewness}=\frac{\mu_3}{\sigma^3},
+\qquad
+\text{kurtosis}=\frac{\mu_4}{\sigma^4},
+$$
+
+where $\sigma^2=\mu_2$. Excess kurtosis subtracts $3$, the normal-distribution value. Skewness measures signed asymmetry only imperfectly, while kurtosis is sensitive to tail weight and outliers; neither alone determines distributional shape.
+
+## Moments need not identify a distribution
+
+Some distributions lack higher moments. Even when every positive integer moment is finite, the full moment sequence need not uniquely determine the distribution: the log-normal distribution is a classical moment-indeterminate example. A moment-generating function, when finite on an open interval around zero, does determine the distribution, but such a function does not exist for every law.
+
+# Conditional Expectation and Iterated Averaging
+
+Conditional expectation $E[X\mid Y]$ is itself a random variable: it is the best mean-squared predictor of $X$ among functions of $Y$. It obeys the tower property
+
+$$
+E\{E[X\mid Y]\}=E[X].
+$$
+
+Decomposing $X-E[X]$ into within-$Y$ and between-$Y$ components yields the law of total variance:
+
+$$
+\operatorname{Var}(X)
+=E\{\operatorname{Var}(X\mid Y)\}
++\operatorname{Var}\{E[X\mid Y]\}.
+$$
+
+The first term is average variation within groups defined by $Y$; the second is variation among group means. In multi-sample biology, this identity clarifies why technical variation within a sample and biological variation between samples are distinct sources of uncertainty.
+
+# Population Moments, Sample Statistics, and Interpretation
+
+The population mean $\mu=E[X]$ and variance $\sigma^2=\operatorname{Var}(X)$ are parameters of a model. Given observations $x_1,\ldots,x_n$, the sample mean
+
+$$
+\bar x=\frac1n\sum_{i=1}^n x_i
+$$
+
+is an estimate of $\mu$ under an appropriate sampling design. The empirical second moment, the sample variance, and an estimator's standard error are different objects; their denominators and interpretations depend on the inferential goal. A small within-sample variance does not imply that an estimated population mean is precise when the number of independent biological samples is small.
+
+# Common Pitfalls
+
+1. **Assuming a mean always exists:** verify absolute integrability; heavy-tailed models can have undefined moments.
+2. **Requiring independence for linearity:** linearity of expectation holds under dependence.
+3. **Adding variances while ignoring covariance:** dependence contributes cross-terms.
+4. **Interpreting standard deviation as standard error:** the former describes variability in $X$; the latter describes variability of an estimator across repeated samples.
+5. **Treating mean and variance as a complete model:** many distinct distributions share the same first two moments.
+6. **Using technical observations as biological replication:** the variance decomposition must respect the experimental hierarchy.
+
+# Connections to the Knowledge Map
+
+- [Random variables and probability distributions](random-variables-and-probability-distributions.qmd) defines the laws being summarized.
+- [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) supplies the underlying probability measure.
+- [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd) shows how expectations can arise from finite probability models.
+- [Probability distributions](../distributions.qmd) links moments to named distribution families.
+- [Statistics overview](../index.qmd) places the topic in the broader curriculum.
+
+# Take-home Messages
+
+1. Expectation is integration with respect to a probability distribution and may fail to exist.
+2. Linearity of expectation does not require independence.
+3. Variance measures mean squared deviation, while standard deviation returns to the original measurement scale.
+4. Dependence enters the variance of a sum through covariance terms.
+5. Higher moments can summarize asymmetry and tails, but they may not exist or uniquely identify a law.
+6. Population moments, sample summaries, and estimator uncertainty answer different questions.
+
+# References
+
+- Billingsley, P. *Probability and Measure*, 3rd ed. Wiley, 1995.
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Durrett, R. *Probability: Theory and Examples*, 5th ed. Cambridge University Press, 2019. [https://doi.org/10.1017/9781108591034](https://doi.org/10.1017/9781108591034).
+- Stieltjes, T. J. “Recherches sur les fractions continues.” *Annales de la Faculté des sciences de Toulouse* 8, 1894. [https://doi.org/10.5802/afst.112](https://doi.org/10.5802/afst.112).
