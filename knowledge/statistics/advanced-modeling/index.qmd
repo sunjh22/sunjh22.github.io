@@ -1,0 +1,13 @@
+---
+title: "Advanced Modeling"
+description: "Regularization, hierarchical models, mixtures, survival analysis, and multivariate methods."
+categories: [Statistics, Advanced Modeling]
+---
+
+- [Mixture models overview](mixture-models.qmd)
+
+Future notes in this level will cover regularization, empirical Bayes, mixed effects, hierarchical Bayes, mixture estimation, survival analysis, and multivariate models.
+
+- [Regression & Statistical Models](../regression-models/index.qmd)
+- [Real Bioinformatics Problems](../bioinformatics-problems/index.qmd)
+- [Statistics overview](../index.qmd)

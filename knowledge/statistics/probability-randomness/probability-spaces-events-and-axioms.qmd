@@ -94,7 +94,7 @@ If low-quality reads are disproportionately unmapped, $A$ and $B$ overlap less t
 # Connections to the Knowledge Map
 
 - [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd) uses finite sample spaces to calculate probabilities.
-- [Probability distributions](../distributions.qmd) collects common probability models built on these axioms.
+- [Probability distributions](distributions.qmd) collects common probability models built on these axioms.
 - [Statistics overview](../index.qmd) places this foundation within the wider knowledge map.
 
 # Take-home Messages

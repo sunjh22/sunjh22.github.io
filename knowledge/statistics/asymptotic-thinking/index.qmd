@@ -1,0 +1,11 @@
+---
+title: "Asymptotic Thinking"
+description: "Convergence, laws of large numbers, central limit theory, and approximation."
+categories: [Statistics, Asymptotics]
+---
+
+This level will connect probability foundations to large-sample statistical inference through convergence, the law of large numbers, the central limit theorem, and related approximations.
+
+- [Probability & Randomness](../probability-randomness/index.qmd)
+- [Statistical Inference](../statistical-inference/index.qmd)
+- [Statistics overview](../index.qmd)

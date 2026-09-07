@@ -1,0 +1,13 @@
+---
+title: "Regression & Statistical Models"
+description: "Regression, generalized linear models, diagnostics, and model selection."
+categories: [Statistics, Modelling]
+---
+
+- [Statistical modelling overview](statistical-modelling.qmd)
+
+Future notes in this level will cover linear, logistic, Poisson, and negative-binomial regression; ANOVA; generalized linear models; diagnostics; and model selection.
+
+- [Statistical Inference](../statistical-inference/index.qmd)
+- [Advanced Modeling](../advanced-modeling/index.qmd)
+- [Statistics overview](../index.qmd)

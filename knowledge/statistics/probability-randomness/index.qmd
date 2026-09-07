@@ -1,0 +1,20 @@
+---
+title: "Probability & Randomness"
+description: "Probability foundations, random variables, distributions, and moments."
+categories: [Statistics, Probability]
+---
+
+Probability provides the language for representing biological variation, sampling, and measurement uncertainty.
+
+## Foundations
+
+- [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd)
+- [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd)
+- [Random variables and probability distributions](random-variables-and-probability-distributions.qmd)
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd)
+- [Probability distributions](distributions.qmd)
+
+## Continue through the map
+
+- [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
+- [Statistics overview](../index.qmd)

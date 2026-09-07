@@ -1,0 +1,10 @@
+---
+title: "Real Bioinformatics Problems"
+description: "Statistical reasoning for experimental design and high-throughput biological data."
+categories: [Statistics, Bioinformatics]
+---
+
+This level will connect statistical foundations to missing data, confounding, batch effects, RNA-seq, gene-set inference, microbiome data, single-cell studies, spatial omics, and reproducible analysis.
+
+- [Advanced Modeling](../advanced-modeling/index.qmd)
+- [Statistics overview](../index.qmd)

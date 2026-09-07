@@ -102,7 +102,7 @@ The formula identifies the null distribution; it does not establish biological e
 # Connections to the Knowledge Map
 
 - [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) supplies the probability language behind finite counts.
-- [Probability distributions](../distributions.qmd) links this derivation to hypergeometric, binomial, and related distributions.
+- [Probability distributions](distributions.qmd) links this derivation to hypergeometric, binomial, and related distributions.
 - [Statistics overview](../index.qmd) organizes the rest of the Statistics knowledge map.
 
 # Take-home Messages

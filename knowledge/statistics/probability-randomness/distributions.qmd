@@ -1,0 +1,14 @@
+---
+title: "Probability Distributions"
+description: "Discrete and continuous probability distributions and their biological uses."
+categories: [Statistics, Probability]
+---
+
+## Foundations
+
+- [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd)
+- [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd)
+- [Random variables and probability distributions](random-variables-and-probability-distributions.qmd)
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd)
+
+Planned: Bernoulli, binomial, multinomial, Poisson, negative binomial, beta-binomial, normal, gamma, beta, and Dirichlet distributions.

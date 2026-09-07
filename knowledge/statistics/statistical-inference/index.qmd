@@ -1,0 +1,11 @@
+---
+title: "Statistical Inference"
+description: "Estimation, uncertainty, testing, power, resampling, and multiplicity."
+categories: [Statistics, Inference]
+---
+
+This level will organize notes about likelihood, estimators, sampling distributions, intervals, tests, power, effect sizes, resampling, and multiple testing.
+
+- [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
+- [Regression & Statistical Models](../regression-models/index.qmd)
+- [Statistics overview](../index.qmd)

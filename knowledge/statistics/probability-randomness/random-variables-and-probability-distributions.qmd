@@ -153,7 +153,7 @@ In bioinformatics, the distribution of measurements is only one layer. The biolo
 - [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) provides the domain on which random variables are defined.
 - [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd) constructs finite distributions from equally likely outcomes.
 - [Expectation, variance, and moments](expectation-variance-and-moments.qmd) summarizes distributions numerically.
-- [Probability distributions](../distributions.qmd) is the distribution overview.
+- [Probability distributions](distributions.qmd) is the distribution overview.
 - [Statistics overview](../index.qmd) places the topic in the six-level knowledge map.
 
 # Take-home Messages
