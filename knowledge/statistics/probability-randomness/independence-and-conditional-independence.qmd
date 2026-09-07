@@ -1,0 +1,238 @@
+---
+title: "Independence and Conditional Independence"
+subtitle: "Distinguishing unrelated variables from relationships explained within strata"
+description: "Event and random-variable independence, factorization, conditional independence, common causes, colliders, and implications for biological data."
+author: "Jiahong Sun"
+date: "2026-09-07"
+date-modified: "2026-09-07"
+categories: [Statistics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Independence means learning one variable does not change the distribution of another, while conditional independence means this is true only after specified information is held fixed.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness |
+| Main question | When does information about one variable change what is known about another? |
+| Core ideas | Factorization, mutual independence, conditional independence |
+| Typical applications | Replication assumptions, graphical models, confounding, hierarchical data |
+| Prerequisites | [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) |
+
+# Independence of Events
+
+Events $A$ and $B$ are **independent** when
+
+$$
+P(A\cap B)=P(A)P(B).
+$$
+
+If $P(B)>0$, this is equivalent to $P(A\mid B)=P(A)$: learning that $B$ occurred does not change the probability of $A$. Independence is symmetric.
+
+Independence is not the same as disjointness. If non-null events are disjoint, then $P(A\cap B)=0$ but $P(A)P(B)>0$, so they are dependent. Nor is independence a statement that two observed values merely look unrelated; it is a property of their probability model.
+
+# Independence of Random Variables
+
+Random variables $X$ and $Y$ are independent if
+
+$$
+P(X\in A,Y\in B)=P(X\in A)P(Y\in B)
+$$
+
+for all measurable sets $A$ and $B$. Equivalently, their joint CDF factorizes:
+
+$$
+F_{X,Y}(x,y)=F_X(x)F_Y(y)
+$$
+
+for all $x,y$. When PMFs or densities exist, independence is equivalent to
+
+$$
+p_{X,Y}(x,y)=p_X(x)p_Y(y)
+$$
+
+or
+
+$$
+f_{X,Y}(x,y)=f_X(x)f_Y(y)
+$$
+
+almost everywhere.
+
+The support must factorize as well, up to probability-zero regions. A density supported on the triangle $0<x<y<1$ cannot describe independent $X$ and $Y$, because learning $Y=y$ restricts $X$ to $(0,y)$.
+
+## Consequences, not definitions
+
+If $X$ and $Y$ are independent and the expectations exist, then for measurable functions $g$ and $h$,
+
+$$
+E[g(X)h(Y)]=E[g(X)]E[h(Y)].
+$$
+
+Taking $g(X)=X$ and $h(Y)=Y$ shows that independence with finite second moments implies zero covariance. The converse is false. For example, if $X$ is symmetric about zero and $Y=X^2$, then $E[XY]=E[X^3]=0$, so $X$ and $Y$ are uncorrelated, but $Y$ is determined by $X$.
+
+# More Than Two Variables
+
+Variables $X_1,\ldots,X_n$ are **mutually independent** when every finite collection of measurable sets factorizes:
+
+$$
+P(X_1\in A_1,\ldots,X_n\in A_n)
+=\prod_{i=1}^nP(X_i\in A_i).
+$$
+
+Mutual independence implies pairwise independence, but pairwise independence does not imply mutual independence. Let $U$ and $V$ be independent fair bits and define $W=U\mathbin{\mathrm{XOR}}V$. Every pair among $U,V,W$ is independent, yet $W$ is completely determined by the other two.
+
+This distinction matters when a derivation requires factorization of an entire joint distribution rather than zero pairwise correlations.
+
+# Conditional Independence
+
+Variables $X$ and $Y$ are **conditionally independent given $Z$**, written
+
+$$
+X\perp\!\!\!\perp Y\mid Z,
+$$
+
+when, for almost every relevant $z$,
+
+$$
+P(X\in A,Y\in B\mid Z=z)
+=P(X\in A\mid Z=z)P(Y\in B\mid Z=z)
+$$
+
+for all measurable $A,B$. With conditional densities, this becomes
+
+$$
+f_{X,Y\mid Z}(x,y\mid z)
+=f_{X\mid Z}(x\mid z)f_{Y\mid Z}(y\mid z).
+$$
+
+An equivalent screening-off statement is
+
+$$
+f_{X\mid Y,Z}(x\mid y,z)=f_{X\mid Z}(x\mid z)
+$$
+
+where the conditionals are defined: once $Z$ is known, $Y$ supplies no further information about $X$.
+
+Conditional independence and marginal independence do not imply one another. Conditioning can remove dependence created by mixing groups, or create dependence by selecting a common consequence.
+
+# Two Fundamental Patterns
+
+## A common cause: dependence disappears within strata
+
+Suppose $Z$ denotes biological sample and two technical measurements satisfy
+
+$$
+X=\mu_Z+\varepsilon_X,
+\qquad
+Y=\mu_Z+\varepsilon_Y,
+$$
+
+where the measurement errors are independent given $Z$. Then
+
+$$
+X\perp\!\!\!\perp Y\mid Z,
+$$
+
+but $X$ and $Y$ are generally dependent marginally because both contain the sample-specific signal $\mu_Z$. Repeated measurements within one sample therefore do not supply independent biological replication. Their conditional error independence cannot erase the shared biological unit.
+
+This structure factorizes as
+
+$$
+p(z,x,y)=p(z)p(x\mid z)p(y\mid z).
+$$
+
+It is the probability pattern represented by a fork $X\leftarrow Z\rightarrow Y$.
+
+## A common consequence: conditioning creates dependence
+
+Let $X$ and $Y$ be independent causes of selection $S$. Among all units, $X\perp\!\!\!\perp Y$ may hold. Within the selected group $S=1$, however, learning that one cause is absent can make the other more likely:
+
+$$
+X\not\!\perp\!\!\!\perp Y\mid S.
+$$
+
+For a concrete binary example, take independent fair bits $X,Y$ and select when $S=1$ if at least one equals one. In the selected group,
+
+$$
+P(X=1\mid S=1)=\frac23,
+$$
+
+but
+
+$$
+P(X=1\mid Y=0,S=1)=1.
+$$
+
+This **collider** or selection effect is a probabilistic reason that restricting an analysis to detected genes, hospitalized patients, or quality-controlled samples can induce associations not present in the source population.
+
+# Factorization and Graphical Models
+
+Conditional independence lets a complex joint law be built from smaller pieces. A Markov chain $X\rightarrow Z\rightarrow Y$ factorizes as
+
+$$
+p(x,z,y)=p(x)p(z\mid x)p(y\mid z),
+$$
+
+which implies $X\perp\!\!\!\perp Y\mid Z$. Directed acyclic graphs and other graphical models encode such factorizations compactly.
+
+The graph alone does not make a causal claim. A causal interpretation requires assumptions about how the graph relates to interventions, measurement, selection, and unmeasured variables. Conditional independence is an observational probability statement; causal irrelevance is stronger.
+
+# What Independence Assumptions Buy—and Cost
+
+Independence can simplify likelihoods. If observations $Y_1,\ldots,Y_n$ are independent conditional on parameter $\theta$, then
+
+$$
+p(y_1,\ldots,y_n\mid\theta)=\prod_{i=1}^n p(y_i\mid\theta).
+$$
+
+The qualifier “conditional on $\theta$” matters. In a hierarchical model, observations may be conditionally independent given shared latent effects while remaining marginally dependent after those effects are integrated out.
+
+In biological studies, the defensible factorization follows the data-generating process:
+
+```text
+independent biological samples
+        ↓
+sample-specific latent biology and batch conditions
+        ↓
+many correlated cells, molecules, reads, or repeated measurements
+```
+
+Treating the lowest-level measurements as independent replicates usually produces too much apparent information and uncertainty intervals that are too narrow. Clustered, mixed-effects, pseudobulk, or other hierarchical methods may be needed, depending on the estimand and design.
+
+# Common Pitfalls
+
+1. **Equating uncorrelated with independent:** zero covariance controls one moment, not the full joint law.
+2. **Checking only pairs:** pairwise independence can coexist with higher-order dependence.
+3. **Dropping what is conditioned on:** $X\perp\!\!\!\perp Y\mid Z$ says nothing automatic about marginal independence.
+4. **Assuming conditioning always removes bias:** conditioning on a collider or selection variable can create dependence.
+5. **Reading a graphical separation as causation:** probabilistic factorization and causal intervention require different assumptions.
+6. **Counting technical units as independent samples:** conditional measurement independence does not create biological replication.
+
+# Connections to the Knowledge Map
+
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) provides the laws that factorize under independence.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) explains covariance and iterated expectation.
+- [Random variables and probability distributions](random-variables-and-probability-distributions.qmd) defines random variables and their distributions.
+- [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) supplies the event-level definition.
+- [Statistics overview](../index.qmd) places these ideas in the broader knowledge map.
+
+# Take-home Messages
+
+1. Independence means the complete joint law factorizes, not merely that correlation is zero.
+2. Mutual independence is stronger than pairwise independence.
+3. Conditional independence says that specified information screens variables off from one another.
+4. Marginal and conditional independence can differ because of common causes, mixtures, or selection.
+5. Replication and likelihood factorization must follow the experimental hierarchy.
+6. Conditional independence is central to graphical models, but causal claims need additional assumptions.
+
+# References
+
+- Dawid, A. P. “Conditional Independence in Statistical Theory.” *Journal of the Royal Statistical Society: Series B* 41(1), 1979, 1–31. [https://doi.org/10.1111/j.2517-6161.1979.tb01052.x](https://doi.org/10.1111/j.2517-6161.1979.tb01052.x).
+- Lauritzen, S. L. *Graphical Models*. Oxford University Press, 1996.
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Pearl, J. *Causality: Models, Reasoning, and Inference*, 2nd ed. Cambridge University Press, 2009.

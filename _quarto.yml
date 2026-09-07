@@ -79,6 +79,8 @@ website:
                   - knowledge/statistics/probability-randomness/counting-rules-and-combinatorial-probability.qmd
                   - knowledge/statistics/probability-randomness/random-variables-and-probability-distributions.qmd
                   - knowledge/statistics/probability-randomness/expectation-variance-and-moments.qmd
+                  - knowledge/statistics/probability-randomness/joint-marginal-and-conditional-distributions.qmd
+                  - knowledge/statistics/probability-randomness/independence-and-conditional-independence.qmd
                   - knowledge/statistics/probability-randomness/distributions.qmd
               - section: "Asymptotic Thinking"
                 href: knowledge/statistics/asymptotic-thinking/index.qmd

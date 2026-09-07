@@ -1,0 +1,239 @@
+---
+title: "Joint, Marginal, and Conditional Distributions"
+subtitle: "Describing several random variables together and changing perspective by averaging or conditioning"
+description: "Joint laws, marginalization, conditional distributions, support, and the multiplication rule for discrete and continuous random variables."
+author: "Jiahong Sun"
+date: "2026-09-07"
+date-modified: "2026-09-07"
+categories: [Statistics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A joint distribution describes variables together; marginalization averages over variables not of current interest, while conditioning updates the distribution after learning information about them.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness |
+| Main question | How are several random quantities distributed together, separately, and after one is observed? |
+| Core objects | Joint law, marginal law, conditional law, support |
+| Typical applications | Genotype and phenotype, expression across tissues, counts within samples |
+| Prerequisites | [Random variables and probability distributions](random-variables-and-probability-distributions.qmd); [Expectation, variance, and moments](expectation-variance-and-moments.qmd) |
+
+# One Probability Model, Three Views
+
+Let $X$ and $Y$ be random variables defined on the same probability space. Their **joint distribution** assigns probability to pairs:
+
+$$
+P_{X,Y}(A)=P\{(X,Y)\in A\},
+\qquad A\subseteq\mathbb R^2.
+$$
+
+It contains both one-variable distributions and every probabilistic relationship between the variables. A **marginal distribution** ignores the other coordinate. A **conditional distribution** restricts attention to cases in which information about the other coordinate is known.
+
+```text
+                    joint law of (X,Y)
+                      /             \
+          sum/integrate over Y     divide by Y's marginal
+                    /                 \
+             marginal law of X     conditional law of X | Y=y
+```
+
+Marginalization loses information about association. Conditioning does not discard that information; it describes how the distribution of one variable changes across values of another.
+
+# The Joint Distribution
+
+The joint cumulative distribution function is
+
+$$
+F_{X,Y}(x,y)=P(X\leq x,Y\leq y).
+$$
+
+Like a one-dimensional CDF, it is defined for every random vector, including discrete, continuous, and mixed cases. It determines probabilities of rectangles; for example,
+
+$$
+\begin{aligned}
+P(a<X\leq b,\,c<Y\leq d)
+={}&F_{X,Y}(b,d)-F_{X,Y}(a,d)\\
+&-F_{X,Y}(b,c)+F_{X,Y}(a,c).
+\end{aligned}
+$$
+
+The subtraction is two-dimensional inclusion--exclusion.
+
+## Discrete joint laws
+
+For discrete variables, the joint probability mass function is
+
+$$
+p_{X,Y}(x,y)=P(X=x,Y=y),
+$$
+
+with nonnegative entries that sum to one over the **joint support**. The support matters: some pairs may be impossible even when each coordinate value is possible separately.
+
+## Continuous joint laws
+
+An absolutely continuous pair has a joint density $f_{X,Y}$ satisfying
+
+$$
+P\{(X,Y)\in A\}=\iint_A f_{X,Y}(x,y)\,dx\,dy,
+\qquad
+\iint_{\mathbb R^2}f_{X,Y}(x,y)\,dx\,dy=1.
+$$
+
+The geometry of the support determines the integration limits. Integrating over a rectangle when the true support is triangular or curved is a common source of error.
+
+# Marginalization
+
+For discrete variables, summing each row or column of the joint table gives a marginal PMF:
+
+$$
+p_X(x)=\sum_y p_{X,Y}(x,y),
+\qquad
+p_Y(y)=\sum_x p_{X,Y}(x,y).
+$$
+
+For continuous variables, summation becomes integration:
+
+$$
+f_X(x)=\int_{-\infty}^{\infty} f_{X,Y}(x,y)\,dy,
+\qquad
+f_Y(y)=\int_{-\infty}^{\infty} f_{X,Y}(x,y)\,dx.
+$$
+
+These formulas follow from partitioning all ways the unreported variable can occur. More abstractly, the marginal is the pushforward of the joint probability measure under a coordinate projection.
+
+Marginals do **not** determine the joint law. The same two marginal distributions can be coupled so that $X$ and $Y$ are positively associated, negatively associated, or independent. A relationship assumption or additional data is needed to reconstruct their joint behavior.
+
+# Conditional Distributions
+
+When $P(Y=y)>0$, the discrete conditional PMF is
+
+$$
+p_{X\mid Y}(x\mid y)
+=P(X=x\mid Y=y)
+=\frac{p_{X,Y}(x,y)}{p_Y(y)}.
+$$
+
+For each fixed $y$ with positive marginal probability, this is a valid PMF over $x$. Rearranging yields the multiplication rule
+
+$$
+p_{X,Y}(x,y)=p_{X\mid Y}(x\mid y)p_Y(y).
+$$
+
+For an absolutely continuous pair, a version of the conditional density is
+
+$$
+f_{X\mid Y}(x\mid y)
+=\frac{f_{X,Y}(x,y)}{f_Y(y)}
+$$
+
+at values where $f_Y(y)>0$. Although $P(Y=y)=0$ for a continuous $Y$, conditional distributions can be defined rigorously as **regular conditional probabilities**. The density ratio is the familiar form when densities exist. Values assigned at exceptional $y$ values of marginal probability zero are not uniquely determined and do not affect probabilistic calculations.
+
+## Recovering a marginal from conditionals
+
+Combining multiplication and marginalization gives
+
+$$
+p_X(x)=\sum_y p_{X\mid Y}(x\mid y)p_Y(y)
+$$
+
+or, in the continuous case,
+
+$$
+f_X(x)=\int f_{X\mid Y}(x\mid y)f_Y(y)\,dy.
+$$
+
+This is the distributional form of the law of total probability: the marginal distribution is a mixture of stratum-specific conditional distributions, weighted by how common the strata are. The parallel identity for expectations is $E[g(X)]=E\{E[g(X)\mid Y]\}$.
+
+# Worked Discrete Example
+
+Suppose $Y$ marks library-preparation batch ($A$ or $B$), and $X$ marks whether a read from an idealized sampling model is assigned to a target transcript. Consider the joint PMF:
+
+| | $X=0$ | $X=1$ | Row total |
+|---|---:|---:|---:|
+| $Y=A$ | 0.54 | 0.06 | 0.60 |
+| $Y=B$ | 0.24 | 0.16 | 0.40 |
+| Column total | 0.78 | 0.22 | 1.00 |
+
+The marginal target-assignment probability is $P(X=1)=0.22$. The conditional probabilities differ:
+
+$$
+P(X=1\mid Y=A)=\frac{0.06}{0.60}=0.10,
+\qquad
+P(X=1\mid Y=B)=\frac{0.16}{0.40}=0.40.
+$$
+
+Their weighted average recovers the marginal:
+
+$$
+P(X=1)=0.10(0.60)+0.40(0.40)=0.22.
+$$
+
+This calculation reveals batch-related heterogeneity in the read-level model. It does not turn reads into independent biological replicates or show why the batches differ.
+
+# Worked Continuous Example
+
+Let the joint density be constant on the triangle $0<x<y<1$:
+
+$$
+f_{X,Y}(x,y)=2\,\mathbf 1(0<x<y<1).
+$$
+
+The area of the triangle is $1/2$, so the density integrates to one. For a fixed $x$, allowable $y$ values run from $x$ to $1$:
+
+$$
+f_X(x)=\int_x^1 2\,dy=2(1-x),
+\qquad 0<x<1.
+$$
+
+For a fixed $y$, allowable $x$ values run from $0$ to $y$:
+
+$$
+f_Y(y)=\int_0^y 2\,dx=2y,
+\qquad 0<y<1.
+$$
+
+Therefore
+
+$$
+f_{X\mid Y}(x\mid y)=\frac{2}{2y}=\frac1y,
+\qquad 0<x<y.
+$$
+
+Given $Y=y$, $X$ is uniform on $(0,y)$. The changing support itself carries dependence: knowing $Y$ changes which values of $X$ are possible.
+
+# Common Pitfalls
+
+1. **Trying to recover a joint law from marginals alone:** marginals omit dependence information.
+2. **Ignoring support when summing or integrating:** the valid range of one coordinate can depend on the other.
+3. **Treating a conditional density as a joint density:** for fixed $y$, $f_{X\mid Y}(x\mid y)$ integrates to one over $x$, not over $(x,y)$.
+4. **Dividing by zero:** elementary conditional ratios require positive conditioning mass or density; measure-theoretic conditionals handle continuous variables only up to null sets.
+5. **Confusing conditioning with intervention:** $P(X\mid Y=y)$ describes an observed stratum; it is not automatically the distribution produced by setting $Y$ to $y$.
+6. **Ignoring the experimental hierarchy:** a joint distribution over technical measurements does not justify biological inference without independent experimental units.
+
+# Connections to the Knowledge Map
+
+- [Random variables and probability distributions](random-variables-and-probability-distributions.qmd) defines the variables and their induced laws.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) develops conditional expectation and iterated averaging.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) characterizes when joint or conditional laws factorize.
+- [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) provides the underlying event-based definitions.
+- [Probability distributions](distributions.qmd) organizes named families used for joint and marginal models.
+
+# Take-home Messages
+
+1. The joint distribution is the complete probability model for variables considered together.
+2. Marginalization sums or integrates out variables and therefore discards their relationship with retained variables.
+3. Conditioning produces a distribution within a known stratum and obeys the multiplication rule with the marginal law.
+4. Marginals are weighted averages of conditional distributions.
+5. Support, dependence, and the sampling hierarchy are parts of the model, not bookkeeping details.
+
+# References
+
+- Billingsley, P. *Probability and Measure*, 3rd ed. Wiley, 1995.
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Bertsekas, D. P. and Tsitsiklis, J. N. *Introduction to Probability*, 2nd ed. Athena Scientific, 2008.
+- MIT OpenCourseWare. “Part I: The Fundamentals,” *Introduction to Probability*. [https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/pages/part-i-the-fundamentals/](https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/pages/part-i-the-fundamentals/).

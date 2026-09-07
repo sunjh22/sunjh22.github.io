@@ -12,6 +12,8 @@ Probability provides the language for representing biological variation, samplin
 - [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd)
 - [Random variables and probability distributions](random-variables-and-probability-distributions.qmd)
 - [Expectation, variance, and moments](expectation-variance-and-moments.qmd)
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd)
+- [Independence and conditional independence](independence-and-conditional-independence.qmd)
 - [Probability distributions](distributions.qmd)
 
 ## Continue through the map
