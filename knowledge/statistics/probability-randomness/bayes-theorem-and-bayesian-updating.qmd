@@ -1,0 +1,229 @@
+---
+title: "Bayes' Theorem and Bayesian Updating"
+subtitle: "Reversing conditional probabilities and learning from evidence"
+description: "Bayes' theorem for events and parameters, likelihood ratios, sequential updating, posterior prediction, and sensitivity to prior information."
+author: "Jiahong Sun"
+date: "2026-09-08"
+date-modified: "2026-09-08"
+categories: [Statistics, Probability, Bayesian]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Bayes' theorem combines prior plausibility with the relative support supplied by observed evidence to produce an updated probability.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness; Bayesian reasoning |
+| Main question | After observing evidence, how plausible is each possible explanation? |
+| Core objects | Prior, likelihood, evidence, posterior, likelihood ratio |
+| Typical applications | Diagnostic testing, variant interpretation, model comparison, parameter learning |
+| Prerequisites | [Conditional probability and the law of total probability](conditional-probability-and-total-probability.qmd) |
+
+# Bayes' Theorem for Events
+
+For events $H$ and $D$ with $P(D)>0$, the multiplication rule gives
+
+$$
+P(H\cap D)=P(D\mid H)P(H)=P(H\mid D)P(D).
+$$
+
+Therefore
+
+$$
+\boxed{P(H\mid D)=\frac{P(D\mid H)P(H)}{P(D)}}.
+$$
+
+Here $H$ is a hypothesis and $D$ is observed data or evidence:
+
+- $P(H)$ is the **prior probability** of the hypothesis;
+- $P(D\mid H)$ is the probability of the evidence if the hypothesis holds;
+- $P(D)$ is the **evidence** or prior predictive probability;
+- $P(H\mid D)$ is the **posterior probability** after observing the evidence.
+
+If $H_1,\ldots,H_k$ form an exhaustive, mutually exclusive set of hypotheses, total probability supplies the denominator:
+
+$$
+\boxed{
+P(H_j\mid D)=
+\frac{P(D\mid H_j)P(H_j)}
+{\sum_{i=1}^k P(D\mid H_i)P(H_i)}
+}.
+$$
+
+The denominator makes the posterior probabilities sum to one. When only relative posterior support is needed, the same relationship is written
+
+$$
+P(H_j\mid D)\propto P(D\mid H_j)P(H_j).
+$$
+
+# Odds and Likelihood Ratios
+
+For two hypotheses $H_1$ and $H_0$, Bayes' theorem can be expressed as
+
+$$
+\underbrace{\frac{P(H_1\mid D)}{P(H_0\mid D)}}_{\text{posterior odds}}
+=
+\underbrace{\frac{P(H_1)}{P(H_0)}}_{\text{prior odds}}
+\times
+\underbrace{\frac{P(D\mid H_1)}{P(D\mid H_0)}}_{\text{likelihood ratio}}.
+$$
+
+The likelihood ratio measures how much more compatible the evidence is with $H_1$ than with $H_0$. It multiplies odds; it is not itself a posterior probability. Evidence that strongly favors a rare hypothesis can still leave its posterior probability modest when the prior odds are very small.
+
+For a binary diagnostic test with sensitivity $P(T^+\mid H)$ and specificity $P(T^-\mid H^c)$, the positive likelihood ratio is
+
+$$
+LR^+=\frac{P(T^+\mid H)}{P(T^+\mid H^c)}
+=\frac{\text{sensitivity}}{1-\text{specificity}}.
+$$
+
+This separates a test's evidence contribution from the prevalence that supplies the prior odds.
+
+# Worked Example: A Rare Pathogenic Variant
+
+Consider a screening context in which a particular pathogenic state has prevalence
+
+$$
+P(H)=0.001.
+$$
+
+Suppose an assay has sensitivity $P(T^+\mid H)=0.99$ and specificity $P(T^-\mid H^c)=0.98$. The false-positive probability is therefore $P(T^+\mid H^c)=0.02$. Total probability gives
+
+$$
+P(T^+)=0.99(0.001)+0.02(0.999)=0.02097.
+$$
+
+Bayes' theorem then gives
+
+$$
+P(H\mid T^+)
+=\frac{0.99(0.001)}{0.02097}
+\approx0.0472.
+$$
+
+Despite 99% sensitivity and 98% specificity, only about 4.7% of positive screens represent the rare state under this model. The result is not a defect in Bayes' theorem or necessarily in the assay; most screened units are non-cases, so even a small false-positive rate produces many false positives.
+
+The calculation concerns the stated target population. Applying the assay in a clinically enriched group changes the prior prevalence and therefore the positive predictive value. Technical validation also does not replace biological replication: estimates of sensitivity, specificity, and prevalence need representative, independently sampled specimens and transparent uncertainty.
+
+# Bayesian Updating for an Unknown Parameter
+
+The same probability identity applies when the hypothesis is an unknown parameter $\theta$ and the observation is data $y$. With a prior density $p(\theta)$ and sampling model $p(y\mid\theta)$,
+
+$$
+\boxed{
+p(\theta\mid y)=
+\frac{p(y\mid\theta)p(\theta)}
+{\int p(y\mid t)p(t)\,dt}
+}.
+$$
+
+The components have distinct roles:
+
+1. The **prior** $p(\theta)$ represents uncertainty about $\theta$ before these data.
+2. The **likelihood** $L(\theta;y)=p(y\mid\theta)$ treats observed $y$ as fixed and compares parameter values; it is not a probability distribution over $\theta$ by itself.
+3. The **posterior** $p(\theta\mid y)$ combines prior and likelihood and is normalized by the marginal likelihood $p(y)$.
+4. A **posterior predictive distribution** averages predictions over posterior uncertainty:
+
+$$
+p(\tilde y\mid y)=\int p(\tilde y\mid\theta)p(\theta\mid y)\,d\theta.
+$$
+
+Posterior prediction is where a fitted Bayesian model confronts observable quantities. Replicated data drawn from $p(\tilde y\mid y)$ can be compared with the real data using summaries that reflect the scientific question and known failure modes.
+
+## Beta--binomial updating
+
+Let $Y$ be the number of successes in $n$ conditionally independent Bernoulli trials with probability $\theta$:
+
+$$
+Y\mid\theta\sim\operatorname{Binomial}(n,\theta).
+$$
+
+Choose a beta prior $\theta\sim\operatorname{Beta}(a,b)$. Ignoring factors that do not depend on $\theta$,
+
+$$
+\begin{aligned}
+p(\theta\mid y)
+&\propto \theta^y(1-\theta)^{n-y}
+\theta^{a-1}(1-\theta)^{b-1}\\
+&=\theta^{a+y-1}(1-\theta)^{b+n-y-1}.
+\end{aligned}
+$$
+
+Thus
+
+$$
+\theta\mid y\sim\operatorname{Beta}(a+y,b+n-y).
+$$
+
+The update adds observed successes and failures to the prior shape parameters. Its posterior mean is
+
+$$
+E(\theta\mid y)=\frac{a+y}{a+b+n}
+=\frac{a+b}{a+b+n}\frac{a}{a+b}
++\frac{n}{a+b+n}\frac{y}{n}.
+$$
+
+This weighted-average form makes shrinkage explicit: the posterior mean lies between the prior mean and observed success proportion. Calling $a+b$ an “effective prior sample size” can be a useful analogy for this conjugate model, but it should not be treated as literal historical replication unless the prior was actually constructed from commensurate data.
+
+# Sequential Updating
+
+If data batches $D_1$ and $D_2$ are conditionally independent given $\theta$, then
+
+$$
+p(\theta\mid D_1,D_2)
+\propto p(D_2\mid\theta)p(\theta\mid D_1).
+$$
+
+The posterior after $D_1$ becomes the prior for analyzing $D_2$. Updating all data jointly or sequentially gives the same result when the likelihood factorization and prior are unchanged. This coherence fails if the analyst silently changes models, uses the first data twice, or treats dependent batches as conditionally independent.
+
+# Model Checking and Sensitivity
+
+Bayes' theorem is an identity; the quality of an analysis depends on the probabilities supplied to it.
+
+| Component | Question to ask | Useful check |
+|---|---|---|
+| Prior | Does it place plausible mass on scientifically meaningful values? | Prior predictive simulation; compare reasonable alternative priors |
+| Likelihood | Does the sampling model represent support, variation, dependence, and observation bias? | Posterior predictive checks; residual or discrepancy summaries |
+| Data hierarchy | Are biological samples, technical replicates, cells, and reads represented at the right levels? | Refit with cluster or hierarchical structure; inspect sensitivity to pseudoreplication |
+| Computation | Was the posterior approximation accurate? | Convergence and effective-sample-size diagnostics for simulation methods |
+| Decision | What loss or action follows from posterior uncertainty? | Report consequences across plausible thresholds |
+
+A concentrated posterior does not rescue a misspecified likelihood. With large data sets, systematic bias can dominate sampling uncertainty and make a wrong model confidently wrong. Prior sensitivity is most important when data are weak, hypotheses are rare, models are weakly identified, or posterior conclusions depend on tail behavior.
+
+# Common Pitfalls
+
+1. **Confusing $P(D\mid H)$ with $P(H\mid D)$:** this is the prosecutor's-fallacy form of reversing the condition.
+2. **Ignoring base rates:** sensitivity and specificity alone do not determine a positive predictive value.
+3. **Treating the likelihood as a posterior:** a likelihood need not integrate to one over the parameter space and omits the prior.
+4. **Using data twice:** selecting a prior from the same data and then updating as if the prior were external overstates information unless the procedure is modeled.
+5. **Assuming sequential evidence is independent:** likelihood ratios multiply only under an appropriate conditional factorization.
+6. **Equating posterior probability with truth:** the posterior is conditional on the prior, likelihood, data quality, and model assumptions.
+7. **Skipping posterior predictive checks:** normalized inference can still arise from a poor data-generating model.
+
+# Connections to the Knowledge Map
+
+- [Conditional probability and the law of total probability](conditional-probability-and-total-probability.qmd) supplies the identity and denominator behind Bayes' theorem.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) expresses the same operations for densities and random variables.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) determines when evidence contributions factorize.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) supports posterior means and predictive summaries.
+- [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) provides the event-level foundation.
+
+# Take-home Messages
+
+1. Bayes' theorem reverses a conditional probability by combining evidence compatibility with prior plausibility.
+2. Posterior odds equal prior odds multiplied by a likelihood ratio.
+3. Rare hypotheses can remain unlikely after apparently accurate positive tests because base rates matter.
+4. Bayesian parameter learning requires a prior, likelihood, posterior normalization, and checks against observable data.
+5. Sequential updating is coherent only when the data factorization is defensible and information is not counted twice.
+6. Posterior certainty is conditional on model quality, sampling design, and the experimental hierarchy.
+
+# References
+
+- Bayes, T. and Price, R. “An Essay towards Solving a Problem in the Doctrine of Chances.” *Philosophical Transactions of the Royal Society of London* 53, 1763, 370–418. [https://doi.org/10.1098/rstl.1763.0053](https://doi.org/10.1098/rstl.1763.0053).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and Rubin, D. B. *Bayesian Data Analysis*, 3rd ed. CRC Press, 2013.
+- Gelman, A., Meng, X.-L., and Stern, H. “Posterior Predictive Assessment of Model Fitness via Realized Discrepancies.” *Statistica Sinica* 6(4), 1996, 733–760. [https://www.jstor.org/stable/24306036](https://www.jstor.org/stable/24306036).

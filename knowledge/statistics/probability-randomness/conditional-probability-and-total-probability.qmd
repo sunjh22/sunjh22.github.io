@@ -1,0 +1,168 @@
+---
+title: "Conditional Probability and the Law of Total Probability"
+subtitle: "Restricting a probability model to known information and averaging across a partition"
+description: "Conditional probability, multiplication and chain rules, partitions, total probability, and the role of base rates in biological examples."
+author: "Jiahong Sun"
+date: "2026-09-08"
+date-modified: "2026-09-08"
+categories: [Statistics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Conditional probability recalibrates uncertainty after information is known, while the law of total probability reconstructs an unconditional probability by averaging conditional probabilities over an exhaustive partition.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness |
+| Main question | How should probabilities change when some information is known? |
+| Core objects | Conditional probability, multiplication rule, partition, total probability |
+| Typical applications | Diagnostic tests, quality control, population mixtures, latent subgroups |
+| Prerequisites | [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd); [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) |
+
+# Conditioning Changes the Reference Population
+
+For events $A$ and $B$ with $P(B)>0$, the **conditional probability** of $A$ given $B$ is
+
+$$
+\boxed{P(A\mid B)=\frac{P(A\cap B)}{P(B)}}.
+$$
+
+The numerator counts probability mass where both events occur. Dividing by $P(B)$ renormalizes that mass so that the restricted sample space $B$ has probability one. Thus $P(A\mid B)$ answers a different question from $P(A)$: it concerns units known to lie in $B$, not units drawn from the original population.
+
+For a fixed event $B$ of positive probability, the map $A\mapsto P(A\mid B)$ is itself a probability measure. It is nonnegative, satisfies $P(\Omega\mid B)=1$, and is countably additive over disjoint events. Familiar probability rules therefore remain valid after conditioning, provided every probability refers to the same conditioning information.
+
+## Multiplication and chain rules
+
+Rearranging the definition gives the **multiplication rule**
+
+$$
+P(A\cap B)=P(A\mid B)P(B)=P(B\mid A)P(A).
+$$
+
+Repeated application produces the chain rule. For events $A_1,\ldots,A_n$ whose conditioning events have positive probability,
+
+$$
+P\!\left(\bigcap_{i=1}^n A_i\right)
+=P(A_1)\prod_{i=2}^n
+P\!\left(A_i\mid A_1\cap\cdots\cap A_{i-1}\right).
+$$
+
+The factors need not be equal. For sampling without replacement, for example, each draw changes the composition available to the next draw. Multiplying one unchanged probability repeatedly would incorrectly impose independence.
+
+# The Law of Total Probability
+
+Events $B_1,B_2,\ldots$ form a **partition** of $\Omega$ when they are pairwise disjoint and their union is $\Omega$. Assume $P(B_i)>0$ for every included stratum. Because
+
+$$
+A=\bigcup_i(A\cap B_i)
+$$
+
+is a disjoint union, countable additivity and the multiplication rule give
+
+$$
+\boxed{P(A)=\sum_i P(A\mid B_i)P(B_i)}.
+$$
+
+This is the **law of total probability**. The weights $P(B_i)$ are nonnegative and sum to one, so $P(A)$ is a weighted average of the stratum-specific probabilities $P(A\mid B_i)$. Consequently,
+
+$$
+\min_i P(A\mid B_i)\leq P(A)\leq\max_i P(A\mid B_i)
+$$
+
+for a finite partition. A reported marginal risk that lies outside all of its correctly weighted stratum-specific risks signals an arithmetic or denominator error.
+
+For a random variable $Z$, the discrete form is
+
+$$
+P(A)=\sum_z P(A\mid Z=z)P(Z=z),
+$$
+
+and, when $Z$ has density $f_Z$,
+
+$$
+P(A)=\int P(A\mid Z=z)f_Z(z)\,dz.
+$$
+
+The distributional version marginalizes a conditional law:
+
+$$
+f_X(x)=\int f_{X\mid Z}(x\mid z)f_Z(z)\,dz.
+$$
+
+This identity is closely related to the tower property $E\{E(X\mid Z)\}=E(X)$ developed in [Expectation, variance, and moments](expectation-variance-and-moments.qmd).
+
+# Worked Example: A Sequencing Quality Filter
+
+Suppose reads come from two library-preparation batches. Let $B$ denote batch and $F$ the event that a read fails a quality filter. In an idealized read-sampling calculation,
+
+| Batch | $P(B)$ | $P(F\mid B)$ | Contribution to $P(F)$ |
+|---|---:|---:|---:|
+| A | 0.70 | 0.02 | 0.014 |
+| B | 0.30 | 0.08 | 0.024 |
+
+The total failure probability is
+
+$$
+P(F)=0.02(0.70)+0.08(0.30)=0.038.
+$$
+
+Although batch B supplies only 30% of reads, it supplies $0.024/0.038\approx63.2\%$ of failed reads. The first calculation predicts a marginal failure rate; the second reverses the conditioning direction and is an application of [Bayes' theorem](bayes-theorem-and-bayesian-updating.qmd).
+
+This read-level model can diagnose a sequencing process, but reads are technical observations nested within libraries. The experimental unit for a biological comparison is normally the independently sampled organism, tissue, or specimen. A large number of reads improves measurement precision within a library; it does not create additional biological replication.
+
+# Mixtures Can Hide or Reverse Patterns
+
+The law of total probability shows that a marginal probability depends on both within-stratum probabilities and stratum weights. If two treatment groups have different mixtures of batches, ages, ancestries, or disease severities, comparing their marginal outcomes can mix a treatment contrast with a composition contrast.
+
+This mechanism underlies **Simpson's paradox**: an association can have one direction within every stratum but another direction after strata are combined. No probability law is violated. The weights differ between the groups being compared.
+
+Choosing whether to condition, standardize to common weights, or report a marginal quantity depends on the scientific estimand and data-generating process. Conditioning on a pre-exposure common cause may clarify a comparison; conditioning on a consequence of exposure and outcome can instead induce selection bias. Conditional probability is descriptive probability calculus, not automatically a causal intervention.
+
+# Zero-Probability Conditioning
+
+The elementary ratio $P(A\cap B)/P(B)$ is undefined when $P(B)=0$. This matters for continuous measurements because $P(X=x)=0$ at each exact value under an absolutely continuous model, even though expressions such as $P(Y\in C\mid X=x)$ are routinely useful.
+
+Such conditionals are defined through **regular conditional distributions** when suitable mathematical conditions hold. A conditional density can often be computed as
+
+$$
+f_{Y\mid X}(y\mid x)=\frac{f_{X,Y}(x,y)}{f_X(x)}
+$$
+
+where $f_X(x)>0$. Its value at exceptional $x$ values of marginal probability zero is generally not uniquely determined. One should not justify conditioning on $X=x$ by substituting zero into the elementary event ratio.
+
+# Common Pitfalls
+
+1. **Reversing the condition:** $P(A\mid B)$ and $P(B\mid A)$ answer different questions and are generally unequal.
+2. **Changing denominators mid-calculation:** every conditional probability is normalized within its stated conditioning event.
+3. **Averaging strata equally:** total probability uses population weights $P(B_i)$, not $1/k$ unless the strata are equally prevalent.
+4. **Assuming conditional rates determine a marginal rate:** the stratum weights are also required.
+5. **Conditioning on an event of probability zero with the elementary ratio:** use an appropriate conditional distribution or density.
+6. **Treating conditioning as intervention:** observational strata and experimentally set conditions coincide only under additional causal assumptions.
+7. **Ignoring the sampling hierarchy:** conditional calculations at the read or cell level do not establish independent biological replication.
+
+# Connections to the Knowledge Map
+
+- [Probability spaces, events, and probability axioms](probability-spaces-events-and-axioms.qmd) supplies additivity and event algebra.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) extends conditioning and marginalization to random variables.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) identifies when conditioning leaves a probability unchanged.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) gives the expectation analogue through iterated expectation.
+- [Bayes' theorem and Bayesian updating](bayes-theorem-and-bayesian-updating.qmd) reverses a conditional probability and uses evidence to update uncertainty.
+
+# Take-home Messages
+
+1. Conditional probability restricts and renormalizes a probability model around known information.
+2. The multiplication rule decomposes intersections into ordered conditional steps.
+3. Total probability averages stratum-specific probabilities using the prevalence of each stratum.
+4. Marginal and conditional patterns can differ because population composition is part of the calculation.
+5. Conditioning is not automatically causal, and the experimental hierarchy still determines valid replication.
+
+# References
+
+- Billingsley, P. *Probability and Measure*, 3rd ed. Wiley, 1995.
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Bertsekas, D. P. and Tsitsiklis, J. N. *Introduction to Probability*, 2nd ed. Athena Scientific, 2008.
+- Simpson, E. H. “The Interpretation of Interaction in Contingency Tables.” *Journal of the Royal Statistical Society: Series B* 13(2), 1951, 238–241. [https://doi.org/10.1111/j.2517-6161.1951.tb00088.x](https://doi.org/10.1111/j.2517-6161.1951.tb00088.x).
