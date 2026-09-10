@@ -1,0 +1,327 @@
+---
+title: "Transformations of Random Variables"
+subtitle: "Deriving the distribution of a function of random quantities"
+description: "CDF, change-of-variables, Jacobian, convolution, expectation, and uncertainty propagation methods for transformed random variables."
+author: "Jiahong Sun"
+date: "2026-09-09"
+date-modified: "2026-09-09"
+categories: [Statistics, Probability, Transformations]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** If $Y=g(X)$, its distribution is obtained by moving the probability carried by $X$ through $g$, accounting for all preimages and the local stretching of the transformation.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness |
+| Main question | What is the probability law of a function of one or more random variables? |
+| Core tools | Preimages, CDF method, change of variables, Jacobian, convolution |
+| Typical applications | Fold changes, ratios, sums, standardized scores, error propagation, simulation |
+| Prerequisites | [Random variables and probability distributions](random-variables-and-probability-distributions.qmd); [joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) |
+
+# Probability Moves Through Preimages
+
+Let $X$ be a random variable and let $Y=g(X)$ for a measurable function $g$. The distribution of $Y$ is the **pushforward** of the distribution of $X$:
+
+$$
+\boxed{P(Y\in A)=P\{X\in g^{-1}(A)\}}.
+$$
+
+The inverse image
+
+$$
+g^{-1}(A)=\{x:g(x)\in A\}
+$$
+
+is defined even when $g$ has no inverse function. This identity is the safest starting point: transformed probability is not created or lost; it is reassigned to the values produced by $g$.
+
+Support must be transformed along with probabilities. If $X>0$ and $Y=\log X$, then $Y\in\mathbb R$. If $Y=X^2$, then $Y\geq0$ no matter which real values $X$ can take.
+
+# Discrete Transformations
+
+If $X$ is discrete, probabilities of all input values mapping to the same output must be added:
+
+$$
+\boxed{p_Y(y)=\sum_{x:g(x)=y}p_X(x)}.
+$$
+
+For example, let $X$ be uniform on $\{-2,-1,0,1,2\}$ and $Y=X^2$. Then
+
+$$
+P(Y=0)=\frac15,
+\qquad
+P(Y=1)=\frac25,
+\qquad
+P(Y=4)=\frac25.
+$$
+
+The map is many-to-one: the probability at $1$ combines $X=-1$ and $X=1$. Forgetting one preimage is the discrete analogue of dropping a Jacobian branch in a continuous problem.
+
+# The CDF Method
+
+For any real-valued transformation, begin with
+
+$$
+F_Y(y)=P(Y\leq y)=P\{g(X)\leq y\}.
+$$
+
+Rewrite the event in terms of $X$, evaluate it using the law of $X$, and differentiate only if a density is required and differentiation is valid. The CDF method works for decreasing, non-monotone, discrete, continuous, and mixed cases.
+
+## Monotone transformations
+
+If $g$ is strictly increasing and has inverse $g^{-1}$,
+
+$$
+F_Y(y)=F_X\{g^{-1}(y)\}.
+$$
+
+If $g$ is strictly decreasing,
+
+$$
+F_Y(y)=P\{X\geq g^{-1}(y)\}.
+$$
+
+For a continuous $X$, this is $1-F_X\{g^{-1}(y)\}$, with endpoint conventions handled by the CDF. Quantiles are especially simple under increasing transformations:
+
+$$
+Q_{g(X)}(p)=g\{Q_X(p)\}.
+$$
+
+Means do not transform this way in general: $E[g(X)]\neq g(E[X])$. For convex $g$, Jensen's inequality gives $E[g(X)]\geq g(E[X])$ when both sides exist.
+
+# One-Dimensional Change of Variables
+
+Suppose $X$ is absolutely continuous, $g$ is differentiable and strictly monotone on the support, and $Y=g(X)$. Differentiating the transformed CDF gives
+
+$$
+\boxed{
+f_Y(y)=f_X\{g^{-1}(y)\}
+\left|\frac{d}{dy}g^{-1}(y)\right|
+}.
+$$
+
+The absolute derivative is a local scale correction. A transformation that stretches a short input interval over a long output interval lowers density height so that probability remains unchanged.
+
+Equivalently, at $y=g(x)$ where $g'(x)\neq0$,
+
+$$
+f_Y\{g(x)\}=\frac{f_X(x)}{|g'(x)|}.
+$$
+
+## Example: the exponential transformation
+
+Let $X\sim\operatorname{Uniform}(0,1)$ and $Y=e^X$. The support becomes $1<y<e$, the inverse is $x=\log y$, and $dx/dy=1/y$. Therefore
+
+$$
+f_Y(y)=\frac1y\,\mathbf 1(1<y<e).
+$$
+
+The density integrates to one because $\int_1^e y^{-1}\,dy=1$. Omitting the derivative would incorrectly assign a uniform density to $Y$.
+
+## Many-to-one transformations
+
+If a differentiable transformation has finitely many inverse branches $x_j(y)$ with nonzero derivatives, their contributions add:
+
+$$
+\boxed{
+f_Y(y)=\sum_j f_X\{x_j(y)\}
+\left|\frac{dx_j(y)}{dy}\right|
+}.
+$$
+
+For $Y=X^2$ and $y>0$, the branches are $x_1=\sqrt y$ and $x_2=-\sqrt y$, so
+
+$$
+f_Y(y)=
+\frac{f_X(\sqrt y)+f_X(-\sqrt y)}{2\sqrt y},
+\qquad y>0.
+$$
+
+A density may diverge near a boundary such as $y=0$ and still be valid if its integral is finite.
+
+# Transforming Random Vectors
+
+Let $X\in\mathbb R^p$ have joint density $f_X$, and define $Y=T(X)$, where $T$ is one-to-one and differentiable with differentiable inverse on the relevant support. Then
+
+$$
+\boxed{
+f_Y(y)=f_X\{T^{-1}(y)\}
+\left|\det\frac{\partial T^{-1}(y)}{\partial y^\mathsf T}\right|
+}.
+$$
+
+The absolute Jacobian determinant measures local volume change. It is the multidimensional version of $|dx/dy|$. The transformed support must be derived explicitly; the formula alone does not supply its boundaries.
+
+## Example: sum and one component
+
+Let $X_1$ and $X_2$ have joint density $f_{X_1,X_2}$. Define
+
+$$
+Y_1=X_1+X_2,
+\qquad
+Y_2=X_2.
+$$
+
+The inverse is $X_1=Y_1-Y_2$, $X_2=Y_2$, and the absolute inverse Jacobian determinant is one. Hence
+
+$$
+f_{Y_1,Y_2}(y_1,y_2)
+=f_{X_1,X_2}(y_1-y_2,y_2).
+$$
+
+Marginalizing over $Y_2$ yields the density of the sum:
+
+$$
+f_{X_1+X_2}(s)
+=\int_{-\infty}^{\infty}f_{X_1,X_2}(s-t,t)\,dt.
+$$
+
+If $X_1$ and $X_2$ are independent, this becomes the convolution
+
+$$
+\boxed{
+f_{X_1+X_2}(s)=\int f_{X_1}(s-t)f_{X_2}(t)\,dt
+}.
+$$
+
+For dependent variables, replacing the joint density with a product is unjustified.
+
+# Moments Without Deriving the New Density
+
+If only an expectation is needed, the law of the unconscious statistician avoids deriving $f_Y$:
+
+$$
+E[h(Y)]=E[h\{g(X)\}]
+=\int h\{g(x)\}\,dP_X(x),
+$$
+
+provided the expectation exists. In particular,
+
+$$
+E[Y]=E[g(X)],
+\qquad
+\operatorname{Var}(Y)=E[g(X)^2]-E[g(X)]^2.
+$$
+
+For an affine transformation of a random vector,
+
+$$
+Y=AX+b,
+$$
+
+the moments transform exactly:
+
+$$
+E[Y]=AE[X]+b,
+\qquad
+\operatorname{Cov}(Y)=A\operatorname{Cov}(X)A^\mathsf T.
+$$
+
+These identities require the relevant moments but not normality.
+
+# Approximate Uncertainty Propagation
+
+For a differentiable scalar function $g$ and a random vector $X$ concentrated near its mean $\mu$, first-order Taylor expansion gives
+
+$$
+g(X)\approx g(\mu)+\nabla g(\mu)^\mathsf T(X-\mu).
+$$
+
+Therefore
+
+$$
+\boxed{
+\operatorname{Var}\{g(X)\}
+\approx
+\nabla g(\mu)^\mathsf T\Sigma\nabla g(\mu)
+},
+$$
+
+where $\Sigma=\operatorname{Cov}(X)$. For $g(X_1,X_2)$ this includes the term
+
+$$
+2\frac{\partial g}{\partial x_1}
+\frac{\partial g}{\partial x_2}
+\operatorname{Cov}(X_1,X_2).
+$$
+
+Dropping covariance silently assumes it is zero. The approximation can fail for strong nonlinearity, broad or heavy-tailed input distributions, boundaries, discontinuities, or a gradient near zero. In those cases, derive the exact law when feasible, use higher-order approximations, or simulate from a defensible joint input model.
+
+# Biological Example: Log Fold Change
+
+Let $A>0$ and $B>0$ denote two expression summaries and define the log fold change
+
+$$
+L=\log_2(A/B)=\frac{\log A-\log B}{\log2}.
+$$
+
+The transformation turns a ratio into a difference, maps equal expression to zero, and treats reciprocal fold changes symmetrically: swapping $A$ and $B$ changes only the sign. It also changes interpretation: an average on the log scale corresponds to a geometric, not arithmetic, average after exponentiation.
+
+If $(A,B)$ is modeled continuously away from zero, approximate propagation gives
+
+$$
+\operatorname{Var}(L)\approx
+\frac{1}{(\log2)^2}
+\left[
+\frac{\operatorname{Var}(A)}{E[A]^2}
++\frac{\operatorname{Var}(B)}{E[B]^2}
+-\frac{2\operatorname{Cov}(A,B)}{E[A]E[B]}
+\right].
+$$
+
+Paired samples can have nonzero covariance, which directly affects uncertainty. Zeros also require a scientific observation model; adding an arbitrary pseudocount changes the estimand and can dominate low counts.
+
+In an omics comparison, the independently randomized or sampled organism/specimen is normally the experimental unit. Transforming thousands of feature measurements does not create replication. Statistically, $L$ summarizes a ratio on a chosen scale; biologically, its meaning depends on normalization, measurement limits, study design, and uncertainty across biological units.
+
+# Choosing a Method
+
+| Goal and setting | Useful method |
+|---|---|
+| Any scalar transformation; CDF is tractable | Preimage/CDF method |
+| Smooth one-to-one scalar map | Inverse derivative formula |
+| Smooth invertible vector map | Jacobian determinant |
+| Many-to-one map | Partition into inverse branches and add contributions |
+| Sum of independent variables | Convolution |
+| Only transformed moments are required | Direct expectation of $h\{g(X)\}$ |
+| Smooth function with small input uncertainty | Taylor or delta approximation |
+| Complex map with a simulatable joint law | Monte Carlo transformation |
+
+# Common Pitfalls
+
+1. **Omitting the transformed support:** a correct-looking density on the wrong domain is not a probability model.
+2. **Forgetting the absolute Jacobian:** density must adjust for local stretching and orientation is irrelevant to probability volume.
+3. **Keeping only one inverse branch:** many-to-one maps combine probability from every valid preimage.
+4. **Multiplying marginals under dependence:** convolution with a product density requires independence.
+5. **Assuming $E[g(X)]=g(E[X])$:** this holds for affine $g$ but generally fails for nonlinear transformations.
+6. **Back-transforming an average naively:** the inverse of a mean on a transformed scale usually targets a different quantity from the original-scale mean.
+7. **Trusting first-order propagation near boundaries or strong curvature:** check exact calculations, simulation, or sensitivity to higher-order terms.
+8. **Using transformations to repair study design:** a scale change cannot create independent biological replication or remove confounding.
+
+# Connections to the Knowledge Map
+
+- [Random variables and probability distributions](random-variables-and-probability-distributions.qmd) defines the laws being transformed.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) supplies joint densities and marginalization.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) supports direct moment calculations and Jensen's inequality.
+- [Covariance and correlation](covariance-and-correlation.qmd) explains covariance matrices and cross-terms in uncertainty propagation.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) identifies when convolution may use a product of marginal densities.
+
+# Take-home Messages
+
+1. A transformed law assigns to each output set the probability of its preimage.
+2. CDF reasoning is general; derivative and Jacobian formulas are efficient under smoothness and invertibility conditions.
+3. Many-to-one transformations require summing every valid inverse branch.
+4. Expectations of transformed variables can often be computed without deriving the transformed density.
+5. Covariance matters when propagating uncertainty through multivariable functions.
+6. Transformed-scale summaries and back-transformed values must be interpreted on their actual scales and within the experimental design.
+
+# References
+
+- Billingsley, P. *Probability and Measure*, 3rd ed. Wiley, 1995.
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Bertsekas, D. P. and Tsitsiklis, J. N. *Introduction to Probability*, 2nd ed. Athena Scientific, 2008.
+- Oehlert, G. W. “A Note on the Delta Method.” *The American Statistician* 46(1), 1992, 27–29. [https://doi.org/10.1080/00031305.1992.10475842](https://doi.org/10.1080/00031305.1992.10475842).
+- NIST/SEMATECH. “Propagation of Error Considerations.” *e-Handbook of Statistical Methods*. [https://www.itl.nist.gov/div898/handbook/mpc/section5/mpc55.htm](https://www.itl.nist.gov/div898/handbook/mpc/section5/mpc55.htm).

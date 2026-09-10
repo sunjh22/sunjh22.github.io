@@ -16,6 +16,8 @@ Probability provides the language for representing biological variation, samplin
 - [Independence and conditional independence](independence-and-conditional-independence.qmd)
 - [Conditional probability and the law of total probability](conditional-probability-and-total-probability.qmd)
 - [Bayes' theorem and Bayesian updating](bayes-theorem-and-bayesian-updating.qmd)
+- [Covariance and correlation](covariance-and-correlation.qmd)
+- [Transformations of random variables](transformations-of-random-variables.qmd)
 - [Probability distributions](distributions.qmd)
 
 ## Continue through the map

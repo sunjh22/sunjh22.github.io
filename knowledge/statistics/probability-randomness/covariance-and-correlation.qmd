@@ -1,0 +1,266 @@
+---
+title: "Covariance and Correlation"
+subtitle: "Quantifying linear co-variation without mistaking association for independence or causation"
+description: "Population and sample covariance, Pearson and rank correlation, covariance matrices, interpretation, and limitations in biological data."
+author: "Jiahong Sun"
+date: "2026-09-09"
+date-modified: "2026-09-09"
+categories: [Statistics, Probability, Association]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Covariance measures whether two variables vary together on their original scales, while correlation standardizes that linear co-variation to a unit-free number between $-1$ and $1$.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness |
+| Main question | How do two numerical random variables vary together? |
+| Core objects | Covariance, Pearson correlation, covariance matrix, rank correlation |
+| Typical applications | Co-expression, repeated measurements, quantitative traits, uncertainty propagation |
+| Prerequisites | [Expectation, variance, and moments](expectation-variance-and-moments.qmd); [joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) |
+
+# Covariance
+
+Let $X$ and $Y$ have finite second moments, with means $\mu_X=E[X]$ and $\mu_Y=E[Y]$. Their population covariance is
+
+$$
+\boxed{\operatorname{Cov}(X,Y)=E[(X-\mu_X)(Y-\mu_Y)]}.
+$$
+
+The product of centered values is positive when $X$ and $Y$ tend to fall on the same side of their means and negative when they tend to fall on opposite sides. Averaging those products measures the direction and magnitude of **linear co-variation**.
+
+Expanding the product gives the useful identity
+
+$$
+\operatorname{Cov}(X,Y)=E[XY]-E[X]E[Y].
+$$
+
+Covariance has units equal to the product of the variables' units. It therefore changes when either variable is rescaled and is not directly comparable across measurement scales.
+
+## Fundamental properties
+
+For constants $a,b,c,d$,
+
+$$
+\operatorname{Cov}(aX+b,cY+d)=ac\operatorname{Cov}(X,Y).
+$$
+
+Covariance is symmetric, $\operatorname{Cov}(X,Y)=\operatorname{Cov}(Y,X)$, and variance is self-covariance:
+
+$$
+\operatorname{Var}(X)=\operatorname{Cov}(X,X).
+$$
+
+Bilinearity gives, whenever the relevant second moments exist,
+
+$$
+\operatorname{Cov}\!\left(\sum_i a_iX_i,\sum_j b_jY_j\right)
+=\sum_i\sum_j a_i b_j\operatorname{Cov}(X_i,Y_j).
+$$
+
+Consequently,
+
+$$
+\operatorname{Var}(aX+bY)
+=a^2\operatorname{Var}(X)+b^2\operatorname{Var}(Y)
++2ab\operatorname{Cov}(X,Y).
+$$
+
+The cross-term explains why correlated measurement errors, clustered observations, or shared batch effects cannot be handled by simply adding separate variances.
+
+# Pearson Correlation
+
+If $0<\sigma_X^2<\infty$ and $0<\sigma_Y^2<\infty$, the population Pearson correlation is
+
+$$
+\boxed{
+\rho_{XY}=\operatorname{Corr}(X,Y)
+=\frac{\operatorname{Cov}(X,Y)}{\sigma_X\sigma_Y}
+}.
+$$
+
+Correlation removes units and is unchanged by positive shifts and rescalings. More generally,
+
+$$
+\operatorname{Corr}(aX+b,cY+d)
+=\operatorname{sign}(ac)\operatorname{Corr}(X,Y)
+$$
+
+for nonzero $a$ and $c$. Reversing the direction of exactly one scale reverses the sign.
+
+## Why correlation lies between minus one and one
+
+Apply the Cauchy--Schwarz inequality to the centered variables:
+
+$$
+|E[(X-\mu_X)(Y-\mu_Y)]|
+\leq
+\sqrt{E[(X-\mu_X)^2]E[(Y-\mu_Y)^2]}.
+$$
+
+Dividing by $\sigma_X\sigma_Y$ gives
+
+$$
+-1\leq\rho_{XY}\leq1.
+$$
+
+Equality holds exactly when the centered variables are linearly dependent almost surely: $Y-\mu_Y=c(X-\mu_X)$ for some nonzero constant $c$. Thus $|\rho|=1$ means a perfect affine relationship under the model. It does not mean the variables are numerically equal.
+
+# What Zero Correlation Does—and Does Not—Mean
+
+If $X$ and $Y$ are independent and have finite second moments, then
+
+$$
+E[XY]=E[X]E[Y],
+$$
+
+so $\operatorname{Cov}(X,Y)=0$. The converse fails. Let $X\sim\operatorname{Uniform}(-1,1)$ and $Y=X^2$. Symmetry gives
+
+$$
+\operatorname{Cov}(X,Y)=E[X^3]-E[X]E[X^2]=0,
+$$
+
+yet $Y$ is completely determined by $X$. Pearson correlation is blind to this symmetric nonlinear dependence.
+
+An important exception is the jointly multivariate normal family: for jointly normal variables, zero covariance implies independence. Marginal normality of $X$ and $Y$ separately is not enough; the **joint** distribution must be multivariate normal.
+
+Correlation also does not identify a causal effect. Confounding, selection, common causes, reverse causation, and measurement artifacts can all create association. A causal interpretation requires a design and assumptions beyond the value of $\rho$.
+
+# Covariance Matrices
+
+For a random vector $X=(X_1,\ldots,X_p)^\mathsf T$ with mean vector $\mu$, its covariance matrix is
+
+$$
+\Sigma=E[(X-\mu)(X-\mu)^\mathsf T],
+\qquad
+\Sigma_{ij}=\operatorname{Cov}(X_i,X_j).
+$$
+
+$\Sigma$ is symmetric and positive semidefinite because, for every vector $a$,
+
+$$
+a^\mathsf T\Sigma a
+=\operatorname{Var}(a^\mathsf T X)\geq0.
+$$
+
+The diagonal contains variances and the off-diagonal entries contain covariances. If $A$ is a fixed matrix and $b$ a fixed vector, then
+
+$$
+\operatorname{Cov}(AX+b)=A\Sigma A^\mathsf T.
+$$
+
+This identity drives uncertainty propagation for linear transformations and later supports multivariate normal models and principal component analysis.
+
+# From a Sample to Estimates
+
+For paired observations $(x_i,y_i)$ from $n$ independent sampling units, define
+
+$$
+\bar x=\frac1n\sum_{i=1}^n x_i,
+\qquad
+\bar y=\frac1n\sum_{i=1}^n y_i.
+$$
+
+The usual sample covariance and Pearson sample correlation are
+
+$$
+s_{XY}=\frac{1}{n-1}\sum_{i=1}^n(x_i-\bar x)(y_i-\bar y),
+$$
+
+$$
+r=\frac{s_{XY}}{s_Xs_Y}
+=\frac{\sum_i(x_i-\bar x)(y_i-\bar y)}
+{\sqrt{\sum_i(x_i-\bar x)^2\sum_i(y_i-\bar y)^2}}.
+$$
+
+Here $\rho$ is a population parameter, $r$ is an estimator as a random function of the sample, and its realized numerical value is an estimate. The denominator $n-1$ makes $s_{XY}$ unbiased for population covariance under independent and identically distributed sampling with finite second moments. That fact does not make $r$ unbiased for $\rho$.
+
+The precision of $r$ depends on sample size and the joint distribution. Under independent bivariate-normal pairs, Fisher's transformation
+
+$$
+z=\operatorname{arctanh}(r)
+=\frac12\log\!\left(\frac{1+r}{1-r}\right)
+$$
+
+is approximately normal with standard error $1/\sqrt{n-3}$. This approximation is not automatically valid for clustered samples, heavy tails, selection, or data-dependent screening. Bootstrap procedures must resample the independent experimental unit, not individual reads or cells nested within a sample.
+
+# Rank Correlation and Robust Alternatives
+
+Pearson correlation targets linear association and can be dominated by outliers. Other summaries answer different questions:
+
+| Measure | What it summarizes | Important limitation |
+|---|---|---|
+| Pearson $r$ | Linear co-variation | Sensitive to outliers and nonlinear patterns |
+| Spearman $\rho_S$ | Pearson correlation of ranks; monotone association | Ties need handling; a summary of ranks, not slope |
+| Kendall $\tau$ | Difference between concordance and discordance probabilities | Different numerical scale from Pearson correlation |
+| Robust covariance/correlation | Association after limiting outlier influence | Depends on the chosen robustness model |
+
+Spearman correlation is invariant to strictly increasing transformations of either variable, whereas Pearson correlation generally is not. Rank methods can capture nonlinear monotone association, but no single coefficient reveals arbitrary dependence. Scatterplots and subject-matter knowledge remain essential.
+
+# Worked Example: Shared Sample Effects
+
+Suppose two gene-expression measurements from biological sample $j$ follow
+
+$$
+X_j=\alpha+U_j+\varepsilon_{Xj},
+\qquad
+Y_j=\beta+U_j+\varepsilon_{Yj},
+$$
+
+where the sample effect $U_j$ has variance $\tau^2$, measurement errors are mutually independent, and their variances are $\sigma_X^2$ and $\sigma_Y^2$. Then
+
+$$
+\operatorname{Cov}(X_j,Y_j)=\tau^2
+$$
+
+and
+
+$$
+\operatorname{Corr}(X_j,Y_j)
+=\frac{\tau^2}
+{\sqrt{(\tau^2+\sigma_X^2)(\tau^2+\sigma_Y^2)}}.
+$$
+
+A positive correlation appears even if the two measurement errors are independent, because the variables share a sample-level cause. Statistically, the coefficient describes co-variation across samples. Biologically, it does not by itself show direct regulation between the genes.
+
+If many cells or reads are observed within each sample, the biological experimental unit remains the independently sampled organism or specimen. Computing a correlation across all lower-level observations can inflate apparent precision and mix within-sample with between-sample association.
+
+# Common Pitfalls
+
+1. **Equating zero correlation with independence:** Pearson correlation controls only linear co-variation, except under special joint models.
+2. **Interpreting correlation as causation:** association alone cannot distinguish direct effects, confounding, selection, or shared causes.
+3. **Comparing raw covariances across scales:** covariance carries product units; use it when scale matters and correlation when scale-free comparison is appropriate.
+4. **Ignoring nonlinear structure and outliers:** always inspect paired data rather than reporting a coefficient alone.
+5. **Pooling heterogeneous groups:** mixtures can create, hide, or reverse correlations; examine the sampling design and relevant strata.
+6. **Using non-independent lower-level observations:** cells, reads, technical replicates, and repeated measurements must not silently replace biological samples.
+7. **Treating a large coefficient as precise:** uncertainty depends on the number of independent units and the joint distribution.
+
+# Connections to the Knowledge Map
+
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) supplies the moment definitions and variance-of-a-sum identity.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) contains the full law that covariance only summarizes.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) explains why uncorrelatedness is usually weaker than independence.
+- [Transformations of random variables](transformations-of-random-variables.qmd) shows how covariance matrices change under linear maps.
+- [Conditional probability and the law of total probability](conditional-probability-and-total-probability.qmd) explains how mixing strata can alter marginal association.
+
+# Take-home Messages
+
+1. Covariance is the expected product of centered variables and retains measurement scale.
+2. Pearson correlation standardizes covariance and measures linear, not arbitrary, dependence.
+3. Independence implies zero covariance when moments exist; the reverse generally fails.
+4. Covariance matrices encode the uncertainty of linear combinations and must be positive semidefinite.
+5. A sample correlation is an estimate whose uncertainty depends on independent experimental units and distributional assumptions.
+6. Biological interpretation requires the data hierarchy, possible common causes, and visual or sensitivity checks—not a coefficient alone.
+
+# References
+
+- Pearson, K. “Note on Regression and Inheritance in the Case of Two Parents.” *Proceedings of the Royal Society of London* 58, 1895, 240–242. [https://doi.org/10.1098/rspl.1895.0041](https://doi.org/10.1098/rspl.1895.0041).
+- Spearman, C. “The Proof and Measurement of Association between Two Things.” *The American Journal of Psychology* 15(1), 1904, 72–101. [https://doi.org/10.2307/1412159](https://doi.org/10.2307/1412159).
+- Fisher, R. A. “On the ‘Probable Error’ of a Coefficient of Correlation Deduced from a Small Sample.” *Metron* 1, 1921, 3–32.
+- Kendall, M. G. “A New Measure of Rank Correlation.” *Biometrika* 30(1/2), 1938, 81–93. [https://doi.org/10.2307/2332226](https://doi.org/10.2307/2332226).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- NIST/SEMATECH. “Propagation of Error Considerations.” *e-Handbook of Statistical Methods*. [https://www.itl.nist.gov/div898/handbook/mpc/section5/mpc55.htm](https://www.itl.nist.gov/div898/handbook/mpc/section5/mpc55.htm).
