@@ -1,0 +1,278 @@
+---
+title: "Categorical and Multinomial Distributions"
+subtitle: "Modeling one label and counts across several categories"
+description: "Categorical and multinomial probability models, moments, covariance, aggregation, assumptions, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-09-10"
+date-modified: "2026-09-10"
+categories: [Statistics, Probability, Distributions]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A categorical variable records one of $K$ mutually exclusive labels, while a multinomial vector counts those labels across a fixed number of independent trials with common category probabilities.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness; discrete multivariate distributions |
+| Main question | How should one multi-category outcome, or a vector of category counts, vary? |
+| Support | Categorical: $\{1,\ldots,K\}$; multinomial: nonnegative counts summing to $n$ |
+| Parameters | Probability vector $\boldsymbol p=(p_1,\ldots,p_K)$ on the simplex; fixed $n$ for the multinomial |
+| Typical applications | Cell-type labels, nucleotide calls, genotype classes, taxon counts |
+| Prerequisites | [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd); [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd) |
+
+# One Outcome Among Several Categories
+
+Let $C$ take one of $K$ mutually exclusive, exhaustive labels. The categorical model
+
+$$
+C\sim\operatorname{Categorical}(p_1,\ldots,p_K)
+$$
+
+has
+
+$$
+\boxed{P(C=k)=p_k,\qquad p_k\geq0,\quad \sum_{k=1}^Kp_k=1.}
+$$
+
+Category names are nominal unless a meaningful order is separately specified. Coding nucleotides as A = 1, C = 2, G = 3, and T = 4 does not make an average code scientifically meaningful.
+
+It is often clearer to use a one-hot vector $X=(X_1,\ldots,X_K)^\mathsf T$, where
+
+$$
+X_k=\mathbf1(C=k).
+$$
+
+Exactly one component equals 1, so $\sum_kX_k=1$. The joint mass function is
+
+$$
+P(X=x)=\prod_{k=1}^Kp_k^{x_k}
+$$
+
+for one-hot vectors $x$. Its moments are
+
+$$
+E(X_k)=p_k,
+\qquad
+\operatorname{Var}(X_k)=p_k(1-p_k),
+$$
+
+and, for $j\neq k$,
+
+$$
+\boxed{\operatorname{Cov}(X_j,X_k)=-p_jp_k.}
+$$
+
+The negative covariance is structural: one trial assigned to category $j$ cannot simultaneously be assigned to category $k$.
+
+# Repeated Trials: The Multinomial Distribution
+
+Suppose $n$ independent trials share the same category-probability vector $\boldsymbol p$. Let $Y_k$ count trials in category $k$. Then
+
+$$
+Y=(Y_1,\ldots,Y_K)^\mathsf T
+\sim\operatorname{Multinomial}(n,\boldsymbol p),
+$$
+
+with support
+
+$$
+\mathcal S=\left\{y\in\mathbb Z_{\geq0}^K:\sum_{k=1}^Ky_k=n\right\}
+$$
+
+and probability mass function
+
+$$
+\boxed{
+P(Y=y)=\frac{n!}{\prod_{k=1}^Ky_k!}
+\prod_{k=1}^Kp_k^{y_k},
+\qquad y\in\mathcal S.
+}
+$$
+
+The multinomial coefficient $n!/\prod_ky_k!$ counts sequences having the specified category totals. Each such sequence has probability $\prod_kp_k^{y_k}$.
+
+## Deriving the mass function
+
+Choose $y_1$ of the $n$ positions for category 1, then $y_2$ of the remaining positions for category 2, and continue. The number of assignments is
+
+$$
+{n\choose y_1}{n-y_1\choose y_2}\cdots
+=\frac{n!}{y_1!\cdots y_K!}.
+$$
+
+Independence multiplies trial probabilities, and additivity sums across the mutually exclusive assignments. The multinomial theorem verifies normalization:
+
+$$
+\sum_{y\in\mathcal S}\frac{n!}{\prod_ky_k!}\prod_kp_k^{y_k}
+=\left(\sum_{k=1}^Kp_k\right)^n=1.
+$$
+
+# Marginals, Covariance, and the Fixed Total
+
+Each component is marginally binomial:
+
+$$
+Y_k\sim\operatorname{Binomial}(n,p_k),
+$$
+
+so
+
+$$
+E(Y_k)=np_k,
+\qquad
+\operatorname{Var}(Y_k)=np_k(1-p_k).
+$$
+
+For different categories,
+
+$$
+\boxed{\operatorname{Cov}(Y_j,Y_k)=-np_jp_k,\qquad j\neq k.}
+$$
+
+In matrix form,
+
+$$
+E(Y)=n\boldsymbol p,
+\qquad
+\operatorname{Cov}(Y)=n\{\operatorname{diag}(\boldsymbol p)-\boldsymbol p\boldsymbol p^\mathsf T\}.
+$$
+
+This covariance matrix is singular because $\sum_kY_k=n$ is fixed. If $K-1$ counts are known, the last is determined. Consequently, there are only $K-1$ free probabilities and $K-1$ free count dimensions.
+
+Negative covariance between counts is not necessarily evidence of biological antagonism. It arises automatically from allocating a fixed total across mutually exclusive categories.
+
+# Aggregation and Conditioning
+
+Combining categories preserves the multinomial family. If categories 1 and 2 are merged, the new probability is $p_1+p_2$, and the merged count is $Y_1+Y_2$.
+
+For any subset $A$ of categories,
+
+$$
+\sum_{k\in A}Y_k\sim
+\operatorname{Binomial}\left(n,\sum_{k\in A}p_k\right).
+$$
+
+Conditional on a subtotal $M=Y_1+Y_2$, the split within that subtotal is
+
+$$
+Y_1\mid M
+\sim\operatorname{Binomial}\left(M,\frac{p_1}{p_1+p_2}\right),
+$$
+
+provided $p_1+p_2>0$. This separation of a group total from its internal composition is useful for hierarchical reasoning.
+
+# Likelihood and Estimation
+
+For observed counts $y$ with total $n$, the likelihood is
+
+$$
+L(\boldsymbol p;y)=
+\frac{n!}{\prod_ky_k!}\prod_{k=1}^Kp_k^{y_k},
+\qquad \sum_kp_k=1.
+$$
+
+Maximizing it under the simplex constraint gives
+
+$$
+\boxed{\hat p_k=\frac{y_k}{n}.}
+$$
+
+The estimator $\hat{\boldsymbol p}=Y/n$ has
+
+$$
+E(\hat{\boldsymbol p})=\boldsymbol p,
+\qquad
+\operatorname{Cov}(\hat{\boldsymbol p})
+=\frac1n\{\operatorname{diag}(\boldsymbol p)-\boldsymbol p\boldsymbol p^\mathsf T\}.
+$$
+
+Observed proportions are estimates of the trial-level probability vector under the stated sampling model. They do not automatically estimate population-level cell-type composition, taxon prevalence, or genotype frequency if trials are selected, clustered, misclassified, or drawn from heterogeneous biological units.
+
+# Worked Example: Base Calls at One Locus
+
+Suppose $n=10$ high-quality reads at a locus are classified as A, C, G, or T, with a simplified common probability vector
+
+$$
+\boldsymbol p=(0.7,0.1,0.1,0.1).
+$$
+
+For observed counts $y=(7,1,1,1)$,
+
+$$
+P(Y=y)
+=\frac{10!}{7!1!1!1!}(0.7)^7(0.1)^3
+\approx0.0593.
+$$
+
+The marginal A count is $Y_A\sim\operatorname{Binomial}(10,0.7)$, but the four counts are not independent. For example,
+
+$$
+\operatorname{Cov}(Y_A,Y_C)
+=-10(0.7)(0.1)=-0.7.
+$$
+
+This is a model for allocations among a fixed number of reads. The read is the trial, while the specimen remains the biological experimental unit. Base-calling errors, strand effects, PCR duplication, mapping ambiguity, and allele imbalance can violate common-probability or independence assumptions. Repeating reads from one specimen improves characterization of that specimen's measurement process; it does not create independent evidence about a population of specimens.
+
+# When the Multinomial Model Is Inadequate
+
+| Failure mechanism | Observable consequence | Possible model or design response |
+|---|---|---|
+| Probability vectors differ across units | Extra between-unit variation | Model unit-level covariates or random effects |
+| Trials cluster within units | Counts vary more than multinomial sampling predicts | Preserve clusters; use hierarchical or robust methods |
+| Category labels are uncertain | Apparent counts mix biology and classification error | Model a misclassification matrix or use probabilistic labels |
+| Total $n$ is scientifically random | Composition model omits abundance information | Jointly model the total and category allocation |
+| Sampling is without replacement from a small finite set | Depletion induces different dependence | Use a multivariate hypergeometric model |
+
+A common extension is the Dirichlet--multinomial model: a probability vector varies across sampling units according to a Dirichlet distribution, and counts are multinomial conditional on that vector. The resulting marginal counts are overdispersed relative to one multinomial with fixed $\boldsymbol p$. This can represent heterogeneity, but it does not identify its biological source by itself.
+
+# Relationship to Other Distributions
+
+| Distribution | Relationship |
+|---|---|
+| Bernoulli | A categorical distribution with $K=2$ after choosing a zero--one coding |
+| Binomial | A multinomial distribution with $K=2$, or an aggregate over a subset of categories |
+| Independent Poisson counts | Conditional on their sum, independent $Z_k\sim\operatorname{Poisson}(\lambda_k)$ have a multinomial allocation with $p_k=\lambda_k/\sum_j\lambda_j$ |
+| Multivariate hypergeometric | Category counts from sampling without replacement |
+| Dirichlet--multinomial | A mixture allowing the probability vector to vary across units |
+
+The Poisson relationship distinguishes two questions: a multinomial model conditions on the total and models composition, whereas independent Poisson models also describe variation in the total.
+
+# Common Pitfalls
+
+1. **Treating category codes as quantitative measurements:** nominal labels have no arithmetic spacing.
+2. **Assuming multinomial counts are independent:** the fixed total creates negative covariance and a singular covariance matrix.
+3. **Reading negative covariance as biological inhibition:** competition for a fixed total produces it even without a mechanistic interaction.
+4. **Ignoring uncertainty in labels:** hard assignments can conceal classification or sequencing error.
+5. **Pooling heterogeneous samples into one count vector:** the pooled composition can hide between-sample variation and invalidate multinomial uncertainty.
+6. **Confusing trials with experimental units:** cells, reads, or molecules nested within one sample are usually technical or subsampling units.
+7. **Forgetting what conditioning on $n$ discards:** totals may carry biological information that a composition-only model cannot recover.
+
+# Connections to the Knowledge Map
+
+- [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd) gives the two-category special case.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) provides marginalization and conditioning rules.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) supports indicator-vector moment calculations.
+- [Covariance and correlation](covariance-and-correlation.qmd) explains covariance matrices and structural dependence.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) identifies the factorization assumed across trials.
+- [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd) develops the multinomial coefficient.
+
+# Take-home Messages
+
+1. A categorical outcome is one label drawn from a probability vector on the simplex.
+2. Multinomial counts arise from a fixed number of independent, identically distributed categorical trials.
+3. Each count is marginally binomial, but different category counts are negatively correlated because their total is fixed.
+4. Aggregating categories adds their counts and probabilities while preserving the multinomial structure.
+5. Heterogeneity, clustering, uncertain labels, and informative totals require richer models or better design.
+6. In bioinformatics, nested reads or cells are not substitutes for independent biological samples.
+
+# References
+
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Johnson, N. L., Kotz, S., and Balakrishnan, N. *Discrete Multivariate Distributions*. Wiley, 1997.
+- Agresti, A. *Categorical Data Analysis*, 3rd ed. Wiley, 2013.
+- Mosimann, J. E. “On the Compound Multinomial Distribution, the Multivariate Beta-Distribution, and Correlations Among Proportions.” *Biometrika* 49(1/2), 1962, 65–82. [https://doi.org/10.1093/biomet/49.1-2.65](https://doi.org/10.1093/biomet/49.1-2.65).
+- R Core Team. “The Multinomial Distribution.” *R Statistical Functions Documentation*. [https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Multinom.html](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Multinom.html).

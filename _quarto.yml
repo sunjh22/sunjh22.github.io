@@ -85,6 +85,8 @@ website:
                   - knowledge/statistics/probability-randomness/bayes-theorem-and-bayesian-updating.qmd
                   - knowledge/statistics/probability-randomness/covariance-and-correlation.qmd
                   - knowledge/statistics/probability-randomness/transformations-of-random-variables.qmd
+                  - knowledge/statistics/probability-randomness/bernoulli-and-binomial-distributions.qmd
+                  - knowledge/statistics/probability-randomness/categorical-and-multinomial-distributions.qmd
                   - knowledge/statistics/probability-randomness/distributions.qmd
               - section: "Asymptotic Thinking"
                 href: knowledge/statistics/asymptotic-thinking/index.qmd

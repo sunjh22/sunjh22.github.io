@@ -1,0 +1,229 @@
+---
+title: "Bernoulli and Binomial Distributions"
+subtitle: "Modeling binary trials and the number of successes"
+description: "Bernoulli and binomial probability models, moments, derivations, assumptions, likelihood, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-09-10"
+date-modified: "2026-09-10"
+categories: [Statistics, Probability, Distributions]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A Bernoulli variable records one binary trial, while a binomial variable counts successes across a fixed number of independent trials sharing one success probability.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness; discrete distributions |
+| Main question | How should one binary outcome, or a count of successes in repeated binary trials, vary? |
+| Support | Bernoulli: $\{0,1\}$; binomial: $\{0,1,\ldots,n\}$ |
+| Parameters | Success probability $p$; fixed trial count $n$ for the binomial |
+| Typical applications | Mutation carriage, assay detection, read classification, responder counts |
+| Prerequisites | [Random variables and probability distributions](random-variables-and-probability-distributions.qmd); [independence and conditional independence](independence-and-conditional-independence.qmd) |
+
+# One Binary Trial: The Bernoulli Distribution
+
+Let $X$ encode failure as 0 and success as 1. For $0\leq p\leq1$,
+
+$$
+X\sim\operatorname{Bernoulli}(p)
+$$
+
+means
+
+$$
+\boxed{P(X=x)=p^x(1-p)^{1-x},\qquad x\in\{0,1\}.}
+$$
+
+The labels “success” and “failure” are mathematical conventions, not value judgments. Success is simply the event coded 1. Reversing the coding replaces $p$ with $1-p$.
+
+Because $X$ is an indicator, $X^k=X$ for every positive integer $k$. Therefore
+
+$$
+E(X)=p,
+\qquad
+E(X^k)=p,
+$$
+
+and
+
+$$
+\boxed{\operatorname{Var}(X)=E(X^2)-E(X)^2=p(1-p).}
+$$
+
+The variance is zero at $p=0$ and $p=1$, and largest at $p=1/2$. The mean $p$ is both the success probability and the long-run average of the zero--one coding.
+
+# Counting Successes: The Binomial Distribution
+
+Suppose $X_1,\ldots,X_n$ are independent Bernoulli variables with the same success probability $p$, and define
+
+$$
+Y=\sum_{i=1}^n X_i.
+$$
+
+Then
+
+$$
+Y\sim\operatorname{Binomial}(n,p),
+$$
+
+with probability mass function
+
+$$
+\boxed{
+P(Y=y)={n\choose y}p^y(1-p)^{n-y},
+\qquad y=0,1,\ldots,n.
+}
+$$
+
+The three factors have distinct meanings:
+
+- ${n\choose y}$ counts which $y$ trials succeed;
+- $p^y$ is the probability contribution from those successes;
+- $(1-p)^{n-y}$ is the contribution from the remaining failures.
+
+## Deriving the mass function
+
+Any particular sequence containing $y$ successes and $n-y$ failures has probability $p^y(1-p)^{n-y}$ by independence. There are ${n\choose y}$ such sequences, and they are mutually exclusive. Adding their probabilities produces the binomial mass function.
+
+Normalization follows from the binomial theorem:
+
+$$
+\sum_{y=0}^n {n\choose y}p^y(1-p)^{n-y}
+=\{p+(1-p)\}^n=1.
+$$
+
+# Moments and Shape
+
+Linearity of expectation does not require independence, so
+
+$$
+E(Y)=\sum_{i=1}^n E(X_i)=np.
+$$
+
+Independence removes all covariance terms from the variance of the sum:
+
+$$
+\boxed{
+\operatorname{Var}(Y)=\sum_{i=1}^n p(1-p)=np(1-p).
+}
+$$
+
+The standard deviation is $\sqrt{np(1-p)}$. The distribution is symmetric when $p=1/2$, right-skewed when $p$ is small, and left-skewed when $p$ is large. If $(n+1)p$ is not an integer, the unique mode is $\lfloor(n+1)p\rfloor$; if it is an integer strictly between 1 and $n$, two adjacent modes occur.
+
+The probability-generating function makes the sum structure explicit:
+
+$$
+G_Y(s)=E(s^Y)=\{(1-p)+ps\}^n.
+$$
+
+# Conditions Behind the Binomial Model
+
+The binomial is justified by a data-generating mechanism, not merely by observing a count between 0 and $n$.
+
+| Condition | Meaning | Typical failure |
+|---|---|---|
+| Fixed $n$ | The number of trials is set independently of their outcomes | Sampling stops after a target number of successes |
+| Binary outcome | Every trial is classified as success or failure | Ambiguous or multiple outcome categories |
+| Common $p$ | Trials share one success probability | Samples differ in quality, genotype, or exposure |
+| Independence | Knowing one outcome does not alter another's probability | Related organisms, clustered cells, duplicate reads |
+
+Conditional independence deserves care. Trials can be independent given a sample-specific probability $P$, yet positively associated after $P$ is averaged over heterogeneous samples. The law of total variance gives
+
+$$
+\operatorname{Var}(Y)
+=E\{nP(1-P)\}+\operatorname{Var}(nP)
+=n\bar p(1-\bar p)+n(n-1)\operatorname{Var}(P),
+$$
+
+where $\bar p=E(P)$. The additional term explains overdispersion relative to a binomial model with probability $\bar p$.
+
+# Likelihood and Estimation
+
+For an observed count $y$ from a binomial model with fixed $n$, the likelihood for $p$ is
+
+$$
+L(p;y)={n\choose y}p^y(1-p)^{n-y}.
+$$
+
+The combinatorial factor is constant with respect to $p$. For $0<y<n$, differentiating the log-likelihood gives
+
+$$
+\frac{d}{dp}\log L(p;y)=\frac{y}{p}-\frac{n-y}{1-p}=0,
+$$
+
+so the maximum-likelihood estimate is
+
+$$
+\boxed{\hat p=\frac{y}{n}.}
+$$
+
+Under the model, $E(\hat p)=p$ and $\operatorname{Var}(\hat p)=p(1-p)/n$. These are repeated-sampling properties of the estimator. The observed fraction $y/n$ is an estimate, not the unknown population probability itself.
+
+A normal approximation may be reasonable when neither $np$ nor $n(1-p)$ is small, but it can be poor near the boundaries or for small $n$. Exact binomial probabilities, score-based intervals, or a stated Bayesian model avoid treating the approximation as universally valid. The frequently used Wald interval $\hat p\pm z\sqrt{\hat p(1-\hat p)/n}$ can have poor coverage, especially near 0 or 1.
+
+# Worked Example: Variant-Supporting Reads
+
+Suppose a sequencing assay yields $n=20$ usable reads at a locus, and a simplified model gives each read probability $p=0.10$ of being classified as variant-supporting. If reads were independent conditional on the same $p$, then
+
+$$
+Y\sim\operatorname{Binomial}(20,0.10).
+$$
+
+The probability of exactly three supporting reads is
+
+$$
+P(Y=3)={20\choose3}(0.10)^3(0.90)^{17}\approx0.190.
+$$
+
+The expected count is $np=2$, and the variance is $np(1-p)=1.8$.
+
+This calculation describes read-level measurement variation under strong assumptions. Reads are technical observations from one specimen, not independent biological replicates. PCR duplicates, mapping ambiguity, allele-specific bias, and sample heterogeneity can violate the common-$p$ or independence conditions. A biological claim about a population requires independently sampled specimens and a model linking their variation to the read-level process.
+
+# Relationships and Approximations
+
+| Relationship | Result | Key condition |
+|---|---|---|
+| Bernoulli special case | $\operatorname{Binomial}(1,p)=\operatorname{Bernoulli}(p)$ | One trial |
+| Sum of binomials | If $Y_j\sim\operatorname{Binomial}(n_j,p)$ independently, then $\sum_jY_j\sim\operatorname{Binomial}(\sum_jn_j,p)$ | Same $p$ and independence |
+| Poisson limit | $\operatorname{Binomial}(n,p)\Rightarrow\operatorname{Poisson}(\lambda)$ when $n\to\infty$, $p\to0$, $np\to\lambda$ | Rare events with stable mean |
+| Normal approximation | $(Y-np)/\sqrt{np(1-p)}\approx N(0,1)$ | Both expected successes and failures sufficiently large |
+| Beta--binomial mixture | Random $P\sim\operatorname{Beta}(a,b)$ followed by $Y\mid P\sim\operatorname{Binomial}(n,P)$ | Heterogeneous success probability |
+
+Sampling without replacement from a finite population is hypergeometric, not binomial. When the sampled fraction is very small, the binomial can approximate the hypergeometric because depletion has little effect.
+
+# Common Pitfalls
+
+1. **Using a binomial model for any bounded count:** the trial-level mechanism and assumptions must be defensible.
+2. **Confusing mutual exclusivity with independence:** one trial cannot be both success and failure, but repeated trials may or may not be independent.
+3. **Treating technical observations as biological replicates:** more reads reduce some measurement uncertainty but do not increase the number of independent organisms or specimens.
+4. **Ignoring heterogeneity in $p$:** mixtures commonly create more variability than $np(1-p)$ predicts.
+5. **Using a normal approximation at a boundary:** exact or better-calibrated interval methods are preferable when successes or failures are sparse.
+6. **Interpreting $p$ without defining the trial:** the probability changes with the population, protocol, classifier, and conditioning information.
+
+# Connections to the Knowledge Map
+
+- [Random variables and probability distributions](random-variables-and-probability-distributions.qmd) defines PMFs, CDFs, and support.
+- [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd) explains the coefficient ${n\choose y}$.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) supplies the indicator-sum derivation.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) clarifies the factorization behind the binomial model.
+- [Bayes' theorem and Bayesian updating](bayes-theorem-and-bayesian-updating.qmd) develops beta--binomial updating for an unknown $p$.
+- [Categorical and multinomial distributions](categorical-and-multinomial-distributions.qmd) generalizes two outcomes to $K$ categories.
+
+# Take-home Messages
+
+1. A Bernoulli variable represents one zero--one trial with mean $p$ and variance $p(1-p)$.
+2. A binomial count is a sum of a fixed number of independent Bernoulli trials sharing one $p$.
+3. The binomial coefficient counts outcome sequences; independence supplies their product probabilities.
+4. Heterogeneity, clustering, and sampling without replacement change the variance or the entire probability model.
+5. Read-level binomial variation does not substitute for biological replication.
+
+# References
+
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Johnson, N. L., Kemp, A. W., and Kotz, S. *Univariate Discrete Distributions*, 3rd ed. Wiley, 2005. [https://doi.org/10.1002/0471715816](https://doi.org/10.1002/0471715816).
+- Brown, L. D., Cai, T. T., and DasGupta, A. “Interval Estimation for a Binomial Proportion.” *Statistical Science* 16(2), 2001, 101–133. [https://doi.org/10.1214/ss/1009213286](https://doi.org/10.1214/ss/1009213286).
+- R Core Team. “The Binomial Distribution.” *R Statistical Functions Documentation*. [https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Binomial.html](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Binomial.html).

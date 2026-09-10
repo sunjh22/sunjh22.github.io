@@ -18,6 +18,8 @@ Probability provides the language for representing biological variation, samplin
 - [Bayes' theorem and Bayesian updating](bayes-theorem-and-bayesian-updating.qmd)
 - [Covariance and correlation](covariance-and-correlation.qmd)
 - [Transformations of random variables](transformations-of-random-variables.qmd)
+- [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd)
+- [Categorical and multinomial distributions](categorical-and-multinomial-distributions.qmd)
 - [Probability distributions](distributions.qmd)
 
 ## Continue through the map
