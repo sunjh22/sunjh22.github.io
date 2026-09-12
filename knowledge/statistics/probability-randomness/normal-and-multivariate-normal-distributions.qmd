@@ -1,0 +1,301 @@
+---
+title: "Normal and Multivariate Normal Distributions"
+subtitle: "Gaussian models for continuous variables and correlated vectors"
+description: "Univariate and multivariate normal distributions, linear transformations, conditional laws, Mahalanobis distance, assumptions, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-09-12"
+date-modified: "2026-09-12"
+categories: [Statistics, Probability, Distributions, Multivariate Analysis]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** A normal distribution models a continuous quantity with symmetric Gaussian variation, while a multivariate normal distribution describes several such quantities through a mean vector and covariance matrix.
+
+| Item | Univariate normal | Multivariate normal |
+|---|---|---|
+| Random quantity | Scalar $X$ | Vector $\mathbf X\in\mathbb R^p$ |
+| Parameters | Mean $\mu$ and variance $\sigma^2>0$ | Mean $\boldsymbol\mu$ and covariance $\boldsymbol\Sigma\succeq0$ |
+| Support | $\mathbb R$ | Usually $\mathbb R^p$; a lower-dimensional affine subspace if singular |
+| Shape | Symmetric bell curve | Elliptical contours when $\boldsymbol\Sigma$ is positive definite |
+| Typical applications | Measurement errors, transformed expression summaries, sampling approximations | Correlated traits, assay panels, latent Gaussian models |
+| Prerequisites | [Expectation, variance, and moments](expectation-variance-and-moments.qmd) | [Covariance and correlation](covariance-and-correlation.qmd); [transformations of random variables](transformations-of-random-variables.qmd) |
+
+# The Univariate Normal Distribution
+
+A continuous random variable has a normal distribution with mean $\mu\in\mathbb R$ and variance $\sigma^2>0$, written
+
+$$
+X\sim N(\mu,\sigma^2),
+$$
+
+when its density is
+
+$$
+\boxed{
+f_X(x)=\frac{1}{\sigma\sqrt{2\pi}}
+\exp\left\{-\frac{(x-\mu)^2}{2\sigma^2}\right\},
+\qquad -\infty<x<\infty.
+}
+$$
+
+The density is symmetric about $\mu$, so its mean, median, and mode coincide. Its moments include
+
+$$
+E(X)=\mu,
+\qquad
+\operatorname{Var}(X)=\sigma^2,
+\qquad
+E\{(X-\mu)^3\}=0,
+\qquad
+E\{(X-\mu)^4\}=3\sigma^4.
+$$
+
+Thus normal excess kurtosis is zero. Symmetry alone does not imply normality: many symmetric distributions have different centers, tails, or kurtosis.
+
+## Standardization and probabilities
+
+The affine transformation
+
+$$
+Z=\frac{X-\mu}{\sigma}
+$$
+
+has the standard normal distribution $N(0,1)$. If $\Phi(z)=P(Z\leq z)$, then
+
+$$
+P(a<X\leq b)
+=\Phi\left(\frac{b-\mu}{\sigma}\right)
+-\Phi\left(\frac{a-\mu}{\sigma}\right).
+$$
+
+There is no elementary antiderivative for the Gaussian density, so normal probabilities and quantiles are evaluated numerically. The familiar approximate intervals $\mu\pm\sigma$, $\mu\pm2\sigma$, and $\mu\pm3\sigma$ contain about 68%, 95%, and 99.7% of the distribution, respectively; these are properties of the model, not universal empirical rules.
+
+# Why Gaussian Models Recur
+
+Normal variables are closed under affine transformations. If $X\sim N(\mu,\sigma^2)$, then
+
+$$
+a+bX\sim N(a+b\mu,b^2\sigma^2).
+$$
+
+If $X_1,\ldots,X_n$ are independent normals, every linear combination is normal:
+
+$$
+\sum_{i=1}^n a_iX_i
+\sim N\left(\sum_i a_i\mu_i,\sum_i a_i^2\sigma_i^2\right).
+$$
+
+Gaussian laws also arise as limits for standardized sums under central-limit-theorem conditions. That fact can justify an approximation to a statistic even when individual observations are not normal. It does **not** imply that every biological measurement is Gaussian, that small samples are protected from skewness or outliers, or that dependence can be ignored.
+
+The moment-generating function makes the closure property transparent:
+
+$$
+M_X(t)=E(e^{tX})
+=\exp\left(\mu t+\frac12\sigma^2t^2\right).
+$$
+
+Products of moment-generating functions for independent sums add their means and variances in the exponent.
+
+# The Multivariate Normal Distribution
+
+A random vector $\mathbf X\in\mathbb R^p$ is multivariate normal if every linear combination $\mathbf a^\mathsf T\mathbf X$ is univariate normal. We write
+
+$$
+\mathbf X\sim N_p(\boldsymbol\mu,\boldsymbol\Sigma),
+$$
+
+where
+
+$$
+E(\mathbf X)=\boldsymbol\mu,
+\qquad
+\operatorname{Cov}(\mathbf X)=\boldsymbol\Sigma.
+$$
+
+The covariance matrix must be symmetric and positive semidefinite. If it is positive definite, the joint density is
+
+$$
+\boxed{
+f_{\mathbf X}(\mathbf x)
+=\frac{1}{(2\pi)^{p/2}|\boldsymbol\Sigma|^{1/2}}
+\exp\left\{-\frac12
+(\mathbf x-\boldsymbol\mu)^\mathsf T
+\boldsymbol\Sigma^{-1}
+(\mathbf x-\boldsymbol\mu)\right\}.
+}
+$$
+
+Equal-density contours are ellipsoids centered at $\boldsymbol\mu$. Their orientation and axis lengths are determined by the eigenvectors and eigenvalues of $\boldsymbol\Sigma$.
+
+If $\boldsymbol\Sigma$ is singular, the linear-combination definition still gives a valid multivariate normal distribution, but no density exists with respect to $p$-dimensional volume. The vector lies on a lower-dimensional affine subspace. This occurs, for example, when one component is an exact linear combination of others.
+
+## Constructing a Gaussian vector
+
+Let $\mathbf Z\sim N_r(\mathbf0,\mathbf I_r)$ and define
+
+$$
+\mathbf X=\boldsymbol\mu+\mathbf A\mathbf Z.
+$$
+
+Then
+
+$$
+\mathbf X\sim N_p(\boldsymbol\mu,\mathbf A\mathbf A^\mathsf T).
+$$
+
+Every multivariate normal vector can be represented this way. A Cholesky factor is convenient when $\boldsymbol\Sigma$ is positive definite; an eigenvalue factorization also handles positive-semidefinite matrices.
+
+# Marginals, Linear Maps, and Conditionals
+
+Any subvector of a multivariate normal vector is multivariate normal. More generally, for a fixed matrix $\mathbf B$ and vector $\mathbf c$,
+
+$$
+\boxed{
+\mathbf B\mathbf X+\mathbf c
+\sim N\left(\mathbf B\boldsymbol\mu+\mathbf c,
+\mathbf B\boldsymbol\Sigma\mathbf B^\mathsf T\right).
+}
+$$
+
+Partition the vector and its parameters as
+
+$$
+\mathbf X=
+\begin{pmatrix}\mathbf X_1\\\mathbf X_2\end{pmatrix},
+\quad
+\boldsymbol\mu=
+\begin{pmatrix}\boldsymbol\mu_1\\\boldsymbol\mu_2\end{pmatrix},
+\quad
+\boldsymbol\Sigma=
+\begin{pmatrix}
+\boldsymbol\Sigma_{11}&\boldsymbol\Sigma_{12}\\
+\boldsymbol\Sigma_{21}&\boldsymbol\Sigma_{22}
+\end{pmatrix}.
+$$
+
+When $\boldsymbol\Sigma_{22}$ is invertible,
+
+$$
+\mathbf X_1\mid\mathbf X_2=\mathbf x_2
+\sim N\left(
+\boldsymbol\mu_1+
+\boldsymbol\Sigma_{12}\boldsymbol\Sigma_{22}^{-1}
+(\mathbf x_2-\boldsymbol\mu_2),
+\boldsymbol\Sigma_{11}-
+\boldsymbol\Sigma_{12}\boldsymbol\Sigma_{22}^{-1}
+\boldsymbol\Sigma_{21}
+\right).
+$$
+
+Conditioning shifts the mean linearly and reduces, or leaves unchanged, the covariance. The conditional covariance does not depend on the observed value $\mathbf x_2$.
+
+Within a jointly multivariate normal vector, zero cross-covariance implies independence:
+
+$$
+\boldsymbol\Sigma_{12}=\mathbf0
+\quad\Longleftrightarrow\quad
+\mathbf X_1\perp\!\!\!\perp\mathbf X_2.
+$$
+
+This equivalence is special to the joint Gaussian family. Variables can each have normal marginal distributions and still fail to be jointly normal; in that case zero covariance need not imply independence.
+
+# Mahalanobis Distance and a Chi-squared Connection
+
+For positive-definite $\boldsymbol\Sigma$, whiten the vector as
+
+$$
+\mathbf Z=\boldsymbol\Sigma^{-1/2}(\mathbf X-\boldsymbol\mu).
+$$
+
+Then $\mathbf Z\sim N_p(\mathbf0,\mathbf I)$, and the squared Mahalanobis distance is
+
+$$
+\boxed{
+D^2=(\mathbf X-\boldsymbol\mu)^\mathsf T
+\boldsymbol\Sigma^{-1}(\mathbf X-\boldsymbol\mu)
+=\mathbf Z^\mathsf T\mathbf Z
+\sim\chi_p^2.
+}
+$$
+
+This result converts an elliptical distance into a probability scale and links multivariate normal geometry to [chi-squared, Student's t, and F distributions](chi-squared-students-t-and-f-distributions.qmd). Estimating $\boldsymbol\mu$ and $\boldsymbol\Sigma$ from the same data changes the exact reference distribution; treating estimated parameters as known can make an outlier rule too optimistic.
+
+# Worked Example: Two Correlated Assay Summaries
+
+Suppose two standardized log-expression summaries from one biological specimen are idealized as
+
+$$
+\begin{pmatrix}X_1\\X_2\end{pmatrix}
+\sim N_2\left[
+\begin{pmatrix}0\\0\end{pmatrix},
+\begin{pmatrix}1&0.8\\0.8&1\end{pmatrix}
+\right].
+$$
+
+The difference $D=X_1-X_2$ is normal because it is a linear combination, with
+
+$$
+E(D)=0,
+\qquad
+\operatorname{Var}(D)=1+1-2(0.8)=0.4.
+$$
+
+Ignoring the covariance would give variance 2, five times too large. Conversely, the conditional distribution of $X_1$ given $X_2=x_2$ is
+
+$$
+X_1\mid X_2=x_2\sim N(0.8x_2,1-0.8^2)=N(0.8x_2,0.36).
+$$
+
+The calculation describes within-specimen joint measurement variation. It does not turn two assay variables, many genes, or repeated technical measurements into independent biological replicates. Population claims still require independently sampled biological units and a design that represents the target population.
+
+# Modeling Checks and Failure Modes
+
+| Assumption or feature | Why it matters | What to inspect | Possible response |
+|---|---|---|---|
+| Symmetric, light-tailed marginals | Gaussian tails assign very low probability to extremes | Histograms, quantile plots, robust summaries | Transform, use a heavy-tailed model, or report robust analysis |
+| Elliptical joint shape | Mean and covariance determine Gaussian dependence | Pair plots, projections, residual structure | Mixture, copula, nonlinear, or latent-state model |
+| Stable covariance | Conditional laws and distances depend on $\boldsymbol\Sigma$ | Covariance across groups, batches, and mean levels | Model group-specific or mean-dependent covariance |
+| Independent experimental units | Standard likelihood factorization requires the sampling structure | Pedigrees, repeated measures, batches, nested observations | Mixed, clustered, longitudinal, or hierarchical model |
+| Adequate dimension-to-sample ratio | Sample covariance can be unstable or singular | Eigenvalues and sensitivity to observations | Regularization, dimension reduction, or more biological samples |
+
+Normal-looking one-dimensional projections do not prove joint normality. A mixture of Gaussian subpopulations can be multimodal or heavy-tailed, and batch effects can create correlations absent within each batch. With $p$ near or above the number of independent samples, the empirical covariance matrix is poorly determined even if the Gaussian model itself is correct.
+
+# Common Pitfalls
+
+1. **Calling any bell-shaped histogram normal:** the tail behavior and data-generating mechanism also matter.
+2. **Using standard deviation as a universal 95% rule:** the familiar coverage percentages are Gaussian model properties.
+3. **Equating marginal normality with joint normality:** Gaussian marginals do not determine the dependence structure.
+4. **Equating zero correlation with independence outside a joint Gaussian model:** the implication is distribution-specific.
+5. **Ignoring singular or unstable covariance:** inversion and Mahalanobis distances require more than a visually plausible matrix.
+6. **Counting variables or technical observations as replicates:** replication is defined by independently sampled experimental units.
+
+# Connections to the Knowledge Map
+
+- [Random variables and probability distributions](random-variables-and-probability-distributions.qmd) defines densities, CDFs, and quantiles.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) supplies moment and moment-generating-function calculations.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) provides the operations used for subvectors and conditioning.
+- [Covariance and correlation](covariance-and-correlation.qmd) develops covariance matrices and their interpretation.
+- [Transformations of random variables](transformations-of-random-variables.qmd) explains affine maps and Jacobian-based derivations.
+- [Chi-squared, Student's t, and F distributions](chi-squared-students-t-and-f-distributions.qmd) develops quadratic forms and exact normal-sample pivots.
+
+# Take-home Messages
+
+1. A univariate normal law is determined by its mean and variance and becomes standard normal after centering and scaling.
+2. A multivariate normal law is characterized by normality of every linear combination and by a mean vector and covariance matrix.
+3. Marginal, conditional, and affine-transformed distributions remain Gaussian.
+4. Zero covariance implies independence only under a jointly Gaussian model, not merely normal marginals.
+5. Mahalanobis distance has a chi-squared law when the mean and covariance are known and the model is multivariate normal.
+6. Outliers, mixtures, nonlinear dependence, batch effects, and limited biological replication can invalidate simple Gaussian analyses.
+
+# References
+
+- Anderson, T. W. *An Introduction to Multivariate Statistical Analysis*, 3rd ed. Wiley, 2003.
+- Mardia, K. V., Kent, J. T., and Bibby, J. M. *Multivariate Analysis*. Academic Press, 1979.
+- Tong, Y. L. *The Multivariate Normal Distribution*. Springer, 1990. [https://doi.org/10.1007/978-1-4613-9655-0](https://doi.org/10.1007/978-1-4613-9655-0).
+- NIST/SEMATECH. “What Do We Mean by ‘Normal’ Data?” *e-Handbook of Statistical Methods*. [https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc51.htm](https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc51.htm).
+- NIST/SEMATECH. “The Multivariate Normal Distribution.” *e-Handbook of Statistical Methods*. [https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc542.htm](https://www.itl.nist.gov/div898/handbook/pmc/section5/pmc542.htm).
+- R Core Team. “The Normal Distribution.” *R Statistical Functions Documentation*. [https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Normal.html](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Normal.html).

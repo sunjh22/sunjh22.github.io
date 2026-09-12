@@ -89,6 +89,8 @@ website:
                   - knowledge/statistics/probability-randomness/categorical-and-multinomial-distributions.qmd
                   - knowledge/statistics/probability-randomness/poisson-distribution-and-poisson-processes.qmd
                   - knowledge/statistics/probability-randomness/exponential-and-geometric-distributions.qmd
+                  - knowledge/statistics/probability-randomness/normal-and-multivariate-normal-distributions.qmd
+                  - knowledge/statistics/probability-randomness/chi-squared-students-t-and-f-distributions.qmd
                   - knowledge/statistics/probability-randomness/distributions.qmd
               - section: "Asymptotic Thinking"
                 href: knowledge/statistics/asymptotic-thinking/index.qmd
