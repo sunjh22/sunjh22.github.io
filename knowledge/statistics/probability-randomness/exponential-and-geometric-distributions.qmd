@@ -1,0 +1,270 @@
+---
+title: "Exponential and Geometric Distributions"
+subtitle: "Waiting for the next event in continuous and discrete time"
+description: "Exponential and geometric waiting-time distributions, memorylessness, hazards, parameterizations, process relationships, assumptions, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-09-11"
+date-modified: "2026-09-11"
+categories: [Statistics, Probability, Distributions, Waiting Times]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** The exponential distribution counts continuous waiting time to the next constant-rate event, while the geometric distribution counts discrete trials to the next success with constant probability.
+
+| Item | Exponential | Geometric |
+|---|---|---|
+| Time scale | Continuous | Discrete |
+| Support | $t\geq0$ | Trials $w=1,2,\ldots$ or failures $g=0,1,\ldots$ |
+| Parameter | Rate $\lambda>0$ | Success probability $0<p\leq1$ per trial |
+| Mean | $1/\lambda$ | $1/p$ trials or $(1-p)/p$ failures |
+| Process connection | Poisson process | Independent Bernoulli trials |
+| Prerequisites | [Poisson distribution and Poisson processes](poisson-distribution-and-poisson-processes.qmd) | [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd) |
+
+# Continuous Waiting: The Exponential Distribution
+
+A nonnegative random variable $T$ has an exponential distribution with rate $\lambda>0$ when its survival function is
+
+$$
+\boxed{P(T>t)=e^{-\lambda t},\qquad t\geq0.}
+$$
+
+Therefore its cumulative distribution function and density are
+
+$$
+F_T(t)=1-e^{-\lambda t},
+\qquad
+f_T(t)=\lambda e^{-\lambda t},
+\qquad t\geq0.
+$$
+
+The rate has units of inverse time or inverse distance. Its reciprocal is the mean waiting time:
+
+$$
+\boxed{E(T)=\frac1\lambda,qquad
+\operatorname{Var}(T)=\frac1{\lambda^2}.}
+$$
+
+These moments follow by integration. For example,
+
+$$
+E(T)=\int_0^\infty P(T>t)\,dt
+=\int_0^\infty e^{-\lambda t}\,dt
+=\frac1\lambda.
+$$
+
+The $q$th quantile is
+
+$$
+F_T^{-1}(q)=-\frac{\log(1-q)}{\lambda},
+$$
+
+so the median is $\log(2)/\lambda$, smaller than the mean because the distribution is right-skewed.
+
+# Discrete Waiting: The Geometric Distribution
+
+Let independent Bernoulli trials have common success probability $p$. If $W$ is the number of the trial on which the first success occurs, then
+
+$$
+\boxed{P(W=w)=(1-p)^{w-1}p,\qquad w=1,2,\ldots}
+$$
+
+and
+
+$$
+P(W>w)=(1-p)^w.
+$$
+
+The moments are
+
+$$
+\boxed{E(W)=\frac1p,qquad
+\operatorname{Var}(W)=\frac{1-p}{p^2}.}
+$$
+
+Another convention defines $G=W-1$, the number of failures before the first success. Then
+
+$$
+P(G=g)=(1-p)^g p,qquad g=0,1,2,\ldots,
+$$
+
+with $E(G)=(1-p)/p$. Both conventions are standard. A formula, software call, or reported mean is ambiguous unless the support is stated.
+
+## Deriving the mean
+
+For a positive integer-valued variable, $E(W)=\sum_{w=0}^{\infty}P(W>w)$. Hence
+
+$$
+E(W)=\sum_{w=0}^{\infty}(1-p)^w=\frac1p.
+$$
+
+This tail-sum derivation exposes the repeated opportunity structure more clearly than differentiating a generating function.
+
+# Memorylessness
+
+The exponential and geometric distributions are memoryless. For $s,t\geq0$,
+
+$$
+\begin{aligned}
+P(T>s+t\mid T>s)
+&=\frac{P(T>s+t)}{P(T>s)}\\
+&=\frac{e^{-\lambda(s+t)}}{e^{-\lambda s}}
+=e^{-\lambda t}\\
+&=P(T>t).
+\end{aligned}
+$$
+
+Likewise, for nonnegative integers $m,n$,
+
+$$
+P(W>m+n\mid W>m)
+=\frac{(1-p)^{m+n}}{(1-p)^m}
+=(1-p)^n
+=P(W>n).
+$$
+
+After waiting without an event, the remaining wait has the same distribution as at the start. This is not a generic property of waiting times. Among nondegenerate continuous distributions on $[0,\infty)$, memorylessness characterizes the exponential distribution; on the nonnegative integers, it characterizes the geometric distribution.
+
+# Hazard and the Constant-Risk Assumption
+
+For a continuous waiting time, the hazard is
+
+$$
+h(t)=\frac{f_T(t)}{P(T\geq t)}.
+$$
+
+For an exponential variable,
+
+$$
+\boxed{h(t)=\lambda.}
+$$
+
+The chance of an event in the next short interval, given survival to time $t$, does not depend on $t$. In discrete time, the analogous conditional success probability is
+
+$$
+P(W=k\mid W\geq k)=p
+$$
+
+at every trial. Constant hazard is the scientific assumption behind memorylessness. If equipment ages, organisms acclimate, molecular sites differ, or depletion changes future opportunities, the assumption fails even if the observed waiting-time histogram looks roughly exponential.
+
+# Process Relationships
+
+## Poisson process and exponential gaps
+
+In a homogeneous Poisson process with rate $\lambda$, let $T$ be the time to the next event. No event before $t$ means $N(t)=0$, so
+
+$$
+P(T>t)=P\{N(t)=0\}=e^{-\lambda t}.
+$$
+
+Thus interarrival times are independent $\operatorname{Exponential}(\lambda)$ variables. Conversely, a renewal process with independent exponential gaps is a homogeneous Poisson process. Counts and gaps are two views of the same model.
+
+The sum of $k$ independent exponential waiting times with common rate $\lambda$ has a gamma distribution with shape $k$ and rate $\lambda$; it is the time of the $k$th Poisson event. The minimum of independent exponentials $T_j\sim\operatorname{Exponential}(\lambda_j)$ is exponential with rate $\sum_j\lambda_j$, and
+
+$$
+P\{T_j=\min_kT_k\}=\frac{\lambda_j}{\sum_k\lambda_k}.
+$$
+
+This competing-clocks result underlies simple models of several possible event types.
+
+## Bernoulli trials and geometric waits
+
+For independent Bernoulli trials, the number of successes in the first $n$ trials is binomial, while the trial of the first success is geometric:
+
+$$
+P(W>w)=P(\text{no success in the first }w\text{ trials})=(1-p)^w.
+$$
+
+The sum of $k$ independent geometric failure counts has a negative-binomial distribution under the matching convention; it counts failures before the $k$th success.
+
+## Geometric-to-exponential limit
+
+Split continuous time into intervals of width $h$ and let success probability be $p_h=\lambda h+o(h)$. If $W_h$ is geometric, then for $t\geq0$,
+
+$$
+P(hW_h>t)
+=(1-p_h)^{\lfloor t/h\rfloor}
+\longrightarrow e^{-\lambda t}.
+$$
+
+Therefore $hW_h$ converges in distribution to an exponential waiting time. The continuous model is the small-interval limit of discrete rare-event trials.
+
+# Worked Examples
+
+## Time between sequence starts
+
+Under an ideal homogeneous process with $\lambda=0.02$ read starts per base, the gap $T$ to the next start has
+
+$$
+E(T)=\frac1{0.02}=50\text{ bases}.
+$$
+
+The probability of a gap longer than 100 bases is
+
+$$
+P(T>100)=e^{-0.02(100)}=e^{-2}\approx0.1353.
+$$
+
+This probability reflects random spacing under a constant-rate model. Large observed gaps can also arise from mappability filters, GC bias, excluded sequence, or correlated fragmentation. The model must be checked against genomic position and the library-generation process.
+
+## Reads until a variant-supporting call
+
+If each usable read independently supports a variant with common probability $p=0.1$, the number $W$ of reads examined through the first supporting read is geometric:
+
+$$
+P(W=4)=(0.9)^3(0.1)=0.0729,
+\qquad
+E(W)=10.
+$$
+
+This is a read-level sampling calculation. PCR duplicates, allele-specific bias, and changing quality can violate independence or constant $p$. Reads remain technical observations within a specimen, not independent biological replicates.
+
+# Modeling and Diagnostic Questions
+
+| Assumption | Why it matters | What to inspect | Alternative |
+|---|---|---|---|
+| Constant continuous hazard $\lambda$ | Produces exponential memorylessness | Hazard or survival by time, position, and covariates | Weibull, gamma, piecewise-exponential, or covariate model |
+| Constant discrete success probability $p$ | Produces geometric memorylessness | Success rate across trial number and strata | Time-varying Bernoulli or state-dependent model |
+| Independent opportunities | Makes gaps renew after each event | Serial dependence, clustering, duplicates | Renewal, Markov, clustered, or hierarchical model |
+| Complete observation | Makes the observed wait equal the event time | Right censoring, left truncation, detection limits | Survival methods with the observation process represented |
+| Homogeneous experimental units | Supports a common parameter | Between-sample variation and batch structure | Unit-level covariates or random effects |
+
+Right-censored waits still contain information: observing $T>c$ is not the same as observing $T=c$. Deleting censored waits biases the distribution toward shorter times. Pooling heterogeneous exponential rates also destroys memorylessness and commonly creates a decreasing marginal hazard.
+
+# Common Pitfalls
+
+1. **Confusing rate with mean:** for the exponential distribution, the mean is $1/\lambda$, not $\lambda$.
+2. **Leaving the geometric support unstated:** “trials until success” and “failures before success” differ by one.
+3. **Assuming lack of memory is realistic by default:** it encodes a constant conditional event rate.
+4. **Ignoring censoring and truncation:** incomplete waits require an observation model, not deletion or endpoint substitution.
+5. **Pooling different rates:** a mixture of memoryless distributions is generally not memoryless.
+6. **Confusing events with experimental units:** many within-sample waits can estimate a technical process but not create biological replication.
+
+# Connections to the Knowledge Map
+
+- [Poisson distribution and Poisson processes](poisson-distribution-and-poisson-processes.qmd) gives the count representation of exponential interarrival times.
+- [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd) gives the trial representation of geometric waiting.
+- [Random variables and probability distributions](random-variables-and-probability-distributions.qmd) defines survival functions, densities, and mass functions.
+- [Conditional probability and the law of total probability](conditional-probability-and-total-probability.qmd) supplies the memoryless conditional calculation.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) supports tail-sum and survival-integral formulas.
+
+# Take-home Messages
+
+1. Exponential and geometric distributions model waiting on continuous and discrete scales, respectively.
+2. Both are memoryless because their conditional event rate or success probability is constant.
+3. Exponential gaps correspond to Poisson-process counts; geometric waits correspond to Bernoulli-trial counts.
+4. State whether an exponential parameter is a rate or scale and which support a geometric variable uses.
+5. Time-varying risk, dependence, heterogeneous units, censoring, and measurement bias require richer models.
+6. Waiting-time observations inherit the replication structure of the experiment that generated them.
+
+# References
+
+- Ross, S. M. *Introduction to Probability Models*, 12th ed. Academic Press, 2019.
+- Johnson, N. L., Kemp, A. W., and Kotz, S. *Univariate Discrete Distributions*, 3rd ed. Wiley, 2005. [https://doi.org/10.1002/0471715816](https://doi.org/10.1002/0471715816).
+- Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate Distributions*, Volume 1, 2nd ed. Wiley, 1994.
+- Kingman, J. F. C. *Poisson Processes*. Oxford University Press, 1993. [https://doi.org/10.1093/oso/9780198536932.001.0001](https://doi.org/10.1093/oso/9780198536932.001.0001).
+- R Core Team. “The Exponential Distribution.” *R Statistical Functions Documentation*. [https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Exponential.html](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Exponential.html).
+- R Core Team. “The Geometric Distribution.” *R Statistical Functions Documentation*. [https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Geometric.html](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Geometric.html).

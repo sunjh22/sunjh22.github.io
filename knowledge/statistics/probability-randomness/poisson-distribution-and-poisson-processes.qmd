@@ -1,0 +1,253 @@
+---
+title: "Poisson Distribution and Poisson Processes"
+subtitle: "Counts, event rates, and random arrivals"
+description: "The Poisson distribution and homogeneous Poisson process, including derivations, waiting-time relationships, assumptions, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-09-11"
+date-modified: "2026-09-11"
+categories: [Statistics, Probability, Distributions, Stochastic Processes]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** The Poisson distribution models the number of events in a fixed exposure, while a Poisson process models how such events accumulate through continuous time or space at a constant rate.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness; count distributions and point processes |
+| Main question | How many events occur in a region, and where or when do they occur? |
+| Support | Count $X\in\{0,1,2,\ldots\}$; process $N(t)\in\{0,1,2,\ldots\}$ |
+| Parameters | Mean count $\mu>0$; process rate $\lambda>0$ per unit exposure |
+| Typical applications | Mutation counts, sequence starts, recombination events, failures, arrivals |
+| Prerequisites | [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd); [independence and conditional independence](independence-and-conditional-independence.qmd) |
+
+# The Poisson Distribution
+
+A random variable $X$ has a Poisson distribution with mean parameter $\mu>0$ when
+
+$$
+\boxed{
+P(X=x)=e^{-\mu}\frac{\mu^x}{x!},
+\qquad x=0,1,2,\ldots
+}
+$$
+
+written $X\sim\operatorname{Poisson}(\mu)$. The parameter is dimensionless: if events occur at rate $\lambda$ per unit exposure and the exposure is $t$, then $\mu=\lambda t$.
+
+Normalization follows from the exponential series:
+
+$$
+\sum_{x=0}^{\infty}e^{-\mu}\frac{\mu^x}{x!}
+=e^{-\mu}e^\mu=1.
+$$
+
+The probability of zero events is $e^{-\mu}$, and successive probabilities obey
+
+$$
+\frac{P(X=x+1)}{P(X=x)}=\frac{\mu}{x+1}.
+$$
+
+This recursion shows that probability masses increase while $x+1<\mu$ and decrease after $x+1>\mu$.
+
+## Mean, variance, and generating function
+
+For $X\sim\operatorname{Poisson}(\mu)$,
+
+$$
+\boxed{E(X)=\mu,\qquad \operatorname{Var}(X)=\mu.}
+$$
+
+An efficient derivation uses the factorial moment:
+
+$$
+\begin{aligned}
+E\{X(X-1)\}
+&=\sum_{x=2}^{\infty}x(x-1)e^{-\mu}\frac{\mu^x}{x!}\\
+&=\mu^2\sum_{j=0}^{\infty}e^{-\mu}\frac{\mu^j}{j!}
+=\mu^2.
+\end{aligned}
+$$
+
+Because $X^2=X(X-1)+X$, $E(X^2)=\mu^2+\mu$ and hence $\operatorname{Var}(X)=\mu$. The probability-generating function is
+
+$$
+G_X(s)=E(s^X)=\exp\{\mu(s-1)\}.
+$$
+
+Equality of mean and variance is a model implication, not a universal law for count data.
+
+# From Rare Trials to Poisson Counts
+
+Let $X_n\sim\operatorname{Binomial}(n,p_n)$, with $n\to\infty$, $p_n\to0$, and $np_n\to\mu$. For fixed $x$,
+
+$$
+\begin{aligned}
+P(X_n=x)
+&={n\choose x}p_n^x(1-p_n)^{n-x}\\
+&=\frac{n(n-1)\cdots(n-x+1)}{n^x x!}
+(np_n)^x(1-p_n)^n(1-p_n)^{-x}\\
+&\longrightarrow e^{-\mu}\frac{\mu^x}{x!}.
+\end{aligned}
+$$
+
+The limit explains the Poisson approximation to many opportunities for rare, approximately independent events. It does not justify a Poisson model when opportunities cluster, probabilities differ substantially, or one event changes the chance of another.
+
+# The Homogeneous Poisson Process
+
+A counting process $\{N(t):t\geq0\}$ is a homogeneous Poisson process with rate $\lambda>0$ if:
+
+1. $N(0)=0$;
+2. counts in disjoint intervals are independent;
+3. increments are stationary and
+
+$$
+N(t+h)-N(t)\sim\operatorname{Poisson}(\lambda h).
+$$
+
+Consequently,
+
+$$
+N(t)\sim\operatorname{Poisson}(\lambda t),
+\qquad
+E\{N(t)\}=\operatorname{Var}\{N(t)\}=\lambda t.
+$$
+
+The rate $\lambda$ has units of events per unit time, distance, area, or other exposure. The product $\lambda t$ is the expected number of events in a region of size $t$.
+
+An equivalent local construction assumes, for small $h$,
+
+$$
+P\{N(t+h)-N(t)=1\}=\lambda h+o(h),
+$$
+
+$$
+P\{N(t+h)-N(t)\geq2\}=o(h),
+$$
+
+together with independent, stationary increments. These conditions say that events occur singly at a stable rate and have no history-dependent clustering.
+
+## Interarrival times
+
+Let $T_1$ be the time to the first event. The events $\{T_1>t\}$ and $\{N(t)=0\}$ are identical, so
+
+$$
+P(T_1>t)=P\{N(t)=0\}=e^{-\lambda t}.
+$$
+
+Thus $T_1\sim\operatorname{Exponential}(\lambda)$. Independent increments imply that successive interarrival times are independent exponential variables. The time $T_k$ of the $k$th event is their sum and has a gamma distribution with shape $k$ and rate $\lambda$.
+
+This count--waiting-time duality links the process directly to [exponential and geometric distributions](exponential-and-geometric-distributions.qmd).
+
+## Superposition, thinning, and conditioning on the total
+
+Poisson processes have useful closure properties:
+
+- **Superposition:** independent processes with rates $\lambda_1,\ldots,\lambda_K$ combine into a Poisson process with rate $\sum_k\lambda_k$.
+- **Thinning:** independently retaining each event with probability $p$ produces a Poisson process of rate $p\lambda$; retained and discarded processes are independent.
+- **Conditional locations:** given $N(t)=n$, the $n$ unordered event locations are independent uniform points on $(0,t)$; their ordered locations are the corresponding order statistics.
+
+For independent counts $X_k\sim\operatorname{Poisson}(\mu_k)$,
+
+$$
+\sum_{k=1}^KX_k\sim\operatorname{Poisson}\left(\sum_{k=1}^K\mu_k\right).
+$$
+
+Conditioning on their total gives
+
+$$
+(X_1,\ldots,X_K)\mid \sum_kX_k=n
+\sim\operatorname{Multinomial}\left(n,\frac{\mu_1}{\mu_+},\ldots,\frac{\mu_K}{\mu_+}\right),
+$$
+
+where $\mu_+=\sum_k\mu_k$. This connects unconditional event totals to the fixed-total allocation model in [categorical and multinomial distributions](categorical-and-multinomial-distributions.qmd).
+
+# Rates, Exposure, and Estimation
+
+Suppose independent counts satisfy
+
+$$
+Y_i\sim\operatorname{Poisson}(\lambda t_i),
+$$
+
+where $t_i$ is known exposure. The likelihood for a common rate is
+
+$$
+L(\lambda;y)\propto
+\lambda^{\sum_i y_i}\exp\left(-\lambda\sum_i t_i\right)
+\prod_i t_i^{y_i}.
+$$
+
+Differentiating the log-likelihood gives
+
+$$
+\boxed{\hat\lambda=\frac{\sum_i y_i}{\sum_i t_i}.}
+$$
+
+The numerator is an event count and the denominator is total exposure. Comparing raw counts when exposures differ confounds rate with opportunity. In regression, $\log t_i$ is commonly used as an offset so the model targets an event rate rather than an unadjusted count.
+
+# Worked Example: Sequence Starts Along a Genome
+
+Consider an idealized library in which read starts are placed independently and uniformly along a genome of length $G$. If there are $m$ starts and a region has length $L\ll G$, its start count is binomial with probability approximately $L/G$. When $m$ is large, $L/G$ is small, and $mL/G\to\lambda L$, the count is approximately
+
+$$
+N(L)\sim\operatorname{Poisson}(\lambda L).
+$$
+
+Under the corresponding homogeneous process, the expected number of starts is $\lambda L$, the variance is also $\lambda L$, and the probability of no start in the region is $e^{-\lambda L}$. Distances between successive starts are exponential with mean $1/\lambda$.
+
+This is a sampling model, not a guarantee about real sequencing. GC bias, mappability, fragmentation preferences, duplicate molecules, and excluded regions make rates nonconstant or events dependent. The read start is the point-process event, while the independently sampled organism or specimen remains the experimental unit for biological inference. More reads characterize one library more precisely; they do not create more biological replicates.
+
+# When the Poisson Model Fails
+
+| Model implication | Failure mechanism | Diagnostic or response |
+|---|---|---|
+| Constant rate | Rate changes with time, position, covariates, or batch | Stratify or fit a nonhomogeneous process/regression model |
+| Independent increments | Bursts, inhibition, duplicate events, or contagion | Inspect inter-event structure; use cluster, renewal, or self-exciting models |
+| Mean equals variance | Unmodeled heterogeneity or dependence | Compare conditional mean and variance; consider negative-binomial or hierarchical models |
+| No extra structural zeros | Inactive units or detection failure | Model the observation process; assess hurdle or zero-inflated alternatives |
+| Exposure is known and comparable | Different region lengths, person-time, or library opportunities | Include exposure explicitly, often as an offset |
+
+Overdispersion is common when units have different latent rates. If $Y\mid\Lambda\sim\operatorname{Poisson}(\Lambda)$, then
+
+$$
+\operatorname{Var}(Y)=E(\Lambda)+\operatorname{Var}(\Lambda),
+$$
+
+which exceeds the mean whenever the rate varies. Underdispersion can arise from inhibition or fixed-spacing mechanisms. Neither pattern is repaired by treating more nested technical observations as independent.
+
+# Common Pitfalls
+
+1. **Using Poisson for every nonnegative count:** support alone does not supply constant-rate or independence assumptions.
+2. **Confusing $\lambda$ with $\lambda t$:** one is a rate with units; the other is an expected count.
+3. **Ignoring exposure:** equal counts over unequal opportunities imply unequal rates.
+4. **Calling mean--variance equality an empirical identity:** it is conditional on the Poisson model.
+5. **Inferring independence from a Poisson-looking histogram:** marginal counts can look Poisson even when event locations are dependent.
+6. **Treating sequence reads or cells as biological replicates:** point-process events and experimental units answer different scientific questions.
+
+# Connections to the Knowledge Map
+
+- [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd) supplies the rare-event limit.
+- [Exponential and geometric distributions](exponential-and-geometric-distributions.qmd) develops waiting times and memorylessness.
+- [Categorical and multinomial distributions](categorical-and-multinomial-distributions.qmd) describes Poisson counts conditional on their total.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) supports factorial moments and mixture variance.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) explains the process factorization.
+
+# Take-home Messages
+
+1. The Poisson distribution models a count with mean and variance $\mu$ under a specific event-generating mechanism.
+2. A homogeneous Poisson process has independent, stationary increments and constant event rate $\lambda$.
+3. Poisson counts, exponential interarrival times, superposition, thinning, and conditional multinomial allocation are parts of one coherent structure.
+4. Rates must be interpreted relative to exposure.
+5. Heterogeneity, clustering, inhibition, excess zeros, and measurement bias can invalidate a simple Poisson model.
+6. Technical events such as reads do not replace independent biological samples.
+
+# References
+
+- Kingman, J. F. C. *Poisson Processes*. Oxford University Press, 1993. [https://doi.org/10.1093/oso/9780198536932.001.0001](https://doi.org/10.1093/oso/9780198536932.001.0001).
+- Ross, S. M. *Introduction to Probability Models*, 12th ed. Academic Press, 2019.
+- Johnson, N. L., Kemp, A. W., and Kotz, S. *Univariate Discrete Distributions*, 3rd ed. Wiley, 2005. [https://doi.org/10.1002/0471715816](https://doi.org/10.1002/0471715816).
+- Lander, E. S. and Waterman, M. S. “Genomic Mapping by Fingerprinting Random Clones: A Mathematical Analysis.” *Genomics* 2(3), 1988, 231–239. [https://doi.org/10.1016/0888-7543(88)90007-9](https://doi.org/10.1016/0888-7543(88)90007-9).
+- R Core Team. “The Poisson Distribution.” *R Statistical Functions Documentation*. [https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Poisson.html](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Poisson.html).

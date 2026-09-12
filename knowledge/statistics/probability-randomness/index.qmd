@@ -20,6 +20,8 @@ Probability provides the language for representing biological variation, samplin
 - [Transformations of random variables](transformations-of-random-variables.qmd)
 - [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd)
 - [Categorical and multinomial distributions](categorical-and-multinomial-distributions.qmd)
+- [Poisson distribution and Poisson processes](poisson-distribution-and-poisson-processes.qmd)
+- [Exponential and geometric distributions](exponential-and-geometric-distributions.qmd)
 - [Probability distributions](distributions.qmd)
 
 ## Continue through the map
