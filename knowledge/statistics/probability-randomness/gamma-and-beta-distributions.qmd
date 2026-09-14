@@ -1,0 +1,288 @@
+---
+title: "Gamma and Beta Distributions"
+subtitle: "Positive quantities, bounded proportions, and a shared family of probability constructions"
+description: "Gamma and beta distributions, their parameterizations, moments, transformations, conjugate roles, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-09-13"
+date-modified: "2026-09-13"
+categories: [Statistics, Probability, Distributions]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** The gamma distribution models positive magnitudes and accumulated waiting times, while the beta distribution models uncertain probabilities or continuous proportions between zero and one.
+
+| Distribution | Support | Parameters used here | Mean | Variance |
+|---|---|---|---|---|
+| Gamma | $x>0$ | shape $a>0$, rate $b>0$ | $a/b$ | $a/b^2$ |
+| Beta | $0<x<1$ | shapes $a>0$, $b>0$ | $a/(a+b)$ | $ab/\{(a+b)^2(a+b+1)\}$ |
+| Prerequisites | [Exponential and geometric distributions](exponential-and-geometric-distributions.qmd); [transformations of random variables](transformations-of-random-variables.qmd) |  |  |  |
+
+The symbols $a$ and $b$ play different roles in the two families. For gamma distributions, software and texts also alternate between a **rate** $b$ and a **scale** $\theta=1/b$; stating the convention is essential.
+
+# The Gamma Distribution
+
+A positive random variable $X$ has a gamma distribution with shape $a>0$ and rate $b>0$ when
+
+$$
+\boxed{
+f_X(x)=\frac{b^a}{\Gamma(a)}x^{a-1}e^{-bx},
+\qquad x>0,
+}
+$$
+
+where the gamma function is
+
+$$
+\Gamma(a)=\int_0^\infty t^{a-1}e^{-t}\,dt.
+$$
+
+The substitution $t=bx$ shows that the density integrates to one. Integration by parts gives $\Gamma(a+1)=a\Gamma(a)$, so $\Gamma(n)=(n-1)!$ for positive integers $n$.
+
+## Moments and shape
+
+For any real $r>-a$,
+
+$$
+E(X^r)=\frac{\Gamma(a+r)}{\Gamma(a)b^r}.
+$$
+
+Taking $r=1$ and $r=2$ yields
+
+$$
+\boxed{E(X)=\frac ab,\qquad \operatorname{Var}(X)=\frac{a}{b^2}.}
+$$
+
+The moment-generating function is
+
+$$
+M_X(t)=\left(\frac{b}{b-t}\right)^a,
+\qquad t<b.
+$$
+
+When $a<1$, the density decreases from an integrable singularity at zero. When $a=1$, it is exponential. When $a>1$, its mode is $(a-1)/b$. Increasing $a$ while holding the mean fixed reduces relative variation and makes the distribution less skewed.
+
+## Waiting times and additivity
+
+If $T_1,\ldots,T_k$ are independent exponential waiting times with common rate $b$, then
+
+$$
+T_1+\cdots+T_k\sim\operatorname{Gamma}(k,b).
+$$
+
+Thus the time of the $k$th event in a homogeneous Poisson process is gamma distributed. More generally, the moment-generating function proves
+
+$$
+X_i\sim\operatorname{Gamma}(a_i,b)\text{ independently}
+\quad\Longrightarrow\quad
+\sum_iX_i\sim\operatorname{Gamma}\left(\sum_i a_i,b\right).
+$$
+
+The common rate is required. Adding gamma variables with different rates does not generally produce another gamma variable.
+
+## Parameterization warning
+
+The shape--scale density is
+
+$$
+f_X(x)=\frac{x^{a-1}e^{-x/\theta}}{\Gamma(a)\theta^a},
+\qquad \theta>0,
+$$
+
+with mean $a\theta$ and variance $a\theta^2$. It describes exactly the same family when $\theta=1/b$. Confusing rate and scale replaces a parameter by its reciprocal and can radically change simulated values or likelihood calculations.
+
+# The Beta Distribution
+
+A random variable $P$ has a beta distribution with shapes $a>0$ and $b>0$ when
+
+$$
+\boxed{
+f_P(p)=\frac{1}{B(a,b)}p^{a-1}(1-p)^{b-1},
+\qquad 0<p<1,
+}
+$$
+
+where
+
+$$
+B(a,b)=\int_0^1p^{a-1}(1-p)^{b-1}\,dp
+=\frac{\Gamma(a)\Gamma(b)}{\Gamma(a+b)}.
+$$
+
+Its principal moments are
+
+$$
+\boxed{
+E(P)=\frac{a}{a+b},
+\qquad
+\operatorname{Var}(P)=
+\frac{ab}{(a+b)^2(a+b+1)}.
+}
+$$
+
+For $a,b>1$, the mode is $(a-1)/(a+b-2)$. The uniform distribution on $(0,1)$ is $\operatorname{Beta}(1,1)$. Shapes below one put more density near boundaries; $a,b>1$ produce an interior mode; and unequal shapes produce skewness.
+
+## Mean--concentration parameterization
+
+Writing
+
+$$
+\mu=\frac{a}{a+b},
+\qquad
+\kappa=a+b
+$$
+
+gives $a=\mu\kappa$ and $b=(1-\mu)\kappa$. Then
+
+$$
+E(P)=\mu,
+\qquad
+\operatorname{Var}(P)=\frac{\mu(1-\mu)}{\kappa+1}.
+$$
+
+This separates location from concentration. At a fixed mean, larger $\kappa$ concentrates probability more tightly around $\mu$. Calling $\kappa$ a sample size is only an analogy unless the model was constructed from actual commensurate observations.
+
+# The Beta--Gamma Construction
+
+Let
+
+$$
+U\sim\operatorname{Gamma}(a,1),
+\qquad
+V\sim\operatorname{Gamma}(b,1),
+\qquad
+U\perp\!\!\!\perp V.
+$$
+
+Define
+
+$$
+S=U+V,
+\qquad
+P=\frac{U}{U+V}.
+$$
+
+The inverse transformation is $U=PS$, $V=(1-P)S$, with absolute Jacobian determinant $s$. Therefore
+
+$$
+\begin{aligned}
+f_{P,S}(p,s)
+&=\frac{p^{a-1}(1-p)^{b-1}}{B(a,b)}
+\frac{s^{a+b-1}e^{-s}}{\Gamma(a+b)}.
+\end{aligned}
+$$
+
+The factorization shows that
+
+$$
+\boxed{P\sim\operatorname{Beta}(a,b),\qquad
+S\sim\operatorname{Gamma}(a+b,1),\qquad P\perp\!\!\!\perp S.}
+$$
+
+The beta variable represents the fraction of two independent gamma contributions attributable to the first; the gamma variable represents their total. This construction generalizes to the [Dirichlet distribution](dirichlet-distribution.qmd).
+
+# Conjugate Roles
+
+## Beta prior with a binomial likelihood
+
+If
+
+$$
+Y\mid P=p\sim\operatorname{Binomial}(n,p),
+\qquad
+P\sim\operatorname{Beta}(a,b),
+$$
+
+then multiplication of likelihood and prior gives
+
+$$
+P\mid Y=y\sim\operatorname{Beta}(a+y,b+n-y).
+$$
+
+The posterior updates the two shape parameters with successes and failures. This is the conjugate calculation introduced in [Bayes' theorem and Bayesian updating](bayes-theorem-and-bayesian-updating.qmd). It does not make beta distributions appropriate for every proportion: structural zeros or ones, dependence among trials, misclassification, and variation across experimental units require a richer observation model.
+
+## Gamma prior with a Poisson likelihood
+
+If conditionally independent counts satisfy
+
+$$
+Y_i\mid\Lambda=\lambda\sim\operatorname{Poisson}(t_i\lambda),
+\qquad
+\Lambda\sim\operatorname{Gamma}(a,b),
+$$
+
+where $t_i$ are known exposures, then
+
+$$
+\boxed{
+\Lambda\mid y
+\sim\operatorname{Gamma}\left(a+\sum_i y_i,
+b+\sum_i t_i\right).
+}
+$$
+
+The rate parameter accumulates exposure, while the shape accumulates events. Mixing a Poisson count over a gamma-distributed rate also yields a negative-binomial marginal distribution, explaining one important source of count overdispersion.
+
+# Worked Biological Example
+
+Suppose a sequencing calibration experiment observes $y=18$ correctly classified control molecules out of $n=20$ conditionally independent trials. With a $\operatorname{Beta}(2,2)$ prior for the assay's classification probability $p$,
+
+$$
+p\mid y\sim\operatorname{Beta}(20,4),
+$$
+
+whose posterior mean is
+
+$$
+E(p\mid y)=\frac{20}{24}\approx0.833.
+$$
+
+The raw observed fraction is $0.9$; the posterior mean is pulled toward the prior mean $0.5$. Statistically, the posterior describes $p$ under the binomial sampling model and chosen prior. Biologically, it supports generalization only to specimens and conditions represented by the calibration design.
+
+Molecules or reads from one library are technical units. Estimating performance across laboratories, organisms, or batches requires independently replicated biological or operational units and a hierarchical model if their probabilities differ.
+
+# Assumptions and Model Choice
+
+| Intended use | Crucial assumption | Common failure | Sensitivity or alternative |
+|---|---|---|---|
+| Gamma waiting-time model | positive duration generated by accumulated constant-rate waits | time-varying hazard, censoring, or competing events | survival model with appropriate hazard and observation process |
+| Gamma magnitude model | continuous positive support with gamma-shaped mean--variance relation | zeros, multimodality, or heavy tails | two-part, mixture, log-normal, or robust model |
+| Beta proportion model | a continuous latent quantity strictly inside $(0,1)$ | observed boundary values or discrete numerator/denominator data | zero/one-inflated beta or explicit binomial model |
+| Conjugate updating | stated conditional independence and common parameter | clustered trials or heterogeneous rates | hierarchical beta--binomial or gamma--Poisson model |
+
+# Common Pitfalls
+
+1. **Failing to state rate versus scale:** the same numeric value implies reciprocal means under the two gamma conventions.
+2. **Using a beta density for a count proportion without its denominator:** $3/5$ and $300/500$ have different measurement uncertainty; model the counts when available.
+3. **Treating density at zero or one as point probability:** an ordinary beta law assigns zero probability to exact boundary values.
+4. **Adding gamma variables with unequal rates as though closure still held:** common rate is part of the additivity result.
+5. **Reading conjugacy as validation:** convenient algebra does not check sampling, dependence, or prior assumptions.
+6. **Confusing technical observations with biological replication:** deeper measurement within one specimen does not estimate between-specimen variation.
+
+# Connections to the Knowledge Map
+
+- [Exponential and geometric distributions](exponential-and-geometric-distributions.qmd) gives the one-event waiting-time case of the gamma family.
+- [Poisson distribution and Poisson processes](poisson-distribution-and-poisson-processes.qmd) supplies counts and arrival times linked to gamma variables.
+- [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd) provides the likelihood paired with a beta prior.
+- [Bayes' theorem and Bayesian updating](bayes-theorem-and-bayesian-updating.qmd) explains posterior normalization and prediction.
+- [Chi-squared, Student's t, and F distributions](chi-squared-students-t-and-f-distributions.qmd) shows that $\chi^2_\nu$ is $\operatorname{Gamma}(\nu/2,1/2)$ under the rate convention.
+- [Dirichlet distribution](dirichlet-distribution.qmd) extends normalized independent gamma variables to multiple proportions.
+
+# Take-home Messages
+
+1. The gamma distribution models positive quantities; its rate and scale parameterizations must never be left implicit.
+2. The beta distribution models a latent continuous probability or proportion on $(0,1)$, with shapes controlling its mean and concentration.
+3. Normalizing two independent gamma variables produces a beta proportion independent of their gamma-distributed total.
+4. Beta--binomial and gamma--Poisson conjugacy give transparent updates, but their sampling assumptions still require scrutiny.
+5. Boundary values, heterogeneous units, dependence, and the biological replication structure often require extensions.
+
+# References
+
+- Johnson, N. L., Kotz, S., and Balakrishnan, N. *Continuous Univariate Distributions*, Volume 2, 2nd ed. Wiley, 1995.
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002.
+- Gelman, A. et al. *Bayesian Data Analysis*, 3rd ed. CRC Press, 2013.
+- R Core Team. “The Gamma Distribution.” *R Statistical Functions Documentation*. [https://stat.ethz.ch/R-manual/R-devel/library/stats/html/GammaDist.html](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/GammaDist.html).
+- R Core Team. “The Beta Distribution.” *R Statistical Functions Documentation*. [https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Beta.html](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/Beta.html).

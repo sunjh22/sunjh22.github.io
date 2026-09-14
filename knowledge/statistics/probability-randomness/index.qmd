@@ -24,6 +24,8 @@ Probability provides the language for representing biological variation, samplin
 - [Exponential and geometric distributions](exponential-and-geometric-distributions.qmd)
 - [Normal and multivariate normal distributions](normal-and-multivariate-normal-distributions.qmd)
 - [Chi-squared, Student's t, and F distributions](chi-squared-students-t-and-f-distributions.qmd)
+- [Gamma and beta distributions](gamma-and-beta-distributions.qmd)
+- [Dirichlet distribution](dirichlet-distribution.qmd)
 - [Probability distributions](distributions.qmd)
 
 ## Continue through the map
