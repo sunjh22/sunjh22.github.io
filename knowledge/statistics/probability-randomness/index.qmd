@@ -26,6 +26,8 @@ Probability provides the language for representing biological variation, samplin
 - [Chi-squared, Student's t, and F distributions](chi-squared-students-t-and-f-distributions.qmd)
 - [Gamma and beta distributions](gamma-and-beta-distributions.qmd)
 - [Dirichlet distribution](dirichlet-distribution.qmd)
+- [Negative binomial distribution and overdispersion](negative-binomial-distribution-and-overdispersion.qmd)
+- [Beta-binomial distribution](beta-binomial-distribution.qmd)
 - [Probability distributions](distributions.qmd)
 
 ## Continue through the map

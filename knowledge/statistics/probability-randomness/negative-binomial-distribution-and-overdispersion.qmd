@@ -1,0 +1,256 @@
+---
+title: "Negative Binomial Distribution and Overdispersion"
+subtitle: "A flexible count law arising from waiting times and heterogeneous Poisson rates"
+description: "Negative binomial parameterizations, moments, Poisson--gamma mixing, overdispersion, assumptions, and interpretation in sequencing count data."
+author: "Jiahong Sun"
+date: "2026-09-14"
+date-modified: "2026-09-14"
+categories: [Statistics, Probability, Distributions, Count Data]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** The negative binomial distribution models nonnegative counts whose variance can exceed their mean, often because an underlying Poisson rate varies across units.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness; discrete distributions and mixtures |
+| Support | $Y\in\{0,1,2,\ldots\}$ |
+| Parameters | Size $r>0$ and success probability $0<p\leq1$, or mean $\mu>0$ and dispersion $\alpha>0$ |
+| Key variance | $\operatorname{Var}(Y)=\mu+\alpha\mu^2$ in the NB2 parameterization |
+| Typical applications | RNA-seq counts, mutation burdens, ecological abundance, recurrent events |
+| Prerequisites | [Poisson distribution and Poisson processes](poisson-distribution-and-poisson-processes.qmd); [gamma and beta distributions](gamma-and-beta-distributions.qmd) |
+
+# One Distribution, Two Generating Stories
+
+The name **negative binomial** is used for closely related counting conventions. Stating the random variable and parameterization prevents most ambiguity.
+
+## Failures before a target number of successes
+
+Run independent Bernoulli trials with success probability $p$. If $Y$ is the number of failures observed before the $r$th success, where $r$ is a positive integer, then
+
+$$
+\boxed{
+P(Y=y)
+={y+r-1\choose y}p^r(1-p)^y,
+\qquad y=0,1,2,\ldots
+}
+$$
+
+The last trial must be the $r$th success. Among the preceding $y+r-1$ trials, choosing the positions of the $y$ failures gives the combinatorial factor.
+
+Some sources instead count the **total number of trials** through the $r$th success. That variable is $T=Y+r$, has support $r,r+1,\ldots$, and has a shifted mass function. Other sources interchange the meanings of “success” and “failure.” A distribution name alone is therefore insufficient.
+
+The probability-generating function under the failures-before-success convention is
+
+$$
+G_Y(s)
+=\left\{\frac{p}{1-(1-p)s}\right\}^{r},
+\qquad |s|<(1-p)^{-1}.
+$$
+
+For $r=1$, this is the geometric distribution counting failures before the first success.
+
+## A count with a heterogeneous event rate
+
+For scientific count data, the more useful construction is often
+
+$$
+Y\mid\Lambda=\lambda\sim\operatorname{Poisson}(\lambda),
+\qquad
+\Lambda\sim\operatorname{Gamma}\left(r,\text{rate}=\frac{r}{\mu}\right).
+$$
+
+The latent rate has
+
+$$
+E(\Lambda)=\mu,
+\qquad
+\operatorname{Var}(\Lambda)=\frac{\mu^2}{r}.
+$$
+
+Conditionally on $\Lambda$, events follow a Poisson model. Across observational units, the rate varies according to a gamma distribution. Integrating over this heterogeneity produces a negative binomial marginal distribution and allows any real $r>0$, not only an integer stopping target.
+
+# Parameterizations and Moments
+
+Under the $(r,p)$ parameterization,
+
+$$
+\boxed{
+E(Y)=\frac{r(1-p)}{p},
+\qquad
+\operatorname{Var}(Y)=\frac{r(1-p)}{p^2}.
+}
+$$
+
+For count modeling it is common to use the mean $\mu$ and dispersion $\alpha$:
+
+$$
+r=\frac{1}{\alpha},
+\qquad
+p=\frac{r}{r+\mu}=\frac{1}{1+\alpha\mu}.
+$$
+
+Substitution gives
+
+$$
+\boxed{
+P(Y=y)
+=\frac{\Gamma(y+1/\alpha)}{\Gamma(1/\alpha)y!}
+\left(\frac{1}{1+\alpha\mu}\right)^{1/\alpha}
+\left(\frac{\alpha\mu}{1+\alpha\mu}\right)^y
+}
+$$
+
+and
+
+$$
+\boxed{
+E(Y)=\mu,
+\qquad
+\operatorname{Var}(Y)=\mu+\alpha\mu^2.
+}
+$$
+
+This quadratic mean--variance relationship is often called **NB2**. Some software uses $r$, $\theta$, $k$, or the reciprocal of one of these as “dispersion.” Another negative binomial family, often called **NB1**, uses variance $\mu(1+\phi)$. Formulas and software calls should always state the variance function.
+
+As $r\to\infty$ with $\mu$ fixed, equivalently $\alpha\to0$, the latent gamma rate concentrates at $\mu$ and
+
+$$
+Y\Rightarrow\operatorname{Poisson}(\mu).
+$$
+
+The Poisson distribution is a boundary limit, not a negative binomial with an ordinary positive dispersion value.
+
+# Deriving the Poisson--Gamma Mixture
+
+Marginalization gives
+
+$$
+\begin{aligned}
+P(Y=y)
+&=\int_0^\infty P(Y=y\mid\lambda)f_\Lambda(\lambda)\,d\lambda\\
+&=\int_0^\infty
+\frac{e^{-\lambda}\lambda^y}{y!}
+\frac{(r/\mu)^r}{\Gamma(r)}
+\lambda^{r-1}e^{-r\lambda/\mu}\,d\lambda\\
+&=\frac{\Gamma(y+r)}{\Gamma(r)y!}
+\left(\frac{r}{r+\mu}\right)^r
+\left(\frac{\mu}{r+\mu}\right)^y.
+\end{aligned}
+$$
+
+This is the negative binomial mass function with $p=r/(r+\mu)$.
+
+The law of total expectation gives
+
+$$
+E(Y)=E\{E(Y\mid\Lambda)\}=E(\Lambda)=\mu.
+$$
+
+The law of total variance separates the two sources of variation:
+
+$$
+\begin{aligned}
+\operatorname{Var}(Y)
+&=E\{\operatorname{Var}(Y\mid\Lambda)\}
++\operatorname{Var}\{E(Y\mid\Lambda)\}\\
+&=E(\Lambda)+\operatorname{Var}(\Lambda)\\
+&=\mu+\frac{\mu^2}{r}.
+\end{aligned}
+$$
+
+The term $\mu$ is conditional Poisson variation; $\mu^2/r=\alpha\mu^2$ is variation in the latent rate across units. This decomposition is an interpretation supplied by the mixture model. A negative binomial fit alone does not prove that gamma-distributed rate heterogeneity generated the data.
+
+# What Overdispersion Does—and Does Not—Mean
+
+For a reference model, **overdispersion** means that observed conditional variation is larger than the model permits. Relative to a Poisson model,
+
+$$
+\operatorname{Var}(Y\mid X)>E(Y\mid X)
+$$
+
+after relevant predictors and exposure have been considered. It is not enough to compare the raw sample variance and mean when units have different fitted means: variation caused by known covariates can inflate the marginal variance even if every conditional distribution is Poisson.
+
+Possible mechanisms include:
+
+- unmeasured heterogeneity in event rates;
+- clustering or positive dependence among events;
+- omitted predictors, batch effects, or unequal exposure;
+- excess structural zeros;
+- mixtures of subpopulations;
+- outliers or data-processing artifacts.
+
+The negative binomial accommodates one mean--variance pattern, but it does not identify which mechanism is present. Zero inflation, temporal dependence, multimodality, or a misspecified mean may require a different model. Underdispersion, where conditional variance is below the Poisson mean, cannot be represented by the ordinary Poisson--gamma negative binomial.
+
+# Worked Example: RNA-seq Counts
+
+Suppose normalized counts for a gene have conditional mean $\mu=100$ and dispersion $\alpha=0.20$. The negative binomial variance is
+
+$$
+\operatorname{Var}(Y)=100+0.20(100)^2=2100,
+$$
+
+so the standard deviation is about $45.8$. A Poisson model with the same mean would have variance $100$ and standard deviation $10$. Ignoring the extra variation would make uncertainty much too small.
+
+In an RNA-seq model, a sample-specific count may be written schematically as
+
+$$
+K_{gj}\sim\operatorname{NB}(\mu_{gj},\alpha_g),
+\qquad
+\mu_{gj}=s_jq_{gj},
+$$
+
+where $s_j$ adjusts for library scale, $q_{gj}$ is the expected expression for gene $g$ in biological sample $j$, and $\alpha_g$ describes residual biological and technical variability after the mean model. Modern differential-expression methods stabilize noisy gene-wise dispersion estimates by sharing information across genes.
+
+The experimental unit is the independently sampled organism, specimen, or culture assigned to a condition. Reads are technical observations within a library, and genes are parallel outcomes. More reads improve measurement of one sample; more genes help estimate common nuisance patterns; neither substitutes for biological replication when estimating a treatment effect.
+
+# Assumptions and Diagnostic Questions
+
+| Assumption or implication | Why it matters | Diagnostic question | Response or sensitivity check |
+|---|---|---|---|
+| Counts are nonnegative integers | the support defines the observation model | are values proportions, continuous intensities, or censored counts? | choose a model matching the measurement process |
+| Mean model and exposure are correct | omitted structure appears as dispersion | do residuals vary systematically with condition, batch, or library size? | revise covariates, offsets, normalization, or nonlinear terms |
+| NB2 variance is $\mu+\alpha\mu^2$ | one dispersion controls the mean--variance curve | does variance grow quadratically across the relevant mean range? | compare variance functions or use flexible dispersion models |
+| Conditional observations are independent | dependence changes uncertainty | are samples paired, repeated, spatially clustered, or related? | use mixed, marginal, time-series, or spatial models |
+| No separate structural-zero process | the NB already predicts zeros through its count law | are zeros associated with an inactive state or detection mechanism? | compare hurdle or zero-inflated models using substantive checks |
+| Gamma mixing is scientifically plausible | it supplies a latent-rate interpretation | is the fitted distribution masking distinct populations or outliers? | inspect predictive distributions and fit alternative mixtures |
+
+Useful checks compare observed and fitted distributions conditional on predictors: residual patterns, zero frequencies, upper tails, replicate variability, and posterior or parametric predictive simulations. A global variance-to-mean ratio cannot localize misspecification.
+
+# Common Pitfalls
+
+1. **Equating every variance larger than the mean with negative binomial sampling:** unequal means and omitted covariates can create marginal overdispersion.
+2. **Calling a parameter “dispersion” without its formula:** packages use reciprocal conventions, so a larger numeric value may mean either more or less variation.
+3. **Treating the negative binomial as a cure for a wrong mean model:** dispersion cannot repair missing exposure, batch, nonlinear response, or dependence.
+4. **Interpreting the gamma mixing distribution literally by default:** it is one coherent construction, not evidence about the biological mechanism.
+5. **Testing dispersion with too few independent units:** biological variance is weakly identified when replication is sparse; shrinkage helps stability but cannot manufacture information.
+6. **Treating reads as replicates:** uncertainty about a condition effect is driven by independent biological samples, not sequencing depth alone.
+
+# Connections to the Knowledge Map
+
+- [Poisson distribution and Poisson processes](poisson-distribution-and-poisson-processes.qmd) provides the equidispersed reference model.
+- [Gamma and beta distributions](gamma-and-beta-distributions.qmd) supplies the mixing law for heterogeneous Poisson rates.
+- [Exponential and geometric distributions](exponential-and-geometric-distributions.qmd) gives the $r=1$ waiting-time special case.
+- [Expectation, variance, and moments](expectation-variance-and-moments.qmd) explains total variance and factorial-moment calculations.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) clarifies conditional Poisson and marginal negative binomial laws.
+
+# Take-home Messages
+
+1. The negative binomial can count failures before a target success or arise by mixing a Poisson count over a gamma rate.
+2. In the NB2 parameterization, the variance $\mu+\alpha\mu^2$ exceeds the mean when $\alpha>0$.
+3. Overdispersion is defined relative to a conditional model; raw variance exceeding a raw mean is not sufficient evidence.
+4. Rate heterogeneity, dependence, omitted predictors, excess zeros, and artifacts can all create extra variation, and they imply different remedies.
+5. Parameterization and variance function must be reported explicitly.
+6. In sequencing studies, independent biological samples—not reads—support inference about biological conditions.
+
+# References
+
+- Greenwood, M. and Yule, G. U. “An Inquiry into the Nature of Frequency Distributions Representative of Multiple Happenings with Particular Reference to the Occurrence of Multiple Attacks of Disease or of Repeated Accidents.” *Journal of the Royal Statistical Society* 83(2), 1920, 255–279. [https://doi.org/10.2307/2341080](https://doi.org/10.2307/2341080).
+- Johnson, N. L., Kemp, A. W., and Kotz, S. *Univariate Discrete Distributions*, 3rd ed. Wiley, 2005. [https://doi.org/10.1002/0471715816](https://doi.org/10.1002/0471715816).
+- Hilbe, J. M. *Negative Binomial Regression*, 2nd ed. Cambridge University Press, 2011. [https://doi.org/10.1017/CBO9780511973420](https://doi.org/10.1017/CBO9780511973420).
+- Love, M. I., Huber, W., and Anders, S. “Moderated Estimation of Fold Change and Dispersion for RNA-seq Data with DESeq2.” *Genome Biology* 15, 2014, 550. [https://doi.org/10.1186/s13059-014-0550-8](https://doi.org/10.1186/s13059-014-0550-8).
+- R Core Team. “The Negative Binomial Distribution.” *R Statistical Functions Documentation*. [https://stat.ethz.ch/R-manual/R-devel/library/stats/html/NegBinomial.html](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/NegBinomial.html).

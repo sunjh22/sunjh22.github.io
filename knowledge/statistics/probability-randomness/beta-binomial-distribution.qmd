@@ -1,0 +1,268 @@
+---
+title: "Beta-binomial Distribution"
+subtitle: "Binomial counts with heterogeneous success probabilities"
+description: "The beta-binomial distribution, including its mixture derivation, moments, intracluster correlation, overdispersion, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-09-14"
+date-modified: "2026-09-14"
+categories: [Statistics, Probability, Distributions, Proportion Data]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** The beta-binomial distribution models a bounded success count when the success probability varies across clusters or experimental units.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness; discrete mixture distributions |
+| Support | $Y\in\{0,1,\ldots,n\}$ for fixed $n$ |
+| Parameters | Trial count $n$ and beta shapes $a,b>0$, or mean probability $\pi$ and intracluster correlation $\rho$ |
+| Key variance | $n\pi(1-\pi)\{1+(n-1)\rho\}$ |
+| Typical applications | Methylated-read counts, allele counts, clustered binary outcomes, spectral-count proportions |
+| Prerequisites | [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd); [gamma and beta distributions](gamma-and-beta-distributions.qmd) |
+
+# A Binomial Probability That Varies Across Units
+
+The ordinary binomial model assumes one fixed success probability $p$ across $n$ conditionally independent trials. The beta-binomial instead introduces a latent probability:
+
+$$
+P\sim\operatorname{Beta}(a,b),
+\qquad
+Y\mid P=p\sim\operatorname{Binomial}(n,p),
+$$
+
+where $a,b>0$. Conditional on $P$, the trials are independent and share one probability. Marginally, they are exchangeable and positively associated because they share the same random $P$.
+
+Integrating out $P$ gives
+
+$$
+\boxed{
+P(Y=y)
+={n\choose y}\frac{B(y+a,n-y+b)}{B(a,b)},
+\qquad y=0,1,\ldots,n.
+}
+$$
+
+Here $B(a,b)=\Gamma(a)\Gamma(b)/\Gamma(a+b)$ is the beta function. Unlike a continuous beta variable, $Y$ is a discrete count and can place positive probability on both endpoints 0 and $n$.
+
+# Deriving the Marginal Mass Function
+
+The beta-binomial probability follows directly from the multiplication rule and marginalization:
+
+$$
+\begin{aligned}
+P(Y=y)
+&=\int_0^1 P(Y=y\mid p)f_P(p)\,dp\\
+&={n\choose y}\frac{1}{B(a,b)}
+\int_0^1 p^{y+a-1}(1-p)^{n-y+b-1}\,dp\\
+&={n\choose y}\frac{B(y+a,n-y+b)}{B(a,b)}.
+\end{aligned}
+$$
+
+The integral is the normalizing beta function with updated shapes. This same algebra has two interpretations that should not be conflated:
+
+- **Sampling heterogeneity:** each cluster has its own latent probability drawn from a population distribution, giving a beta-binomial sampling law across clusters.
+- **Bayesian prediction:** a beta prior updated by binomial data produces a beta posterior; integrating a future binomial count over that posterior gives a beta-binomial posterior predictive law.
+
+The formula is shared, but the random quantity and scientific claim differ.
+
+# Mean, Variance, and Intracluster Correlation
+
+Define
+
+$$
+\pi=E(P)=\frac{a}{a+b},
+\qquad
+\rho=\frac{1}{a+b+1}.
+$$
+
+The parameter $\pi$ is the mean success probability. The concentration $a+b$ controls heterogeneity: larger concentration means smaller $\rho$ and a tighter distribution of $P$ around $\pi$.
+
+Using iterated expectation,
+
+$$
+\boxed{E(Y)=E\{E(Y\mid P)\}=n\pi.}
+$$
+
+The law of total variance gives
+
+$$
+\begin{aligned}
+\operatorname{Var}(Y)
+&=E\{nP(1-P)\}+\operatorname{Var}(nP)\\
+&=n\pi(1-\pi)\{1+(n-1)\rho\}.
+\end{aligned}
+$$
+
+Therefore
+
+$$
+\boxed{
+\operatorname{Var}(Y)
+=n\pi(1-\pi)\{1+(n-1)\rho\}.
+}
+$$
+
+The binomial variance is multiplied by the **design effect** $1+(n-1)\rho$. Even a modest within-cluster correlation can matter when $n$ is large.
+
+To see where $\rho$ comes from, write $Y=\sum_{j=1}^nX_j$ with $X_j\mid P\sim\operatorname{Bernoulli}(P)$. For distinct trials $j\neq k$,
+
+$$
+\operatorname{Cov}(X_j,X_k)
+=\operatorname{Var}(P),
+$$
+
+and because each marginal $X_j$ is Bernoulli with mean $\pi$,
+
+$$
+\operatorname{Corr}(X_j,X_k)
+=\frac{\operatorname{Var}(P)}{\pi(1-\pi)}
+=\frac{1}{a+b+1}
+=\rho.
+$$
+
+Thus the standard beta-binomial imposes one positive correlation for every pair of trials in a cluster. This exchangeable dependence is useful but restrictive.
+
+# Limiting and Special Cases
+
+Hold $\pi=a/(a+b)$ fixed while $a+b\to\infty$. Then $P$ concentrates at $\pi$, $\rho\to0$, and
+
+$$
+Y\Rightarrow\operatorname{Binomial}(n,\pi).
+$$
+
+If $a=b=1$, then $P$ is uniform on $(0,1)$ and
+
+$$
+P(Y=y)=\frac{1}{n+1}
+$$
+
+for every $y=0,\ldots,n$: the count itself is discrete uniform. If $a$ and $b$ are both below one, the latent probability favors values near 0 and 1, often producing a U-shaped count distribution with many endpoint counts.
+
+The beta-binomial only adds positive association and overdispersion relative to a binomial with probability $\pi$. Sampling without replacement can instead produce negative association and underdispersion; the [hypergeometric model](counting-rules-and-combinatorial-probability.qmd) is then the natural finite-population law.
+
+# A Predictive View of Reinforcement
+
+After observing $s$ successes and $f$ failures under a beta--Bernoulli model,
+
+$$
+P\mid\text{data}\sim\operatorname{Beta}(a+s,b+f),
+$$
+
+so the predictive probability that the next trial succeeds is
+
+$$
+P(X_{s+f+1}=1\mid\text{data})
+=\frac{a+s}{a+b+s+f}.
+$$
+
+Earlier successes increase the predictive chance of another success, and earlier failures decrease it. This is the Pólya-urn representation of the beta-binomial: reinforcement produces exchangeable, positively correlated trials. It is an illuminating probability construction, not a claim that literal reinforcement occurs in a biological assay.
+
+# Worked Example: Methylated Reads
+
+Suppose each biological sample yields $n=20$ usable reads at a CpG site. Across specimens, let the latent methylation probability follow
+
+$$
+P_i\sim\operatorname{Beta}(8,2),
+$$
+
+and, conditionally on $P_i$, let methylated-read counts satisfy
+
+$$
+Y_i\mid P_i\sim\operatorname{Binomial}(20,P_i).
+$$
+
+Then
+
+$$
+\pi=\frac{8}{10}=0.8,
+\qquad
+\rho=\frac{1}{11}\approx0.091,
+$$
+
+and
+
+$$
+E(Y_i)=20(0.8)=16.
+$$
+
+The beta-binomial variance is
+
+$$
+\operatorname{Var}(Y_i)
+=20(0.8)(0.2)\left\{1+19\left(\frac{1}{11}\right)\right\}
+\approx8.73.
+$$
+
+A binomial model fixed at $p=0.8$ would have variance $3.2$. The extra variation represents between-sample heterogeneity in the latent methylation probability under this model.
+
+Reads within one library are technical subsamples. The biological sample $i$ is the experimental unit, and treatment replication comes from independently sampled specimens assigned or observed under each condition. A beta-binomial observation model can represent read-level sampling plus between-sample heterogeneity, but it cannot rescue a design with no independent biological replication.
+
+Statistically, a group difference concerns a contrast between distributions or mean probabilities after accounting for dispersion and design. Biologically, it concerns methylation in the target tissue, cell mixture, developmental stage, and population represented by the specimens; those interpretations require design knowledge beyond the count model.
+
+# Assumptions and Diagnostic Questions
+
+| Assumption or implication | Why it matters | Diagnostic question | Response or sensitivity check |
+|---|---|---|---|
+| Denominator $n$ is fixed or conditioned upon | the support is $0,\ldots,n$ | is total coverage informative about biology or detection? | jointly model totals or test sensitivity to conditioning |
+| One latent $P$ per cluster | it defines which trials share dependence | are reads grouped by specimen, locus, batch, or another unit? | align the hierarchy with the data-generating process |
+| Beta-distributed heterogeneity | mean and dispersion determine a specific shape | are latent proportions multimodal or concentrated at boundaries? | use richer random-effects, mixture, or inflated models |
+| Exchangeable positive correlation | every within-cluster pair has correlation $\rho$ | does dependence vary by position, time, molecule, or read family? | model the dependence structure explicitly |
+| Conditional binomial sampling | trials share $P$ and are independent given it | are there PCR duplicates, mapping bias, or allele-specific errors? | deduplicate, model measurement error, or aggregate appropriately |
+| Independent biological units | between-unit inference needs genuine replication | are repeated reads or cells being counted as samples? | analyze at the specimen level or use a hierarchical model |
+
+Diagnostics should be conditional on denominators and predictors. Compare fitted and observed variance, endpoint frequencies, tails, and replicate-level proportions. Simulated replicated datasets are especially useful because residual overdispersion can coexist with zero inflation, omitted covariates, or a wrong grouping level.
+
+# Estimation and Interpretation
+
+For independent observations $(y_i,n_i)$, the likelihood is
+
+$$
+L(a,b)
+=\prod_i {n_i\choose y_i}
+\frac{B(y_i+a,n_i-y_i+b)}{B(a,b)}.
+$$
+
+Maximum-likelihood estimates usually require numerical optimization. Moment estimates can be unstable, particularly with few clusters, similar $n_i$, or probabilities near a boundary. In high-throughput studies, dispersion estimates are commonly stabilized by borrowing information across loci or features.
+
+That borrowing estimates a nuisance variation pattern; it does not change the experimental unit. Uncertainty for a treatment contrast must still reflect the number and structure of independent biological samples. Report the mean-probability contrast or another scientifically defined effect, its uncertainty, the dispersion convention, and the scale on which the effect is interpreted.
+
+# Common Pitfalls
+
+1. **Calling an observed proportion beta-binomial:** the beta-binomial models its numerator conditional on a known denominator; the latent $P$ is beta distributed.
+2. **Pooling biological samples:** combining counts erases between-sample variation, the feature the mixture was introduced to represent.
+3. **Treating all read pairs as independent after marginalization:** they are conditionally independent given $P$, but positively associated marginally.
+4. **Interpreting $\rho$ as a causal biological interaction:** it is the correlation induced by a shared random probability under the model.
+5. **Assuming overdispersion uniquely selects the beta-binomial:** omitted predictors, contamination, zero/one inflation, and dependence can produce similar symptoms.
+6. **Ignoring denominator variation:** equal proportions based on 5 and 500 trials have different sampling information.
+7. **Confusing prior prediction with population heterogeneity:** identical algebra can support different inferential stories.
+
+# Connections to the Knowledge Map
+
+- [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd) provides the conditional sampling model and binomial reference variance.
+- [Gamma and beta distributions](gamma-and-beta-distributions.qmd) develops beta shapes, moments, and beta--binomial conjugacy.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) explains how integrating over $P$ creates a marginal mixture distribution.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) distinguishes conditional independence from marginal dependence.
+- [Covariance and correlation](covariance-and-correlation.qmd) supplies the variance-of-a-sum and intracluster-correlation calculations.
+- [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd) contrasts binomial overdispersion with sampling-without-replacement underdispersion.
+
+# Take-home Messages
+
+1. A beta-binomial count is binomial conditional on a beta-distributed success probability.
+2. Marginalization produces positive within-cluster correlation and variance inflated by $1+(n-1)\rho$.
+3. Mean probability and concentration separate location from heterogeneity, with the binomial recovered as concentration grows.
+4. The same beta-binomial formula can describe population heterogeneity or Bayesian prediction; the scientific interpretation must be stated.
+5. The standard model assumes one exchangeable positive dependence pattern and may miss boundary inflation, multimodality, or structured correlation.
+6. In sequencing applications, specimens are biological units while reads supply within-sample measurement information.
+
+# References
+
+- Skellam, J. G. “A Probability Distribution Derived from the Binomial Distribution by Regarding the Probability of Success as Variable between the Sets of Trials.” *Journal of the Royal Statistical Society: Series B* 10(2), 1948, 257–261. [https://doi.org/10.1111/j.2517-6161.1948.tb00014.x](https://doi.org/10.1111/j.2517-6161.1948.tb00014.x).
+- Johnson, N. L., Kemp, A. W., and Kotz, S. *Univariate Discrete Distributions*, 3rd ed. Wiley, 2005. [https://doi.org/10.1002/0471715816](https://doi.org/10.1002/0471715816).
+- Crowder, M. J. “Beta-binomial ANOVA for Proportions.” *Applied Statistics* 27(1), 1978, 34–37. [https://doi.org/10.2307/2346223](https://doi.org/10.2307/2346223).
+- Feng, H., Conneely, K. N., and Wu, H. “A Bayesian Hierarchical Model to Detect Differentially Methylated Loci from Single Nucleotide Resolution Sequencing Data.” *Nucleic Acids Research* 42(8), 2014, e69. [https://doi.org/10.1093/nar/gku154](https://doi.org/10.1093/nar/gku154).
+- Pham, T. V., Piersma, S. R., Warmoes, M., and Jimenez, C. R. “On the Beta-binomial Model for Analysis of Spectral Count Data in Label-free Tandem Mass Spectrometry-based Proteomics.” *Bioinformatics* 26(3), 2010, 363–369. [https://doi.org/10.1093/bioinformatics/btp677](https://doi.org/10.1093/bioinformatics/btp677).
+- Yee, T. W. “The Beta-binomial Distribution.” *VGAM Documentation*. [https://search.r-project.org/CRAN/refmans/VGAM/html/betabinomUC.html](https://search.r-project.org/CRAN/refmans/VGAM/html/betabinomUC.html).
