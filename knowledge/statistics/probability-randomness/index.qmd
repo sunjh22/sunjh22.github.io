@@ -30,6 +30,8 @@ Probability provides the language for representing biological variation, samplin
 - [Beta-binomial distribution](beta-binomial-distribution.qmd)
 - [Dirichlet--multinomial distribution](dirichlet-multinomial-distribution.qmd)
 - [Zero-inflated and hurdle distributions](zero-inflated-and-hurdle-distributions.qmd)
+- [Probability-generating and moment-generating functions](probability-generating-and-moment-generating-functions.qmd)
+- [Order statistics and extreme values](order-statistics-and-extreme-values.qmd)
 - [Probability distributions](distributions.qmd)
 
 ## Continue through the map

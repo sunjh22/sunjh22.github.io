@@ -1,0 +1,118 @@
+---
+title: "Order Statistics and Extreme Values"
+subtitle: "Ranks, sample maxima, and tail behavior"
+description: "Exact order-statistic laws, beta quantile transform, extreme-value limits, and practical cautions for biological data."
+author: "Jiahong Sun"
+date: "2026-09-16"
+date-modified: "2026-09-16"
+categories: [Statistics, Probability, Extreme Values]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Ordered Samples and Their Question
+
+For independent identically distributed (iid) continuous observations $X_1,\ldots,X_n$, write
+
+$$
+X_{(1)}\leq X_{(2)}\leq\cdots\leq X_{(n)}.
+$$
+
+$X_{(k)}$ is the $k$th **order statistic**, $X_{(1)}$ the minimum, and $X_{(n)}$ the maximum. Their distributions describe questions such as “How unusual is the largest measurement among $n$ independent specimens?” A tail probability for one measurement differs from a tail probability for the largest of many measurements. The connection to [random variables and probability distributions](random-variables-and-probability-distributions.qmd) is through the parent cumulative distribution function (CDF) $F(x)=P(X_i\leq x)$.
+
+Ordering the values does not make them independent: all ranks are computed from the same sample. The formulas below assume iid observations from one continuous $F$ unless stated otherwise. Continuous sampling makes ties have probability zero.
+
+# Exact Distributions from Counting
+
+At least $k$ of the $n$ observations must be at most $x$ for $X_{(k)}\leq x$. Counting these observations as binomial successes yields
+
+$$
+\boxed{P\{X_{(k)}\leq x\}
+=\sum_{j=k}^n {n\choose j}F(x)^j\{1-F(x)\}^{n-j}.}
+$$
+
+If $F$ has density $f$, differentiation gives
+
+$$
+f_{X_{(k)}}(x)
+=\frac{n!}{(k-1)!(n-k)!}
+F(x)^{k-1}\{1-F(x)\}^{n-k}f(x).
+$$
+
+For the extremes these simplify to
+
+$$
+P\{X_{(n)}\leq x\}=F(x)^n,\qquad
+P\{X_{(1)}>x\}=\{1-F(x)\}^n.
+$$
+
+The maximum CDF follows directly: *every* observation must be at most $x$. The minimum survival function likewise requires *every* observation to exceed $x$. An order statistic is a statistic of a sample, not a new population distribution assumed in advance.
+
+## The uniform-to-beta transformation
+
+When $F$ is continuous and strictly increasing, $U_i=F(X_i)$ is uniform on $(0,1)$ and ordering is preserved. Substituting $F(u)=u$ into the density above shows
+
+$$
+\boxed{F(X_{(k)})=U_{(k)}\sim\operatorname{Beta}(k,n-k+1).}
+$$
+
+Thus $E\{F(X_{(k)})\}=k/(n+1)$. This is an expectation on the **CDF scale**, not generally $E(X_{(k)})=F^{-1}\{k/(n+1)\}$; the nonlinear inverse does not commute with expectation. For non-strict or discrete $F$, the simple uniform transform needs modification, and ties require explicit treatment. See [gamma and beta distributions](gamma-and-beta-distributions.qmd) for the beta family.
+
+# A Worked Threshold Calculation
+
+Suppose each of ten independent assay measurements has probability $0.05$ of exceeding a fixed, prespecified threshold $c$. The probability that **at least one** exceeds it is
+
+$$
+P\{X_{(10)}>c\}=1-(0.95)^{10}\approx0.401.
+$$
+
+That is much larger than the per-measurement probability $0.05$. This calculation assumes ten independent measurements with the same calibrated exceedance probability. If they come from one specimen and share preparation or biology, the independence assumption fails and the numerical result need not hold. If the threshold was chosen after seeing the ten values, the calculation also fails to represent a prespecified test.
+
+# Extreme-Value Limits
+
+The exact maximum law $F(x)^n$ is often preferable when $F$ is known and $n$ is moderate. For large $n$, suitable centering $b_n$ and positive scaling $a_n$ can yield a nondegenerate limit of $(X_{(n)}-b_n)/a_n$. The extremal-types result says that **if** such a limit exists under iid sampling, it must be in the generalized extreme-value (GEV) family (up to location and scale); it does not assert convergence for every parent distribution.
+
+One GEV parameterization has CDF
+
+$$
+H_{\xi,\mu,\sigma}(z)
+=\exp\left[-\left\{1+\xi\frac{z-\mu}{\sigma}\right\}^{-1/\xi}\right],
+\quad 1+\xi\frac{z-\mu}{\sigma}>0,\quad\sigma>0,
+$$
+
+with the continuous $\xi\to0$ limit
+
+$$
+H_{0,\mu,\sigma}(z)
+=\exp\left[-\exp\left\{-\frac{z-\mu}{\sigma}\right\}\right].
+$$
+
+Positive $\xi$ is the heavy-tailed Fréchet type; $\xi=0$ is the Gumbel type, often associated with exponential-type tails; negative $\xi$ is the upper-bounded Weibull type. These labels classify possible **limit laws for normalized maxima**. A finite sample maximum is generally not exactly GEV, and an upper bound or tail type alone does not establish a useful finite-sample approximation. The [NIST extreme-value overview](https://www.itl.nist.gov/div898/handbook/apr/section1/apr163.htm) and Coles discuss the domain-of-attraction conditions and modeling details.
+
+# Design, Diagnostics, and Interpretation
+
+| Issue | Consequence | Practical check |
+|---|---|---|
+| Varying sample size $n$ | The maximum tends to rise as more values are observed | Compare maxima at equal exposure or use an explicit sample-size model |
+| Dependence or clustering | $F(x)^n$ and iid limits no longer apply directly | Identify independent biological units and inspect within-batch correlation |
+| Mixed subpopulations | A single parent $F$ hides distinct tail processes | Stratify by biological condition, batch, or known covariates |
+| Measurement limits and artifacts | The largest recorded value may be censored or erroneous | Review assay range, quality control, and extreme observations |
+| Sparse tail information | Tail-shape and high-quantile estimates can be unstable | Examine threshold sensitivity and uncertainty; avoid unwarranted extrapolation |
+
+For an omics experiment, a sample maximum across **genes within one specimen** is a descriptive within-specimen statistic. Thousands of genes are not thousands of independent biological replicates: coexpression, shared library preparation, and gene-specific scales affect its distribution. To compare conditions, define the experimental unit as the independently sampled specimen, specify which feature and scale are comparable, and separate a statistically unusual value from evidence of a biological mechanism. A high extreme can flag follow-up, but it cannot by itself establish a population difference or causal effect.
+
+# Connections and Take-home Messages
+
+- [Counting rules and combinatorial probability](counting-rules-and-combinatorial-probability.qmd) supplies the binomial counting step in the $k$th-order CDF.
+- [Transformations of random variables](transformations-of-random-variables.qmd) explains the CDF transform and nonlinear expectations.
+- [Normal and multivariate normal distributions](normal-and-multivariate-normal-distributions.qmd) provides a parent law whose maxima can be studied.
+
+The distribution of the $k$th value follows from counting how many observations fall below a threshold. Maxima require a multiple-observation tail calculation; sample size and dependence matter. Extreme-value theory describes possible normalized large-sample limits under conditions, while the exact law and study design govern finite biological datasets.
+
+# References
+
+- David, H. A. and Nagaraja, H. N. *Order Statistics*, 3rd ed. Wiley, 2003. [https://doi.org/10.1002/0471722162](https://doi.org/10.1002/0471722162).
+- Fisher, R. A. and Tippett, L. H. C. “Limiting Forms of the Frequency Distribution of the Largest or Smallest Member of a Sample.” *Proceedings of the Cambridge Philosophical Society* 24, 1928, 180–190. [Digitized paper](https://digital.library.adelaide.edu.au/items/44732e57-5031-47f9-9159-a4e6028f90fb).
+- Coles, S. *An Introduction to Statistical Modeling of Extreme Values*. Springer, 2001. [https://doi.org/10.1007/978-1-4471-3675-0](https://doi.org/10.1007/978-1-4471-3675-0).
+- NIST/SEMATECH. “Extreme Value Distributions,” *e-Handbook of Statistical Methods*. [https://www.itl.nist.gov/div898/handbook/apr/section1/apr163.htm](https://www.itl.nist.gov/div898/handbook/apr/section1/apr163.htm).

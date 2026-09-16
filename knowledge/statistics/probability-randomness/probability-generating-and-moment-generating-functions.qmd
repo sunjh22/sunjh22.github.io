@@ -1,0 +1,121 @@
+---
+title: "Probability-generating and Moment-generating Functions"
+subtitle: "Encoding a distribution to recover moments and sums"
+description: "Definitions, derivatives, sum rules, examples, and existence limits for probability- and moment-generating functions."
+author: "Jiahong Sun"
+date: "2026-09-16"
+date-modified: "2026-09-16"
+categories: [Statistics, Probability, Distributions]
+toc: true
+number-sections: true
+draft: false
+---
+
+# What a Generating Function Encodes
+
+A generating function packages an entire probability distribution into one function. Differentiation recovers moments; multiplication handles sums of independent variables. These operations are useful for modeling counts of sequencing events, but the sampling assumptions behind a count model remain separate from the algebra.
+
+For a nonnegative integer-valued random variable $N$ with $p_k=P(N=k)$, its **probability-generating function** (PGF) is
+
+$$
+G_N(s)=E(s^N)=\sum_{k=0}^{\infty}p_ks^k,\qquad |s|\leq1.
+$$
+
+The series is well-defined for $|s|\leq1$ because $\sum_kp_k=1$. In particular, $G_N(1)=1$ and $G_N(0)=P(N=0)$ (with $0^0=1$ in this expression). Its coefficients recover the complete count distribution:
+
+$$
+p_k=\frac{G_N^{(k)}(0)}{k!}.
+$$
+
+The PGF applies to nonnegative **integer** counts; it is not the generating function for an arbitrary continuous or negative-valued variable. See [random variables and probability distributions](random-variables-and-probability-distributions.qmd) for the underlying mass function.
+
+For a real-valued $X$, its **moment-generating function** (MGF) is
+
+$$
+M_X(t)=E(e^{tX}),\qquad t\in\mathbb R\text{ for which the expectation is finite}.
+$$
+
+We call $M_X$ an MGF in the usual uniqueness-and-derivative sense when it is finite on an open interval around $t=0$. Since $M_X(0)=1$ whenever $X$ is finite almost surely, a finite value **only at zero** is insufficient. When the MGF exists around zero, it determines the distribution uniquely and derivatives give $M_X^{(r)}(0)=E(X^r)$. For a count variable, $M_N(t)=G_N(e^t)$ wherever the right side is finite. The identity does not guarantee positive-$t$ finiteness: a PGF can exist on $|s|\leq1$ while the MGF fails for every $t>0$.
+
+# Moments from Derivatives
+
+Differentiating the PGF inside its interval of convergence gives the **factorial moments**:
+
+$$
+G_N^{(r)}(1^-)=E\{N(N-1)\cdots(N-r+1)\},
+$$
+
+provided that moment is finite. The left-hand limit is relevant when $s=1$ is a boundary. The first two derivatives yield
+
+$$
+E(N)=G_N'(1^-),\qquad
+\operatorname{Var}(N)=G_N''(1^-)+G_N'(1^-)-\{G_N'(1^-)\}^2.
+$$
+
+The second derivative measures $E\{N(N-1)\}$, not $E(N^2)$; adding $E(N)$ converts it to the ordinary second moment. This distinction matters for counts because the factorial moment counts ordered pairs of distinct events.
+
+For a real-valued variable with an MGF finite near zero,
+
+$$
+E(X)=M_X'(0),\qquad
+\operatorname{Var}(X)=M_X''(0)-\{M_X'(0)\}^2.
+$$
+
+The log-MGF $K_X(t)=\log M_X(t)$ is the **cumulant-generating function**: $K_X'(0)=E(X)$ and $K_X''(0)=\operatorname{Var}(X)$. Its derivatives of higher order give higher cumulants. The connection to ordinary moments is developed in [expectation, variance, and moments](expectation-variance-and-moments.qmd).
+
+# Independent Sums and Mixtures
+
+If $X$ and $Y$ are independent, factorization of expectation gives
+
+$$
+M_{X+Y}(t)=M_X(t)M_Y(t),
+$$
+
+where both sides are finite. For independent nonnegative integer counts, likewise $G_{X+Y}(s)=G_X(s)G_Y(s)$. **Independence** is essential: two correlated counts have the same marginal PGFs but their sum generally has a different PGF. See [independence and conditional independence](independence-and-conditional-independence.qmd).
+
+For a mixture with a latent state $Z$, averaging is the appropriate operation:
+
+$$
+G_N(s)=E\{G_{N\mid Z}(s)\},
+$$
+
+not a product. This can reveal heterogeneity or excess zeros even when the conditional count process has a simple law.
+
+# Illuminating Examples
+
+| Distribution | Generating function | Consequence |
+|---|---|---|
+| $N\sim\operatorname{Bernoulli}(p)$ | $G_N(s)=1-p+ps$ | $E(N)=p$ |
+| $N\sim\operatorname{Binomial}(n,p)$ | $G_N(s)=(1-p+ps)^n$ | Sum of $n$ independent Bernoulli trials |
+| $N\sim\operatorname{Poisson}(\lambda)$ | $G_N(s)=\exp\{\lambda(s-1)\}$ | $E(N)=\operatorname{Var}(N)=\lambda$ |
+| $X\sim N(\mu,\sigma^2)$ | $M_X(t)=\exp\{\mu t+\sigma^2t^2/2\}$ | Independent normal sums remain normal |
+
+For a Poisson count, differentiating $G_N(s)=e^{\lambda(s-1)}$ gives $G_N'(1)=\lambda$ and $G_N''(1)=\lambda^2$. Hence $\operatorname{Var}(N)=\lambda^2+\lambda-\lambda^2=\lambda$. Multiplying two Poisson PGFs with rates $\lambda_1,\lambda_2$ gives the PGF of a Poisson law with rate $\lambda_1+\lambda_2$. This is an **algebraic** consequence of independent counts, not evidence that observed biological samples have equal rates. See [Poisson distribution and Poisson processes](poisson-distribution-and-poisson-processes.qmd).
+
+For a compound count, let $N\sim\operatorname{Poisson}(\lambda)$ be the number of events and $Y_1,Y_2,\ldots$ be independent nonnegative integer event sizes, independent of $N$, with PGF $G_Y$. For $S=\sum_{i=1}^NY_i$ (zero if $N=0$), conditioning on $N$ yields
+
+$$
+G_S(s)=E\{G_Y(s)^N\}=\exp\{\lambda[G_Y(s)-1]\}.
+$$
+
+This describes a number of events with random contributions; treating the contributions as independent of the event count is a modeling assumption.
+
+# Existence and Interpretation Limits
+
+An MGF may not exist near zero even though ordinary moments exist. A lognormal variable has every positive integer moment finite but $E(e^{tX})=\infty$ for every $t>0$; a Cauchy variable has no finite mean or MGF near zero. When an MGF fails, a characteristic function $E(e^{itX})$ still exists for all real $t$ because $|e^{itX}|=1$. Conversely, a PGF is always available for a nonnegative integer count on $|s|\leq1$, but derivatives at $1$ can be infinite.
+
+In sequencing, the experimental unit for population inference is normally an independently sampled biological specimen. Reads and molecules contribute to a within-specimen count; their large number does not create biological replication. Shared library preparation, mapping bias, and variable exposure can induce dependence or heterogeneity, so a sum rule or theoretical variance should be interpreted under the data-generating model rather than used as a diagnostic by itself.
+
+# Connections and Take-home Messages
+
+- [Bernoulli and binomial distributions](bernoulli-and-binomial-distributions.qmd) illustrate products of trial PGFs.
+- [Negative binomial distribution and overdispersion](negative-binomial-distribution-and-overdispersion.qmd) shows how rate mixing changes count variation.
+- [Normal and multivariate normal distributions](normal-and-multivariate-normal-distributions.qmd) supplies a continuous MGF example.
+
+PGFs encode nonnegative integer probabilities and factorial moments. MGFs encode ordinary moments when finite around zero. Products describe **independent** sums, while mixtures require averaging; neither operation makes an implausible sampling model valid.
+
+# References
+
+- Johnson, N. L., Kemp, A. W., and Kotz, S. *Univariate Discrete Distributions*, 3rd ed. Wiley, 2005. [https://doi.org/10.1002/0471715816](https://doi.org/10.1002/0471715816).
+- Kemp, A. W. “Generating Functions.” *Encyclopedia of Statistical Sciences*, 2005. [https://doi.org/10.1002/0470011815.b2a10022](https://doi.org/10.1002/0470011815.b2a10022).
+- Pennsylvania State University. “Moment Generating Functions,” *STAT 414: Introduction to Probability Theory*. [https://online.stat.psu.edu/stat414/Lesson09](https://online.stat.psu.edu/stat414/Lesson09).
