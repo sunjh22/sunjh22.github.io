@@ -1,0 +1,284 @@
+---
+title: "Zero-inflated and Hurdle Distributions"
+subtitle: "Two-part probability models for counts with a special zero process"
+description: "Zero-inflated and hurdle count distributions, including their probability laws, moments, generative interpretations, identifiability, diagnostics, and bioinformatics cautions."
+author: "Jiahong Sun"
+date: "2026-09-15"
+date-modified: "2026-09-15"
+categories: [Statistics, Probability, Distributions, Count Data]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** Zero-inflated and hurdle distributions both alter the probability of zero, but they encode different data-generating stories and different positive-count laws.
+
+| Item | Zero-inflated model | Hurdle model |
+|---|---|---|
+| Zero mechanism | structural-zero component plus zeros from a baseline count law | one binary process determines zero versus positive |
+| Positive counts | untruncated baseline law | zero-truncated baseline law |
+| Can a baseline state generate zero? | yes | no, after the hurdle is crossed |
+| Main latent interpretation | mixture of an always-zero state and a count-generating state | participation/detection followed by positive intensity |
+| Common baselines | Poisson or negative binomial | zero-truncated Poisson or negative binomial |
+| Prerequisites | [Poisson distribution](poisson-distribution-and-poisson-processes.qmd) and [negative binomial distribution](negative-binomial-distribution-and-overdispersion.qmd) | same |
+
+# Start with a Baseline Count Distribution
+
+Let $Y^*$ have probability mass function
+
+$$
+f(y;\theta),
+\qquad y=0,1,2,\ldots,
+$$
+
+with
+
+$$
+f_0=f(0;\theta),
+\qquad
+E(Y^*)=\mu,
+\qquad
+\operatorname{Var}(Y^*)=\sigma^2.
+$$
+
+The baseline might be Poisson, negative binomial, or another count distribution. Before adding a zero process, check whether this baseline already predicts the observed zeros. For example, a Poisson variable has $P(Y^*=0)=e^{-\mu}$, and an overdispersed negative binomial can assign substantially more mass to zero without a separate mixture.
+
+“Many zeros” is a description of data. **Zero inflation** is a comparison with a specified conditional baseline after exposure, covariates, dependence, and heterogeneity have been represented.
+
+# Zero-inflated Distributions
+
+Let $S\sim\operatorname{Bernoulli}(\pi)$ indicate an always-zero state. If $S=1$, set $Y=0$; if $S=0$, draw $Y$ from the baseline distribution. Then
+
+$$
+\boxed{
+P(Y=0)=\pi+(1-\pi)f_0,
+}
+$$
+
+and, for $y\geq1$,
+
+$$
+\boxed{
+P(Y=y)=(1-\pi)f(y;\theta).
+}
+$$
+
+Thus an observed zero has two latent routes: it can come from the structural-zero component or from the ordinary count component. The positive-count ratios are unchanged from the baseline:
+
+$$
+\frac{P(Y=y)}{P(Y=z)}
+=\frac{f(y;\theta)}{f(z;\theta)},
+\qquad y,z>0.
+$$
+
+The mean and variance follow from conditioning on $S$:
+
+$$
+\boxed{E(Y)=(1-\pi)\mu,}
+$$
+
+$$
+\boxed{
+\operatorname{Var}(Y)
+=(1-\pi)\sigma^2+\pi(1-\pi)\mu^2.
+}
+$$
+
+For a Poisson baseline with mean $\lambda$,
+
+$$
+E(Y)=(1-\pi)\lambda,
+$$
+
+$$
+\operatorname{Var}(Y)
+=(1-\pi)\lambda+\pi(1-\pi)\lambda^2.
+$$
+
+The variance exceeds the mean when $0<\pi<1$ and $\lambda>0$. That mathematical overdispersion does not prove that an always-zero biological state exists.
+
+# Hurdle Distributions
+
+A hurdle model first decides whether the observation is zero. Let
+
+$$
+P(Y=0)=\pi.
+$$
+
+If the observation crosses the hurdle, draw it from the baseline distribution conditional on being positive:
+
+$$
+\boxed{
+P(Y=y)
+=(1-\pi)\frac{f(y;\theta)}{1-f_0},
+\qquad y=1,2,\ldots.
+}
+$$
+
+The two parts are cleanly separated: $\pi$ governs occurrence, while the zero-truncated baseline governs positive magnitude. The baseline's original zero probability $f_0$ affects only the normalization of the positive part.
+
+Because $Y^{*2}=0$ whenever $Y^*=0$,
+
+$$
+E(Y^*\mid Y^*>0)=\frac{\mu}{1-f_0},
+$$
+
+$$
+E(Y^{*2}\mid Y^*>0)
+=\frac{\sigma^2+\mu^2}{1-f_0}.
+$$
+
+Therefore
+
+$$
+\boxed{
+E(Y)=(1-\pi)\frac{\mu}{1-f_0},
+}
+$$
+
+and
+
+$$
+\boxed{
+\operatorname{Var}(Y)
+=(1-\pi)\frac{\sigma^2+\mu^2}{1-f_0}
+-\left\{(1-\pi)\frac{\mu}{1-f_0}\right\}^2.
+}
+$$
+
+A hurdle distribution can represent either more or fewer zeros than its unmodified baseline because $\pi$ is estimated separately from $f_0$. The term “zero-altered” is therefore often more precise than “zero-inflated.”
+
+# Why the Models Are Not Interchangeable
+
+Both families can fit a high zero frequency, yet they imply different latent structures.
+
+In a zero-inflated model, a zero does not reveal its source. Bayes' theorem gives the conditional probability that an observed zero arose from the structural component:
+
+$$
+P(S=1\mid Y=0)
+=\frac{\pi}{\pi+(1-\pi)f_0}.
+$$
+
+This is a model-based posterior classification, not an observed label. In a hurdle model, every zero is assigned to the first process by construction, while every positive value has crossed the hurdle.
+
+For example, presence of a species followed by abundance conditional on presence may motivate a hurdle model. A manufacturing line that is either inactive or active, with an active line still capable of producing zero defects, may motivate a zero-inflated model. Scientific knowledge about which route can generate zero matters more than the superficial count histogram.
+
+# Worked Example
+
+Take a Poisson baseline with $\lambda=2$ and choose $\pi=0.40$. Since $f_0=e^{-2}\approx0.1353$, the zero-inflated Poisson has
+
+$$
+P(Y=0)=0.40+0.60e^{-2}\approx0.4812,
+$$
+
+$$
+E(Y)=0.60(2)=1.2,
+$$
+
+$$
+\operatorname{Var}(Y)=0.60(2)+0.40(0.60)(2^2)=2.16.
+$$
+
+A Poisson hurdle model with the same $\lambda$ and the same overall zero probability has
+
+$$
+P(Y=0)=0.40,
+$$
+
+$$
+E(Y)=0.60\frac{2}{1-e^{-2}}\approx1.388.
+$$
+
+For the zero-inflated model,
+
+$$
+P(Y=1)=0.60(2e^{-2})\approx0.162.
+$$
+
+For the hurdle model,
+
+$$
+P(Y=1)=0.60\frac{2e^{-2}}{1-e^{-2}}\approx0.188.
+$$
+
+The models disagree not only at zero but across the positive counts because the hurdle model renormalizes the positive distribution.
+
+# Regression and Interpretation
+
+With covariates, two linked predictors are usually fitted. A common form is
+
+$$
+\operatorname{logit}(\pi_i)=\boldsymbol z_i^T\boldsymbol\gamma,
+$$
+
+$$
+g(\mu_i)=\boldsymbol x_i^T\boldsymbol\beta,
+$$
+
+where $g$ is often a log link. The two covariate sets may differ if the scientific design supports that choice.
+
+Coefficient interpretation depends on the model:
+
+- in a zero-inflated model, $\boldsymbol\gamma$ changes the probability of the always-zero state and $\boldsymbol\beta$ changes the baseline count distribution among units eligible for that state;
+- in a hurdle model, $\boldsymbol\gamma$ changes the probability of zero versus positive and $\boldsymbol\beta$ changes the distribution of positive counts;
+- neither part alone generally equals the covariate effect on the overall marginal mean.
+
+Report contrasts on a scientifically meaningful scale—such as the probability of any detection, expected count among positive units, and overall expected count—with uncertainty. A significant coefficient in one component does not by itself establish a biologically important total effect.
+
+# Bioinformatics Interpretation
+
+Zeros can arise from true absence or inactivity, finite sampling, low abundance, censoring, quality filters, failed amplification, or an omitted mixture of cell types or environments. Different mechanisms imply different models and different interventions.
+
+For droplet UMI single-cell RNA sequencing, a large fraction of zeros does not automatically require a zero-inflated observation model. Technical-control analyses have shown that common molecule-sampling count models can explain zeros in many droplet UMI datasets. Biological heterogeneity among cell types can also create marginal excess zeros when the conditional model omits cell state.
+
+Cells and reads are not automatically independent biological replicates. For a treatment comparison, the experimental unit is usually the independently assigned organism, donor, specimen, or culture. Cells are subsamples nested within specimens, and reads or UMIs are technical observations. A two-part model at the cell level cannot replace sample-level replication or correct pseudoreplication.
+
+# Identifiability, Diagnostics, and Sensitivity
+
+| Issue | Why it matters | What to inspect | Sensitivity analysis |
+|---|---|---|---|
+| Baseline misspecification | a Poisson model may call ordinary heterogeneity “extra zeros” | fitted zeros, tails, dispersion, and residuals conditional on covariates | compare Poisson and negative-binomial baselines |
+| Omitted mixtures or covariates | marginal zeros may reflect unmodeled groups | zero rates by batch, condition, cell type, exposure, and quality | add justified predictors or stratify the data-generating model |
+| Weak separation of components | different parameter pairs can give similar observed distributions | likelihood profiles, unstable estimates, boundary estimates, large standard errors | simplify predictors, regularize, or compare predictive performance |
+| Structural interpretation | latent membership is not observed | whether science permits both routes to zero | fit hurdle and zero-inflated alternatives and compare implied quantities |
+| Dependence | clustered observations make standard errors too small | repeated specimens, subjects, plates, spatial sites, or time points | hierarchical, marginal, or cluster-aware models |
+| Exposure and detection | unequal opportunity changes both zeros and positive counts | library size, observation time, assay sensitivity, censoring threshold | offsets, detection models, or analyses at matched exposure |
+
+Useful validation is distributional rather than limited to one statistic. Compare observed and simulated zero counts, frequencies of 1 and 2, upper tails, means and variances within covariate strata, and replicate-level patterns. Out-of-sample predictive checks can compare fit, but scientific interpretation of the two latent processes still requires domain assumptions.
+
+# Common Pitfalls
+
+1. **Diagnosing zero inflation from the raw fraction of zeros:** the comparison must be against a well-specified conditional baseline.
+2. **Using zero inflation to repair a Poisson mean or variance model:** omitted covariates and ordinary overdispersion often explain the discrepancy.
+3. **Treating latent zero sources as observed:** a zero-inflated fit supplies probabilities, not verified labels for individual zeros.
+4. **Calling hurdle and zero-inflated models equivalent:** only the hurdle truncates and renormalizes the positive-count distribution.
+5. **Interpreting component coefficients as marginal effects:** overall means combine both model parts.
+6. **Selecting a model only by information criteria:** similar predictive fit can coexist with incompatible scientific stories.
+7. **Counting cells or reads as experimental units:** abundant within-sample observations do not substitute for independent biological replication.
+
+# Connections to the Knowledge Map
+
+- [Poisson distribution and Poisson processes](poisson-distribution-and-poisson-processes.qmd) supplies the common equidispersed baseline.
+- [Negative binomial distribution and overdispersion](negative-binomial-distribution-and-overdispersion.qmd) supplies a baseline that already accommodates heterogeneous rates.
+- [Conditional probability and the law of total probability](conditional-probability-and-total-probability.qmd) explains the mixture probabilities and latent-state calculation.
+- [Bayes' theorem and Bayesian updating](bayes-theorem-and-bayesian-updating.qmd) gives the posterior probability of structural membership for an observed zero.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) clarifies conditional versus marginal zero frequencies.
+- [Mixture models](../advanced-modeling/mixture-models.qmd) places the zero-inflated construction in the broader latent-mixture family.
+
+# Take-home Messages
+
+1. A zero-inflated distribution mixes an always-zero state with an ordinary count distribution that can itself produce zero.
+2. A hurdle distribution models zero versus positive separately and uses a zero-truncated law for positive counts.
+3. Many observed zeros do not establish zero inflation; the baseline, covariates, exposure, heterogeneity, and dependence must be assessed first.
+4. Latent zero sources are not identified for individual observations without model assumptions.
+5. Diagnostics should cover zeros, small positive counts, tails, and replicate structure, with alternative baselines and two-part mechanisms as sensitivity checks.
+6. In omics data, the observation process and experimental unit must be explicit before zeros receive a technical or biological interpretation.
+
+# References
+
+- Mullahy, J. “Specification and Testing of Some Modified Count Data Models.” *Journal of Econometrics* 33(3), 1986, 341–365. [https://doi.org/10.1016/0304-4076(86)90002-3](https://doi.org/10.1016/0304-4076(86)90002-3).
+- Lambert, D. “Zero-Inflated Poisson Regression, with an Application to Defects in Manufacturing.” *Technometrics* 34(1), 1992, 1–14. [https://doi.org/10.1080/00401706.1992.10485228](https://doi.org/10.1080/00401706.1992.10485228).
+- Zeileis, A., Kleiber, C., and Jackman, S. “Regression Models for Count Data in R.” *Journal of Statistical Software* 27(8), 2008, 1–25. [https://doi.org/10.18637/jss.v027.i08](https://doi.org/10.18637/jss.v027.i08).
+- Svensson, V. “Droplet scRNA-seq Is Not Zero-Inflated.” *Nature Biotechnology* 38, 2020, 147–150. [https://doi.org/10.1038/s41587-019-0379-5](https://doi.org/10.1038/s41587-019-0379-5).

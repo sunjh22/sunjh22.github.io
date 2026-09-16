@@ -1,0 +1,246 @@
+---
+title: "Dirichlet--Multinomial Distribution"
+subtitle: "Multinomial counts with heterogeneous category probabilities"
+description: "The Dirichlet--multinomial distribution, including its mixture derivation, moments, covariance, overdispersion, assumptions, and interpretation for compositional count data."
+author: "Jiahong Sun"
+date: "2026-09-15"
+date-modified: "2026-09-15"
+categories: [Statistics, Probability, Distributions, Compositional Data]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Topic at a Glance
+
+> **One-sentence summary:** The Dirichlet--multinomial models a fixed-total vector of category counts when the underlying category probabilities vary across clusters or experimental units.
+
+| Item | Description |
+|---|---|
+| Domain | Probability & Randomness; multivariate discrete mixture distributions |
+| Support | $x_k\in\{0,1,\ldots,n\}$ with $\sum_{k=1}^Kx_k=n$ |
+| Parameters | Total $n$ and concentrations $\boldsymbol\alpha=(\alpha_1,\ldots,\alpha_K)$, all positive |
+| Key feature | Multinomial sampling plus extra variation from a shared random probability vector |
+| Typical applications | Microbial taxon counts, cell-type counts, allele counts, clustered categorical outcomes |
+| Prerequisites | [Categorical and multinomial distributions](categorical-and-multinomial-distributions.qmd); [Dirichlet distribution](dirichlet-distribution.qmd) |
+
+# A Random Composition Behind the Counts
+
+The ordinary multinomial model uses one fixed vector of category probabilities for every experimental unit. The Dirichlet--multinomial introduces a unit-specific latent composition:
+
+$$
+\boldsymbol P\sim\operatorname{Dirichlet}(\alpha_1,\ldots,\alpha_K),
+\qquad
+\boldsymbol X\mid\boldsymbol P=\boldsymbol p
+\sim\operatorname{Multinomial}(n,\boldsymbol p).
+$$
+
+Write
+
+$$
+\alpha_0=\sum_{k=1}^K\alpha_k,
+\qquad
+\pi_k=\frac{\alpha_k}{\alpha_0}.
+$$
+
+The vector $\boldsymbol\pi$ is the mean composition, while $\alpha_0$ controls how tightly the latent compositions concentrate around it. Conditional on $\boldsymbol P$, the $n$ categorical trials are independent. Marginally, trials from the same unit are dependent because they share $\boldsymbol P$.
+
+Integrating out the latent composition gives the probability mass function
+
+$$
+\boxed{
+P(\boldsymbol X=\boldsymbol x)
+=\frac{n!}{\prod_{k=1}^Kx_k!}
+\frac{\Gamma(\alpha_0)}{\Gamma(n+\alpha_0)}
+\prod_{k=1}^K
+\frac{\Gamma(x_k+\alpha_k)}{\Gamma(\alpha_k)},
+\qquad \sum_kx_k=n.
+}
+$$
+
+This distribution is also called the **compound multinomial**. When $K=2$, one component determines the other and the model reduces to the [beta-binomial distribution](beta-binomial-distribution.qmd).
+
+# Deriving the Mass Function
+
+The multinomial likelihood and Dirichlet density are
+
+$$
+p(\boldsymbol x\mid\boldsymbol p)
+=\frac{n!}{\prod_kx_k!}\prod_kp_k^{x_k},
+$$
+
+$$
+f(\boldsymbol p)
+=\frac{\Gamma(\alpha_0)}{\prod_k\Gamma(\alpha_k)}
+\prod_kp_k^{\alpha_k-1}.
+$$
+
+Marginalization over the simplex $\mathcal S_{K-1}$ yields
+
+$$
+\begin{aligned}
+P(\boldsymbol X=\boldsymbol x)
+&=\int_{\mathcal S_{K-1}}
+p(\boldsymbol x\mid\boldsymbol p)f(\boldsymbol p)\,d\boldsymbol p\\
+&=\frac{n!}{\prod_kx_k!}
+\frac{B(\boldsymbol\alpha+\boldsymbol x)}{B(\boldsymbol\alpha)},
+\end{aligned}
+$$
+
+where the multivariate beta function is
+
+$$
+B(\boldsymbol a)=\frac{\prod_k\Gamma(a_k)}{\Gamma(\sum_ka_k)}.
+$$
+
+Substituting the two beta functions gives the boxed mass function. The derivation also exposes the model's meaning: overdispersion is not inserted as an arbitrary correction; it arises from variation in the full probability vector across units.
+
+# Mean, Variance, and Covariance
+
+Iterated expectation gives
+
+$$
+\boxed{E(X_k)=n\pi_k.}
+$$
+
+Define the intracluster-correlation parameter
+
+$$
+\rho=\frac{1}{\alpha_0+1}.
+$$
+
+Applying total variance to $X_k\mid P_k\sim\operatorname{Binomial}(n,P_k)$ gives
+
+$$
+\boxed{
+\operatorname{Var}(X_k)
+=n\pi_k(1-\pi_k)\{1+(n-1)\rho\}.
+}
+$$
+
+For $j\neq k$,
+
+$$
+\boxed{
+\operatorname{Cov}(X_j,X_k)
+=-n\pi_j\pi_k\{1+(n-1)\rho\}.
+}
+$$
+
+The factor $1+(n-1)\rho$ multiplies every entry of the ordinary multinomial covariance matrix. As $\alpha_0\to\infty$ with $\boldsymbol\pi$ fixed, $\rho\to0$, the latent composition becomes nearly constant, and the Dirichlet--multinomial converges to a multinomial distribution.
+
+The negative count covariance does not imply biological antagonism. Counts must sum to $n$, so an increase in one category leaves fewer slots for the others. Meanwhile, repeated labels for the **same** category are positively associated marginally: for distinct trials $r$ and $s$,
+
+$$
+\operatorname{Corr}\{I(Z_r=k),I(Z_s=k)\}=\rho.
+$$
+
+These statements describe different comparisons and are not contradictory.
+
+# Aggregation and Predictive Reinforcement
+
+The family is closed under merging categories. If categories 1 and 2 are combined, their new concentration is $\alpha_1+\alpha_2$, exactly as for the Dirichlet distribution. Consequently, any one component has marginal law
+
+$$
+X_k\sim\operatorname{BetaBinomial}
+(n,\alpha_k,\alpha_0-\alpha_k).
+$$
+
+There is also a sequential Pólya-urn representation. After category counts $x_1,\ldots,x_K$ have appeared, the predictive probability for the next label is
+
+$$
+P(Z_{t+1}=k\mid Z_1,\ldots,Z_t)
+=\frac{\alpha_k+x_k}{\alpha_0+t}.
+$$
+
+An observed label raises the predictive probability of the same category. This reinforcement produces an exchangeable sequence with the Dirichlet--multinomial count distribution. It is a mathematical construction, not evidence that biological observations literally reinforce one another.
+
+# Worked Example: Taxon Counts Across Specimens
+
+Suppose one specimen contributes $n=100$ classified microbial reads across three taxa, and the population model for specimen-specific proportions has
+
+$$
+\boldsymbol\alpha=(6,3,1),
+\qquad
+\alpha_0=10.
+$$
+
+The mean composition is $\boldsymbol\pi=(0.6,0.3,0.1)$ and
+
+$$
+\rho=\frac{1}{11}\approx0.091.
+$$
+
+For taxon 1,
+
+$$
+E(X_1)=60,
+$$
+
+$$
+\operatorname{Var}(X_1)
+=100(0.6)(0.4)
+\left\{1+99\left(\frac{1}{11}\right)\right\}
+=240.
+$$
+
+The corresponding multinomial variance would be only $24$. The extra variance represents between-specimen heterogeneity under the assumed Dirichlet mixing distribution.
+
+The specimen—not each read—is the experimental unit for a treatment or population comparison. Additional reads estimate one specimen's composition more precisely; they do not create additional biological replicates. Extraction, amplification, sequencing depth, taxonomic misclassification, and batch can all affect observed counts, so biological interpretation requires more than a fitted probability law.
+
+# Sampling Model, Bayesian Prediction, or Both?
+
+The same formula appears in two distinct roles:
+
+- **Population sampling model:** every biological unit has a latent composition drawn from a common Dirichlet distribution, and its observed counts are multinomial conditional on that composition.
+- **Bayesian posterior prediction:** a Dirichlet prior updated by one multinomial sample gives a Dirichlet posterior; integrating a future multinomial sample over that posterior produces a Dirichlet--multinomial predictive distribution.
+
+In the first role, $\alpha_0$ represents modeled heterogeneity among units. In the second, it contributes prior or posterior concentration for uncertainty about a probability vector. Identical algebra does not make these scientific interpretations interchangeable.
+
+# Assumptions and Diagnostic Questions
+
+| Assumption or implication | Why it matters | Diagnostic question | Response or sensitivity check |
+|---|---|---|---|
+| Total $n$ is fixed or conditioned upon | the model describes allocation given a total | does total abundance or library size carry biological information? | jointly model totals and composition, or state the conditional estimand |
+| One latent composition per experimental unit | it determines which observations share dependence | are reads grouped by specimen, subject, site, or batch? | align the hierarchy with the sampling design |
+| Dirichlet heterogeneity | one concentration scale controls all extra covariance | do taxa show distinct dispersion or richer log-ratio covariance? | compare generalized Dirichlet, logistic-normal, or feature-specific models |
+| Exchangeability given $\boldsymbol P$ | read labels have common probabilities within a unit | are there PCR duplicates, spatial structure, or taxon-specific detection errors? | preprocess appropriately or model dependence and detection |
+| No extra point-mass process | zeros arise from multinomial sampling and heterogeneous composition | are some taxa structurally absent or censored below detection? | compare zero-altered models using biological knowledge |
+| Independent biological units | uncertainty depends on genuine replication | are repeated libraries or aliquots treated as independent specimens? | preserve pairing and use hierarchical or repeated-measures models |
+
+Useful checks compare observed and simulated replicate-level compositions, zero frequencies, dominant-category frequencies, marginal variances, pairwise log-ratios, and patterns by batch or condition. A good fit to marginal variances alone cannot verify the Dirichlet covariance structure or distinguish biological heterogeneity from technical bias.
+
+# Common Pitfalls
+
+1. **Using a Dirichlet density directly for integer counts:** the Dirichlet models a latent composition; the Dirichlet--multinomial models fixed-total counts.
+2. **Calling every overdispersed multinomial dataset Dirichlet--multinomial:** omitted covariates, mixtures, contamination, and correlated measurement error can create similar variation.
+3. **Interpreting negative count covariance as competition:** much of it follows mechanically from the fixed total.
+4. **Pooling specimens before analysis:** aggregation destroys the between-unit variation that identifies overdispersion.
+5. **Ignoring the total:** conditioning on library size answers a compositional question and can hide absolute-abundance changes.
+6. **Treating reads or cells as biological replication:** within-sample observations refine measurement but do not increase the number of independently assigned or sampled units.
+7. **Assuming a small $\alpha_0$ reveals a mechanism:** it describes heterogeneity under the model but does not identify its biological or technical cause.
+
+# Connections to the Knowledge Map
+
+- [Categorical and multinomial distributions](categorical-and-multinomial-distributions.qmd) supplies the conditional count model and fixed-total covariance.
+- [Dirichlet distribution](dirichlet-distribution.qmd) supplies the latent composition, its moments, and aggregation property.
+- [Beta-binomial distribution](beta-binomial-distribution.qmd) is the two-category special case.
+- [Joint, marginal, and conditional distributions](joint-marginal-and-conditional-distributions.qmd) explains the mixture calculation.
+- [Independence and conditional independence](independence-and-conditional-independence.qmd) distinguishes conditional independence from marginal dependence.
+- [Covariance and correlation](covariance-and-correlation.qmd) provides the total-variance and covariance tools.
+
+# Take-home Messages
+
+1. The Dirichlet--multinomial is multinomial conditional on a Dirichlet-distributed probability vector.
+2. Its mean composition is $\boldsymbol\pi$, while $\alpha_0$ controls a specific exchangeable overdispersion pattern.
+3. Variances and covariances equal their multinomial counterparts multiplied by $1+(n-1)/(\alpha_0+1)$.
+4. The model can describe population heterogeneity or Bayesian prediction, but those interpretations must be kept distinct.
+5. Fixed totals, constrained covariance, structural zeros, and technical biases should be checked rather than absorbed uncritically into dispersion.
+6. In omics applications, independent specimens support inference; reads and cells are subsamples within those specimens.
+
+# References
+
+- Mosimann, J. E. “On the Compound Multinomial Distribution, the Multivariate Beta-Distribution, and Correlations Among Proportions.” *Biometrika* 49(1/2), 1962, 65–82. [https://doi.org/10.1093/biomet/49.1-2.65](https://doi.org/10.1093/biomet/49.1-2.65).
+- Johnson, N. L., Kotz, S., and Balakrishnan, N. *Discrete Multivariate Distributions*. Wiley, 1997.
+- Holmes, I., Harris, K., and Quince, C. “Dirichlet Multinomial Mixtures: Generative Models for Microbial Metagenomics.” *PLOS ONE* 7(2), 2012, e30126. [https://doi.org/10.1371/journal.pone.0030126](https://doi.org/10.1371/journal.pone.0030126).
+- Chen, J. and Li, H. “Variable Selection for Sparse Dirichlet--Multinomial Regression with an Application to Microbiome Data Analysis.” *Bioinformatics* 29(13), 2013, 1638–1644. [https://doi.org/10.1093/bioinformatics/btt268](https://doi.org/10.1093/bioinformatics/btt268).

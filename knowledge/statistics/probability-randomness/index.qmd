@@ -28,6 +28,8 @@ Probability provides the language for representing biological variation, samplin
 - [Dirichlet distribution](dirichlet-distribution.qmd)
 - [Negative binomial distribution and overdispersion](negative-binomial-distribution-and-overdispersion.qmd)
 - [Beta-binomial distribution](beta-binomial-distribution.qmd)
+- [Dirichlet--multinomial distribution](dirichlet-multinomial-distribution.qmd)
+- [Zero-inflated and hurdle distributions](zero-inflated-and-hurdle-distributions.qmd)
 - [Probability distributions](distributions.qmd)
 
 ## Continue through the map

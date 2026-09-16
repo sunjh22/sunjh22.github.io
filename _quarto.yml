@@ -95,6 +95,8 @@ website:
                   - knowledge/statistics/probability-randomness/dirichlet-distribution.qmd
                   - knowledge/statistics/probability-randomness/negative-binomial-distribution-and-overdispersion.qmd
                   - knowledge/statistics/probability-randomness/beta-binomial-distribution.qmd
+                  - knowledge/statistics/probability-randomness/dirichlet-multinomial-distribution.qmd
+                  - knowledge/statistics/probability-randomness/zero-inflated-and-hurdle-distributions.qmd
                   - knowledge/statistics/probability-randomness/distributions.qmd
               - section: "Asymptotic Thinking"
                 href: knowledge/statistics/asymptotic-thinking/index.qmd
