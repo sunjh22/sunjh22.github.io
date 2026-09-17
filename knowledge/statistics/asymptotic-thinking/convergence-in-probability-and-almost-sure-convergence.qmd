@@ -1,0 +1,94 @@
+---
+title: "Convergence in Probability and Almost-Sure Convergence"
+subtitle: "Two ways a sequence of random quantities approaches a limit"
+description: "Definitions, implications, counterexamples, and conditions for two fundamental modes of stochastic convergence."
+author: "Jiahong Sun"
+date: "2026-09-17"
+date-modified: "2026-09-17"
+categories: [Statistics, Asymptotics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# The Question Behind Convergence
+
+An estimator, sample average, or simulation output changes as its sample size $n$ grows. Saying that it "approaches" a target needs a precise meaning. **Convergence in probability** controls the chance of a substantial error at each large $n$; **almost-sure convergence** says that, on almost every infinite sample path, the errors eventually become and remain small. Both statements concern a sequence of random variables defined on a common probability space, as in [probability spaces and events](../probability-randomness/probability-spaces-events-and-axioms.qmd).
+
+# Definitions
+
+For random variables $X_n$ and $X$ on the same probability space,
+
+$$
+X_n\xrightarrow{P}X
+\quad\Longleftrightarrow\quad
+P(|X_n-X|>\varepsilon)\longrightarrow0
+\quad\text{for every }\varepsilon>0.
+$$
+
+Using $\geq\varepsilon$ instead of $>\varepsilon$ gives an equivalent definition because the condition holds for every positive threshold. Convergence in probability does not say that a *particular* sample path eventually settles down. It says that the probability of an error exceeding any fixed tolerance tends to zero.
+
+Almost-sure convergence is the pathwise statement
+
+$$
+X_n\xrightarrow{\mathrm{a.s.}}X
+\quad\Longleftrightarrow\quad
+P\{\omega:\lim_{n\to\infty}X_n(\omega)=X(\omega)\}=1.
+$$
+
+The exceptional sample paths may exist, but their probability is zero. For a fixed $\varepsilon>0$, the event that $|X_n-X|>\varepsilon$ occurs infinitely often is written $\{|X_n-X|>\varepsilon\ \mathrm{i.o.}\}$. Almost-sure convergence means this event has probability zero for every positive rational $\varepsilon$, which is enough to cover all positive tolerances.
+
+# How the Modes Relate
+
+Almost-sure convergence implies convergence in probability. If $X_n\to X$ almost surely, the indicators $1\{|X_n-X|>\varepsilon\}$ tend to zero almost surely and are bounded by one. Bounded convergence therefore gives
+
+$$
+P(|X_n-X|>\varepsilon)
+=E[1\{|X_n-X|>\varepsilon\}]\longrightarrow0.
+$$
+
+The reverse implication fails. Let $X_n$ be independent Bernoulli variables with $P(X_n=1)=1/n$ for $n\geq2$. For any $0<\varepsilon<1$, $P(|X_n|>\varepsilon)=1/n\to0$, so $X_n\xrightarrow{P}0$. Yet $\sum_nP(X_n=1)=\infty$; independence and the second Borel--Cantelli lemma imply $X_n=1$ infinitely often almost surely. Thus $X_n$ does not converge almost surely to zero. The construction separates a vanishing error probability *at each step* from errors occurring infinitely often *along a path*.
+
+A useful sufficient condition is summability: if for every $\varepsilon>0$,
+
+$$
+\sum_{n=1}^{\infty}P(|X_n-X|>\varepsilon)<\infty,
+$$
+
+the first Borel--Cantelli lemma gives $X_n\to X$ almost surely. This condition needs no independence, but is stronger than necessary. Conversely, convergence in probability guarantees an almost-surely convergent **subsequence**, not necessarily almost-sure convergence of the full sequence.
+
+# Bounds, Expectations, and Limits
+
+If $E|X_n-X|^r\to0$ for some $r>0$, Markov's inequality yields
+
+$$
+P(|X_n-X|>\varepsilon)
+\leq\frac{E|X_n-X|^r}{\varepsilon^r}\longrightarrow0.
+$$
+
+This is convergence in $L^r$ implying convergence in probability. Neither convergence in probability nor almost-sure convergence by itself guarantees convergence of expectations. For example, if $X_n=n^2$ with probability $1/n^2$ and is zero otherwise, then $X_n\to0$ in probability but $E(X_n)=1$ for every $n$. If these events are placed on one probability space, their probabilities are summable, so $X_n\to0$ almost surely as well, while the expectations still stay at one. Uniform integrability or another suitable domination condition is needed to exchange such limits and expectations.
+
+# Why the Conditions Matter in Data Analysis
+
+Consider a fraction of reads passing a quality filter as sequencing depth grows. A convergence claim for that fraction describes the stipulated read-sampling model. Reads from one library can share PCR, mapping, and preparation effects; increasing reads does not supply additional independent **biological specimens**. A limit for a within-library fraction does not establish consistency for a population-level biological effect.
+
+| Question | What to check |
+|---|---|
+| Are $X_n$ defined together? | Pathwise statements require a joint construction of the whole sequence. |
+| What is the limit? | A fixed parameter, a random latent quantity, and an observed estimate have different meanings. |
+| Which probability is shrinking? | Identify the sampling process and the tolerance $\varepsilon$. |
+| Is a pathwise claim needed? | Convergence in probability is often enough for consistency; pathwise algorithms or strong laws may call for almost-sure convergence. |
+
+These modes describe **asymptotic behavior**, not the error at a particular finite $n$. A finite-sample bound, uncertainty interval, or simulation under a credible data-generating process is needed for that question. The [law of large numbers](law-of-large-numbers.qmd) is the central example: its weak and strong forms differ by exactly these modes.
+
+# Connections and Take-home Messages
+
+- [Expectation, variance, and moments](../probability-randomness/expectation-variance-and-moments.qmd) supplies the moment bounds used above.
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd) explains the independence condition in the counterexample.
+
+Convergence in probability makes large errors unlikely at each sufficiently large sample size. Almost-sure convergence controls almost every entire sequence. The latter implies the former, while neither alone justifies exchanging limits and expectations or ignoring finite-sample and design assumptions.
+
+# References
+
+- MIT OpenCourseWare. *Theory of Probability*, lectures 6--9 on laws of large numbers, weak laws, Borel--Cantelli, and the strong law. [Lecture slides](https://www.ocw.mit.edu/courses/18-175-theory-of-probability-spring-2014/pages/lecture-slides/).
+- Tsitsiklis, J. and Jaillet, P. *Introduction to Probability*, Lecture 18: Inequalities, Convergence, and the Weak Law of Large Numbers. MIT OpenCourseWare, 2018. [Lecture PDF](https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/d39c57e82b51b495f67aa61cbc29d054_MITRES_6_012S18_L18.pdf).

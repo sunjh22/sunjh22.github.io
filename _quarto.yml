@@ -102,6 +102,9 @@ website:
                   - knowledge/statistics/probability-randomness/distributions.qmd
               - section: "Asymptotic Thinking"
                 href: knowledge/statistics/asymptotic-thinking/index.qmd
+                contents:
+                  - knowledge/statistics/asymptotic-thinking/convergence-in-probability-and-almost-sure-convergence.qmd
+                  - knowledge/statistics/asymptotic-thinking/law-of-large-numbers.qmd
               - section: "Statistical Inference"
                 href: knowledge/statistics/statistical-inference/index.qmd
               - section: "Regression & Statistical Models"

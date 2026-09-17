@@ -6,6 +6,9 @@ categories: [Statistics, Asymptotics]
 
 This level will connect probability foundations to large-sample statistical inference through convergence, the law of large numbers, the central limit theorem, and related approximations.
 
+- [Convergence in probability and almost-sure convergence](convergence-in-probability-and-almost-sure-convergence.qmd)
+- [Law of large numbers](law-of-large-numbers.qmd)
+
 - [Probability & Randomness](../probability-randomness/index.qmd)
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Statistics overview](../index.qmd)

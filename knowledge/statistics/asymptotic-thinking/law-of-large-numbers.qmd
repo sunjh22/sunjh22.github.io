@@ -1,0 +1,87 @@
+---
+title: "Law of Large Numbers"
+subtitle: "When averages stabilize, and what they stabilize to"
+description: "Weak and strong laws, a Chebyshev derivation, finite-sample bounds, and failure cases relevant to biological sampling."
+author: "Jiahong Sun"
+date: "2026-09-17"
+date-modified: "2026-09-17"
+categories: [Statistics, Asymptotics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# The Claim and Its Scope
+
+Let $X_1,X_2,\ldots$ be independent and identically distributed (iid) observations with finite mean $\mu=E(X_1)$, and let $\bar X_n=n^{-1}\sum_{i=1}^nX_i$. The **law of large numbers** (LLN) says that the average approaches $\mu$ as $n$ increases. It concerns repeated sampling from a specified population; it does not claim that the observations themselves approach $\mu$ or that averaging removes bias in how units were selected.
+
+The weak and strong statements use the two modes defined in [convergence in probability and almost-sure convergence](convergence-in-probability-and-almost-sure-convergence.qmd):
+
+$$
+\underbrace{\bar X_n\xrightarrow{P}\mu}_{\text{weak law}},
+\qquad
+\underbrace{\bar X_n\xrightarrow{\mathrm{a.s.}}\mu}_{\text{strong law}}.
+$$
+
+Under iid sampling, **finite absolute mean** $E|X_1|<\infty$ suffices for the classical strong law and therefore for the weak law. A finite variance is a convenient *stronger* assumption for the simple weak-law proof and quantitative bound below; it is not required for the iid theorem itself. The laws can also hold under other dependence and nonidentical-sampling conditions, but such extensions require their own assumptions.
+
+# A Finite-Variance Derivation of the Weak Law
+
+Suppose $\operatorname{Var}(X_i)=\sigma^2<\infty$ and the $X_i$ are independent. Linearity of expectation and the absence of cross-covariances give
+
+$$
+E(\bar X_n)=\mu,
+\qquad
+\operatorname{Var}(\bar X_n)
+=\frac{1}{n^2}\sum_{i=1}^n\operatorname{Var}(X_i)
+=\frac{\sigma^2}{n}.
+$$
+
+Chebyshev's inequality then yields, for every $\varepsilon>0$,
+
+$$
+\boxed{P(|\bar X_n-\mu|\geq\varepsilon)
+\leq\frac{\sigma^2}{n\varepsilon^2}\longrightarrow0.}
+$$
+
+This proves the weak law under these conditions and supplies a finite-sample upper bound. The bound is often loose: it guarantees a maximum error probability without specifying the full sampling distribution. If observations are independent but have different means or variances, the same calculation can still prove convergence to a target average when the average of their means tends to that target and $n^{-2}\sum_i\operatorname{Var}(X_i)\to0$. It need not converge to any single population mean without that first condition.
+
+# A Small Worked Example
+
+Suppose $X_i$ indicates whether independently sampled specimens carry a feature, with $P(X_i=1)=p=0.2$. Then $\bar X_n$ is the observed fraction and $\operatorname{Var}(X_i)=p(1-p)=0.16$. At $n=100$, Chebyshev gives
+
+$$
+P(|\bar X_{100}-0.2|\geq0.1)
+\leq\frac{0.16}{100(0.1)^2}=0.16.
+$$
+
+This is an upper bound, not the exact probability and not a confidence interval for $p$. If the one hundred measurements instead come from cells within a few specimens, the iid **specimen** calculation is inapplicable. More cells can improve measurement of each specimen while leaving biological replication small.
+
+# What the Strong Law Adds
+
+The strong law says that, with probability one, a single infinite iid sequence's running averages eventually stay within any specified tolerance of $\mu$. It is stronger than saying the deviation probability tends to zero at each $n$. Its general iid finite-mean proof uses more than the one-line Chebyshev bound; truncation and maximal inequalities or related arguments control the entire tail of the sequence. The implication from strong to weak convergence does not require another iid assumption once the strong convergence has been established.
+
+Neither law specifies a rate of convergence under only a finite-mean assumption. With finite variance, Chebyshev gives an $O(1/n)$ bound for a **fixed** deviation threshold, but this is a conservative probability bound, not a statement that the realized error always shrinks like $1/n$. The [normal distribution note](../probability-randomness/normal-and-multivariate-normal-distributions.qmd) discusses Gaussian behavior; an LLN by itself does **not** imply a normal approximation or a standard error formula.
+
+# Failure Cases and Design Checks
+
+| Mechanism | What averaging does | What to do |
+|---|---|---|
+| No finite mean: iid Cauchy observations | The sample average remains Cauchy distributed; there is no finite $\mu$ for the usual LLN. | Specify an estimand that exists, such as a median, and its sampling theory. |
+| Shared random effect: $X_i=\mu+U+\epsilon_i$ with one common $U$ | If the independent $\epsilon_i$ average to zero, $\bar X_n\to\mu+U$, not $\mu$. | Sample independent biological units or model clustering. |
+| Selection bias | The average can converge precisely to the mean of the **selected** population. | Define the target population and examine the sampling mechanism. |
+| Nonstationary process | An average of changing means need not approach a stable target. | Model time or batch trends and state the quantity being averaged. |
+
+For RNA-seq, sequencing more reads from one library can stabilize a library-specific proportion under a read-level sampling model. It cannot make that library's gene expression equal to the average across a biological population. The experimental unit for condition-level inference is ordinarily the independently sampled organism, tissue specimen, or culture; technical libraries and reads are nested measurements. Even when an LLN applies, a statistically stable proportion is not by itself evidence of a biological mechanism.
+
+# Connections and Take-home Messages
+
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd) clarifies the sampling assumption behind the simple variance calculation.
+- [Expectation, variance, and moments](../probability-randomness/expectation-variance-and-moments.qmd) derives the properties used in the Chebyshev proof.
+
+The iid finite-mean law identifies the mean as the long-run limit of the sample average. Finite variance gives a transparent weak-law proof and a bound, while almost-sure convergence describes entire paths. The scientific target depends on the sampling design; more technical measurements cannot substitute for independent biological replication.
+
+# References
+
+- MIT OpenCourseWare. *Theory of Probability*, lectures 6--9 on laws of large numbers and the strong law. [Lecture slides](https://www.ocw.mit.edu/courses/18-175-theory-of-probability-spring-2014/pages/lecture-slides/).
+- Tsitsiklis, J. and Jaillet, P. *Introduction to Probability*, Lecture 18: Inequalities, Convergence, and the Weak Law of Large Numbers. MIT OpenCourseWare, 2018. [Lecture PDF](https://ocw.mit.edu/courses/res-6-012-introduction-to-probability-spring-2018/d39c57e82b51b495f67aa61cbc29d054_MITRES_6_012S18_L18.pdf).
