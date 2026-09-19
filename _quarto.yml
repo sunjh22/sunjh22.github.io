@@ -107,6 +107,8 @@ website:
                   - knowledge/statistics/asymptotic-thinking/law-of-large-numbers.qmd
                   - knowledge/statistics/asymptotic-thinking/convergence-in-distribution.qmd
                   - knowledge/statistics/asymptotic-thinking/central-limit-theorem.qmd
+                  - knowledge/statistics/asymptotic-thinking/delta-method.qmd
+                  - knowledge/statistics/asymptotic-thinking/slutskys-theorem-and-continuous-mapping.qmd
               - section: "Statistical Inference"
                 href: knowledge/statistics/statistical-inference/index.qmd
               - section: "Regression & Statistical Models"

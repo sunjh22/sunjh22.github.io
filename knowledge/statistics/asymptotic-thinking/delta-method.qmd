@@ -1,0 +1,141 @@
+---
+title: "Delta Method"
+subtitle: "Transferring asymptotic uncertainty through smooth transformations"
+description: "The univariate and multivariate delta method, its Taylor expansion, standard-error propagation, and important failure cases."
+author: "Jiahong Sun"
+date: "2026-09-19"
+date-modified: "2026-09-19"
+categories: [Statistics, Asymptotics, Inference]
+toc: true
+number-sections: true
+draft: false
+---
+
+# The Problem the Method Solves
+
+An estimator may have a simple limiting distribution even when the scientific quantity reported from it is nonlinear. Examples include a log fold change, an odds ratio, a ratio of means, or a function of several fitted coefficients. The **delta method** carries the estimator's first-order asymptotic uncertainty through a smooth transformation.
+
+Suppose an estimator $T_n\in\mathbb R^k$ targets $\theta$ and, for constants $r_n\to\infty$,
+
+$$
+r_n(T_n-\theta)\xrightarrow{d}Z.
+$$
+
+If $g:\mathbb R^k\to\mathbb R^m$ is differentiable at $\theta$, with Jacobian $Dg(\theta)$, then
+
+$$
+\boxed{
+r_n\{g(T_n)-g(\theta)\}
+\xrightarrow{d}Dg(\theta)Z.
+}
+$$
+
+This is a statement about the transformed **estimator** $g(T_n)$ of the transformed **estimand** $g(\theta)$. It is not a claim that transforming a point estimate removes bias, design problems, or model misspecification.
+
+# Why It Works
+
+Differentiability gives the local expansion
+
+$$
+g(T_n)-g(\theta)
+=Dg(\theta)(T_n-\theta)+R_n,
+$$
+
+where $\lVert R_n\rVert/\lVert T_n-\theta\rVert\to0$ whenever $T_n\to\theta$. Because convergence of $r_n(T_n-\theta)$ in distribution implies stochastic boundedness, $T_n-\theta=O_p(r_n^{-1})$. Therefore $r_nR_n=o_p(1)$, and
+
+$$
+r_n\{g(T_n)-g(\theta)\}
+=Dg(\theta)r_n(T_n-\theta)+o_p(1).
+$$
+
+The result follows from the [continuous mapping theorem and Slutsky's theorem](slutskys-theorem-and-continuous-mapping.qmd). The approximation is local: curvature discarded by the linearization can matter at the available sample size.
+
+# Normal Limits and Standard Errors
+
+The most common case is
+
+$$
+\sqrt n(T_n-\theta)\xrightarrow{d}N_k(0,\Sigma).
+$$
+
+Then
+
+$$
+\boxed{
+\sqrt n\{g(T_n)-g(\theta)\}
+\xrightarrow{d}
+N_m\!\left(0,Dg(\theta)\Sigma Dg(\theta)^\mathsf T\right).
+}
+$$
+
+For a scalar $g$, the asymptotic variance is $\nabla g(\theta)^\mathsf T\Sigma\nabla g(\theta)$. If $\widehat\Sigma$ consistently estimates $\Sigma$, the plug-in standard error is
+
+$$
+\widehat{\operatorname{SE}}\{g(T_n)\}
+=\sqrt{\frac{
+\nabla g(T_n)^\mathsf T\widehat\Sigma\nabla g(T_n)}{n}}.
+$$
+
+Replacing $\theta$ and $\Sigma$ by consistent estimates is itself justified asymptotically; it does not guarantee that a normal interval has accurate finite-sample coverage.
+
+# Worked Example: A Log Ratio
+
+Let $T_n=(\bar X,\bar Y)^\mathsf T$ estimate positive means $\theta=(\mu_X,\mu_Y)^\mathsf T$ from paired independent biological specimens. For the natural-log ratio
+
+$$
+g(\mu_X,\mu_Y)=\log(\mu_X/\mu_Y),
+$$
+
+the gradient is
+
+$$
+\nabla g(\theta)
+=\begin{pmatrix}1/\mu_X\\-1/\mu_Y\end{pmatrix}.
+$$
+
+If $\sqrt n(T_n-\theta)\xrightarrow{d}N_2(0,\Sigma)$, then
+
+$$
+\operatorname{Avar}\{\sqrt n\,g(T_n)\}
+=\frac{\Sigma_{11}}{\mu_X^2}
++\frac{\Sigma_{22}}{\mu_Y^2}
+-\frac{2\Sigma_{12}}{\mu_X\mu_Y}.
+$$
+
+The covariance term matters for paired specimens. Dropping it treats the two sample means as if they were independent and can overstate or understate uncertainty. For a base-2 log fold change, divide the gradient and standard error by $\log 2$.
+
+Statistically, this calculation approximates repeated-sampling uncertainty for a ratio of population means under the stated design. Biologically, the log ratio is meaningful only relative to the assay scale, normalization, target population, and measurement process. Technical replicates can improve a specimen's measurement but do not increase the number $n$ of independent biological specimens.
+
+# Conditions and Failure Cases
+
+| Condition or warning | What can go wrong | Practical response |
+|---|---|---|
+| $T_n$ has the stated limiting distribution at rate $r_n$ | Dependence, heavy tails, or weak identification can change the rate or limit. | Justify the sampling limit from the actual experimental units. |
+| $g$ is differentiable at $\theta$ | Thresholds, absolute values at zero, maxima at ties, and parameters on boundaries may have nonnormal limits. | Derive the limit directly or use a theorem for directionally differentiable maps. |
+| The first derivative is informative | If $Dg(\theta)=0$, the first-order limit degenerates at zero. | Use a second-order delta method and usually a faster scaling. |
+| The transformation stays away from singularities | Ratios with a denominator near zero can be extremely unstable. | Report denominator uncertainty and consider Fieller-type or model-based methods. |
+| The local linear approximation is adequate | Strong curvature or small samples can produce skewness and poor interval coverage. | Compare with a design-faithful bootstrap, simulation, or higher-order approximation. |
+
+For example, if $\sqrt n(T_n-0)\xrightarrow{d}N(0,\sigma^2)$ and $g(t)=t^2$, then $g'(0)=0$. The first-order method only gives a zero limit. The informative result uses a different rate:
+
+$$
+nT_n^2\xrightarrow{d}\sigma^2\chi_1^2.
+$$
+
+This is why mechanically substituting a zero gradient into a standard-error formula can erase rather than describe the uncertainty.
+
+# Interpretation and Connections
+
+- [Transformations of random variables](../probability-randomness/transformations-of-random-variables.qmd) gives exact transformed laws and finite-uncertainty propagation.
+- [Central limit theorem](central-limit-theorem.qmd) supplies the common $\sqrt n$ normal limit.
+- [Convergence in distribution](convergence-in-distribution.qmd) explains what the limiting approximation means.
+- [Slutsky's theorem and continuous mapping](slutskys-theorem-and-continuous-mapping.qmd) justify plug-in quantities and the Taylor remainder step.
+
+The delta method propagates a justified asymptotic distribution through a smooth local map. Its variance is a gradient--covariance--gradient calculation, including all covariance terms. Its limitations are as important as its convenience: zero derivatives, nonsmooth maps, boundaries, weak denominators, and poor finite-sample approximations require different reasoning.
+
+# References
+
+- Oehlert, G. W. “A Note on the Delta Method.” *The American Statistician* 46(1), 1992, 27--29. [https://doi.org/10.1080/00031305.1992.10475842](https://doi.org/10.1080/00031305.1992.10475842).
+- van der Vaart, A. W. *Asymptotic Statistics*. Cambridge University Press, 1998, Chapter 3.
+- MIT OpenCourseWare. *Mathematical Statistics*, Lecture 16: Asymptotics---Consistency and Delta Method. [Lecture notes](https://ocw.mit.edu/courses/18-655-mathematical-statistics-spring-2016/resources/mit18_655s16_lecnote16/).
+- MIT OpenCourseWare. *Mathematical Statistics*, Lecture 17: Asymptotics II---Limiting Distributions. [Lecture notes](https://live.ocw.mit.edu/courses/18-655-mathematical-statistics-spring-2016/7534b5eacdc9efa136fa0422447e13ae_MIT18_655S16_LecNote17.pdf).

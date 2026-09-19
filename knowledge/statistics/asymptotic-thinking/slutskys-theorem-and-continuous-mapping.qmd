@@ -1,0 +1,127 @@
+---
+title: "Slutsky's Theorem and Continuous Mapping"
+subtitle: "Combining limiting random quantities with consistent plug-in estimates"
+description: "Continuous mapping and Slutsky's theorem, with conditions, proof intuition, studentization, and failure cases."
+author: "Jiahong Sun"
+date: "2026-09-19"
+date-modified: "2026-09-19"
+categories: [Statistics, Asymptotics, Inference]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Two Rules for Building Useful Limits
+
+Asymptotic arguments rarely end with the first limiting distribution. Analysts transform estimators, replace unknown nuisance parameters by consistent estimates, and combine several random quantities. The **continuous mapping theorem** handles continuous transformations; **Slutsky's theorem** makes a particularly important combination valid when one component converges in probability to a constant.
+
+These are limit theorems, not declarations that estimation error is absent. They say when the extra random error is asymptotically negligible on the scale being studied.
+
+# Continuous Mapping Theorem
+
+Let $X_n\xrightarrow{d}X$, and let $g$ be measurable. If $g$ is continuous at $X$ with probability one---equivalently, the limit assigns probability zero to the discontinuity set $D_g$---then
+
+$$
+\boxed{g(X_n)\xrightarrow{d}g(X).}
+$$
+
+The theorem also has probability and almost-sure forms: if $X_n\xrightarrow{P}X$ or $X_n\xrightarrow{a.s.}X$, the corresponding convergence is preserved under continuity at the relevant limiting values.
+
+Continuity everywhere is sufficient but stronger than necessary. For the threshold map $g(x)=\mathbf 1(x\leq a)$, the only discontinuity is $a$. Thus $X_n\xrightarrow{d}X$ implies $P(X_n\leq a)\to P(X\leq a)$ only when $P(X=a)=0$, matching the CDF definition of [convergence in distribution](convergence-in-distribution.qmd).
+
+# Slutsky's Theorem
+
+Suppose
+
+$$
+X_n\xrightarrow{d}X,
+\qquad
+Y_n\xrightarrow{P}c,
+$$
+
+where $c$ is a constant. Then $(X_n,Y_n)\xrightarrow{d}(X,c)$. Applying continuous functions to this joint limit gives
+
+$$
+\boxed{
+\begin{aligned}
+X_n+Y_n &\xrightarrow{d} X+c,\\
+X_nY_n &\xrightarrow{d} cX,\\
+X_n/Y_n &\xrightarrow{d} X/c &&\text{if }c\neq0.
+\end{aligned}}
+$$
+
+No independence between $X_n$ and $Y_n$ is required. The constant limit is the crucial feature: although $Y_n$ remains random at finite $n$, it collapses to a fixed value asymptotically.
+
+A useful proof intuition is that $Y_n=c+o_p(1)$. Joint convergence with $X_n$ follows because the second coordinate's displacement vanishes in probability; addition, multiplication, and division then follow from continuous mapping. Division is continuous only away from a zero denominator.
+
+# Worked Example: Studentization
+
+Let $X_1,\ldots,X_n$ be iid with mean $\mu$ and finite, positive variance $\sigma^2$. The [central limit theorem](central-limit-theorem.qmd) gives
+
+$$
+\frac{\sqrt n(\bar X_n-\mu)}{\sigma}
+\xrightarrow{d}N(0,1).
+$$
+
+Because the sample standard deviation $S_n\xrightarrow{P}\sigma$, its ratio satisfies $S_n/\sigma\xrightarrow{P}1$. Slutsky's theorem therefore yields
+
+$$
+\boxed{
+\frac{\sqrt n(\bar X_n-\mu)}{S_n}
+=
+\frac{\sqrt n(\bar X_n-\mu)/\sigma}{S_n/\sigma}
+\xrightarrow{d}N(0,1).
+}
+$$
+
+This justifies replacing the unknown $\sigma$ by a consistent estimate in the asymptotic pivot. It does not say the statistic has an exact normal distribution. Under normal sampling it has an exact Student's $t_{n-1}$ distribution; under broader finite-variance sampling, normality is only a large-sample approximation.
+
+If the $X_i$ are summaries from independently sampled biological specimens, $n$ counts specimens. Multiple reads, cells, or technical runs within a specimen do not become independent $X_i$ values merely because there are many of them. A correct algebraic limit cannot rescue a misspecified unit of replication.
+
+# What the Theorems Do Not Permit
+
+## Separate marginal limits are not a joint limit
+
+If $X_n\xrightarrow{d}X$ and $Y_n\xrightarrow{d}Y$, the limit of $X_n+Y_n$ is not determined without information about their joint behavior. For example, two standard-normal marginals can be identical, independent, or perfectly negatively related; their sum variances are then respectively $4$, $2$, or $0$ under suitable couplings. Slutsky avoids this ambiguity because one limiting component is constant.
+
+## Discontinuities at mass points matter
+
+Let $X_n=1/n$ and $X=0$. Then $X_n\to X$, but for $g(x)=\mathbf 1(x>0)$, $g(X_n)=1$ while $g(X)=0$. The map is discontinuous exactly where the limiting variable lies. “Almost surely continuous under the limit” is a real condition, not a technical decoration.
+
+## A denominator converging to zero is unsafe
+
+From $Y_n\xrightarrow{P}0$, one cannot conclude a stable ratio limit for $X_n/Y_n$. The ratio may diverge or depend on relative rates. Ratios of weak signals and estimators near parameter boundaries require a dedicated joint analysis.
+
+# Conditions, Diagnostics, and Finite-Sample Limits
+
+| Claim | Required condition | Failure or check |
+|---|---|---|
+| Transform a weak limit | $g$ is continuous with probability one under the limiting law. | Locate discontinuities and check whether the limit has atoms there. |
+| Add or multiply a plug-in quantity | The plug-in converges in probability to a constant. | Consistency can fail under misspecification, dependence, or weak identification. |
+| Divide by a plug-in quantity | Its constant limit is nonzero. | Inspect whether the denominator can approach or cross zero. |
+| Combine multiple nondegenerate limits | Establish joint convergence, not just marginal convergence. | Preserve dependence and covariance in the limiting vector. |
+| Use the limit at the observed $n$ | The approximation must be adequate for the needed region, especially the tails. | Compare with an exact law, design-faithful simulation, or bootstrap when justified. |
+
+These theorems provide no universal sample-size threshold or convergence rate. A nuisance estimator can be consistent yet too noisy at the current sample size for a plug-in approximation to work well. Tail probabilities, ratios, and near-discontinuous decisions are especially sensitive.
+
+# Role in Asymptotic Statistics
+
+The [delta method](delta-method.qmd) combines a Taylor expansion with Slutsky's theorem to discard a smaller-order remainder. Consistent variance estimates turn asymptotically normal estimation errors into studentized statistics. Together, these tools form the bridge from a theoretical limit involving unknown parameters to an implementable large-sample approximation.
+
+The scientific interpretation remains tied to the estimand and sampling design. Slutsky's theorem licenses a statistical substitution; it does not show that a measured association is causal, practically important, or biologically reproducible.
+
+# Connections and Take-home Messages
+
+- [Convergence in probability and almost-sure convergence](convergence-in-probability-and-almost-sure-convergence.qmd) defines the modes used by consistent plug-in estimates.
+- [Convergence in distribution](convergence-in-distribution.qmd) gives the weak limit transformed by these results.
+- [Central limit theorem](central-limit-theorem.qmd) supplies many initial normal limits.
+- [Delta method](delta-method.qmd) is a central application.
+
+Continuous mapping preserves convergence through functions that are continuous where the limiting variable lives. Slutsky permits consistent nuisance estimates to replace constants in sums, products, and nonzero-denominator ratios. Neither theorem supplies joint convergence, finite-sample accuracy, or a valid experimental design automatically.
+
+# References
+
+- van der Vaart, A. W. *Asymptotic Statistics*. Cambridge University Press, 1998, Chapters 2--3.
+- Billingsley, P. *Convergence of Probability Measures*, 2nd ed. Wiley, 1999.
+- MIT OpenCourseWare. *Statistics for Applications*, Lecture 1: Introduction, including Slutsky's theorem. [Lecture slides](https://ocw.mit.edu/courses/18-650-statistics-for-applications-fall-2016/7836ea6d101679d495194bc3c5f227fa_MIT18_650F16_Introduction.pdf).
+- MIT OpenCourseWare. *Mathematical Statistics*, Lecture 16: Asymptotics---Consistency and Delta Method. [Lecture notes](https://ocw.mit.edu/courses/18-655-mathematical-statistics-spring-2016/resources/mit18_655s16_lecnote16/).
