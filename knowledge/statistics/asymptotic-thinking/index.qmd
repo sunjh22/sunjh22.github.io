@@ -8,6 +8,8 @@ This level will connect probability foundations to large-sample statistical infe
 
 - [Convergence in probability and almost-sure convergence](convergence-in-probability-and-almost-sure-convergence.qmd)
 - [Law of large numbers](law-of-large-numbers.qmd)
+- [Convergence in distribution](convergence-in-distribution.qmd)
+- [Central limit theorem](central-limit-theorem.qmd)
 
 - [Probability & Randomness](../probability-randomness/index.qmd)
 - [Statistical Inference](../statistical-inference/index.qmd)

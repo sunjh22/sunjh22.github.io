@@ -1,0 +1,80 @@
+---
+title: "Central Limit Theorem"
+subtitle: "Why standardized averages often have a Gaussian sampling limit"
+description: "The iid central limit theorem, its characteristic-function intuition, finite-sample checks, and failures."
+author: "Jiahong Sun"
+date: "2026-09-18"
+date-modified: "2026-09-18"
+categories: [Statistics, Asymptotics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# The Theorem and the Scientific Question
+
+Suppose $X_1,X_2,\ldots$ are independent and identically distributed (iid) observations with mean $\mu$ and finite, positive variance $\sigma^2$. The classical central limit theorem (CLT) states that
+
+$$
+\boxed{Z_n=\frac{\sum_{i=1}^nX_i-n\mu}{\sigma\sqrt n}
+=\frac{\sqrt n(\bar X_n-\mu)}{\sigma}
+\xrightarrow{d}N(0,1).}
+$$
+
+The [law of large numbers](law-of-large-numbers.qmd) says $\bar X_n$ approaches $\mu$; the CLT describes the *sampling distribution of its scaled error*. It gives the approximation $\bar X_n\approx N(\mu,\sigma^2/n)$ for sufficiently suitable finite $n$. This is a statement about repeated samples under the assumed data-generating process, not a claim that individual $X_i$ values become normal.
+
+# Why a Normal Limit Appears
+
+Center and scale one observation as $Y_i=(X_i-\mu)/\sigma$, so $E(Y_i)=0$ and $E(Y_i^2)=1$. Its characteristic function $\phi_Y(t)=E(e^{itY_i})$ has the local expansion
+
+$$
+\phi_Y(u)=1-\frac{u^2}{2}+o(u^2)
+\quad\text{as }u\to0.
+$$
+
+Independence makes the characteristic function of $Z_n=n^{-1/2}\sum_iY_i$ a product:
+
+$$
+\phi_{Z_n}(t)
+=\left[\phi_Y\!\left(\frac{t}{\sqrt n}\right)\right]^n
+=\left[1-\frac{t^2}{2n}+o(n^{-1})\right]^n
+\longrightarrow e^{-t^2/2}.
+$$
+
+The final expression is the characteristic function of $N(0,1)$, and the continuity theorem gives convergence in distribution. The finite second moment supports the expansion; this argument does not require the original distribution to have a moment-generating function. See [generating functions](../probability-randomness/probability-generating-and-moment-generating-functions.qmd) for that distinction.
+
+# A Binary Example
+
+Suppose an independently sampled biological specimen has a feature with probability $p=0.2$. For $n=100$ specimens, the feature count $S_n$ is binomial with mean $20$ and variance $16$. Its standardized form $(S_n-20)/4$ is approximately standard normal. The observed fraction $\hat p=S_n/100$ consequently has approximate standard deviation $\sqrt{0.2(0.8)/100}=0.04$ under this model.
+
+These values describe variation of $\hat p$ around a **fixed population fraction** across repeated samples. For a particular dataset, $p$ is unknown; replacing it with $\hat p$ in a standard error introduces another approximation. An interval built from that plug-in value is a separate inferential procedure, and its coverage can be poor near $p=0$ or $1$. For exact count probabilities use the [binomial distribution](../probability-randomness/bernoulli-and-binomial-distributions.qmd), or check a finite-sample interval method appropriate to the data.
+
+# Conditions, Extensions, and Failure Cases
+
+| Situation | Consequence | Practical response |
+|---|---|---|
+| iid observations with finite, nonzero variance | The standardized sample mean has the stated normal limit. | Check what counts as an independent sampling unit. |
+| Very skewed or rare outcomes at the available $n$ | The limit may be accurate only at much larger $n$; tails can be especially poor. | Compare with the exact distribution or a design-faithful simulation. |
+| Infinite variance, such as iid Cauchy observations | The stated normalization and Gaussian limit do not apply; a Cauchy sample average remains Cauchy. | Use a suitable robust statistic and its own sampling theory. |
+| Dependence or unequal distributions | The iid theorem does not apply as stated. Other CLTs require conditions controlling dependence or any dominating contribution. | Model clusters, time dependence, or heterogeneity; use a justified variance estimator. |
+
+For **independent, nonidentically distributed** arrays, Lindeberg-type conditions can yield a Gaussian limit after scaling by the standard deviation of the sum. These conditions rule out a single large term dominating the total. They are extensions, not an automatic consequence of a large count of observations.
+
+In RNA-seq or single-cell studies, reads and cells from one specimen share biology and processing effects. Thousands of such measurements do not create thousands of independent biological replicates. A normal approximation for a specimen-level summary may be useful when independent specimens are sampled, but its variance and scientific target must reflect the specimen-level design. A small standard error under one model is a statistical statement, not evidence that a biological mechanism is large or causal.
+
+# Interpreting the Approximation
+
+The CLT gives no universal sample-size cutoff and no finite-$n$ error bound under only finite variance. Convergence in distribution permits fixed-threshold probability approximations because the normal limit is continuous, but the rate can depend strongly on skewness and tail behavior. Inspect the observed design, plausible data-generating distributions, and the tail probability actually needed. If the original observations themselves are normal, the standardized mean is exactly normal at every $n$; that is a stronger, model-specific fact.
+
+# Connections and Take-home Messages
+
+- [Convergence in distribution](convergence-in-distribution.qmd) explains the meaning of the arrow in the theorem.
+- [Expectation, variance, and moments](../probability-randomness/expectation-variance-and-moments.qmd) explains centering and the $\sqrt n$ scale.
+- [Normal and multivariate normal distributions](../probability-randomness/normal-and-multivariate-normal-distributions.qmd) gives the limiting law.
+
+The CLT is a distributional result for a **scaled average**. Independence and finite variance justify the classical iid form; finite-sample accuracy and non-iid designs require separate checks. In biological studies, the number of independent specimens, not the number of technical measurements, governs the relevant sampling approximation.
+
+# References
+
+- MIT OpenCourseWare. *Mathematical Statistics*, Lecture 15: Limit Theorems. [Lecture notes](https://live.ocw.mit.edu/courses/18-655-mathematical-statistics-spring-2016/6c41b4096a836ff41f8de46cf54b5b7c_MIT18_655S16_LecNote15.pdf).
+- MIT OpenCourseWare. *Theory of Probability*, lectures 15--16: Characteristic Functions and Central Limit Theorem; Central Limit Theorem Variants. [Lecture slides](https://www.ocw.mit.edu/courses/18-175-theory-of-probability-spring-2014/pages/lecture-slides/).

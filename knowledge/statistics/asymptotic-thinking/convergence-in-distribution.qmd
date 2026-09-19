@@ -1,0 +1,81 @@
+---
+title: "Convergence in Distribution"
+subtitle: "When the law of a random quantity approaches a limiting law"
+description: "Weak convergence through CDFs, continuity sets, and expectations, with its implications and limits."
+author: "Jiahong Sun"
+date: "2026-09-18"
+date-modified: "2026-09-18"
+categories: [Statistics, Asymptotics, Probability]
+toc: true
+number-sections: true
+draft: false
+---
+
+# What Converges?
+
+The [law of large numbers](law-of-large-numbers.qmd) says that a sample mean approaches a fixed population mean. To describe the *shape* of its remaining sampling error, we instead study a scaled statistic and ask whether its **distribution** approaches a useful limiting distribution. This is convergence in distribution, also called weak convergence. It concerns probability laws; the random variables need not be constructed on a common probability space.
+
+For real-valued $X_n$ and $X$ with cumulative distribution functions $F_n$ and $F$,
+
+$$
+\boxed{X_n\xrightarrow{d}X
+\quad\Longleftrightarrow\quad
+F_n(x)\longrightarrow F(x)
+\text{ at every continuity point }x\text{ of }F.}
+$$
+
+The qualification about continuity points is essential. If $X_n=1/n$ and $X=0$ with probability one, then $X_n\to X$ surely. Yet $F_n(0)=0$ for every $n$, whereas $F(0)=1$. The point $0$ is a jump of $F$; away from it the CDFs converge as required.
+
+# Equivalent Ways to Use the Limit
+
+The portmanteau theorem gives other formulations of weak convergence. Two especially useful consequences are:
+
+- For every bounded continuous function $g$, $E[g(X_n)]\to E[g(X)]$.
+- For a set $A$ whose boundary has zero probability under the limiting law, $P(X_n\in A)\to P(X\in A)$.
+
+The second statement licenses approximate tail or interval probabilities when the **boundary** has no mass under the limit. In particular, if the limit is continuous, probabilities of fixed intervals can converge. It does not promise good accuracy at a specific finite sample size. Nor does it imply convergence of arbitrary moments: $g(x)=x$ and $g(x)=x^2$ are unbounded, so the bounded-continuous result does not cover them.
+
+For example, let $X_n=n$ with probability $1/n$ and $0$ otherwise. Then $X_n\xrightarrow{P}0$, hence $X_n\xrightarrow{d}0$, but $E(X_n)=1$ for all $n$. Rare large values can retain a nonvanishing mean while disappearing from the limiting distribution.
+
+# Relationship to Other Modes of Convergence
+
+[Convergence in probability](convergence-in-probability-and-almost-sure-convergence.qmd) implies convergence in distribution. The reverse is generally false: if $X$ is Bernoulli$(1/2)$ and each $X_n$ is an independent Bernoulli$(1/2)$ variable, then $X_n$ and $X$ have the same distribution for every $n$, but $P(|X_n-X|>1/2)=1/2$ throughout. In this example the shared probability-space construction matters for the probability comparison, while the distributional comparison ignores it.
+
+An important exception is a **constant** limit: $X_n\xrightarrow{d}c$ if and only if $X_n\xrightarrow{P}c$. Thus the weak law's constant limit can also be expressed as distributional convergence. A nondegenerate limit, such as a standard normal variable, usually describes the distribution of a *scaled error*, not convergence of the unscaled estimator to that random normal variable.
+
+If $X_n\xrightarrow{d}X$ and $g$ is continuous at $X$ with probability one, the continuous mapping theorem gives $g(X_n)\xrightarrow{d}g(X)$. Continuity only at almost every value under the limiting law is enough. For a discontinuous threshold function, inspect whether the limit places mass at that threshold before applying the result.
+
+# Worked Example: A Standardized Sample Fraction
+
+For independent Bernoulli$(p)$ observations with $0<p<1$, let $\hat p_n=n^{-1}\sum_{i=1}^nX_i$. The [central limit theorem](central-limit-theorem.qmd) gives
+
+$$
+\frac{\sqrt n(\hat p_n-p)}{\sqrt{p(1-p)}}
+\xrightarrow{d}N(0,1).
+$$
+
+The limit concerns the distribution of the **standardized estimation error** over repeated samples. It does not say that $\hat p_n$ itself remains normally spread as $n\to\infty$; by the weak law, $\hat p_n\xrightarrow{P}p$. The two results answer different questions: where the estimate tends, and how its shrinking error behaves after rescaling.
+
+If $X_i$ denotes a feature measured in independent biological specimens, the sampling law concerns specimens from the specified population. Reads or cells from the same specimen can be correlated and cannot simply replace independent specimens in this argument. A statistically well-behaved limit also does not establish that the feature causes a biological outcome.
+
+# Conditions and Failure Cases
+
+| Claim | Condition to check | Failure if ignored |
+|---|---|---|
+| Interval probabilities converge | The limiting distribution assigns zero mass to the interval boundary. | A CDF may fail to converge at an atom, as in $X_n=1/n$. |
+| Expectations converge | Bounded continuous functions are covered; unbounded functions need additional tail control such as uniform integrability. | Rare large observations preserve a mean that the weak limit misses. |
+| A transformed statistic has the proposed limit | The transform is continuous at almost every value of the limit. | A threshold at an atom can break the mapping argument. |
+| A limit approximates a real analysis | The sampling design and finite-sample approximation are adequate. | Clustered units or skewed small samples invalidate naive probability calculations. |
+
+# Connections and Take-home Messages
+
+- [Random variables and distributions](../probability-randomness/random-variables-and-probability-distributions.qmd) defines CDFs and atoms.
+- [Normal and multivariate normal distributions](../probability-randomness/normal-and-multivariate-normal-distributions.qmd) describes a common nondegenerate limit.
+- [Law of large numbers](law-of-large-numbers.qmd) gives the complementary constant-limit result.
+
+Convergence in distribution describes the limiting law, not a pathwise approximation or a finite-sample error bound. Its CDF definition deliberately excludes discontinuity points, and its expectation statement applies directly only to bounded continuous functions. For data analysis, the scale of the statistic and the independent sampling unit must be stated.
+
+# References
+
+- Bartlett, P. *Theoretical Statistics*, Lecture 1: Convergence in Distribution and the Portmanteau Theorem. University of California, Berkeley. [Lecture notes](https://www.stat.berkeley.edu/~bartlett/courses/2013spring-stat210b/notes/1notes.pdf).
+- MIT OpenCourseWare. *Theory of Probability*, lecture slides on convergence and the central limit theorem. [Lecture slides](https://www.ocw.mit.edu/courses/18-175-theory-of-probability-spring-2014/pages/lecture-slides/).
