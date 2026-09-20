@@ -1,0 +1,122 @@
+---
+title: "When Asymptotic Approximations Fail"
+subtitle: "Recognizing slow convergence, nonregular limits, and false effective sample sizes"
+description: "Mechanisms that invalidate or delay large-sample approximations, with diagnostics and design-faithful remedies."
+author: "Jiahong Sun"
+date: "2026-09-20"
+date-modified: "2026-09-20"
+categories: [Statistics, Asymptotics, Diagnostics]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Limit Theorem Is Not a Sample-size Guarantee
+
+An asymptotic result describes a sequence of data-generating problems as an information index $n$ tends to infinity. Applying it to one dataset requires three separate judgments:
+
+1. the theorem's assumptions match the design and model;
+2. the observed data correspond to the theorem's notion of increasing information; and
+3. the limiting distribution is already accurate in the region that matters, often a tail.
+
+Failure at any step can produce biased estimates, incorrect standard errors, or badly calibrated tests even when a formula contains a very large nominal $n$.
+
+# Slow Convergence Under a Valid Theorem
+
+The classical [central limit theorem](central-limit-theorem.qmd) requires iid observations with finite, positive variance, but under those conditions alone it gives no universal sample-size cutoff. With a finite third absolute central moment, a Berry--Esseen bound has the form
+
+$$
+\sup_x\left|
+P\!\left\{\frac{\sqrt n(\bar X_n-\mu)}{\sigma}\leq x\right\}
+-\Phi(x)
+\right|
+\leq
+\frac{C\,E|X-\mu|^3}{\sigma^3\sqrt n}.
+$$
+
+The standardized third absolute moment exposes why strong skewness and heavy tails can make convergence slow. The bound controls the maximum CDF error but may be conservative; it does not make extreme-tail relative error small.
+
+## Rare binary outcomes
+
+Suppose $X_i\sim\operatorname{Bernoulli}(0.01)$ independently and $n=50$. The expected number of events is only $np=0.5$, and
+
+$$
+P\!\left(\sum_iX_i=0\right)=0.99^{50}\approx0.605.
+$$
+
+The estimator $\hat p$ therefore has a point mass of about $0.605$ at zero. A smooth normal approximation centered at $0.01$ cannot reproduce that shape, even though fifty may sound like a moderate sample size. The relevant information is the expected number of events, not $n$ alone. Exact binomial calculations or a method designed for sparse events are more credible here.
+
+# The Wrong Limit Theorem
+
+## Heavy tails and infinite variance
+
+For iid Cauchy observations, the sample mean is Cauchy at every $n$; it does not become Gaussian or concentrate at a finite population mean. More generally, infinite-variance sums can require a different normalization and converge to a stable non-Gaussian law. Inspecting only the center of an empirical distribution can miss the tail behavior responsible for failure.
+
+## Dependence and false replication
+
+If observations share clusters, time trends, spatial structure, or latent batch effects, an iid standard error treats correlated information as new information. For $m$ equal-sized clusters of size $k$ with intraclass correlation $\rho$, the variance inflation relative to independent observations is summarized by the design effect
+
+$$
+1+(k-1)\rho.
+$$
+
+Thus increasing cells or reads within the same biological specimen can make the nominal count enormous while the number of independent specimens remains $m$. The effective asymptotic sequence for population inference must add independent biological units or use a justified dependent-data limit.
+
+## Changing dimension
+
+Classical likelihood theory usually keeps the parameter dimension fixed while $n\to\infty$. If the number of predictors, genes, or latent components grows with $n$, remainder terms that were negligible in fixed dimension can accumulate. When $p/n$ is not small, maximum-likelihood estimators may be biased or fail to exist, sample covariance matrices can be unstable, and pointwise normal approximations do not automatically control thousands of simultaneous errors.
+
+# Nonregular Problems
+
+Regular asymptotic normality relies on interior parameters, local identifiability, smooth likelihoods, and nonsingular information. Important failures include:
+
+- **Boundaries:** a variance component or mixing proportion equal to zero lies on the edge of its parameter space. Likelihood-ratio limits can be mixtures rather than the usual chi-squared law.
+- **Weak identification:** nearly indistinguishable parameter values make the information matrix close to singular. Estimated standard errors can be unstable, and convergence may be much slower than $\sqrt n$.
+- **Nondifferentiability:** maxima, change points, thresholds, and some penalized estimators can have non-Gaussian limits and different rates.
+- **Mixtures and latent variables:** coincident components and label symmetry create singularities or nonidentifiability; see [mixture models](../advanced-modeling/mixture-models.qmd).
+- **Data-dependent selection:** choosing variables, models, thresholds, or the most significant feature changes the sampling distribution. An approximation derived for a prespecified statistic generally does not survive selection unchanged.
+
+These are not small corrections to the same normal curve. They can change the limiting law itself.
+
+# Bootstrap and Simulation Are Not Automatic Repairs
+
+The nonparametric bootstrap estimates a sampling law by resampling empirical units. It works when the empirical distribution consistently reproduces the relevant local behavior of a sufficiently smooth statistic. It can fail for extremes, parameters on boundaries, cube-root-rate estimators, weakly identified models, or data with dependence resampled at the wrong level.
+
+A simulation is useful only when its data-generating mechanism preserves the features under suspicion. Simulating iid Gaussian observations cannot validate an analysis threatened by clustering, rare events, or heavy tails. For bioinformatics, a design-faithful simulation should preserve specimen-level replication, library or batch structure, sequencing depth, dispersion, missingness, and the analysis pipeline's selection steps.
+
+# A Diagnostic Workflow
+
+| Risk | Evidence to examine | Better check or remedy |
+|---|---|---|
+| Sparse events or expected counts | Counts per outcome category and mass at boundaries | Exact calculations, suitable discrete models, or sparse-event simulation |
+| Skewness or heavy tails | Tail plots, influential observations, plausible moment assumptions | Robust estimators, transformation, truncation sensitivity, or heavy-tail models |
+| Dependence or pseudoreplication | Experimental-unit map, clusters, repeated measures, time or spatial ordering | Cluster-aware models or resampling at the independent-unit level |
+| Boundary or weak identification | Parameter constraints, likelihood profiles, near-singular Hessian | Profile methods, problem-specific limits, penalization sensitivity, or redesign |
+| High dimensionality or selection | $p/n$, selection path, multiplicity, held-out performance | High-dimensional theory, sample splitting, regularization, or selective-inference methods |
+| Inaccurate tails | Difference between central fit and required significance level | Exact law, saddlepoint or higher-order method, or targeted simulation |
+
+No diagnostic can prove an asymptotic approximation correct from one dataset. The strongest check combines mathematical conditions, the experimental design, and repeated simulation across scientifically plausible data-generating mechanisms.
+
+# Statistical and Biological Interpretation
+
+Consider single-cell differential expression with 50,000 cells from four people. Cell-level residual plots may look smooth and a normal approximation may appear excellent because there are many cells. For a condition effect intended to generalize across people, however, the experimental units are the four people; cells are subsamples nested within them. A tiny cell-level standard error answers the wrong sampling question.
+
+Even a correctly calibrated asymptotic interval only quantifies uncertainty under its estimand, design, and model. It does not show that an association is causal, that an effect is large enough to matter biologically, or that it reproduces in another population or laboratory.
+
+# Connections and Take-home Messages
+
+- [Law of large numbers](law-of-large-numbers.qmd) explains why averaging can fail under infinite means, dependence, or selection bias.
+- [Convergence in distribution](convergence-in-distribution.qmd) separates a limiting law from finite-sample accuracy and moment convergence.
+- [Asymptotic bias, consistency, and efficiency](asymptotic-bias-consistency-and-efficiency.qmd) states the regular benchmarks that nonregular settings disrupt.
+- [Zero-inflated and hurdle distributions](../probability-randomness/zero-inflated-and-hurdle-distributions.qmd) illustrates model ambiguity around excess zeros.
+
+“Large $n$” has meaning only relative to the independent unit, event rate, tail behavior, parameter dimension, and inferential target. Check assumptions before convergence rate, and convergence rate before tail accuracy. When the regular approximation is doubtful, use exact or problem-specific theory and design-faithful sensitivity analyses rather than trusting a generic normal curve or bootstrap.
+
+# References
+
+- Berry, A. C. "The Accuracy of the Gaussian Approximation to the Sum of Independent Variates." *Transactions of the American Mathematical Society* 49 (1941): 122--136. [Article](https://doi.org/10.1090/S0002-9947-1941-0003498-3).
+- van der Vaart, A. W. *Asymptotic Statistics*. Cambridge University Press, 1998. [Publisher page](https://doi.org/10.1017/CBO9780511802256).
+- Self, S. G. and Liang, K.-Y. "Asymptotic Properties of Maximum Likelihood Estimators and Likelihood Ratio Tests under Nonstandard Conditions." *Journal of the American Statistical Association* 82 (1987): 605--610. [Article](https://doi.org/10.1080/01621459.1987.10478472).
+- Staiger, D. and Stock, J. H. "Instrumental Variables Regression with Weak Instruments." *Econometrica* 65 (1997): 557--586. [Article](https://doi.org/10.2307/2171753).
+- Bickel, P. J. and Freedman, D. A. "Some Asymptotic Theory for the Bootstrap." *The Annals of Statistics* 9 (1981): 1196--1217. [Article](https://doi.org/10.1214/aos/1176345637).
+- Sur, P. and Candès, E. J. "A Modern Maximum-Likelihood Theory for High-dimensional Logistic Regression." *Proceedings of the National Academy of Sciences* 116 (2019): 14516--14525. [Article](https://doi.org/10.1073/pnas.1810420116).

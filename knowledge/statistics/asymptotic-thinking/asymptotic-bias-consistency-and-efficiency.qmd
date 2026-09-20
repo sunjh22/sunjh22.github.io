@@ -1,0 +1,171 @@
+---
+title: "Asymptotic Bias, Consistency, and Efficiency"
+subtitle: "What large-sample guarantees say about an estimator—and what they leave unresolved"
+description: "Finite-sample and asymptotic bias, consistency, asymptotic variance, and efficiency under explicit regularity conditions."
+author: "Jiahong Sun"
+date: "2026-09-20"
+date-modified: "2026-09-20"
+categories: [Statistics, Asymptotics, Inference]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Three Different Questions About an Estimator
+
+Let $X_1,\ldots,X_n$ come from a model indexed by a fixed parameter $\theta$, and let $T_n=T_n(X_1,\ldots,X_n)$ estimate $\theta$. Bias, consistency, and efficiency answer different questions:
+
+| Property | Question | Typical mathematical object |
+|---|---|---|
+| Bias | Is the estimator centered on the target at this $n$? | $E_\theta(T_n)-\theta$ |
+| Consistency | Does the estimator concentrate at the target as information grows? | $T_n\xrightarrow{P_\theta}\theta$ |
+| Efficiency | How small is its limiting sampling variance relative to a justified benchmark? | $\operatorname{Avar}(T_n)$ |
+
+None of these properties alone establishes that $\theta$ is the scientifically appropriate estimand, that the data identify it, or that an approximation is accurate at the observed sample size.
+
+# Bias and Mean Squared Error
+
+The finite-sample bias and mean squared error (MSE) are
+
+$$
+\operatorname{Bias}_\theta(T_n)=E_\theta(T_n)-\theta,
+\qquad
+\operatorname{MSE}_\theta(T_n)=E_\theta[(T_n-\theta)^2].
+$$
+
+When the second moment exists,
+
+$$
+\boxed{
+\operatorname{MSE}_\theta(T_n)
+=\operatorname{Var}_\theta(T_n)
++\operatorname{Bias}_\theta(T_n)^2.
+}
+$$
+
+Thus an unbiased estimator need not have the smallest MSE. A small, deliberate bias can be worthwhile if it substantially reduces variance. Conversely, a tiny bias is not reassuring when variance is large or the target itself is scientifically irrelevant.
+
+One common definition calls $T_n$ **asymptotically unbiased** when
+
+$$
+E_\theta(T_n)-\theta\longrightarrow0.
+$$
+
+This expectation statement is not equivalent to consistency. If $T_n=n$ with probability $1/n$ and $0$ otherwise while $\theta=0$, then $T_n\xrightarrow{P}0$ but $E(T_n)=1$: the estimator is consistent and not asymptotically unbiased. Rare, increasingly extreme values disappear in probability but preserve the mean. Additional tail control, such as uniform integrability, can turn convergence in probability into convergence of expectations.
+
+# Consistency
+
+An estimator is **consistent** for $\theta$ if, for every $\varepsilon>0$,
+
+$$
+\boxed{P_\theta(|T_n-\theta|>\varepsilon)\longrightarrow0.}
+$$
+
+Consistency is [convergence in probability](convergence-in-probability-and-almost-sure-convergence.qmd) to the correct target. A standard proof decomposes the error into a deterministic approximation and a random fluctuation. For example, if $E(T_n)\to\theta$ and $\operatorname{Var}(T_n)\to0$, then
+
+$$
+P(|T_n-\theta|>\varepsilon)
+\leq
+P\{|T_n-E(T_n)|>\varepsilon/2\}
+\longrightarrow0
+$$
+
+once $|E(T_n)-\theta|<\varepsilon/2$, using Chebyshev's inequality. These conditions are sufficient, not necessary.
+
+Consistency is model-relative. Under misspecification, an estimator may converge precisely to a **pseudo-true** value that minimizes a population discrepancy rather than to the scientific parameter originally intended. Under nonidentifiability, distinct parameter values generate the same observed-data law, so no estimator can consistently distinguish them without extra assumptions.
+
+# Rates, Limiting Bias, and Asymptotic Variance
+
+Consistency says where an estimator goes, not how quickly. A common stronger result is
+
+$$
+\sqrt n(T_n-\theta)\xrightarrow{d}N(b,V).
+$$
+
+Here $V$ is the **asymptotic variance on the $\sqrt n$ scale** and $b$ is a first-order asymptotic centering term. Equivalently, for large $n$,
+
+$$
+T_n\approx N\!\left(\theta+\frac{b}{\sqrt n},\frac{V}{n}\right).
+$$
+
+When $b=0$, one often writes $\sqrt n(T_n-\theta)\xrightarrow{d}N(0,V)$. This distributional statement alone does not guarantee convergence of the estimator's moments; moment conclusions again need suitable tail conditions. A bias of order $1/n$ vanishes after $\sqrt n$ scaling, even though it may matter in a small sample.
+
+The [central limit theorem](central-limit-theorem.qmd), [delta method](delta-method.qmd), and [Slutsky's theorem](slutskys-theorem-and-continuous-mapping.qmd) are the usual tools for deriving and making such limits usable.
+
+# Asymptotic Efficiency
+
+Suppose a regular one-parameter iid model has per-observation Fisher information
+
+$$
+I(\theta)=E_\theta\!\left[
+\left\{\frac{\partial}{\partial\theta}\log f_\theta(X)\right\}^2
+\right],
+$$
+
+with the usual differentiability, identifiability, and integrability conditions. A regular estimator sequence with
+
+$$
+\sqrt n(T_n-\theta)\xrightarrow{d}N(0,V(\theta))
+$$
+
+cannot have $V(\theta)<I(\theta)^{-1}$ under the classical local asymptotic theory. An estimator attaining
+
+$$
+\boxed{V(\theta)=I(\theta)^{-1}}
+$$
+
+is called asymptotically efficient in that model. For vector parameters, the comparison uses positive-semidefinite ordering of covariance matrices and the inverse information matrix.
+
+The word **regular** matters. Hodges-type estimators can have smaller pointwise asymptotic variance at one parameter value while performing worse in shrinking neighborhoods around it. Such superefficiency does not overturn the regular efficiency bound; it exposes why pointwise comparisons without local stability are misleading. Efficiency is also relative to a model and estimand: an estimator efficient under an incorrect iid likelihood need not have valid uncertainty under clustering or misspecification.
+
+# Worked Example: A Bernoulli Proportion
+
+Let $X_i\stackrel{iid}{\sim}\operatorname{Bernoulli}(p)$ with $0<p<1$, and estimate $p$ by $\hat p_n=\bar X_n$. Then
+
+$$
+E(\hat p_n)=p,
+\qquad
+\operatorname{Var}(\hat p_n)=\frac{p(1-p)}{n},
+$$
+
+so $\hat p_n$ is unbiased and consistent by the [law of large numbers](law-of-large-numbers.qmd). The CLT gives
+
+$$
+\sqrt n(\hat p_n-p)\xrightarrow{d}N\{0,p(1-p)\}.
+$$
+
+For one Bernoulli observation,
+
+$$
+I(p)=\frac{1}{p(1-p)},
+$$
+
+so the inverse-information bound is $I(p)^{-1}=p(1-p)$ on the $\sqrt n$ scale. The sample proportion attains it for interior $p$ and is asymptotically efficient in this regular model.
+
+This conclusion changes at the boundaries $p=0$ or $1$, where information and normal-limit formulas become nonregular. It also depends on what $n$ counts. If $X_i$ represents a cell-level call, thousands of cells from one specimen are not thousands of independent biological specimens. The estimator may precisely describe that specimen while failing to estimate a population prevalence across specimens.
+
+# Conditions and Failure Cases
+
+| Claim | Conditions that matter | What can go wrong |
+|---|---|---|
+| Vanishing bias implies good estimation | Variance and tail behavior are also controlled. | MSE can remain large; unbiased estimators can be unstable. |
+| Consistency identifies the scientific truth | The estimand is appropriate, identified, and the model or estimating equation targets it. | Convergence can be to a pseudo-true or scientifically irrelevant value. |
+| $\sqrt n$ asymptotic normality | A suitable CLT, differentiability, and nondegenerate information hold. | Boundaries, heavy tails, dependence, or weak identification can change the rate and limit. |
+| Information-bound efficiency | The parametric model and regularity assumptions are correct. | Superefficient or nonregular procedures evade a pointwise statement but lose local stability. |
+| Large technical sample size supplies precision | The independent units increase. | Reads, cells, or repeated runs inflate nominal $n$ without adding biological replication. |
+
+The companion note on [when asymptotic approximations fail](when-asymptotic-approximations-fail.qmd) develops these mechanisms and practical checks.
+
+# Connections and Take-home Messages
+
+- [Expectation, variance, and moments](../probability-randomness/expectation-variance-and-moments.qmd) supplies the bias--variance decomposition.
+- [Normal and multivariate normal distributions](../probability-randomness/normal-and-multivariate-normal-distributions.qmd) describes the most common regular limiting law.
+- [Convergence in distribution](convergence-in-distribution.qmd) explains why a limiting law need not imply moment convergence.
+
+Bias is a finite-sample centering property; consistency is concentration at a target; and asymptotic efficiency compares limiting variance within a stated regular model. Always report the target, limiting scale, assumptions, and independent experimental unit. A favorable asymptotic label does not by itself establish finite-sample accuracy, robustness, or biological importance.
+
+# References
+
+- van der Vaart, A. W. *Asymptotic Statistics*. Cambridge University Press, 1998, Chapters 5, 7--8. [Publisher page](https://doi.org/10.1017/CBO9780511802256).
+- Lehmann, E. L. and Casella, G. *Theory of Point Estimation*, 2nd ed. Springer, 1998, Chapters 1--2 and 6. [Publisher page](https://doi.org/10.1007/b98854).
+- Le Cam, L. *Asymptotic Methods in Statistical Decision Theory*. Springer, 1986. [Publisher page](https://doi.org/10.1007/978-1-4612-4946-7).

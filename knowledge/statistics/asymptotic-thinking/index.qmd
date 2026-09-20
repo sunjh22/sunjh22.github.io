@@ -12,6 +12,8 @@ This level will connect probability foundations to large-sample statistical infe
 - [Central limit theorem](central-limit-theorem.qmd)
 - [Delta method](delta-method.qmd)
 - [Slutsky's theorem and continuous mapping](slutskys-theorem-and-continuous-mapping.qmd)
+- [Asymptotic bias, consistency, and efficiency](asymptotic-bias-consistency-and-efficiency.qmd)
+- [When asymptotic approximations fail](when-asymptotic-approximations-fail.qmd)
 
 - [Probability & Randomness](../probability-randomness/index.qmd)
 - [Statistical Inference](../statistical-inference/index.qmd)

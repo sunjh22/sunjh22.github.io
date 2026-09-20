@@ -109,6 +109,8 @@ website:
                   - knowledge/statistics/asymptotic-thinking/central-limit-theorem.qmd
                   - knowledge/statistics/asymptotic-thinking/delta-method.qmd
                   - knowledge/statistics/asymptotic-thinking/slutskys-theorem-and-continuous-mapping.qmd
+                  - knowledge/statistics/asymptotic-thinking/asymptotic-bias-consistency-and-efficiency.qmd
+                  - knowledge/statistics/asymptotic-thinking/when-asymptotic-approximations-fail.qmd
               - section: "Statistical Inference"
                 href: knowledge/statistics/statistical-inference/index.qmd
               - section: "Regression & Statistical Models"
