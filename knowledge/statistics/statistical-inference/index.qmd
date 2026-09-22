@@ -8,6 +8,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 
 - [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd)
 - [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd)
+- [Likelihood and log-likelihood](likelihood-and-log-likelihood.qmd)
+- [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)

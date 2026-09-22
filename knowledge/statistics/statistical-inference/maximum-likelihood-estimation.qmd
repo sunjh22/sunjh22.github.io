@@ -1,0 +1,199 @@
+---
+title: "Maximum-likelihood Estimation"
+subtitle: "Choosing the parameter value that best supports the observed data"
+description: "Maximum-likelihood estimators, derivations, invariance, uncertainty, computation, diagnostics, and nonregular failure cases."
+author: "Jiahong Sun"
+date: "2026-09-22"
+date-modified: "2026-09-22"
+categories: [Statistics, Inference, Estimation]
+toc: true
+number-sections: true
+draft: false
+---
+
+# From an Estimand to an Estimation Rule
+
+Let $X\sim P_\theta$ under a parametric model with likelihood $L(\theta;X)$. If the estimand is the model parameter $\theta$, a **maximum-likelihood estimator** (MLE) is any rule
+
+$$
+\boxed{\hat\theta_{\mathrm{ML}}(X)\in
+\operatorname*{arg\,max}_{\theta\in\Theta}L(\theta;X).}
+$$
+
+Before data are observed, $\hat\theta_{\mathrm{ML}}$ is a random variable with a sampling distribution. After observing $X=x$, its realized value is the maximum-likelihood estimate. The maximizer is best supported relative to other values in the specified model; it is not automatically unbiased, scientifically important, or close to truth.
+
+# Worked Derivation: A Binomial Probability
+
+Suppose $X_1,\ldots,X_n\stackrel{iid}{\sim}\operatorname{Bernoulli}(p)$ and $s=\sum_i x_i$. For $0<p<1$,
+
+$$
+\ell(p)=s\log p+(n-s)\log(1-p),
+$$
+
+so
+
+$$
+\ell'(p)=\frac{s}{p}-\frac{n-s}{1-p}
+=\frac{s-np}{p(1-p)}.
+$$
+
+When $0<s<n$, the unique stationary point is
+
+$$
+\hat p_{\mathrm{ML}}=\frac{s}{n}=\bar X.
+$$
+
+Because
+
+$$
+\ell''(p)=-\frac{s}{p^2}-\frac{n-s}{(1-p)^2}<0,
+$$
+
+the log-likelihood is strictly concave and this point is the global maximum. If $s=0$ or $s=n$, the maximum is respectively at $p=0$ or $p=1$. Checking the parameter boundary is part of optimization, not an optional numerical detail.
+
+Under the binomial model,
+
+$$
+E_p(\hat p_{\mathrm{ML}})=p,
+\qquad
+\operatorname{Var}_p(\hat p_{\mathrm{ML}})=\frac{p(1-p)}{n}.
+$$
+
+These finite-sample properties come from this particular model. MLEs are not generally unbiased.
+
+# Invariance and Reparameterization
+
+If $\hat\theta$ maximizes $L(\theta)$ and the estimand is $\psi=g(\theta)$, the invariance property defines the MLE of $\psi$ as
+
+$$
+\hat\psi_{\mathrm{ML}}=g(\hat\theta_{\mathrm{ML}}).
+$$
+
+For a one-to-one transformation this follows by relabeling the same likelihood curve. For a many-to-one transformation, the profile likelihood for $\psi$ maximizes over all $\theta$ satisfying $g(\theta)=\psi$.
+
+For example, if $p$ is an allele probability and the target is the odds $\psi=p/(1-p)$, then
+
+$$
+\hat\psi_{\mathrm{ML}}=\frac{\hat p}{1-\hat p}.
+$$
+
+Unbiasedness is not invariant under nonlinear transformations, which is one reason maximum likelihood is not defined by unbiasedness.
+
+# Large-sample Behavior
+
+Under identifiability, correct specification, an interior true parameter, sufficient smoothness, and regularity conditions that permit differentiation and integration to be interchanged, a regular scalar MLE commonly satisfies
+
+$$
+\sqrt n(\hat\theta_{\mathrm{ML}}-\theta_0)
+\xrightarrow{d}
+N\!\left(0,I_1(\theta_0)^{-1}\right),
+$$
+
+where the per-observation Fisher information is
+
+$$
+I_1(\theta)=E_\theta\!\left[
+\left\{\frac{\partial}{\partial\theta}
+\log f(X;\theta)\right\}^2
+\right].
+$$
+
+Thus the approximate variance is $\{nI_1(\theta_0)\}^{-1}$. This statement does not apply merely because $n$ is numerically large. The relevant information may be limited by clustering, weak identification, rare outcomes, growing model dimension, or a parameter near the boundary.
+
+Consistency and asymptotic normality are different claims. Consistency says the estimator approaches the target; asymptotic normality describes the scaled estimation error. Both require conditions that should be stated for the model in use.
+
+# Quantifying Uncertainty
+
+Three common likelihood-based approaches answer related but distinct approximation questions.
+
+## Curvature or Wald uncertainty
+
+For a scalar parameter, invert observed information at the maximum:
+
+$$
+\widehat{\operatorname{SE}}(\hat\theta)
+=j(\hat\theta)^{-1/2},
+\qquad
+j(\hat\theta)=-\ell''(\hat\theta).
+$$
+
+A Wald interval $\hat\theta\pm z_{1-\alpha/2}\widehat{\operatorname{SE}}$ is convenient but can cross parameter boundaries and performs poorly for skewed or flat likelihoods.
+
+## Profile-likelihood uncertainty
+
+With parameter of interest $\psi$ and nuisance parameter $\lambda$, define
+
+$$
+\ell_p(\psi)=\max_\lambda\ell(\psi,\lambda).
+$$
+
+An approximate likelihood-ratio interval retains values satisfying
+
+$$
+2\{\ell_p(\hat\psi)-\ell_p(\psi)\}
+\le \chi^2_{1,1-\alpha}.
+$$
+
+Profile intervals respect many parameter constraints and reveal asymmetry, but the chi-squared reference is itself a regular large-sample result.
+
+## Parametric bootstrap
+
+Simulate datasets from the fitted model, refit the complete procedure, and use the empirical distribution of the refitted estimates. This can expose finite-sample bias or skewness, but it inherits the fitted model, must preserve clustering and censoring, and may reproduce a misspecified mechanism very precisely.
+
+# Computation and Verification
+
+Closed-form MLEs are uncommon in complex models. Numerical routines typically minimize the negative log-likelihood. A trustworthy analysis should:
+
+1. enforce the parameter space through bounds or stable transformations;
+2. try scientifically plausible dispersed starting values when local maxima are possible;
+3. inspect convergence codes, gradients, and parameter scaling;
+4. compare the reported solution with boundary values and alternative starts;
+5. examine eigenvalues or conditioning of the Hessian; and
+6. plot one- or two-dimensional likelihood profiles for important parameters.
+
+The R `stats4::mle()` function, for example, minimizes a user-supplied negative log-likelihood with `optim()` and obtains an approximate covariance matrix by inverting the Hessian. A successful optimizer message confirms a numerical stopping rule, not model adequacy, global optimality, or valid biological replication.
+
+# Bioinformatics Example: Estimating an Error Rate
+
+Suppose $m$ independently prepared control libraries each yield a prespecified consensus call, with $x_j=1$ for an error. If the estimand is the across-library error probability $p$ and the libraries are exchangeable Bernoulli units, the MLE is
+
+$$
+\hat p=\frac{1}{m}\sum_{j=1}^m x_j.
+$$
+
+Millions of reads may help determine each consensus call, but they do not turn $m$ biological or process replicates into millions of independent estimates of the across-library error rate. Treating reads as Bernoulli replicates targets a read-level probability under a different dependence model.
+
+Statistically, $\hat p$ summarizes the fitted sampling law. Biologically, its relevance depends on whether the control material, instrument, laboratory, run conditions, genomic contexts, and filtering pipeline match the target use. A narrow interval cannot repair a mismatched target population.
+
+# When Maximum Likelihood Misleads or Fails
+
+| Failure mechanism | Symptom | Consequence or response |
+|---|---|---|
+| Non-identifiability | Ridge, flat profile, or several equivalent maxima | Report the identified combination; redesign or constrain with justification |
+| Boundary estimate | Variance estimate zero or probability zero/one | Interior normal approximations may fail; use boundary-aware inference |
+| Separation in logistic regression | Coefficients diverge while likelihood approaches its supremum | The finite MLE may not exist; consider penalization and report the separation |
+| Mixture singularity | Component variance collapses around one observation | Likelihood can be unbounded; impose a defensible model or regularization |
+| Weak information | Very broad or asymmetric profile | Report profile-based uncertainty and avoid overinterpreting the point estimate |
+| Model misspecification | Structured residuals or poor predictive checks | Use a better observation model and sensitivity analyses; robust standard errors address only part of the problem |
+| Pseudoreplication | Curvature grows with reads or cells rather than independent samples | Model clustering or aggregate at the experimental-unit level |
+
+Under misspecification, an MLE may converge to the model parameter that minimizes Kullback--Leibler discrepancy from the true distribution rather than to the scientific estimand originally intended. Sandwich variance can improve uncertainty for this pseudo-true target under suitable conditions, but it does not make the working likelihood true or remove bias from confounding and selection.
+
+# Connections and Take-home Messages
+
+- [Likelihood and log-likelihood](likelihood-and-log-likelihood.qmd) defines the evidence function, score, and curvature optimized here.
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) separates a scientifically chosen target from a convenient model parameter.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) provides finite-sample criteria for evaluating the MLE.
+- [Asymptotic bias, consistency, and efficiency](../asymptotic-thinking/asymptotic-bias-consistency-and-efficiency.qmd) develops the limiting guarantees and their conditions.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) explains why Wald uncertainty and chi-squared likelihood ratios may be inaccurate.
+- [Bernoulli and binomial distributions](../probability-randomness/bernoulli-and-binomial-distributions.qmd) supplies the worked sampling model.
+
+Maximum likelihood is an estimation rule defined by a complete probability model. Its invariance and regular large-sample efficiency are powerful, but neither replaces checks for existence, identifiability, boundary behavior, numerical stability, model fit, or correct experimental units.
+
+# References
+
+- Fisher, R. A. “On the Mathematical Foundations of Theoretical Statistics.” *Philosophical Transactions of the Royal Society A* 222 (1922): 309--368. [Article](https://doi.org/10.1098/rsta.1922.0009).
+- van der Vaart, A. W. *Asymptotic Statistics*. Cambridge University Press, 1998, Chapter 5. [Publisher page](https://doi.org/10.1017/CBO9780511802256).
+- White, H. “Maximum Likelihood Estimation of Misspecified Models.” *Econometrica* 50 (1982): 1--25. [Article](https://doi.org/10.2307/1912526).
+- Self, S. G. and Liang, K.-Y. “Asymptotic Properties of Maximum Likelihood Estimators and Likelihood Ratio Tests under Nonstandard Conditions.” *Journal of the American Statistical Association* 82 (1987): 605--610. [Article](https://doi.org/10.1080/01621459.1987.10478472).
+- R Core Team. “Maximum Likelihood Estimation (`stats4::mle`).” *R Documentation*. [Official documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats4/html/mle.html).

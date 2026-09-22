@@ -1,0 +1,168 @@
+---
+title: "Likelihood and Log-likelihood"
+subtitle: "How observed data compare parameter values within a statistical model"
+description: "Likelihood, log-likelihood, likelihood ratios, score, curvature, and the assumptions behind likelihood-based evidence."
+author: "Jiahong Sun"
+date: "2026-09-22"
+date-modified: "2026-09-22"
+categories: [Statistics, Inference, Likelihood]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Data Fixed, Parameter Varied
+
+Let a model assign a joint probability mass function or density $f(x;\theta)$ to possible data $X=x$. Once $x$ has been observed, the **likelihood function** is the same mathematical expression viewed as a function of the unknown parameter:
+
+$$
+\boxed{L(\theta;x)=f(x;\theta).}
+$$
+
+The sampling distribution holds $\theta$ fixed and compares possible datasets. Likelihood holds the observed dataset fixed and compares parameter values. This change of viewpoint is small in notation but fundamental in interpretation.
+
+Likelihood is not generally a probability distribution over $\theta$. It need not integrate or sum to one across the parameter space. A probability distribution for $\theta$ requires a Bayesian model with a prior and a normalizing calculation.
+
+# Constructing a Likelihood
+
+Suppose $X_1,\ldots,X_n$ are conditionally independent given $\theta$, with individual densities or mass functions $f_i(x_i;\theta)$. Their joint likelihood factorizes:
+
+$$
+L(\theta;x_1,\ldots,x_n)
+=\prod_{i=1}^n f_i(x_i;\theta).
+$$
+
+This product is justified by the model's conditional-independence assumption, not by the mere presence of several rows in a data table. Clustered samples, longitudinal measurements, related individuals, and multiple cells or reads from one specimen require a joint model that represents their dependence.
+
+## Bernoulli example
+
+For independent $X_i\sim\operatorname{Bernoulli}(p)$ and $s=\sum_i x_i$ observed successes,
+
+$$
+L(p;x)=\prod_{i=1}^n p^{x_i}(1-p)^{1-x_i}
+=p^s(1-p)^{n-s},
+\qquad 0\le p\le1.
+$$
+
+Every ordered binary sequence with the same $s$ produces the same likelihood for $p$. If only the total $S=s$ was observed, the binomial model contributes an additional factor ${n\choose s}$. That factor changes probabilities over possible totals but is constant in $p$, so it does not change relative likelihoods or the maximizing value.
+
+# Relative Likelihood and Proportionality
+
+For two parameter values, the likelihood ratio
+
+$$
+\frac{L(\theta_1;x)}{L(\theta_2;x)}
+$$
+
+reports how well $\theta_1$ fits the observed data relative to $\theta_2$ under the same model. Multiplying $L(\theta;x)$ by any positive factor that depends on $x$ but not on $\theta$ leaves all such ratios unchanged. This is why one often writes
+
+$$
+L(p;x)\propto p^s(1-p)^{n-s}.
+$$
+
+The numerical height of a likelihood curve has no invariant meaning by itself. Changing measurement units changes a continuous density and therefore its height, while comparisons among parameter values within the transformed model remain meaningful.
+
+# Why Use the Log-likelihood?
+
+The **log-likelihood** is
+
+$$
+\ell(\theta;x)=\log L(\theta;x).
+$$
+
+Because the logarithm is strictly increasing, $L$ and $\ell$ have the same maximizers. For independent observations, multiplication becomes addition:
+
+$$
+\ell(\theta;x)=\sum_{i=1}^n\log f_i(x_i;\theta).
+$$
+
+This form is easier to differentiate, less prone to numerical underflow, and naturally decomposes contributions from observations or model components. For the Bernoulli sample,
+
+$$
+\ell(p)=s\log p+(n-s)\log(1-p).
+$$
+
+Terms equal to $\log 0$ should be handled through mathematically correct boundary limits, not replaced by arbitrary finite constants.
+
+# Score and Curvature
+
+For a differentiable scalar parameter, the **score** and **observed information** are
+
+$$
+U(\theta)=\frac{\partial\ell(\theta)}{\partial\theta},
+\qquad
+j(\theta)=-\frac{\partial^2\ell(\theta)}{\partial\theta^2}.
+$$
+
+The score is the local slope: it points toward parameter values with higher log-likelihood. Curvature describes how quickly support falls away near a peak. For a parameter vector, the score is a gradient and observed information is the negative Hessian matrix.
+
+In the Bernoulli model,
+
+$$
+U(p)=\frac{s}{p}-\frac{n-s}{1-p},
+\qquad
+j(p)=\frac{s}{p^2}+\frac{n-s}{(1-p)^2}.
+$$
+
+When $0<s<n$, solving $U(p)=0$ gives $p=s/n$, and positive observed information confirms a local maximum. When $s=0$ or $s=n$, the maximum lies on the boundary, so an interior score equation is the wrong tool.
+
+# Likelihood Is Conditional on the Model
+
+A likelihood is not extracted from data alone. It depends on the outcome model, sampling design, observation process, censoring or truncation mechanism, and dependence structure.
+
+| Design feature | Likelihood contribution |
+|---|---|
+| Exact continuous observation $x_i$ | Density $f(x_i;\theta)$ |
+| Right-censored value at $c_i$ | Survival probability $P_\theta(X_i>c_i)$ |
+| Observation known only to lie in $(a_i,b_i]$ | $F(b_i;\theta)-F(a_i;\theta)$ |
+| Case--control sampling | Retrospective sampling law or a justified conditional likelihood |
+| Clustered observations | Joint or conditional distribution for the cluster |
+
+Ignoring how an observation entered the dataset can yield a precise-looking likelihood for the wrong data-generating process. Missingness, filtering, quality thresholds, and selection after seeing outcomes may all be part of the observation model.
+
+# Worked Example: Sequencing Errors
+
+Suppose 12 independently prepared reference samples each contribute one prespecified consensus base call, and 2 calls are incorrect. Under a common error probability $p$,
+
+$$
+L(p)\propto p^2(1-p)^{10}.
+$$
+
+Compare $p_1=0.10$ with $p_2=0.01$:
+
+$$
+\frac{L(0.10)}{L(0.01)}
+=\left(\frac{0.10}{0.01}\right)^2
+\left(\frac{0.90}{0.99}\right)^{10}
+\approx38.6.
+$$
+
+Within this binomial model, the observed result supports $p=0.10$ about 39 times as strongly as $p=0.01$. It does not say that the probability $p=0.10$ is true is 39 times the probability that $p=0.01$ is true.
+
+The experimental unit must match the independence claim. Twelve reads from one library do not provide the same biological or process-level information as twelve independently prepared samples. Read dependence, base-specific quality, mapping uncertainty, and sample heterogeneity would motivate a richer likelihood.
+
+# Common Misinterpretations and Checks
+
+- **Likelihood is not $P(\theta\mid x)$.** It ranks parameter values under a model; posterior probability also needs a prior.
+- **A density is not the probability of an exact continuous observation.** Its role in likelihood is still valid because likelihood ratios are defined using densities relative to a common dominating measure.
+- **Large likelihood does not imply good absolute fit.** Every candidate model may fit poorly; residual, predictive, or goodness-of-fit checks address that question.
+- **Independence cannot be inferred from a product written in software.** It must follow from design and subject-matter assumptions.
+- **Dropping constants is task-dependent.** A factor constant in $\theta$ can be dropped for maximization or within-model likelihood ratios, but not automatically when comparing non-nested models with different observation spaces.
+- **Flat or multimodal likelihoods matter.** They reveal weak identification, competing explanations, or insufficient information that a single point summary can hide.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) defines the target and sampling process before a likelihood is written.
+- [Joint, marginal, and conditional distributions](../probability-randomness/joint-marginal-and-conditional-distributions.qmd) supplies the probability operations used to construct observed-data likelihoods.
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd) explains when likelihood contributions factorize.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) provides criteria for evaluating an estimator derived from likelihood.
+- [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd) turns the likelihood into an estimation rule and develops uncertainty and diagnostics.
+
+Likelihood compares parameter values with the observed data held fixed. Log-likelihood preserves these comparisons while making products, derivatives, and computation manageable. Every conclusion is conditional on the full observation model, especially its experimental unit and dependence assumptions.
+
+# References
+
+- Fisher, R. A. “On the Mathematical Foundations of Theoretical Statistics.” *Philosophical Transactions of the Royal Society A* 222 (1922): 309--368. [Article](https://doi.org/10.1098/rsta.1922.0009).
+- Pawitan, Y. *In All Likelihood: Statistical Modelling and Inference Using Likelihood*. Oxford University Press, 2001. [Publisher page](https://global.oup.com/academic/product/in-all-likelihood-9780198507659).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Chapman and Hall/CRC, 2002, Chapter 7. [Publisher page](https://www.routledge.com/Statistical-Inference/Casella-Berger/p/book/9781032593036).
+- Azzalini, A. *Statistical Inference Based on the Likelihood*. Chapman and Hall/CRC, 1996. [Publisher page](https://doi.org/10.1201/9780203738490).
