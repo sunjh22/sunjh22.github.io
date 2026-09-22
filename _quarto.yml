@@ -113,6 +113,9 @@ website:
                   - knowledge/statistics/asymptotic-thinking/when-asymptotic-approximations-fail.qmd
               - section: "Statistical Inference"
                 href: knowledge/statistics/statistical-inference/index.qmd
+                contents:
+                  - knowledge/statistics/statistical-inference/populations-samples-parameters-and-estimands.qmd
+                  - knowledge/statistics/statistical-inference/point-estimators-bias-variance-and-mean-squared-error.qmd
               - section: "Regression & Statistical Models"
                 href: knowledge/statistics/regression-models/index.qmd
                 contents:

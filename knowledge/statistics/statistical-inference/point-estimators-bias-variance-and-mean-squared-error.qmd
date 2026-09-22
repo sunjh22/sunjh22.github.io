@@ -1,0 +1,221 @@
+---
+title: "Point Estimators: Bias, Variance, and Mean Squared Error"
+subtitle: "Comparing estimation rules by repeated-sampling accuracy"
+description: "Point estimation through estimands, sampling distributions, bias, variance, standard error, and mean squared error."
+author: "Jiahong Sun"
+date: "2026-09-21"
+date-modified: "2026-09-21"
+categories: [Statistics, Inference, Estimation]
+toc: true
+number-sections: true
+draft: false
+---
+
+# One Number, Evaluated Over Repeated Samples
+
+A **point estimator** is a rule that turns data into one candidate value for an estimand. If $X=(X_1,\ldots,X_n)$ has distribution $P_\theta$ and the target is $g(\theta)$, an estimator is a statistic
+
+$$
+T=T(X)
+$$
+
+chosen to estimate $g(\theta)$. Before observing the data, $T$ is random and has a sampling distribution. After observing $X=x$, the realized number $t=T(x)$ is the **estimate**.
+
+This distinction makes performance measurable. Bias, variance, and mean squared error describe what the estimation rule would do over repetitions generated under a stated model or sampling design; they are not three properties of the single observed number.
+
+# Estimand, Estimator, and Estimate
+
+Suppose $X_1,\ldots,X_n$ are independent Bernoulli observations with success probability $p$.
+
+- **Estimand:** $p$, the population success probability.
+- **Estimator:** $\hat p=\bar X$, a function defined for every possible sample.
+- **Estimate:** if 7 of 20 observations are successes, $\hat p=0.35$.
+- **Sampling distribution:** $n\hat p\sim\operatorname{Binomial}(n,p)$ under the model.
+
+The sampling distribution connects the estimator to uncertainty:
+
+$$
+E_p(\hat p)=p,
+\qquad
+\operatorname{Var}_p(\hat p)=\frac{p(1-p)}{n}.
+$$
+
+An estimate alone does not show how variable the procedure is. That requires a standard error, interval, posterior distribution, or another uncertainty summary appropriate to the inferential framework.
+
+# Bias
+
+The bias of $T$ for $g(\theta)$ is
+
+$$
+\boxed{
+\operatorname{Bias}_\theta(T)
+=E_\theta(T)-g(\theta).
+}
+$$
+
+An estimator is **unbiased** if this equals zero for every parameter value in the stated model. Bias is signed: positive and negative errors can cancel in expectation. It is also target-specific. The sample standard deviation, sample variance, and sample coefficient of variation have different targets and different bias properties.
+
+Unbiasedness does not mean that an estimate is correct, close to the target, or more useful than every biased alternative. It means only that the sampling distribution is centered at the estimand. A highly variable unbiased estimator can perform poorly in most practical samples.
+
+# Variance and Standard Error
+
+The repeated-sampling variance is
+
+$$
+\operatorname{Var}_\theta(T)
+=E_\theta\left[\{T-E_\theta(T)\}^2\right].
+$$
+
+Its square root is the estimator's true standard deviation under $P_\theta$. Because it usually depends on unknown quantities, an analysis reports an estimated **standard error**:
+
+$$
+\widehat{\operatorname{SE}}(T)
+\approx \sqrt{\operatorname{Var}_\theta(T)}.
+$$
+
+The standard error of an estimator is not the standard deviation of the raw observations. For an iid mean with variance $\sigma^2$,
+
+$$
+\operatorname{SD}(X_i)=\sigma,
+\qquad
+\operatorname{SE}(\bar X)=\frac{\sigma}{\sqrt n}.
+$$
+
+This $1/\sqrt n$ reduction depends on independent information. If observations are correlated within patients, plates, or batches, substituting the number of reads or cells for $n$ understates variance.
+
+# Mean Squared Error and the Bias--Variance Trade-off
+
+Under squared-error loss, the frequentist risk at $\theta$ is the mean squared error:
+
+$$
+\operatorname{MSE}_\theta(T)
+=E_\theta\left[\{T-g(\theta)\}^2\right].
+$$
+
+Add and subtract $E_\theta(T)$ inside the square. The cross term has expectation zero, giving
+
+$$
+\boxed{
+\operatorname{MSE}_\theta(T)
+=\operatorname{Var}_\theta(T)
++\operatorname{Bias}_\theta(T)^2.
+}
+$$
+
+MSE measures squared distance from the target, so it combines random spread and systematic centering error. A biased estimator can have smaller MSE if its reduction in variance exceeds the squared bias it introduces. The comparison is generally parameter-dependent: one estimator may be better near some values of $\theta$ and worse elsewhere.
+
+Other loss functions produce other risk criteria. Absolute error emphasizes typical magnitude and is less sensitive to extreme errors; asymmetric loss can represent different scientific costs for over- and underestimation. MSE is useful, not universal.
+
+# Worked Derivation: Estimating a Normal Variance
+
+Let $X_1,\ldots,X_n\stackrel{iid}{\sim}N(\mu,\sigma^2)$ and consider
+
+$$
+T_n=\frac{1}{n}\sum_{i=1}^n(X_i-\bar X)^2.
+$$
+
+Because
+
+$$
+\frac{nT_n}{\sigma^2}\sim\chi^2_{n-1},
+$$
+
+the chi-squared mean and variance give
+
+$$
+E(T_n)=\frac{n-1}{n}\sigma^2,
+\qquad
+\operatorname{Bias}(T_n)=-\frac{\sigma^2}{n},
+$$
+
+and
+
+$$
+\operatorname{Var}(T_n)
+=\frac{2(n-1)}{n^2}\sigma^4.
+$$
+
+Therefore
+
+$$
+\operatorname{MSE}(T_n)
+=\frac{2(n-1)+1}{n^2}\sigma^4
+=\frac{2n-1}{n^2}\sigma^4.
+$$
+
+The usual unbiased sample variance is
+
+$$
+S^2=\frac{1}{n-1}\sum_{i=1}^n(X_i-\bar X)^2
+=\frac{n}{n-1}T_n,
+$$
+
+with
+
+$$
+E(S^2)=\sigma^2,
+\qquad
+\operatorname{MSE}(S^2)=\operatorname{Var}(S^2)
+=\frac{2}{n-1}\sigma^4.
+$$
+
+For $n>1$,
+
+$$
+\frac{2n-1}{n^2}<\frac{2}{n-1},
+$$
+
+so the biased divisor-$n$ estimator has smaller MSE than the unbiased divisor-$(n-1)$ estimator under this normal model and squared-error loss. This does not make $T_n$ universally preferable: the comparison depends on the model, target, loss, and whether unbiased estimation or prediction has a special role in the application.
+
+# How Bias and Variance Are Assessed
+
+Analytic calculations are best when the sampling distribution is tractable. Otherwise, performance may be studied through a design-faithful simulation:
+
+1. choose parameter values and a data-generating mechanism;
+2. generate many independent datasets at the biological experimental-unit level;
+3. apply the complete estimator, including filtering and tuning, to each dataset;
+4. estimate bias by the mean estimate minus the known target;
+5. estimate variance by the variance across estimates; and
+6. estimate MSE by the mean squared distance from the target.
+
+Monte Carlo error should be reported for these simulation summaries. A simulation only evaluates the scenarios it includes; Gaussian independent data cannot validate an estimator intended for clustered, zero-inflated, selected, or heavy-tailed biological measurements.
+
+Bootstrap resampling serves a different purpose. It approximates the sampling distribution from the observed empirical distribution and is often used to estimate standard errors or bias. It is not a direct observation of repeated sampling from the true population, and it can fail when resampling occurs at the wrong unit or when the statistic is nonregular.
+
+# Bioinformatics Interpretation
+
+Suppose the estimand is the difference in mean normalized expression between two disease groups in a patient population. The estimator may combine normalization, filtering, dispersion estimation, and a fitted coefficient. Its bias and variance are properties of that entire pipeline under a specified data-generating process.
+
+Technical replication can reduce measurement variance within a patient. It does not remove patient-selection bias, batch--group confounding, or biological heterogeneity. For population inference, the sampling variance must reflect the number and design of independent patients. An estimator with low gene-level MSE under a simulated count model may still target the wrong contrast or fail to generalize beyond the sampled tissue, ancestry, disease stage, or laboratory protocol.
+
+Large-scale omics methods often shrink noisy gene-wise estimates toward a common value. Shrinkage deliberately introduces conditional bias for some genes to reduce variance and average prediction error. Whether that trade-off is useful depends on the loss function, the distribution of true effects, and whether inference is required for prespecified genes or selected extremes.
+
+# Diagnostics and Limits
+
+| Claim or calculation | Required condition | Failure mode |
+|---|---|---|
+| Analytic bias and variance | The assumed sampling law and estimator match the implemented procedure | Misspecification, preprocessing, or selection changes the distribution |
+| $1/\sqrt n$ standard-error scaling | Independent information with stable variance | Clustering and pseudoreplication make nominal $n$ misleading |
+| Small MSE implies a good procedure | The estimand and squared-error loss are scientifically appropriate | A low-risk estimate can answer the wrong question or hide asymmetric costs |
+| Estimated standard error measures total uncertainty | All important variation is represented in the design and model | Batch, missingness, normalization, or model selection may be omitted |
+| Simulation establishes performance | Scenarios cover plausible data-generating mechanisms and the full pipeline | Results are conditional on unrealistic parameter values or idealized data |
+
+Bias and variance cannot usually be diagnosed reliably from one observed dataset. Their assessment combines theory, external design information, simulation, and sensitivity analysis.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) defines the target before its estimator is judged.
+- [Expectation, variance, and moments](../probability-randomness/expectation-variance-and-moments.qmd) supplies the algebra behind risk calculations.
+- [Chi-squared, Student's t, and F distributions](../probability-randomness/chi-squared-students-t-and-f-distributions.qmd) gives the exact law used in the variance example.
+- [Law of large numbers](../asymptotic-thinking/law-of-large-numbers.qmd) supports consistency of many sample averages.
+- [Asymptotic bias, consistency, and efficiency](../asymptotic-thinking/asymptotic-bias-consistency-and-efficiency.qmd) distinguishes finite-sample risk from limiting behavior.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) explains why a large nominal sample may not yield accurate uncertainty.
+
+A point estimator is a rule, an estimate is its observed output, and the estimand is the target. Bias measures centering, variance measures spread, and MSE combines them under squared-error loss. None of these criteria excuses a poorly chosen target, an incorrect experimental unit, or an uncertainty calculation that ignores the study design.
+
+# References
+
+- Lehmann, E. L. and Casella, G. *Theory of Point Estimation*, 2nd ed. Springer, 1998. [Publisher page](https://doi.org/10.1007/b98854).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Chapman and Hall/CRC. [Publisher page](https://www.routledge.com/Statistical-Inference/Casella-Berger/p/book/9781032593036).
+- Stein, C. “Inadmissibility of the Usual Estimator for the Mean of a Multivariate Normal Distribution.” In *Proceedings of the Third Berkeley Symposium on Mathematical Statistics and Probability*, Volume 1, 1956, pp. 197--206. [Article](https://projecteuclid.org/euclid.bsmsp/1200501656).
+- Efron, B. and Hastie, T. *Computer Age Statistical Inference*. Cambridge University Press, 2016, Chapters 7 and 17. [Official online edition](https://hastie.su.domains/CASI/).

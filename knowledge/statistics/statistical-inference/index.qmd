@@ -4,8 +4,10 @@ description: "Estimation, uncertainty, testing, power, resampling, and multiplic
 categories: [Statistics, Inference]
 ---
 
-This level will organize notes about likelihood, estimators, sampling distributions, intervals, tests, power, effect sizes, resampling, and multiple testing.
+This level organizes notes about likelihood, estimators, sampling distributions, intervals, tests, power, effect sizes, resampling, and multiple testing.
 
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd)
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)
