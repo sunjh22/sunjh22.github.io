@@ -118,6 +118,8 @@ website:
                   - knowledge/statistics/statistical-inference/point-estimators-bias-variance-and-mean-squared-error.qmd
                   - knowledge/statistics/statistical-inference/likelihood-and-log-likelihood.qmd
                   - knowledge/statistics/statistical-inference/maximum-likelihood-estimation.qmd
+                  - knowledge/statistics/statistical-inference/bayesian-priors-likelihoods-and-posteriors.qmd
+                  - knowledge/statistics/statistical-inference/maximum-a-posteriori-estimation.qmd
               - section: "Regression & Statistical Models"
                 href: knowledge/statistics/regression-models/index.qmd
                 contents:

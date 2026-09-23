@@ -1,0 +1,235 @@
+---
+title: "Bayesian Priors, Likelihoods, and Posteriors"
+subtitle: "Building, updating, checking, and interpreting a Bayesian model"
+description: "A practical foundation for Bayesian inference: priors, likelihoods, posterior distributions, prediction, computation, checking, and sensitivity."
+author: "Jiahong Sun"
+date: "2026-09-23"
+date-modified: "2026-09-23"
+categories: [Statistics, Inference, Bayesian]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Probability Model for Unknown Quantities
+
+Bayesian inference represents uncertainty about an unknown parameter or latent quantity $\theta$ with probability. A complete model specifies both how data could be generated and which parameter values were plausible before the current data were observed:
+
+$$
+\theta\sim p(\theta),
+\qquad
+y\mid\theta\sim p(y\mid\theta).
+$$
+
+Here $p(\theta)$ is the **prior distribution** and $p(y\mid\theta)$ is the **sampling distribution**. After observing $y$, Bayes' theorem gives
+
+$$
+\boxed{
+p(\theta\mid y)
+=\frac{p(y\mid\theta)p(\theta)}{p(y)}
+=\frac{p(y\mid\theta)p(\theta)}
+{\int p(y\mid t)p(t)\,dt}
+}
+$$
+
+for a continuous parameter; a sum replaces the integral for a discrete parameter. The resulting $p(\theta\mid y)$ is the **posterior distribution**. The denominator
+
+$$
+p(y)=\int p(y\mid\theta)p(\theta)\,d\theta
+$$
+
+is the prior predictive density, also called the marginal likelihood or model evidence. It normalizes the posterior and is important in some model-comparison methods, even though it can be omitted when deriving a posterior kernel:
+
+$$
+p(\theta\mid y)\propto p(y\mid\theta)p(\theta).
+$$
+
+This formula is an identity, not a guarantee that the chosen prior or sampling model is scientifically adequate.
+
+# The Four Objects Have Different Roles
+
+| Object | What varies? | Main role | Common mistake |
+|---|---|---|---|
+| Prior $p(\theta)$ | $\theta$ | Encodes uncertainty before the current data | Calling a vague prior assumption-free |
+| Likelihood $L(\theta;y)=p(y\mid\theta)$ | $\theta$, with $y$ fixed | Measures relative support from the observed data | Treating it as a probability distribution over $\theta$ |
+| Posterior $p(\theta\mid y)$ | $\theta$, with $y$ observed | Represents updated uncertainty conditional on the model | Reporting only its mode and discarding its spread or shape |
+| Posterior predictive $p(\tilde y\mid y)$ | Future or replicated data $\tilde y$ | Propagates parameter uncertainty into observables | Plugging in one estimate and ignoring posterior uncertainty |
+
+The likelihood is the same mathematical object used in [likelihood and log-likelihood](likelihood-and-log-likelihood.qmd). Bayesian and likelihood-based analyses differ in what else they add and how they interpret uncertainty.
+
+# Choosing and Understanding a Prior
+
+A prior should be stated on a scientifically interpretable scale and examined through its implications. Useful sources include previous commensurate studies, physical constraints, expert knowledge, or regularization that rules out implausible extremes.
+
+Broad labels do not determine whether a prior is appropriate:
+
+- An **informative prior** concentrates substantial mass based on credible external information.
+- A **weakly informative prior** excludes unreasonable values while leaving a broad scientifically plausible range.
+- A **reference**, **default**, or purportedly **noninformative prior** follows a formal construction, but can still affect inference and may change under reparameterization.
+- An **improper prior** does not integrate to one. It can sometimes yield a proper posterior, but prior prediction is then undefined and posterior propriety must be proved rather than assumed.
+- An **empirical-Bayes prior** estimates hyperparameters from data. Its uncertainty and any reuse of the same data need explicit treatment.
+
+Uniformity is scale-dependent. A density uniform in a probability $p$ is not uniform in the log-odds $\log\{p/(1-p)\}$. Every density is defined relative to a parameterization and base measure.
+
+## Prior predictive checking
+
+Before fitting the model, simulate
+
+$$
+\theta^{\mathrm{sim}}\sim p(\theta),
+\qquad
+y^{\mathrm{sim}}\sim p(y\mid\theta^{\mathrm{sim}}).
+$$
+
+The distribution
+
+$$
+p(y)=\int p(y\mid\theta)p(\theta)\,d\theta
+$$
+
+shows what observable data the entire prior-plus-likelihood model regards as plausible. Impossible counts, implausible effect sizes, or unrealistic between-sample variation can reveal a poorly calibrated prior more clearly than inspecting its numerical scale alone. A prior predictive check tests implications, not whether a prior is uniquely correct.
+
+# Worked Derivation: Beta--Binomial Learning
+
+Suppose the experimental units are $n$ independently prepared specimens and $Y$ is the number positive for a prespecified assay endpoint:
+
+$$
+Y\mid p\sim\operatorname{Binomial}(n,p),
+\qquad
+p\sim\operatorname{Beta}(a,b).
+$$
+
+Holding the observed count $y$ fixed and retaining terms that depend on $p$,
+
+$$
+\begin{aligned}
+p(p\mid y)
+&\propto
+p^y(1-p)^{n-y}
+p^{a-1}(1-p)^{b-1}\\
+&=p^{a+y-1}(1-p)^{b+n-y-1}.
+\end{aligned}
+$$
+
+Therefore
+
+$$
+\boxed{p\mid y\sim\operatorname{Beta}(a+y,b+n-y).}
+$$
+
+The beta family is conjugate to the binomial likelihood: the posterior has the same distributional form as the prior. Its mean is
+
+$$
+E(p\mid y)=\frac{a+y}{a+b+n}
+=\frac{a+b}{a+b+n}\frac{a}{a+b}
++\frac{n}{a+b+n}\frac{y}{n}.
+$$
+
+This is a weighted average of the prior mean and observed proportion. Describing $a+b$ as an “effective prior sample size” is an algebraic analogy; it is not evidence that those units were actually observed under the current protocol.
+
+For one future exchangeable specimen, integrating over posterior uncertainty gives
+
+$$
+P(\tilde Y=1\mid y)
+=\int_0^1 p\,p(p\mid y)\,dp
+=\frac{a+y}{a+b+n}.
+$$
+
+For multiple future trials, integration produces a [beta-binomial distribution](../probability-randomness/beta-binomial-distribution.qmd), whose variance includes uncertainty about $p$.
+
+# Posterior Summaries and Decisions
+
+The posterior distribution is the inferential result. Summaries should follow the scientific question rather than habit.
+
+- A posterior mean minimizes posterior expected squared-error loss.
+- A posterior median minimizes posterior expected absolute-error loss.
+- A posterior mode is the [maximum a posteriori estimate](maximum-a-posteriori-estimation.qmd), but can be unstable or parameterization-dependent.
+- A $100(1-\alpha)\%$ credible interval is a set $C(y)$ satisfying $P(\theta\in C(y)\mid y)=1-\alpha$ under the fitted model.
+- A posterior probability such as $P(\theta>\theta_0\mid y)$ directly addresses a prespecified threshold, although the threshold should have scientific meaning.
+
+A Bayesian credible interval conditions on the observed data and prior-model specification. It is not a frequentist confidence interval, whose defining probability concerns coverage across repeated samples. Neither interval interpretation survives an incorrect experimental unit, unmodeled selection, or a badly misspecified likelihood.
+
+Decisions require more than estimation. With action $a$ and loss $L(a,\theta)$, a Bayes action minimizes posterior expected loss:
+
+$$
+a^*(y)=\operatorname*{arg\,min}_a
+E\{L(a,\theta)\mid y\}.
+$$
+
+Thus a treatment, validation, or follow-up decision depends on its consequences, not merely on whether a posterior probability exceeds an arbitrary convention.
+
+# Computation and Computational Diagnostics
+
+Conjugate models permit exact algebra, but most realistic posteriors require numerical work.
+
+| Method | What it approximates | Main diagnostic concern |
+|---|---|---|
+| Quadrature or a parameter grid | Integrals on a low-dimensional space | Grid range and resolution |
+| Markov chain Monte Carlo | Correlated draws from the posterior | Mixing, divergences, effective sample size, and Monte Carlo error |
+| Importance sampling | Weighted draws from a proposal | Unstable or highly concentrated weights |
+| Variational inference | A tractable distribution near the posterior | Approximation bias and underestimated tails or dependence |
+| Laplace approximation | Local Gaussian shape around a mode | Skewness, boundaries, weak identification, and multiple modes |
+
+An optimizer or sampler can converge for a poor model, and a good model can be approximated badly. Computational diagnostics and model criticism are separate requirements. Posterior summaries should report Monte Carlo error when simulation error is not negligible relative to scientific uncertainty.
+
+# Posterior Prediction and Model Checking
+
+Posterior prediction averages the observation model over parameter uncertainty:
+
+$$
+\boxed{
+p(\tilde y\mid y)=
+\int p(\tilde y\mid\theta)p(\theta\mid y)\,d\theta.
+}
+$$
+
+For a posterior predictive check, generate replicated data $y^{\mathrm{rep}}$ using the fitted model and compare scientifically relevant features $T(y^{\mathrm{rep}})$ with $T(y)$. Useful discrepancies might include the number of zeros, an upper-tail quantile, between-sample variability, or a batch contrast. A check should target ways the model could fail; matching a statistic already forced by the fit is weak evidence of adequacy.
+
+Posterior predictive checks detect mismatch but do not automatically identify its cause. A discrepancy can arise from the likelihood, dependence structure, prior, covariates, measurement process, or selection mechanism. Model revision should be followed by new checks and transparent reporting rather than treating the same data as untouched confirmation.
+
+# Bioinformatics Interpretation and Replication
+
+Consider estimating a batch-specific contamination probability from sequencing libraries. The **estimand** might be the probability that a newly prepared library from the target laboratory and protocol exceeds a prespecified contamination threshold. The independent experimental units are libraries, not reads; reads are technical measurements nested within libraries.
+
+A defensible model may therefore include:
+
+1. a library-level likelihood for the threshold indicator or contamination fraction;
+2. a prior calibrated using comparable laboratories and protocols;
+3. batch or run effects if the target population includes multiple batches;
+4. an explicit measurement model when read depth makes library classifications uncertain; and
+5. posterior prediction for a new library, not merely a posterior for a read-level rate.
+
+Statistically, the posterior quantifies uncertainty under this hierarchy. Biologically, relevance depends on specimen type, preparation chemistry, laboratory conditions, contamination definition, and target population. Millions of reads can reduce measurement error within a library, but they cannot replace biological or process replication across libraries.
+
+# Sensitivity and Failure Modes
+
+| Issue | Why it matters | Check or response |
+|---|---|---|
+| Prior--likelihood conflict | A concentrated prior and incompatible data can produce surprising compromise or model failure | Plot prior, likelihood, and posterior; inspect prior and posterior predictions |
+| Weak identification | Different parameter combinations explain the data similarly | Inspect joint posterior geometry and predictions; redesign or justify constraints |
+| Improper posterior | No valid probability distribution exists | Establish posterior propriety or use a proper prior |
+| Pseudoreplication | Posterior precision reflects reads or cells rather than independent samples | Encode clustering or aggregate at the experimental-unit level |
+| Model misspecification | A narrow posterior can be confidently wrong | Use targeted posterior predictive checks and alternative likelihoods |
+| Prior sensitivity | Weak data leave conclusions dependent on prior choices | Refit with scientifically defensible alternatives and report changes |
+| Selection or data reuse | Conditioning mechanism is omitted or information is counted twice | Model selection/ascertainment and separate prior construction from validation |
+
+Sensitivity analysis is most informative when alternatives are plausible and prespecified. Replacing a defensible prior with an arbitrarily extreme one does not measure practical robustness.
+
+# Connections and Take-home Messages
+
+- [Bayes' theorem and Bayesian updating](../probability-randomness/bayes-theorem-and-bayesian-updating.qmd) develops the underlying probability identity and sequential updating.
+- [Likelihood and log-likelihood](likelihood-and-log-likelihood.qmd) explains the data contribution to the posterior.
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) separates a scientific target from a convenient model parameter.
+- [Gamma and beta distributions](../probability-randomness/gamma-and-beta-distributions.qmd) and the [beta-binomial distribution](../probability-randomness/beta-binomial-distribution.qmd) supply the conjugate example.
+- [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd) provides a likelihood-only point-estimation comparison.
+- [Maximum a posteriori estimation](maximum-a-posteriori-estimation.qmd) studies the posterior mode and its limitations.
+
+Bayesian analysis is a workflow, not just multiplication of a prior and likelihood. It requires a scientifically meaningful estimand, a generative model, calibrated priors, accurate computation, posterior uncertainty, predictive checking, and sensitivity analysis. Its probabilities are conditional on all of those choices.
+
+# References
+
+- Bayes, T. and Price, R. “An Essay towards Solving a Problem in the Doctrine of Chances.” *Philosophical Transactions of the Royal Society of London* 53 (1763): 370--418. [Article](https://doi.org/10.1098/rstl.1763.0053).
+- Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and Rubin, D. B. *Bayesian Data Analysis*, 3rd ed. CRC Press, 2013. [Book resources](https://sites.stat.columbia.edu/gelman/book/).
+- Gelman, A., Vehtari, A., Simpson, D., et al. “Bayesian Workflow.” arXiv:2011.01808, 2020. [Preprint](https://arxiv.org/abs/2011.01808).
+- Gelman, A., Meng, X.-L., and Stern, H. “Posterior Predictive Assessment of Model Fitness via Realized Discrepancies.” *Statistica Sinica* 6 (1996): 733--760. [Article](https://www.jstor.org/stable/24306036).
+- Stan Development Team. “Posterior and Prior Predictive Checks.” *Stan User's Guide*. [Official documentation](https://mc-stan.org/docs/stan-users-guide/posterior-predictive-checks.html).

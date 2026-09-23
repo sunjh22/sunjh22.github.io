@@ -1,0 +1,242 @@
+---
+title: "Maximum a Posteriori Estimation"
+subtitle: "Posterior modes, penalized likelihood, and the limits of a single optimum"
+description: "Maximum a posteriori estimation, its relationship to likelihood and regularization, exact examples, optimization, interpretation, and failure modes."
+author: "Jiahong Sun"
+date: "2026-09-23"
+date-modified: "2026-09-23"
+categories: [Statistics, Inference, Bayesian, Estimation]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Posterior Mode Is a Point Summary
+
+Given observed data $y$, likelihood $p(y\mid\theta)$, and prior density $p(\theta)$, a **maximum a posteriori** (MAP) estimate is any posterior mode:
+
+$$
+\boxed{
+\hat\theta_{\mathrm{MAP}}
+\in\operatorname*{arg\,max}_{\theta\in\Theta}
+p(\theta\mid y)
+=\operatorname*{arg\,max}_{\theta\in\Theta}
+p(y\mid\theta)p(\theta).
+}
+$$
+
+The normalizing constant $p(y)$ does not depend on $\theta$, so computation usually maximizes the log posterior kernel,
+
+$$
+\hat\theta_{\mathrm{MAP}}
+\in\operatorname*{arg\,max}_{\theta\in\Theta}
+\{\ell(\theta;y)+\log p(\theta)\}.
+$$
+
+Before observing data, the rule $\hat\theta_{\mathrm{MAP}}(Y)$ is an estimator; after observing $y$, its realized value is an estimate. The estimand must still be defined separately. MAP reports where a posterior **density** is highest, not how much posterior probability lies at that exact point.
+
+# MAP, MLE, Posterior Mean, and Prediction
+
+| Summary | Definition | What it uses | Important property or limitation |
+|---|---|---|---|
+| Maximum likelihood | $\arg\max_\theta p(y\mid\theta)$ | Likelihood | Invariant under one-to-one reparameterization of the parameter value |
+| MAP | $\arg\max_\theta p(y\mid\theta)p(\theta)$ | Likelihood and prior density | Depends on prior and on the density's parameterization |
+| Posterior mean | $E(\theta\mid y)$ | Full posterior | Bayes action under squared-error loss; may fall between modes |
+| Posterior median | A posterior 0.5 quantile | Full posterior | Bayes action under absolute-error loss in one dimension |
+| Posterior predictive | $p(\tilde y\mid y)$ | Full posterior and observation model | Propagates parameter uncertainty to observables |
+
+With a flat prior density on the optimization scale, MAP can equal the [maximum-likelihood estimate](maximum-likelihood-estimation.qmd). That statement is not parameterization-free: a density flat in $\theta$ is generally not flat in $g(\theta)$.
+
+MAP can be useful when a fast point estimate is required or when posterior optimization is a step toward a Laplace approximation. It is not a complete Bayesian analysis because it discards spread, skewness, dependence, tail risk, and competing modes.
+
+# Worked Derivation: A Beta--Binomial MAP
+
+Let
+
+$$
+Y\mid p\sim\operatorname{Binomial}(n,p),
+\qquad
+p\sim\operatorname{Beta}(a,b).
+$$
+
+After observing $Y=y$, the posterior is
+
+$$
+p\mid y\sim\operatorname{Beta}(a+y,b+n-y).
+$$
+
+For an interior mode, write the log posterior kernel as
+
+$$
+h(p)=(a+y-1)\log p+(b+n-y-1)\log(1-p).
+$$
+
+Then
+
+$$
+h'(p)=\frac{a+y-1}{p}
+-\frac{b+n-y-1}{1-p}.
+$$
+
+If $a+y>1$ and $b+n-y>1$, solving $h'(p)=0$ gives
+
+$$
+\boxed{
+\hat p_{\mathrm{MAP}}
+=\frac{a+y-1}{a+b+n-2}.
+}
+$$
+
+The posterior mean is instead
+
+$$
+E(p\mid y)=\frac{a+y}{a+b+n}.
+$$
+
+These summaries need not agree. The mean accounts for the entire posterior under squared-error loss; the MAP uses only the density height at its mode. If a posterior shape parameter is at most one, the mode may lie on a boundary; if both are below one, a beta density is U-shaped with two boundary modes. Applying the interior formula without checking these cases is wrong.
+
+# MAP as Penalized Likelihood
+
+Negating the log-posterior objective yields
+
+$$
+\hat\theta_{\mathrm{MAP}}
+=\operatorname*{arg\,min}_\theta
+\{-\ell(\theta;y)-\log p(\theta)\}.
+$$
+
+The negative log prior acts as a penalty. This establishes a useful mathematical connection between Bayesian priors and regularization, but the interpretations are not interchangeable unless the full probability model is intended.
+
+## Gaussian example and ridge shrinkage
+
+Suppose
+
+$$
+y\mid\beta\sim N(X\beta,\sigma^2I),
+\qquad
+\beta\sim N(0,\tau^2I),
+$$
+
+with known $\sigma^2$ and $\tau^2$. Up to constants, the negative log posterior is
+
+$$
+\frac{1}{2\sigma^2}\lVert y-X\beta\rVert_2^2
++\frac{1}{2\tau^2}\lVert\beta\rVert_2^2.
+$$
+
+Therefore
+
+$$
+\hat\beta_{\mathrm{MAP}}
+=\operatorname*{arg\,min}_\beta
+\left\{
+\lVert y-X\beta\rVert_2^2
++\lambda\lVert\beta\rVert_2^2
+\right\},
+\qquad
+\lambda=\frac{\sigma^2}{\tau^2}.
+$$
+
+This is the ridge objective. The prior scale $\tau$ determines shrinkage jointly with the noise scale $\sigma$. In this conjugate Gaussian case the posterior is normal, so its mean and mode coincide. That coincidence does not generalize to skewed, constrained, mixture, or multimodal posteriors.
+
+# Why MAP Is Not Reparameterization Invariant
+
+Let $\phi=g(\theta)$ be one-to-one and differentiable. The transformed posterior density is
+
+$$
+p_\phi(\phi\mid y)
+=p_\theta\{g^{-1}(\phi)\mid y\}
+\left|\frac{d g^{-1}(\phi)}{d\phi}\right|.
+$$
+
+The Jacobian changes density heights, so in general
+
+$$
+\operatorname*{arg\,max}_\phi p_\phi(\phi\mid y)
+\ne
+g\!\left(
+\operatorname*{arg\,max}_\theta p_\theta(\theta\mid y)
+\right).
+$$
+
+For a beta posterior with shape parameters $(\alpha,\beta)$, the mode on the probability scale is $(\alpha-1)/(\alpha+\beta-2)$ when both shapes exceed one. On the log-odds scale $\eta=\log\{p/(1-p)\}$, the transformed density includes the Jacobian $p(1-p)$ and its mode maps back to $\alpha/(\alpha+\beta)$, the beta mean. Neither answer is an algebra error: “highest density” depends on the coordinate and measure used to define density.
+
+This contrasts with likelihood invariance, because a likelihood is relabeled under a one-to-one transformation without a density Jacobian. The parameterization should therefore be reported whenever a MAP estimate is scientifically interpreted.
+
+# Optimization and Verification
+
+A numerical MAP fit should be treated as an optimization problem with statistical structure.
+
+1. Write the complete log posterior, including every prior term and Jacobian introduced by any transformation used to define the model.
+2. Enforce constraints through stable parameterizations or bounded optimization.
+3. Use multiple dispersed starting values when local modes are plausible.
+4. Inspect convergence codes, gradients, and scaling rather than trusting a returned number;
+5. compare boundary values and plot one- or two-dimensional profiles for important parameters; and
+6. examine the Hessian only if a local quadratic approximation is scientifically useful and numerically stable.
+
+Automatic differentiation can provide accurate local gradients, but it cannot establish global optimality, identify an omitted mode, or validate the likelihood and prior. A singular or poorly conditioned Hessian may signal weak identification, a ridge, a boundary, or an unsuitable parameter scale.
+
+# Uncertainty Does Not Come with the Optimum
+
+A MAP estimate alone provides no interval or posterior probability. Inverting the negative Hessian at the mode gives a local Gaussian or Laplace approximation,
+
+$$
+p(\theta\mid y)
+\approx N\!\left(
+\hat\theta_{\mathrm{MAP}},
+\left[-\nabla^2\log p(\theta\mid y)
+\big|_{\hat\theta_{\mathrm{MAP}}}\right]^{-1}
+\right),
+$$
+
+when the mode is interior, unique, smooth, well identified, and approximately quadratic. This approximation can be poor for skewed posteriors, parameters near boundaries, heavy tails, strong nonlinear dependence, or multiple modes.
+
+If uncertainty or prediction matters, approximate or sample from the full posterior and validate the computation. Plugging $\hat\theta_{\mathrm{MAP}}$ into $p(\tilde y\mid\theta)$ understates predictive uncertainty because it ignores uncertainty about $\theta$.
+
+# Bioinformatics Example: Regularizing Many Effects
+
+Suppose a model estimates gene-specific treatment effects $\beta_g$ from several biological samples per condition. Independent priors
+
+$$
+\beta_g\sim N(0,\tau^2)
+$$
+
+shrink noisy effects toward zero; the joint MAP resembles penalized estimation. The estimands are treatment effects for the target biological population, not read-level contrasts. Biological samples are the experimental units, while reads are nested technical observations informing each sample's expression measurement.
+
+A MAP pipeline must not treat thousands of reads or cells from one donor as thousands of independent donors. That pseudoreplication makes the likelihood dominate the prior for the wrong reason and produces severe overconfidence. Batch, donor, and condition structure belong in the likelihood or hierarchy before optimization.
+
+Statistically, shrinkage can reduce estimation error across many weakly informed effects. Biologically, a shrunken nonzero coefficient is not proof of mechanism or practical relevance. Report the prior scale, its selection procedure, uncertainty beyond the mode, and sensitivity of scientifically important rankings or thresholds.
+
+# Failure Modes and Sensitivity
+
+| Failure mechanism | Symptom | Response |
+|---|---|---|
+| Multiple modes | Different starts find different optima | Report and explore all relevant modes; use full-posterior methods |
+| Boundary mode | Estimate is zero, one, or a zero variance | Use boundary-aware interpretation; do not apply an interior Hessian blindly |
+| Parameterization dependence | Modes disagree after transformation | State the optimization scale and examine invariant decisions or predictions |
+| Weak identification | Flat ridge or ill-conditioned Hessian | Report identified combinations; redesign, constrain with justification, or retain posterior uncertainty |
+| Hyperparameter tuning on the same data | Shrinkage looks more certain than warranted | Model hyperparameters or propagate tuning uncertainty |
+| Improper or unbounded posterior | Optimizer diverges or density has no finite maximum | Verify posterior propriety and existence before interpreting output |
+| Pseudoreplication | Precision grows with technical observations | Encode clustering and preserve biological experimental units |
+| Model misspecification | Good objective value but poor replicated data | Conduct prior and posterior predictive checks; revise the generative model |
+
+Sensitivity analysis should vary scientifically defensible prior families and scales, not only optimization settings. If a conclusion changes materially, that dependence is part of the result.
+
+# Connections and Take-home Messages
+
+- [Bayesian priors, likelihoods, and posteriors](bayesian-priors-likelihoods-and-posteriors.qmd) develops the full distributional workflow that MAP compresses.
+- [Likelihood and log-likelihood](likelihood-and-log-likelihood.qmd) supplies the data-fit term in the objective.
+- [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd) clarifies what changes when the prior term is absent.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) provides repeated-sampling criteria for evaluating any point-estimation rule.
+- [Transformations of random variables](../probability-randomness/transformations-of-random-variables.qmd) explains the Jacobian responsible for parameterization dependence.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) gives broader reasons local normal approximations can mislead.
+
+MAP combines likelihood and prior information in an optimization problem and often corresponds to penalized estimation. Its speed and simplicity are useful, but its dependence on parameterization, loss of uncertainty, sensitivity to boundaries and multiple modes, and reliance on correct replication make it a limited posterior summary rather than a complete Bayesian conclusion.
+
+# References
+
+- Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and Rubin, D. B. *Bayesian Data Analysis*, 3rd ed. CRC Press, 2013. [Book resources](https://sites.stat.columbia.edu/gelman/book/).
+- Berger, J. O. *Statistical Decision Theory and Bayesian Analysis*, 2nd ed. Springer, 1985. [Publisher page](https://doi.org/10.1007/978-1-4757-4286-2).
+- Druilhet, P. and Marin, J.-M. “Invariant HPD Credible Sets and MAP Estimators.” *Bayesian Analysis* 2 (2007): 681--691. [Article](https://doi.org/10.1214/07-BA227).
+- Tikhonov, A. N. “Solution of Incorrectly Formulated Problems and the Regularization Method.” *Soviet Mathematics Doklady* 4 (1963): 1035--1038.
+- Pereyra, M. “Revisiting Maximum-a-Posteriori Estimation in Log-Concave Models.” *SIAM Journal on Imaging Sciences* 12 (2019): 650--670. [Article](https://doi.org/10.1137/18M1170549).
