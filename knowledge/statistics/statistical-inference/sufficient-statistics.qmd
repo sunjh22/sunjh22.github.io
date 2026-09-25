@@ -1,0 +1,187 @@
+---
+title: "Sufficient Statistics"
+subtitle: "What a statistic must retain for inference under a model"
+description: "Sufficiency, factorization, minimal and complete statistics, Rao--Blackwell improvement, and limits of model-based data reduction."
+author: "Jiahong Sun"
+date: "2026-09-25"
+date-modified: "2026-09-25"
+categories: [Statistics, Inference, Estimation]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Information Relative to a Statistical Model
+
+Let $X$ denote the full data and let $T=T(X)$ be a statistic. For a family of sampling distributions $\{P_\theta:\theta\in\Theta\}$, $T$ is **sufficient for $\theta$** when the conditional distribution of $X$ given $T$ does not depend on $\theta$.
+
+Informally, after $T$ is known, the remaining detail in $X$ contains no additional information about which value of $\theta$ generated the data. Sufficiency is therefore a property of three objects together:
+
+1. the observed data $X$;
+2. the assumed family $\{P_\theta\}$; and
+3. the target parameter $\theta$.
+
+It is not an intrinsic property of a summary. A count may be sufficient under an iid Bernoulli model and insufficient when error probabilities vary by read, samples are clustered, or additional parameters are targets.
+
+Sufficiency does not mean that $T$ reconstructs the raw data, predicts well, identifies $\theta$, or preserves information about every future scientific question. It means only that the discarded detail is conditionally irrelevant for inference about the specified parameter within the specified model.
+
+# The Factorization Theorem
+
+For a dominated family with joint density or mass function $f_\theta(x)$, the Fisher--Neyman factorization theorem says that $T$ is sufficient for $\theta$ if and only if there are nonnegative functions $g_\theta$ and $h$ such that
+
+$$
+\boxed{f_\theta(x)=g_\theta\{T(x)\}h(x),}
+$$
+
+where $h$ does not depend on $\theta$. All parameter-dependent variation in the likelihood then passes through $T(x)$:
+
+$$
+L(\theta;x)\propto_\theta g_\theta\{T(x)\}.
+$$
+
+The factor $h(x)$ may distinguish datasets that share the same statistic, but it cannot change their relative support for different parameter values. The theorem is especially convenient because it avoids calculating a conditional distribution directly. Its familiar density form assumes a common dominating measure; more general formulations require corresponding measure-theoretic care.
+
+# Worked Example: Bernoulli Observations
+
+Suppose $X_1,\ldots,X_n\stackrel{iid}{\sim}\operatorname{Bernoulli}(p)$. For $x_i\in\{0,1\}$,
+
+$$
+f_p(x_1,\ldots,x_n)
+=\prod_{i=1}^n p^{x_i}(1-p)^{1-x_i}
+=p^{\sum_i x_i}(1-p)^{n-\sum_i x_i}.
+$$
+
+Thus
+
+$$
+T(X)=\sum_{i=1}^nX_i
+$$
+
+is sufficient for $p$. Conditional on $T=t$, every binary sequence containing $t$ ones has probability $1/{n\choose t}$, which is independent of $p$. The ordering of successes is ancillary for this model.
+
+The statistic is an estimator only after it is turned into an estimation rule. For example, $\hat p=T/n$ estimates the estimand $p$, while the observed value $t/n$ is the estimate. Sufficiency describes retained likelihood information; unbiasedness, variance, and loss describe an estimator's performance.
+
+# Exponential Families and Fixed-dimensional Summaries
+
+An exponential family can be written as
+
+$$
+f_\theta(x)=h(x)\exp\!\left\{\eta(\theta)^\mathsf{T}T(x)-A(\theta)\right\}.
+$$
+
+The factorization theorem makes $T(X)$ sufficient. For an iid sample, the canonical statistic is usually a sum of observation-level statistics. Examples include:
+
+| Sampling model | Parameter target | A sufficient statistic |
+|---|---|---|
+| Bernoulli($p$) | $p$ | $\sum_iX_i$ |
+| Poisson($\lambda$) | $\lambda$ | $\sum_iX_i$ |
+| Normal($\mu,\sigma^2$), known $\sigma^2$ | $\mu$ | $\sum_iX_i$ |
+| Normal($\mu,\sigma^2$), both unknown | $(\mu,\sigma^2)$ | $(\sum_iX_i,\sum_iX_i^2)$ |
+
+A statistic's low dimension does not by itself establish sufficiency. The factorization must hold for the whole model, including its support. Conversely, a sufficient statistic need not have fixed dimension: the order statistics are sufficient for an arbitrary continuous distribution because sorting loses only labels, but this gives little compression.
+
+The Pitman--Koopman--Darmois result explains why regular iid models with parameter-independent support and a fixed-dimensional sufficient statistic are closely associated with exponential families. Its conditions matter. If $X_i\stackrel{iid}{\sim}\operatorname{Uniform}(0,\theta)$, then
+
+$$
+f_\theta(x)=\theta^{-n}
+\mathbf 1\{0\leq \min_i x_i,\ \max_i x_i\leq\theta\},
+$$
+
+so $\max_iX_i$ is sufficient even though the support changes with $\theta$.
+
+# Minimal Sufficiency and Completeness
+
+A sufficient statistic $T$ is **minimal sufficient** if it is a function of every other sufficient statistic, apart from null-set qualifications. It is the coarsest reduction that remains sufficient; this is an ordering by information, not necessarily by vector dimension.
+
+For many dominated families, a useful criterion is
+
+$$
+\frac{f_\theta(x)}{f_\theta(y)}
+\text{ is independent of }\theta
+\quad\Longleftrightarrow\quad
+T(x)=T(y).
+$$
+
+Minimality does not imply that an unbiased estimator based on $T$ is unique. That conclusion uses the stronger property of **completeness**: $T$ is complete when
+
+$$
+E_\theta\{a(T)\}=0\ \text{for every }\theta
+\quad\Longrightarrow\quad
+a(T)=0\ \text{almost surely for every }\theta.
+$$
+
+If $T$ is complete and sufficient and $a(T)$ is unbiased for $g(\theta)$, the Lehmann--Scheffé theorem makes $a(T)$ the unique uniformly minimum-variance unbiased estimator of $g(\theta)$. Completeness is a property to prove, not a synonym for sufficiency.
+
+# Rao--Blackwell Improvement
+
+Let $W=W(X)$ be an estimator of $g(\theta)$ with finite second moment, and let $T$ be sufficient. Define
+
+$$
+W^*=E_\theta(W\mid T).
+$$
+
+Because $T$ is sufficient, a version of this conditional expectation can be chosen that is a function of $T$ without unknown $\theta$. Iterated expectation gives
+
+$$
+E_\theta(W^*)=E_\theta(W),
+$$
+
+so Rao--Blackwellization preserves the bias. The conditional variance decomposition gives
+
+$$
+\operatorname{Var}_\theta(W)
+=\operatorname{Var}_\theta(W^*)
++E_\theta\{\operatorname{Var}_\theta(W\mid T)\},
+$$
+
+and hence $\operatorname{Var}_\theta(W^*)\leq\operatorname{Var}_\theta(W)$. More generally, conditioning cannot increase expected convex loss under appropriate integrability conditions.
+
+This is a theorem about repeated-sampling performance under the assumed model. It cannot repair a wrong estimand, confounding, selection bias, or an incorrect independence assumption.
+
+# Likelihood, Bayesian Updating, and Information
+
+When $T$ is sufficient, two datasets with the same $T$ have proportional likelihood functions. Consequently:
+
+- maximum-likelihood estimation can be based on $T$;
+- for a fixed prior, the posterior satisfies $p(\theta\mid x)=p(\theta\mid T(x))$ whenever Bayes' rule is well defined; and
+- under regularity conditions, $T$ preserves Fisher information about $\theta$.
+
+These statements remain model-relative. A Bayesian prior does not make a statistic sufficient for aspects of the data-generating process omitted from the likelihood. Posterior predictive checks may deliberately require raw-data features that are ancillary for parameter estimation but informative about model adequacy.
+
+# Bioinformatics Example: What May Be Safely Aggregated?
+
+Suppose a control library contains $n$ prespecified, conditionally independent base calls with a common error probability $p$. Under that ideal Bernoulli model, the number of errors $T$ is sufficient for $p$; retaining read order does not change the likelihood for $p$.
+
+Real sequencing data may attach different quality scores, cycles, strands, genomic contexts, or batches to different calls. If call $i$ has modeled error probability $p_i(\beta)$, the unweighted total is generally not sufficient for the regression parameter $\beta$. Aggregating before checking the model can erase covariate patterns, overdispersion, contamination, or dependence.
+
+The experimental unit also remains a design question. A count sufficient for a within-library error probability does not turn millions of reads into millions of biological replicates. If the scientific estimand concerns variation across patients, organisms, or independently prepared libraries, the sampling model must retain those independent units and represent between-unit heterogeneity. Statistically lossless aggregation under a conditional read model can still be biologically lossy for a population-level question.
+
+# Limits and Common Misinterpretations
+
+| Claim | What is actually required | What can go wrong |
+|---|---|---|
+| “The summary contains all information” | Sufficiency for a named parameter in a named model | It may discard information about other parameters or model misfit |
+| “The likelihood uses only the total” | A valid factorization including support | Heterogeneous probabilities, dependence, or censoring can invalidate it |
+| “Minimal means smallest vector” | Coarsest sufficient sigma-field, up to equivalence | Dimension is not a complete information ordering |
+| “Sufficient implies optimal” | An estimator plus a stated loss or unbiasedness criterion | Many poor estimators are functions of sufficient statistics |
+| “Aggregation increases replication” | Independent experimental units in the sampling design | Reads or cells within one specimen remain clustered technical observations |
+| “No raw data are needed” | The inferential model is trusted and the target will not change | Diagnostics, reanalysis, and new scientific questions may need discarded detail |
+
+# Connections and Take-home Messages
+
+- [Likelihood and log-likelihood](likelihood-and-log-likelihood.qmd) explains why proportional likelihoods carry the same relative evidence.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) supplies the performance criteria used by Rao--Blackwellization.
+- [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd) can operate on a sufficient statistic without changing the likelihood maximizer.
+- [Bayesian priors, likelihoods, and posteriors](bayesian-priors-likelihoods-and-posteriors.qmd) shows how the same reduction enters posterior updating.
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd) clarifies the conditional-distribution definition.
+- [Fisher information and the Cramér--Rao bound](fisher-information-and-cramer-rao-bound.qmd) develops information preservation and variance limits.
+
+A sufficient statistic retains all model-based information about a specified parameter, not all scientifically useful information in the data. Factorization proves sufficiency in dominated models; minimality describes the coarsest sufficient reduction; completeness supports uniqueness; and Rao--Blackwellization turns sufficiency into a variance-improvement principle. Every claim depends on the sampling model and therefore on correct experimental units, dependence assumptions, and target definition.
+
+# References
+
+- Fisher, R. A. “On the Mathematical Foundations of Theoretical Statistics.” *Philosophical Transactions of the Royal Society A* 222 (1922): 309--368. [Article](https://doi.org/10.1098/rsta.1922.0009).
+- Neyman, J. “Sur la vérification des hypothèses statistiques composées.” *Bulletin de la Société Mathématique de France* 63 (1935): 246--266. [Article](https://www.numdam.org/item/BSMF_1935__63__246_0/).
+- Rao, C. R. “Information and the Accuracy Attainable in the Estimation of Statistical Parameters.” *Bulletin of the Calcutta Mathematical Society* 37 (1945): 81--91. Reprinted in *Breakthroughs in Statistics*, 1992. [Reprint](https://doi.org/10.1007/978-1-4612-0919-5_16).
+- Lehmann, E. L. and Casella, G. *Theory of Point Estimation*, 2nd ed. Springer, 1998, Chapters 1--2. [Publisher page](https://doi.org/10.1007/b98854).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002, Sections 6.2--6.3. [Publisher page](https://www.routledge.com/Statistical-Inference/Casella-Berger/p/book/9781032593036).

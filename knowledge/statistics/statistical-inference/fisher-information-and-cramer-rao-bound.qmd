@@ -1,0 +1,247 @@
+---
+title: "Fisher Information and the Cramér--Rao Bound"
+subtitle: "Likelihood curvature and a benchmark for estimator precision"
+description: "Scores, expected and observed Fisher information, the Cramér--Rao inequality, efficiency, nuisance parameters, and nonregular failure cases."
+author: "Jiahong Sun"
+date: "2026-09-25"
+date-modified: "2026-09-25"
+categories: [Statistics, Inference, Estimation]
+toc: true
+number-sections: true
+draft: false
+---
+
+# How Strongly Can the Data Distinguish Nearby Parameters?
+
+For data $X$ with log-likelihood $\ell(\theta;X)=\log f_\theta(X)$, the **score** is
+
+$$
+U(\theta;X)=\frac{\partial}{\partial\theta}\ell(\theta;X).
+$$
+
+The score measures the local slope of the log-likelihood. A realization with a large positive score favors a local increase in $\theta$; a large negative score favors a decrease. Fisher information measures how much this score varies across repeated datasets generated at $\theta$:
+
+$$
+\boxed{I_X(\theta)=E_\theta\{U(\theta;X)^2\}.}
+$$
+
+Large information means that nearby parameter values tend to generate more distinguishable sampling distributions. Information belongs to a model, parameterization, design, and observation scheme. It is not a context-free measure of sample quality.
+
+# Two Information Identities and Their Conditions
+
+If the support does not depend on $\theta$ and differentiation may be passed under the integral or sum, then
+
+$$
+E_\theta\{U(\theta;X)\}
+=\int \frac{\partial f_\theta(x)}{\partial\theta}\,dx
+=\frac{\partial}{\partial\theta}1=0.
+$$
+
+Differentiating the zero-score identity again gives
+
+$$
+I_X(\theta)
+=\operatorname{Var}_\theta\{U(\theta;X)\}
+=-E_\theta\!\left\{
+\frac{\partial^2}{\partial\theta^2}\ell(\theta;X)
+\right\}.
+$$
+
+The last equality can fail when the support changes with $\theta$, derivatives are not integrable, or the model is otherwise nonregular. The definition through the squared score may itself require modification if differentiability fails.
+
+The **observed information** is the realized negative Hessian
+
+$$
+j(\theta;x)=-\frac{\partial^2}{\partial\theta^2}\ell(\theta;x),
+$$
+
+whereas Fisher information $I_X(\theta)$ is its expectation under regularity. Observed information describes curvature in one dataset; expected information averages over repeated datasets. They need not agree in finite samples.
+
+# Additivity and Parameterization
+
+For independent observations, scores add. If $X_1,\ldots,X_n$ are iid with one-observation information $I_1(\theta)$, then
+
+$$
+U_n(\theta)=\sum_{i=1}^nU_i(\theta),
+\qquad
+I_n(\theta)=nI_1(\theta),
+$$
+
+because the zero-mean independent score terms have zero cross-covariance. Clustering breaks this calculation: covariance terms remain, so counting cells, reads, or repeated measurements as iid can greatly exaggerate information.
+
+If $\psi=g(\theta)$ is a one-to-one differentiable reparameterization, then
+
+$$
+I_\psi(\psi)
+=I_\theta(\theta)
+\left(\frac{d\theta}{d\psi}\right)^2.
+$$
+
+The number changes with the coordinate scale, while information-based uncertainty transforms consistently. Comparing raw information values across different parameterizations is therefore misleading.
+
+# Deriving the Cramér--Rao Inequality
+
+Let $T(X)$ estimate a differentiable target $g(\theta)$ and suppose first that it is unbiased: $E_\theta(T)=g(\theta)$. Under conditions that permit differentiation under the integral,
+
+$$
+\begin{aligned}
+g'(\theta)
+&=\frac{\partial}{\partial\theta}E_\theta(T)\\
+&=\int T(x)\frac{\partial f_\theta(x)}{\partial\theta}\,dx\\
+&=E_\theta\{T(X)U(\theta;X)\}\\
+&=\operatorname{Cov}_\theta\{T(X),U(\theta;X)\}.
+\end{aligned}
+$$
+
+Cauchy--Schwarz now gives
+
+$$
+\{g'(\theta)\}^2
+\leq \operatorname{Var}_\theta(T)
+\operatorname{Var}_\theta\{U(\theta;X)\}.
+$$
+
+Therefore
+
+$$
+\boxed{
+\operatorname{Var}_\theta(T)
+\geq \frac{\{g'(\theta)\}^2}{I_X(\theta)}.
+}
+$$
+
+For an unbiased estimator of $\theta$ itself, the numerator is one. If $T$ has differentiable bias $b(\theta)=E_\theta(T)-g(\theta)$, the same calculation yields
+
+$$
+\operatorname{Var}_\theta(T)
+\geq
+\frac{\{g'(\theta)+b'(\theta)\}^2}{I_X(\theta)}.
+$$
+
+This biased form bounds variance, not mean squared error by itself; MSE also contains $b(\theta)^2$.
+
+# Worked Example: A Bernoulli Probability
+
+Let $X_1,\ldots,X_n\stackrel{iid}{\sim}\operatorname{Bernoulli}(p)$. The log-likelihood is
+
+$$
+\ell(p)=\sum_{i=1}^n\{X_i\log p+(1-X_i)\log(1-p)\},
+$$
+
+and the score is
+
+$$
+U(p)=\frac{\sum_iX_i-np}{p(1-p)}.
+$$
+
+Since $\operatorname{Var}(\sum_iX_i)=np(1-p)$,
+
+$$
+I_n(p)=\frac{n}{p(1-p)}.
+$$
+
+The unbiased estimator $\hat p=\bar X$ has
+
+$$
+\operatorname{Var}_p(\hat p)=\frac{p(1-p)}{n}=\frac{1}{I_n(p)},
+$$
+
+so it attains the Cramér--Rao bound for $0<p<1$. Equality in Cauchy--Schwarz occurs because
+
+$$
+\hat p-p=\frac{p(1-p)}{n}U(p).
+$$
+
+This exact efficiency result is model-specific and interior. At $p=0$ or $p=1$, the regular calculation degenerates and the usual normal approximation is invalid.
+
+# Several Parameters and Nuisance Information
+
+For a vector parameter $\theta\in\mathbb R^k$, the score is a gradient and the Fisher information is the matrix
+
+$$
+I(\theta)=E_\theta\{U(\theta)U(\theta)^\mathsf{T}\}.
+$$
+
+Under regularity and nonsingularity, any unbiased estimator $T$ of a vector target $g(\theta)$ obeys the matrix inequality
+
+$$
+\operatorname{Cov}_\theta(T)
+\succeq
+G(\theta)I(\theta)^{-1}G(\theta)^\mathsf{T},
+$$
+
+where $G=\partial g/\partial\theta^\mathsf{T}$ and $A\succeq B$ means $A-B$ is positive semidefinite.
+
+If $\theta=(\psi,\lambda)$ contains a scalar parameter of interest $\psi$ and nuisance parameters $\lambda$, using $1/I_{\psi\psi}$ generally overstates the available precision. The efficient information for $\psi$ is the Schur complement
+
+$$
+I_{\psi\cdot\lambda}
+=I_{\psi\psi}
+-I_{\psi\lambda}I_{\lambda\lambda}^{-1}I_{\lambda\psi},
+$$
+
+which removes information confounded with estimation of $\lambda$. Near-collinearity, weak identification, or a singular information matrix signals that some parameter combinations cannot be precisely separated by the design.
+
+# Sufficiency, Efficiency, and Maximum Likelihood
+
+If $T(X)$ is sufficient, regular conditional-expectation arguments give
+
+$$
+U_T(\theta;T)=E_\theta\{U_X(\theta;X)\mid T\}.
+$$
+
+The law of total variance implies $I_T(\theta)\leq I_X(\theta)$ for any statistic, with equality for a sufficient statistic under regularity. This is a statistical data-processing principle: summarization cannot create Fisher information, and a sufficient reduction preserves it for the modeled parameter.
+
+In regular parametric models, a consistent maximum-likelihood estimator often satisfies
+
+$$
+\sqrt n(\hat\theta_{\mathrm{ML}}-\theta_0)
+\xrightarrow{d}
+N\{0,I_1(\theta_0)^{-1}\}.
+$$
+
+It is then **asymptotically efficient** relative to the regular parametric model. This is a limiting statement, not proof that the finite-sample variance equals the Cramér--Rao bound or that the estimator is unbiased.
+
+# What the Bound Does Not Say
+
+The Cramér--Rao bound is a benchmark within a specified class, not a universal minimum error for every procedure.
+
+| Issue | Why the usual bound is insufficient |
+|---|---|
+| Biased estimators | A biased estimator can have lower variance or MSE than every unbiased estimator |
+| Boundary parameters | Score identities and normal approximations can degenerate |
+| Parameter-dependent support | Differentiating the integral may create boundary terms; for $\operatorname{Uniform}(0,\theta)$, the standard identity fails |
+| Non-identifiability | Singular information cannot be inverted, and no regular precision claim follows |
+| Model misspecification | Model-based information equality may fail; sandwich variance targets repeated-sampling variability around a pseudo-true parameter |
+| Finite samples | Attainability is not guaranteed, and an asymptotic approximation may be poor |
+| Superefficiency | Pointwise improvement at isolated parameter values can be offset by worse behavior nearby |
+| Wrong experimental unit | Iid additivity counts nominal observations rather than independent information |
+
+Other lower bounds, including Chapman--Robbins and van Trees inequalities, address some settings outside the classical unbiased differentiable formulation. No bound rescues an estimand that does not answer the scientific question.
+
+# Bioinformatics Design and Interpretation
+
+Suppose a specimen produces $n$ reads and, conditional on a specimen-specific allele fraction $p$, variant-support indicators are modeled as iid Bernoulli. The conditional information is $n/[p(1-p)]$, so deeper sequencing can improve measurement of that specimen's $p$ under the model.
+
+If the scientific estimand is the mean allele fraction across patients, the patients—not their reads—are the biological replicates. Between-patient heterogeneity, library preparation, mapping uncertainty, allele-specific bias, and duplicate reads alter the likelihood and its information. Treating every read as an independent draw from one common population can produce a very large nominal information value and a very small standard error for the wrong target.
+
+Statistically, information quantifies local distinguishability in the chosen likelihood. Biologically, useful precision also requires a representative target population, independent experimental units, defensible measurement assumptions, and a design that separates the effect of interest from batch and nuisance effects. Technical replication can reduce within-unit measurement error; it does not substitute for biological replication.
+
+# Connections and Take-home Messages
+
+- [Likelihood and log-likelihood](likelihood-and-log-likelihood.qmd) introduces the score and curvature used here.
+- [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd) uses inverse information for regular large-sample uncertainty.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) distinguishes variance bounds from total estimation risk.
+- [Sufficient statistics](sufficient-statistics.qmd) explains when data reduction preserves information.
+- [Asymptotic bias, consistency, and efficiency](../asymptotic-thinking/asymptotic-bias-consistency-and-efficiency.qmd) separates finite-sample and limiting efficiency.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) develops boundary, dependence, and weak-information failures.
+
+Fisher information is expected score variation—or expected likelihood curvature under regularity—and it adds only across genuinely independent observations. The Cramér--Rao inequality converts information into a variance lower bound for regular unbiased estimation. Equality is a special efficiency result, while inverse information for an MLE is usually an asymptotic approximation. Parameterization, nuisance parameters, model misspecification, boundaries, and the experimental unit all determine whether the calculation supports the intended scientific inference.
+
+# References
+
+- Fisher, R. A. “On the Mathematical Foundations of Theoretical Statistics.” *Philosophical Transactions of the Royal Society A* 222 (1922): 309--368. [Article](https://doi.org/10.1098/rsta.1922.0009).
+- Rao, C. R. “Information and the Accuracy Attainable in the Estimation of Statistical Parameters.” *Bulletin of the Calcutta Mathematical Society* 37 (1945): 81--91. Reprinted in *Breakthroughs in Statistics*, 1992. [Reprint](https://doi.org/10.1007/978-1-4612-0919-5_16).
+- Cramér, H. *Mathematical Methods of Statistics*. Princeton University Press, 1946, Chapter 32. [Publisher page](https://press.princeton.edu/books/paperback/9780691080048/mathematical-methods-of-statistics).
+- Lehmann, E. L. and Casella, G. *Theory of Point Estimation*, 2nd ed. Springer, 1998, Chapter 2. [Publisher page](https://doi.org/10.1007/b98854).
+- van der Vaart, A. W. *Asymptotic Statistics*. Cambridge University Press, 1998, Chapters 7 and 25. [Publisher page](https://doi.org/10.1017/CBO9780511802256).

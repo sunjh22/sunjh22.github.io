@@ -12,6 +12,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd)
 - [Bayesian priors, likelihoods, and posteriors](bayesian-priors-likelihoods-and-posteriors.qmd)
 - [Maximum a posteriori estimation](maximum-a-posteriori-estimation.qmd)
+- [Sufficient statistics](sufficient-statistics.qmd)
+- [Fisher information and the Cramér--Rao bound](fisher-information-and-cramer-rao-bound.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)
