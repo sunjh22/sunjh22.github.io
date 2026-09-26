@@ -1,0 +1,295 @@
+---
+title: "Standard Errors"
+subtitle: "Estimating the repeated-sampling precision of an estimator"
+description: "Standard errors as estimated sampling standard deviations, with plug-in, information, delta-method, bootstrap, robust, and cluster-aware calculations."
+author: "Jiahong Sun"
+date: "2026-09-26"
+date-modified: "2026-09-26"
+categories: [Statistics, Inference, Uncertainty]
+toc: true
+number-sections: true
+draft: false
+---
+
+# The Quantity a Standard Error Estimates
+
+Let $\hat\theta=T(X)$ estimate an estimand $\theta(P)$. Under a stated data-generating process $P$, the estimator has sampling variance
+
+$$
+V_P(T)=\operatorname{Var}_P\{T(X)\}.
+$$
+
+Its sampling standard deviation is
+
+$$
+\operatorname{SD}_P(\hat\theta)=\sqrt{V_P(T)}.
+$$
+
+Because $P$ is unknown, an analysis usually reports a **standard error**:
+
+$$
+\boxed{
+\widehat{\operatorname{SE}}(\hat\theta)
+=\sqrt{\widehat V(\hat\theta)},
+}
+$$
+
+an estimate of that repeated-sampling standard deviation. The standard error is itself a statistic and therefore has sampling variability. It summarizes precision under a model or design; it is not the observed estimation error $|\hat\theta-\theta|$, which cannot be calculated when $\theta$ is unknown.
+
+# Standard Deviation, Standard Error, and Bias
+
+These quantities answer different questions:
+
+| Quantity | What varies? | Interpretation |
+|---|---|---|
+| Standard deviation of $X$ | Individual observations | Population heterogeneity or measurement spread |
+| Standard deviation of $\hat\theta$ | Estimates across repeated samples | True repeated-sampling precision of the estimator |
+| Estimated standard error | A function of the observed sample | Estimate of the preceding quantity |
+| Bias $E(\hat\theta)-\theta$ | Center of the estimator's sampling distribution | Systematic displacement from the estimand |
+
+A small standard error does not imply small bias. With squared-error loss,
+
+$$
+\operatorname{MSE}(\hat\theta)
+=\operatorname{Var}(\hat\theta)
++\operatorname{Bias}(\hat\theta)^2,
+$$
+
+so a precise estimator may be precisely wrong because of confounding, selection, measurement error, or model misspecification.
+
+# Direct and Plug-in Standard Errors
+
+For iid observations with variance $\sigma^2$, the sample mean satisfies
+
+$$
+\operatorname{Var}(\bar X)=\frac{\sigma^2}{n}.
+$$
+
+Replacing the unknown $\sigma$ with the sample standard deviation $S$ gives
+
+$$
+\widehat{\operatorname{SE}}(\bar X)=\frac{S}{\sqrt n}.
+$$
+
+This familiar formula is not a universal definition. It follows from equal weighting and independence:
+
+$$
+\operatorname{Var}\left(\frac{1}{n}\sum_iX_i\right)
+=\frac{1}{n^2}\left\{
+\sum_i\operatorname{Var}(X_i)
++2\sum_{i<j}\operatorname{Cov}(X_i,X_j)
+\right}.
+$$
+
+The $\sigma^2/n$ result appears only when the variances are common and all covariance terms vanish. Positive within-cluster correlation slows the gain in precision even when the raw observation count is large.
+
+For a Bernoulli proportion,
+
+$$
+\operatorname{SE}_p(\hat p)
+=\sqrt{\frac{p(1-p)}{n}},
+\qquad
+\widehat{\operatorname{SE}}(\hat p)
+=\sqrt{\frac{\hat p(1-\hat p)}{n}}.
+$$
+
+The second is a plug-in estimate. It becomes zero when all observed outcomes agree, even though uncertainty about $p$ is not generally zero. Boundary data and small samples therefore require more than mechanically applying the plug-in formula.
+
+# Information-Based Standard Errors
+
+In a regular parametric model with log-likelihood $\ell(\theta)$, a maximum-likelihood estimator often has
+
+$$
+\sqrt n(\hat\theta-\theta_0)
+\xrightarrow{d}
+N\{0,I_1(\theta_0)^{-1}\}.
+$$
+
+For a scalar parameter, common estimates are
+
+$$
+\widehat{\operatorname{SE}}(\hat\theta)
+=\{I_n(\hat\theta)\}^{-1/2}
+$$
+
+using expected information, or
+
+$$
+\widehat{\operatorname{SE}}(\hat\theta)
+=\{j_n(\hat\theta)\}^{-1/2},
+\qquad
+j_n(\theta)=-\frac{\partial^2\ell(\theta)}{\partial\theta^2},
+$$
+
+using observed information. For vector parameters, the square roots of the diagonal entries of the inverse information matrix are marginal standard errors. Off-diagonal entries matter for contrasts and reveal parameter dependence.
+
+These estimates rely on local quadratic curvature, correct likelihood specification, identifiability, interior parameters, and an adequate large-sample approximation. Near a boundary or a nearly singular information matrix, a finite curvature-based standard error can be unstable or misleading.
+
+# Transformations and the Delta Method
+
+Suppose $g$ is differentiable and $\hat\theta$ has estimated covariance matrix $\widehat\Sigma$. The first-order delta method gives
+
+$$
+\widehat{\operatorname{Var}}\{g(\hat\theta)\}
+\approx
+\nabla g(\hat\theta)^\mathsf T
+\widehat\Sigma
+\nabla g(\hat\theta).
+$$
+
+For a scalar estimator,
+
+$$
+\widehat{\operatorname{SE}}\{g(\hat\theta)\}
+\approx
+|g'(\hat\theta)|\,
+\widehat{\operatorname{SE}}(\hat\theta).
+$$
+
+If $g(\theta)=\log\theta$ for $\theta>0$, this becomes $\widehat{\operatorname{SE}}(\log\hat\theta)\approx\widehat{\operatorname{SE}}(\hat\theta)/\hat\theta$. Transforming the endpoints of an interval and constructing a symmetric interval from a transformed standard error are related but distinct operations.
+
+The approximation can fail when the derivative is zero, undefined, or highly variable over the estimator's plausible range. In those cases, higher-order theory, profile likelihood, or a design-faithful resampling distribution may better represent uncertainty.
+
+# Sandwich and Cluster-Robust Standard Errors
+
+For an estimator defined by estimating equations
+
+$$
+\sum_{i=1}^n\psi_i(\theta)=0,
+$$
+
+the asymptotic covariance often has the sandwich form
+
+$$
+\operatorname{Var}(\hat\theta)
+\approx
+A^{-1}BA^{-\mathsf T},
+$$
+
+where $A$ describes the sensitivity of the estimating equations to $\theta$ and $B$ describes their variability. The model-based information formula is a special case when the likelihood is correctly specified and the information identity holds.
+
+A heteroskedasticity-consistent sandwich estimate permits observation-level variance misspecification while retaining assumptions about independent units and the mean model. With clusters $c=1,\ldots,G$, the score contributions must instead be summed within clusters before forming the middle matrix:
+
+$$
+\widehat B_{\text{cluster}}
+=\sum_{c=1}^G
+\left(\sum_{i\in c}\hat\psi_i\right)
+\left(\sum_{i\in c}\hat\psi_i\right)^\mathsf T.
+$$
+
+Cluster-robust standard errors allow arbitrary within-cluster dependence under suitable conditions, but they rely on independent clusters and asymptotics in the number of clusters. Thousands of cells from eight donors do not provide a large-$G$ justification. Small-sample corrections or methods tailored to the design may be necessary.
+
+“Robust” refers to a limited class of variance misspecification. It does not fix a biased coefficient, omitted confounding, dependence across clusters, severe leverage, or the wrong estimand.
+
+# Resampling Standard Errors
+
+Given bootstrap estimates $\hat\theta^{*1},\ldots,\hat\theta^{*B}$ from $B$ resamples, the bootstrap standard error is
+
+$$
+\widehat{\operatorname{SE}}_{\mathrm{boot}}(\hat\theta)
+=\left[
+\frac{1}{B-1}
+\sum_{b=1}^B
+\left(\hat\theta^{*b}-\bar{\hat\theta}^{*}\right)^2
+\right]^{1/2}.
+$$
+
+Here $B$ controls Monte Carlo error, not the amount of scientific information. Increasing $B$ stabilizes the numerical estimate of bootstrap spread; it cannot compensate for few independent experimental units.
+
+The resampling scheme must reproduce the original design. Resample independent specimens for specimen-level inference; use cluster, block, or stratified resampling when the design requires it. Refit normalization, selection, and tuning steps inside every replicate if those would vary in a repeated study. Ordinary bootstrap methods can fail for maxima, boundary parameters, model selection, very small samples, and other nonregular statistics.
+
+# Worked Example: Correlated Technical Measurements
+
+Suppose $m$ biological specimens each contribute $k$ technical measurements,
+
+$$
+Y_{ij}=\mu+b_i+\varepsilon_{ij},
+$$
+
+where $\operatorname{Var}(b_i)=\tau^2$, $\operatorname{Var}(\varepsilon_{ij})=\sigma^2$, and all random terms are independent across specimens. The grand mean is
+
+$$
+\bar Y=\frac{1}{mk}\sum_{i=1}^m\sum_{j=1}^kY_{ij}.
+$$
+
+Its variance is
+
+$$
+\boxed{
+\operatorname{Var}(\bar Y)
+=\frac{\tau^2}{m}
++\frac{\sigma^2}{mk}.
+}
+$$
+
+Adding technical replicates reduces only the second term. Adding biological specimens reduces both sources of uncertainty in the population mean. If one incorrectly treats all $mk$ measurements as iid with marginal variance $\tau^2+\sigma^2$, the reported variance becomes $(\tau^2+\sigma^2)/(mk)$, dividing the biological heterogeneity by $k$ when it should be divided only by $m$.
+
+Equivalently, with intraclass correlation
+
+$$
+\rho=\frac{\tau^2}{\tau^2+\sigma^2},
+$$
+
+the variance inflation relative to $mk$ independent measurements is the design effect
+
+$$
+1+(k-1)\rho.
+$$
+
+This calculation shows why the experimental unit is part of a standard-error formula, not merely a reporting detail.
+
+# From Standard Errors to Inference
+
+A common large-sample interval has the Wald form
+
+$$
+\hat\theta\pm z_{1-\alpha/2}
+\widehat{\operatorname{SE}}(\hat\theta).
+$$
+
+Its validity needs more than a standard error: the centered, studentized statistic must have an appropriate reference distribution, bias must be negligible on the standard-error scale, and the variance estimate must be reliable. With normal iid data and an estimated variance, the exact reference for a mean is Student's $t$, not standard normal. With bounded, skewed, or weakly identified targets, a symmetric Wald interval can be inappropriate even when the standard error itself is correctly estimated.
+
+A Bayesian posterior standard deviation is not automatically a frequentist standard error. The two can agree approximately in regular large samples, but they arise from different probability statements and can differ under informative priors, weak identification, boundaries, or misspecification.
+
+# Reporting and Diagnostic Checklist
+
+Report enough information to understand what uncertainty the number represents:
+
+- the estimand, estimate, and scale;
+- the independent experimental unit and number of such units;
+- the variance estimator: model-based, robust, cluster-robust, design-based, or resampling;
+- clustering, stratification, weighting, repeated measures, and small-sample corrections;
+- whether preprocessing and model selection are included;
+- the reference distribution or interval method; and
+- sensitivity to plausible dependence and model assumptions.
+
+Useful warning signs include a singular Hessian, very large or implausibly tiny standard errors, strong disagreement between model-based and robust estimates, estimates near parameter boundaries, few clusters, high leverage, or bootstrap replicates that frequently fail. Each points to a specific assumption or identification problem rather than a reason to choose whichever standard error is smallest.
+
+# Bioinformatics Interpretation
+
+For a differential-expression coefficient, the estimand might be a population log fold change among biological specimens under a specified normalization and regression model. The coefficient is the estimate; its standard error summarizes repeated-sampling precision for that fitted procedure. Read depth and technical replication can reduce measurement noise, while the number, diversity, and allocation of independent specimens control population-level information.
+
+Pseudoreplicating reads or cells produces artificially small standard errors. Treating batch as independent noise when it is confounded with condition can produce a precise coefficient for an unidentified scientific contrast. Shrinkage and empirical-Bayes procedures may improve estimation by borrowing information across features, but the resulting posterior or moderated uncertainty should be described according to the method rather than mislabeled as a plain iid standard error.
+
+Statistical precision does not establish biological importance. Report the effect estimate and uncertainty on an interpretable scale, then discuss whether the range is compatible with effects that matter biologically.
+
+# Connections and Take-home Messages
+
+- [Sampling distributions](sampling-distributions.qmd) defines the repeated-sample distribution whose spread is being estimated.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) distinguishes precision from bias and total risk.
+- [Fisher information and the Cramér--Rao bound](fisher-information-and-cramer-rao-bound.qmd) develops inverse-information precision benchmarks.
+- [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd) explains Hessian-based covariance estimates.
+- [Delta method](../asymptotic-thinking/delta-method.qmd) derives uncertainty propagation through smooth transformations.
+- [Slutsky's theorem and continuous mapping](../asymptotic-thinking/slutskys-theorem-and-continuous-mapping.qmd) justifies many plug-in and studentized approximations.
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd) clarifies the assumptions behind variance additivity.
+
+A standard error estimates an estimator's repeated-sampling standard deviation under a defined model or design. Its formula must reflect dependence, clustering, nuisance estimation, transformations, and every variable analysis step. A small standard error says nothing by itself about bias, causality, biological importance, or generalizability. The number of independent biological units—not the count of technical observations—sets the foundation for population-level precision.
+
+# References
+
+- Eicker, F. “Limit Theorems for Regressions with Unequal and Dependent Errors.” In *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability*, Volume 1, 1967, pp. 59--82. [Article](https://projecteuclid.org/euclid.bsmsp/1200512981).
+- Huber, P. J. “The Behavior of Maximum Likelihood Estimates under Nonstandard Conditions.” In *Proceedings of the Fifth Berkeley Symposium on Mathematical Statistics and Probability*, Volume 1, 1967, pp. 221--233. [Article](https://projecteuclid.org/euclid.bsmsp/1200512988).
+- White, H. “A Heteroskedasticity-Consistent Covariance Matrix Estimator and a Direct Test for Heteroskedasticity.” *Econometrica* 48 (1980): 817--838. [Article](https://doi.org/10.2307/1912934).
+- Liang, K.-Y. and Zeger, S. L. “Longitudinal Data Analysis Using Generalized Linear Models.” *Biometrika* 73 (1986): 13--22. [Article](https://doi.org/10.1093/biomet/73.1.13).
+- Efron, B. and Tibshirani, R. J. *An Introduction to the Bootstrap*. Chapman & Hall/CRC, 1993. [Publisher page](https://doi.org/10.1201/9780429246593).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002. [Publisher page](https://www.routledge.com/Statistical-Inference/Casella-Berger/p/book/9781032593036).

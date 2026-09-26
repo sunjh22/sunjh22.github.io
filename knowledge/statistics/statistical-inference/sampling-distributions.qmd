@@ -1,0 +1,212 @@
+---
+title: "Sampling Distributions"
+subtitle: "The repeated-sample behavior of statistics and estimators"
+description: "Sampling distributions, exact and approximate derivations, design dependence, simulation, and interpretation for statistical inference."
+author: "Jiahong Sun"
+date: "2026-09-26"
+date-modified: "2026-09-26"
+categories: [Statistics, Inference, Sampling]
+toc: true
+number-sections: true
+draft: false
+---
+
+# From One Sample to a Distribution of Possible Results
+
+Let data $X=(X_1,\ldots,X_n)$ arise from a specified population model or sampling design, and let
+
+$$
+T=T(X)
+$$
+
+be a statistic. The **sampling distribution** of $T$ is the probability distribution induced by repeating that data-generating process and recalculating $T$. Before data are observed, $T$ is random. After observing $X=x$, the realized value $t=T(x)$ is fixed, but its sampling distribution remains the reference for statements about the procedure's bias, precision, intervals, and tests.
+
+This separates four objects that should not be conflated:
+
+| Object | Role |
+|---|---|
+| **Estimand** $\theta(P)$ | Population quantity or scientific target |
+| **Estimator** $T(X)$ | Rule applied to every possible sample |
+| **Estimate** $T(x)$ | Number obtained from the observed sample |
+| **Sampling distribution** $\mathcal L_P\{T(X)\}$ | Distribution of the estimator across repeated samples from $P$ |
+
+The sampling distribution is indexed by the unknown population law $P$ and often by a finite-dimensional parameter $\theta$. It is therefore not usually known exactly from one dataset.
+
+# What Is Repeated?
+
+A sampling distribution is meaningful only after the repetition scheme is clear. Under a model-based formulation, one may imagine new data drawn from $P_\theta$. Under design-based survey or randomized-experiment inference, the outcomes or finite population may be held fixed while sample selection or treatment assignment is repeated. Conditional inference may hold covariates, margins, or ancillary statistics fixed; unconditional inference averages over them.
+
+These choices can produce different reference distributions for the same formula. A useful description states:
+
+1. the target population and estimand;
+2. the independent experimental units;
+3. what sampling, assignment, or measurement mechanism is repeated;
+4. what features are conditioned on; and
+5. the complete analysis rule, including filtering, tuning, and model selection.
+
+Repeating only the final model fit while treating data-dependent preprocessing as fixed understates the variability of the full procedure.
+
+# Exact Sampling Distributions
+
+## A Bernoulli sample proportion
+
+Suppose $X_1,\ldots,X_n\stackrel{iid}{\sim}\operatorname{Bernoulli}(p)$ and $\hat p=\bar X$. Because $S=\sum_iX_i\sim\operatorname{Binomial}(n,p)$,
+
+$$
+P_p\left(\hat p=\frac{k}{n}\right)
+=\binom nkp^k(1-p)^{n-k},
+\qquad k=0,\ldots,n.
+$$
+
+Thus
+
+$$
+E_p(\hat p)=p,
+\qquad
+\operatorname{Var}_p(\hat p)=\frac{p(1-p)}{n}.
+$$
+
+The distribution is discrete and depends on the unknown $p$. Replacing $p$ by $\hat p$ estimates its variance but does not turn the exact binomial law into a known distribution.
+
+## A normal sample mean and variance
+
+If $X_1,\ldots,X_n\stackrel{iid}{\sim}N(\mu,\sigma^2)$, then
+
+$$
+\bar X\sim N\left(\mu,\frac{\sigma^2}{n}\right),
+\qquad
+\frac{(n-1)S^2}{\sigma^2}\sim\chi^2_{n-1},
+$$
+
+and $\bar X$ is independent of $S^2$. Consequently,
+
+$$
+\frac{\bar X-\mu}{S/\sqrt n}\sim t_{n-1}.
+$$
+
+The first two are sampling distributions of statistics. The third is a **pivotal distribution**: after standardization, its law no longer depends on $\mu$ or $\sigma$. Such pivots support exact confidence procedures and tests. Their exactness is conditional on the normal, iid model.
+
+# How Sampling Distributions Are Obtained
+
+## Transformation and probability identities
+
+When the statistic is a simple transformation, its distribution may follow from a change of variables, probability-generating functions, moment-generating functions, or known closure properties. For example, sums of independent Bernoulli variables are binomial, and linear combinations of jointly normal variables are normal.
+
+## Sufficiency and distribution theory
+
+A sufficient statistic can reduce the problem without losing model-based information about a parameter. Exact distributions of sufficient statistics, order statistics, and quadratic forms provide many classical results. Exact does not mean assumption-free: it means exact within the stated probability model.
+
+## Asymptotic approximation
+
+For iid observations with mean $\mu$ and finite variance $\sigma^2$, the central limit theorem gives
+
+$$
+\frac{\sqrt n(\bar X-\mu)}{\sigma}\xrightarrow{d}N(0,1).
+$$
+
+More generally, if an estimator is regular and asymptotically linear,
+
+$$
+\hat\theta-\theta
+=\frac{1}{n}\sum_{i=1}^n\phi(X_i)+r_n,
+\qquad
+\sqrt n\,r_n\xrightarrow{p}0,
+$$
+
+then, under suitable moment and dependence conditions,
+
+$$
+\sqrt n(\hat\theta-\theta)
+\xrightarrow{d}N\{0,\operatorname{Var}_P(\phi(X))\}.
+$$
+
+The influence function $\phi$ exposes which observations and assumptions drive the limiting variance. A limit theorem describes an approximation as information grows; it does not supply a universal finite-sample cutoff.
+
+## Resampling and simulation
+
+A **parametric simulation** generates data from a fitted model, whereas a **nonparametric bootstrap** resamples observed units from the empirical distribution. Either can approximate a statistic's sampling distribution when analytic work is difficult. A simulation study can instead generate data from known scenarios to evaluate a method's operating characteristics.
+
+All three require the resampling or generation unit to match the design. Resampling cells within a single donor approximates within-donor variation, not repeated sampling of donors from a population. If preprocessing, feature selection, or hyperparameter tuning would be repeated in a new study, it must occur inside each replicate.
+
+# Shape Matters Beyond a Standard Error
+
+The mean and variance do not fully describe a sampling distribution. It may be skewed, discrete, heavy-tailed, multimodal, bounded, or concentrated at a boundary. These features determine whether a symmetric normal approximation is sensible.
+
+For example, when $p$ is near zero and $np$ is small, the sampling distribution of $\hat p$ places substantial mass at zero. Although $\sqrt{p(1-p)/n}$ is its exact standard deviation, a normal interval centered at $\hat p$ can extend below zero and have poor coverage. Likewise, a weakly identified mixture model may yield an irregular or multimodal estimator distribution for which one curvature-based standard error is not an adequate summary.
+
+Studentization often improves approximation. If $\widehat{\operatorname{SE}}(\hat\theta)$ consistently estimates the sampling standard deviation, then a statistic such as
+
+$$
+Z=\frac{\hat\theta-\theta}{\widehat{\operatorname{SE}}(\hat\theta)}
+$$
+
+may have a distribution less dependent on unknown scale parameters. This still requires justification; standardizing a nonregular estimator does not automatically make it normal.
+
+# Worked Example: Difference in Two Proportions
+
+Let independent groups contain $n_1$ and $n_0$ biological units, with binary probabilities $p_1$ and $p_0$. The estimand is the risk difference
+
+$$
+\Delta=p_1-p_0,
+$$
+
+and the estimator is $\hat\Delta=\hat p_1-\hat p_0$. If $Y_g=n_g\hat p_g\sim\operatorname{Binomial}(n_g,p_g)$ independently, then the exact sampling distribution of $\hat\Delta$ is obtained from all pairs $(Y_1,Y_0)$:
+
+$$
+P(\hat\Delta=d)
+=\sum_{k/n_1-\ell/n_0=d}
+P(Y_1=k)P(Y_0=\ell).
+$$
+
+Its mean and variance are
+
+$$
+E(\hat\Delta)=\Delta,
+\qquad
+\operatorname{Var}(\hat\Delta)
+=\frac{p_1(1-p_1)}{n_1}
++\frac{p_0(1-p_0)}{n_0}.
+$$
+
+For sufficiently informative samples away from the boundaries, the centered estimator is approximately normal. The realized difference is an **estimate**; the formula above describes uncertainty of the **estimator** under repeated independent sampling. Neither establishes that the group contrast is causal: that interpretation additionally requires a randomized design or defensible adjustment assumptions.
+
+# Bioinformatics Design and Interpretation
+
+Suppose the target is a difference in mean gene expression between two patient populations. Patients are the biological experimental units. Libraries, lanes, reads, and cells are nested measurements that may improve estimation of a patient's expression profile, but they do not by themselves enlarge the population-level sampling distribution's effective number of independent units.
+
+A faithful sampling distribution must represent patient sampling, between-patient heterogeneity, the group allocation or observational design, batch structure, library preparation, normalization, filtering, and the fitted model. Conditional calculations that treat estimated size factors or dispersions as known may omit uncertainty. Conversely, modeling every technical detail is not automatically useful: the repetition scheme should reflect the scientific estimand and intended generalization.
+
+Statistically, a narrow sampling distribution means the specified procedure varies little under the specified repetition. Biologically, it does not imply a large, important, causal, or broadly generalizable effect. Precision and scientific relevance answer different questions.
+
+# Failure Modes and Diagnostic Questions
+
+| Failure mode | Effect on the reference distribution | Response |
+|---|---|---|
+| Wrong experimental unit | Nominal sample size and precision are exaggerated | Define independent biological units before deriving or resampling |
+| Dependence treated as iid | Variance omits covariance terms | Use a design-aware model or cluster-level method |
+| Heavy tails or rare outcomes | Normal approximation can converge slowly, especially in tails | Use exact theory, robust methods, or scenario-based simulation |
+| Boundary or non-identifiability | Distribution may be asymmetric, mixed, or nonnormal | Use nonregular theory and report profile or simulation evidence |
+| Data-dependent selection omitted | Reported distribution applies to a prespecified analysis, not the selected one | Repeat selection within simulation or resampling |
+| Model misspecification | Distribution is calibrated to the wrong data-generating process | Compare models and perform sensitivity analyses |
+
+One observed dataset cannot reveal its own repeated-sampling distribution without assumptions. Diagnostics can challenge those assumptions, and simulations can explore their consequences, but neither removes the need to state them.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) defines the population target and sampling frame.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) evaluates estimators using their sampling distributions.
+- [Sufficient statistics](sufficient-statistics.qmd) explains model-based data reduction.
+- [Chi-squared, Student's t, and F distributions](../probability-randomness/chi-squared-students-t-and-f-distributions.qmd) develops exact normal-sample reference laws.
+- [Central limit theorem](../asymptotic-thinking/central-limit-theorem.qmd) supplies a common large-sample approximation.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) covers slow convergence and nonregular limits.
+- [Standard errors](standard-errors.qmd) focuses on estimating the spread of a sampling distribution.
+
+A sampling distribution belongs to an estimator plus a data-generating or design-based repetition scheme. Exact distributions are model-specific; asymptotic and resampling distributions are approximations with conditions. Their shape, not only their variance, governs valid uncertainty statements. In biological studies, the independent experimental unit and the full analysis pipeline determine what must be repeated.
+
+# References
+
+- Fisher, R. A. “On the Mathematical Foundations of Theoretical Statistics.” *Philosophical Transactions of the Royal Society A* 222 (1922): 309--368. [Article](https://doi.org/10.1098/rsta.1922.0009).
+- Neyman, J. “Outline of a Theory of Statistical Estimation Based on the Classical Theory of Probability.” *Philosophical Transactions of the Royal Society A* 236 (1937): 333--380. [Article](https://doi.org/10.1098/rsta.1937.0005).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002, Chapters 5--10. [Publisher page](https://www.routledge.com/Statistical-Inference/Casella-Berger/p/book/9781032593036).
+- Davison, A. C. and Hinkley, D. V. *Bootstrap Methods and Their Application*. Cambridge University Press, 1997. [Publisher page](https://doi.org/10.1017/CBO9780511802843).
+- van der Vaart, A. W. *Asymptotic Statistics*. Cambridge University Press, 1998. [Publisher page](https://doi.org/10.1017/CBO9780511802256).

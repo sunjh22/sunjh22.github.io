@@ -122,6 +122,8 @@ website:
                   - knowledge/statistics/statistical-inference/maximum-a-posteriori-estimation.qmd
                   - knowledge/statistics/statistical-inference/sufficient-statistics.qmd
                   - knowledge/statistics/statistical-inference/fisher-information-and-cramer-rao-bound.qmd
+                  - knowledge/statistics/statistical-inference/sampling-distributions.qmd
+                  - knowledge/statistics/statistical-inference/standard-errors.qmd
               - section: "Regression & Statistical Models"
                 href: knowledge/statistics/regression-models/index.qmd
                 contents:
