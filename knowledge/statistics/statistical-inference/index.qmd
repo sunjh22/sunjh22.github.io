@@ -16,6 +16,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [Fisher information and the Cramér--Rao bound](fisher-information-and-cramer-rao-bound.qmd)
 - [Sampling distributions](sampling-distributions.qmd)
 - [Standard errors](standard-errors.qmd)
+- [Confidence intervals](confidence-intervals.qmd)
+- [Bayesian credible intervals](bayesian-credible-intervals.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)

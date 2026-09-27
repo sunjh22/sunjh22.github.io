@@ -1,0 +1,212 @@
+---
+title: "Confidence Intervals"
+subtitle: "Procedures that quantify repeated-sampling uncertainty"
+description: "Confidence intervals, coverage, exact and approximate constructions, interpretation, diagnostics, and design-aware use in bioinformatics."
+author: "Jiahong Sun"
+date: "2026-09-27"
+date-modified: "2026-09-27"
+categories: [Statistics, Inference, Uncertainty]
+toc: true
+number-sections: true
+draft: false
+---
+
+# The Target Is a Procedure, Not One Realized Interval
+
+Let data $X\sim P_\theta$ arise from a specified model or sampling design, and let $\theta$ be the estimand. A two-sided $(1-\alpha)$ confidence procedure is a pair of statistics $L(X)$ and $U(X)$ such that
+
+$$
+\boxed{
+P_\theta\{L(X)\leq\theta\leq U(X)\}\geq 1-\alpha
+}
+$$
+
+for every $\theta$ in the advertised parameter space, or approximately so under stated conditions. The probability is over hypothetical repetitions of the data-generating process. Before observing data, both endpoints are random and the parameter is fixed. After observing $X=x$, the reported interval $[L(x),U(x)]$ is fixed; in ordinary frequentist inference it is not valid to assign that realized interval a posterior probability of containing $\theta$.
+
+This distinction separates three objects:
+
+| Object | Role |
+|---|---|
+| $\theta$ | Fixed but unknown estimand under repeated sampling |
+| $[L(X),U(X)]$ | Random interval-valued estimator |
+| $[L(x),U(x)]$ | Realized confidence interval from the observed sample |
+
+Coverage calibrates the **method**, not the truth of one interval. A 95% procedure may miss for the present dataset, while a poorly calibrated method may happen to cover.
+
+# Constructing Confidence Sets
+
+## Pivotal quantities
+
+A pivot is a statistic $Q(X,\theta)$ whose distribution does not depend on unknown parameters. If constants $a$ and $b$ satisfy
+
+$$
+P\{a\leq Q(X,\theta)\leq b\}=1-\alpha,
+$$
+
+then solving the inequalities for $\theta$ produces a confidence set. For iid normal observations with known variance $\sigma^2$,
+
+$$
+Z=\frac{\bar X-\mu}{\sigma/\sqrt n}\sim N(0,1),
+$$
+
+so
+
+$$
+\boxed{
+\mu\in
+\left[
+\bar X-z_{1-\alpha/2}\frac{\sigma}{\sqrt n},
+\bar X+z_{1-\alpha/2}\frac{\sigma}{\sqrt n}
+\right].
+}
+$$
+
+When $\sigma$ is unknown but the observations are iid normal,
+
+$$
+T=\frac{\bar X-\mu}{S/\sqrt n}\sim t_{n-1},
+$$
+
+giving the exact Student interval
+
+$$
+\bar X\pm t_{n-1,1-\alpha/2}\frac{S}{\sqrt n}.
+$$
+
+Normality is essential for the finite-sample $t$ result. With nonnormal data, the same expression is generally approximate, although it may work well when the sample mean is close to normal and no observation dominates.
+
+## Inverting tests
+
+Suppose a level-$\alpha$ test of $H_0:\theta=\theta_0$ rejects when $T(X,\theta_0)$ lies in a rejection region. The set
+
+$$
+C(X)=\{\theta_0:\text{the level-}\alpha\text{ test does not reject }\theta_0\}
+$$
+
+is a $(1-\alpha)$ confidence set when the tests have the required size. This duality explains why a two-sided null value lies outside a 95% confidence interval precisely when the corresponding compatible two-sided test rejects at level 0.05, provided both use the same model and construction.
+
+“Not rejected” does not mean “shown true.” The confidence set collects parameter values not excluded by that procedure; it need not rank their plausibility.
+
+## Large-sample constructions
+
+If
+
+$$
+\frac{\hat\theta-\theta}{\widehat{\operatorname{SE}}(\hat\theta)}
+\xrightarrow{d}N(0,1),
+$$
+
+then a Wald interval is
+
+$$
+\hat\theta\pm z_{1-\alpha/2}
+\widehat{\operatorname{SE}}(\hat\theta).
+$$
+
+This approximation needs negligible bias on the standard-error scale, a reliable variance estimate, and an approximately normal studentized statistic. It can perform badly near a boundary, under weak identification, with rare outcomes, or when the effective sample size is small. It may also extend beyond the parameter space, such as below zero for a variance or outside $[0,1]$ for a probability.
+
+Likelihood-ratio intervals instead retain values satisfying
+
+$$
+2\{\ell(\hat\theta)-\ell(\theta)\}
+\leq \chi^2_{1,1-\alpha},
+$$
+
+with nuisance parameters profiled out when necessary. They often represent skewness and parameter boundaries better than symmetric Wald intervals, but their chi-squared calibration is also asymptotic and can fail in nonregular problems.
+
+# Exactness, Conservatism, and Discreteness
+
+“Exact” means that coverage is derived from a finite-sample reference distribution under the model; it does not mean the assumptions are exactly true or the interval is uniquely optimal. For discrete data, attainable tail probabilities jump rather than vary continuously. A procedure required to cover at least $1-\alpha$ for every parameter value is therefore often conservative:
+
+$$
+P_\theta\{\theta\in C(X)\}>1-\alpha
+$$
+
+for some or many $\theta$. Randomization can achieve exact nominal coverage mathematically, but it is rarely appealing for scientific reporting.
+
+Different valid procedures trade coverage, expected length, symmetry, and invariance differently. Coverage should therefore be examined across the parameter space rather than summarized only at one convenient value.
+
+# Worked Example: A Binomial Proportion
+
+Suppose $Y=3$ variant-supporting independent reads are observed among $n=20$ reads and, temporarily, the binomial model $Y\sim\operatorname{Binomial}(n,p)$ is accepted. The estimate is $\hat p=0.15$.
+
+The elementary Wald interval uses
+
+$$
+\hat p\pm z_{0.975}\sqrt{\frac{\hat p(1-\hat p)}{n}},
+$$
+
+giving approximately $[-0.006,0.306]$. The negative endpoint is impossible, and the plug-in standard error becomes zero if $Y=0$. These are symptoms of poor approximation, not evidence that the true uncertainty is absent.
+
+The score-test inversion gives the Wilson interval. With $z=z_{1-\alpha/2}$,
+
+$$
+\frac{
+\hat p+z^2/(2n)
+\pm z\sqrt{\hat p(1-\hat p)/n+z^2/(4n^2)}
+}{1+z^2/n}.
+$$
+
+For $Y=3$, $n=20$, and 95% confidence, it is approximately $[0.052,0.360]$. It remains inside $[0,1]$ and has substantially better coverage behavior than the Wald interval across many small-sample settings. An exact Clopper--Pearson interval is another option, but its guaranteed minimum coverage commonly produces greater conservatism.
+
+The calculation assumes independent Bernoulli trials with a common $p$. Reads from one specimen are technical observations, not independent biological replicates. If the estimand is a population prevalence or mean allele fraction across patients, a patient-level model and patient-level sampling uncertainty are required.
+
+# Resampling and Transformation
+
+Bootstrap intervals approximate the estimator's sampling distribution by resampling from an empirical or fitted distribution. Common constructions include percentile, basic, studentized, and bias-corrected and accelerated intervals. They have different accuracy properties; “the bootstrap interval” is not a single method.
+
+Resampling must reproduce the design and the full variable analysis pipeline. For donor-level inference, resample donors rather than individual cells or reads. Repeat normalization, filtering, feature selection, and tuning within each bootstrap replicate if those operations would change in a repeated study. An ordinary iid bootstrap does not repair dependence, selection bias, weak identification, or a nonregular statistic.
+
+If $g$ is one-to-one and monotone, transforming the endpoints of a valid interval for $\theta$ gives an interval with the same coverage for $g(\theta)$. By contrast, constructing a new symmetric Wald interval after transformation is a different approximation. This is why log-scale intervals are often preferable for positive ratios and logit-scale intervals for probabilities.
+
+# What Interval Width Does and Does Not Say
+
+Interval width depends on sampling information, confidence level, estimator, construction, and assumptions. Under a regular square-root-$n$ regime, width is often proportional to
+
+$$
+z_{1-\alpha/2}\operatorname{SE}(\hat\theta),
+$$
+
+so increasing independent sample size narrows the interval at roughly $1/\sqrt n$. More technical measurements can reduce measurement error, but cannot substitute for independent biological units when between-unit variation defines the population uncertainty.
+
+A narrow interval can still target the wrong estimand or be biased by confounding, selection, measurement error, or model misspecification. A wide interval can be scientifically informative by showing that both negligible and important effects remain compatible with the data. Confidence level is not the probability that a future observation falls in the interval; that requires a prediction interval, which also includes outcome variation.
+
+# Assumptions and Diagnostic Questions
+
+| Question | Why it matters | Useful response |
+|---|---|---|
+| What is the estimand and its scale? | Endpoints are meaningless without a target | Define the population, contrast, transformation, and units |
+| What is independently sampled or randomized? | Coverage follows the repetition scheme | Base models or resampling on biological experimental units |
+| Is the reference distribution exact or asymptotic? | Tail calibration may be poor in small samples | Compare exact, profile, resampling, or simulation-based coverage |
+| Is the parameter near a boundary or weakly identified? | Symmetric normal approximations can fail | Inspect likelihood shape and use boundary-aware methods |
+| Was the analysis selected after seeing the data? | Ordinary coverage ignores unmodeled selection | Repeat selection in resampling or use selective procedures |
+| Are many intervals reported together? | Marginal 95% coverage is not simultaneous 95% coverage | Use a simultaneous procedure when the joint claim requires it |
+
+Coverage itself cannot be verified from one dataset. Simulation under scientifically plausible data-generating scenarios can reveal undercoverage, excessive conservatism, and sensitivity to dependence or nuisance estimation. Such simulation validates the proposed procedure only over the scenarios examined.
+
+# Bioinformatics Interpretation
+
+For differential expression, define whether $\theta$ is a log fold change between treatment populations, a conditional coefficient given covariates, or a sample-specific descriptive contrast. Biological specimens are the experimental units for population inference. Libraries, lanes, reads, and cells can sharpen specimen-level measurements, but treating them as independent specimens yields intervals that are too narrow.
+
+Report the estimate, confidence level, construction, endpoint scale, independent sample counts, and assumptions about clustering, normalization, dispersion, and batch structure. Interpret the interval statistically as the output of a calibrated procedure under those assumptions. Then interpret it biologically: which effect magnitudes are compatible with the data, and which would change a scientific conclusion? Neither inclusion nor exclusion of zero alone establishes biological importance.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) defines the target the interval is intended to cover.
+- [Sampling distributions](sampling-distributions.qmd) supplies the repeated-sampling law behind coverage.
+- [Standard errors](standard-errors.qmd) explains the estimated spread used in Wald and Student intervals.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) separates interval precision from bias.
+- [Likelihood and log-likelihood](likelihood-and-log-likelihood.qmd) supports profile-likelihood intervals.
+- [Chi-squared, Student's t, and F distributions](../probability-randomness/chi-squared-students-t-and-f-distributions.qmd) develops exact normal-sample reference laws.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) describes slow and nonregular limits.
+
+A confidence interval is the realization of a procedure calibrated over repeated samples, not a posterior probability statement about the observed endpoints. Validity depends on the estimand, experimental unit, sampling or randomization scheme, and reference distribution. Exact, Wald, score, likelihood, and bootstrap constructions can behave differently, especially with small samples, discrete data, boundaries, or selection. Report effect magnitude and compatible values, not only whether zero is excluded.
+
+# References
+
+- Neyman, J. “Outline of a Theory of Statistical Estimation Based on the Classical Theory of Probability.” *Philosophical Transactions of the Royal Society A* 236 (1937): 333--380. [Article](https://doi.org/10.1098/rsta.1937.0005).
+- Student. “The Probable Error of a Mean.” *Biometrika* 6 (1908): 1--25. [Article](https://doi.org/10.1093/biomet/6.1.1).
+- Wilson, E. B. “Probable Inference, the Law of Succession, and Statistical Inference.” *Journal of the American Statistical Association* 22 (1927): 209--212. [Article](https://doi.org/10.1080/01621459.1927.10502953).
+- Brown, L. D., Cai, T. T., and DasGupta, A. “Interval Estimation for a Binomial Proportion.” *Statistical Science* 16 (2001): 101--133. [Article](https://doi.org/10.1214/ss/1009213286).
+- Efron, B. and Tibshirani, R. J. *An Introduction to the Bootstrap*. Chapman & Hall/CRC, 1993. [Publisher page](https://doi.org/10.1201/9780429246593).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002, Chapters 9--10. [Publisher page](https://www.routledge.com/Statistical-Inference/Casella-Berger/p/book/9781032593036).

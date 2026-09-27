@@ -1,0 +1,213 @@
+---
+title: "Bayesian Credible Intervals"
+subtitle: "Posterior probability statements about unknown quantities"
+description: "Equal-tailed, highest-density, and decision-focused Bayesian intervals, with computation, diagnostics, prior sensitivity, and interpretation."
+author: "Jiahong Sun"
+date: "2026-09-27"
+date-modified: "2026-09-27"
+categories: [Statistics, Bayesian, Uncertainty]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Posterior Probability Defines Credibility
+
+Let $\theta$ be an unknown estimand, $y$ the observed data, and $M$ a Bayesian model containing the likelihood and prior. Bayes' theorem gives
+
+$$
+p(\theta\mid y,M)
+=\frac{p(y\mid\theta,M)p(\theta\mid M)}{p(y\mid M)}.
+$$
+
+A $(1-\alpha)$ posterior credible set $C(y)$ satisfies
+
+$$
+\boxed{
+P\{\theta\in C(y)\mid y,M\}=1-\alpha.
+}
+$$
+
+Conditional on the observed data and model, this is a probability statement about $\theta$. It is therefore different from the repeated-sampling calibration that defines a [confidence interval](confidence-intervals.qmd). The statement is only as defensible as the likelihood, prior, computational approximation, and definition of the estimand.
+
+Credible sets are not unique. Infinitely many subsets can contain 95% posterior probability, so the construction must be reported.
+
+# Prior, Likelihood, and Posterior Geometry
+
+The likelihood records how the proposed data-generating model connects $\theta$ to the observations. The prior encodes information or regularization before the present data. Their product determines not only the posterior center but also its spread, skewness, correlation, and modality:
+
+$$
+p(\theta\mid y)\propto p(y\mid\theta)p(\theta).
+$$
+
+With plentiful information in a regular identified model, the likelihood may dominate locally. With few independent units, weak identification, missing data, separation, or latent structure, the prior can materially determine interval width and location. A narrow credible interval may reflect strong prior concentration rather than high information in the data. Prior influence should therefore be investigated, not inferred from sample size alone.
+
+For a derived estimand $\phi=g(\theta)$, uncertainty should be propagated through the full posterior:
+
+$$
+p(\phi\mid y)
+=\int \delta_{g(\theta)}(\phi)
+p(\theta\mid y)\,d\theta.
+$$
+
+In computation, transform every posterior draw: $\phi^{(s)}=g(\theta^{(s)})$. This automatically preserves posterior dependence and nonlinearity.
+
+# Common Interval Constructions
+
+## Equal-tailed intervals
+
+Let $F(\theta\mid y)$ be a continuous marginal posterior CDF. The equal-tailed interval is
+
+$$
+\boxed{
+\left[
+F^{-1}(\alpha/2\mid y),
+F^{-1}(1-\alpha/2\mid y)
+\right].
+}
+$$
+
+It leaves posterior probability $\alpha/2$ below and $\alpha/2$ above. It is easy to compute from posterior draws and its endpoints transform coherently under a monotone transformation: transform the corresponding quantiles, reversing them when the transformation decreases.
+
+Equal tails do not generally minimize interval length. In a strongly skewed posterior, the interval may include relatively low-density values on one side while excluding higher-density values on the other.
+
+## Highest-posterior-density sets
+
+For a continuous posterior density, a highest-posterior-density (HPD) set has the form
+
+$$
+C_k=\{\theta:p(\theta\mid y)\geq k\},
+$$
+
+where $k$ is chosen so that $P(\theta\in C_k\mid y)=1-\alpha$. Under regularity conditions it is a minimum-volume credible set: every included point has posterior density at least as large as every excluded point.
+
+An HPD set need not be a single interval. A multimodal posterior may produce disconnected components, and forcing them into one span includes a low-density valley. HPD regions also depend on parameterization because densities change by a Jacobian. An HPD interval for $\theta$ transformed to $g(\theta)$ need not be the HPD interval calculated directly for $g(\theta)$. Thus “shortest” is not invariant to scientific scale.
+
+## One-sided bounds and decision-focused summaries
+
+If the scientific question is whether an effect exceeds a meaningful threshold $\delta$, a direct posterior probability may be more useful than a symmetric interval:
+
+$$
+P(\theta>\delta\mid y).
+$$
+
+A lower $(1-\alpha)$ credible bound $L$ satisfies $P(\theta\geq L\mid y)=1-\alpha$. One-sided summaries should be chosen because the decision or scientific claim is one-sided, not because the data make a two-sided result inconvenient.
+
+For multivariate $\theta$, separate marginal intervals do not form a joint $(1-\alpha)$ credible region. If a joint statement matters, construct a region with the desired joint posterior probability or evaluate the posterior probability of the scientifically relevant joint event.
+
+# Worked Example: Beta--Binomial Updating
+
+Suppose $Y\mid p\sim\operatorname{Binomial}(n,p)$ and $p\sim\operatorname{Beta}(a,b)$. The posterior is
+
+$$
+p\mid Y=y\sim\operatorname{Beta}(a+y,b+n-y).
+$$
+
+For $y=3$ successes among $n=20$ trials and a uniform $\operatorname{Beta}(1,1)$ prior,
+
+$$
+p\mid y\sim\operatorname{Beta}(4,18),
+$$
+
+with posterior mean
+
+$$
+E(p\mid y)=\frac{4}{22}\approx0.182.
+$$
+
+The 95% equal-tailed credible interval is approximately
+
+$$
+[q_{0.025},q_{0.975}]=[0.054,0.363],
+$$
+
+where $q_u$ is the $u$ quantile of $\operatorname{Beta}(4,18)$. Conditional on the beta--binomial model and the stated prior, the posterior probability that $p$ lies in this realized interval is 0.95.
+
+This resembles the 95% Wilson confidence interval for the same counts, but the numerical similarity does not erase the conceptual difference. The credible interval changes with the prior; the Wilson procedure is chosen for repeated-sampling coverage. Neither analysis is appropriate for population-level biological inference if the 20 trials are correlated reads from one specimen and the target concerns patients.
+
+# Computation from Posterior Draws
+
+If $\theta^{(1)},\ldots,\theta^{(S)}$ are representative posterior draws, equal-tailed endpoints are empirical quantiles. Monte Carlo error remains even after the statistical model is fixed. Its size depends on effective sample size, autocorrelation, tail behavior, and the sampler—not merely on the nominal number of stored draws.
+
+Before reporting endpoints, assess:
+
+- convergence across multiple chains using rank-normalized split $\widehat R$ and trace behavior;
+- bulk and tail effective sample sizes, especially because interval endpoints are tail quantiles;
+- divergent transitions, maximum tree-depth events, or other algorithm-specific warnings;
+- stability of endpoints under longer runs and alternative parameterizations; and
+- whether all posterior modes were explored.
+
+For approximate methods such as variational inference or Laplace approximations, posterior intervals can be too narrow when the approximation suppresses skewness, heavy tails, or dependence. Compare against a more faithful computation on representative cases when interval accuracy drives conclusions.
+
+# Posterior Predictive Checking
+
+A precise posterior for a poorly fitting model is not trustworthy. Posterior predictive replication draws
+
+$$
+\theta^{\mathrm{rep}}\sim p(\theta\mid y),
+\qquad
+y^{\mathrm{rep}}\sim p(y^{\mathrm{rep}}\mid\theta^{\mathrm{rep}}),
+$$
+
+or, equivalently after integrating out $\theta$,
+
+$$
+p(y^{\mathrm{rep}}\mid y)
+=\int p(y^{\mathrm{rep}}\mid\theta)p(\theta\mid y)\,d\theta.
+$$
+
+Compare replicated and observed data using discrepancies tied to the scientific use: zero fractions, tails, group means, within-subject correlations, count dispersion, missingness patterns, or spatial structure. A posterior predictive check can reveal conflicts between model and data, but passing selected checks does not prove the likelihood or prior correct.
+
+Do not confuse a credible interval for a parameter with a posterior predictive interval for a future observation. The predictive interval usually includes both parameter uncertainty and new-outcome variability, so it answers a different question and is often wider.
+
+# Prior and Model Sensitivity
+
+Sensitivity analysis should vary scientifically plausible assumptions, not arbitrary cosmetic settings. Useful comparisons include:
+
+- weakly informative versus domain-informed priors on an interpretable scale;
+- alternative priors for variance, correlation, sparsity, and tail parameters;
+- likelihoods allowing overdispersion, outliers, zero inflation, or dependence;
+- inclusion of plausible batch, donor, or measurement-error structures; and
+- alternative missing-data or selection models when the data cannot identify them.
+
+Report whether the posterior center, interval width, tail probabilities, and scientific decision change. If different defensible models produce materially different intervals, that model uncertainty is part of the result. Model averaging is one possible response, but it also requires justified model probabilities and does not replace transparent sensitivity analysis.
+
+# Credibility and Frequentist Coverage
+
+A 95% credible interval need not cover a fixed true parameter in 95% of repeated samples. Its repeated-sampling coverage depends on the prior, likelihood, construction, and true data-generating process. Conversely, a 95% confidence interval does not automatically contain 95% posterior probability.
+
+In a regular, fixed-dimensional, identifiable model with sufficient information and a prior that is positive and smooth near the true parameter, a Bernstein--von Mises result can make the posterior approximately normal around an efficient estimator. Then common credible and likelihood-based confidence intervals may agree asymptotically. This agreement is not guaranteed with boundaries, weak identification, mixtures, increasing dimension, informative priors that remain influential, or model misspecification.
+
+Frequentist simulation can still be useful in Bayesian workflow: generate data across plausible parameter values and assess the repeated-sampling calibration of posterior intervals. Such calibration is an additional operating characteristic, not the definition of posterior credibility.
+
+# Bioinformatics Design and Interpretation
+
+Suppose $\theta$ is a treatment log fold change across a target population of organisms or patients. The likelihood must respect the hierarchy: biological specimens are experimental units; libraries, reads, spots, or cells are nested measurements unless independently sampled at the target level. A hierarchical model can pool information while retaining donor-level uncertainty. Merely placing a prior on an analysis that pseudoreplicates cells does not correct the experimental unit.
+
+State the estimand, prior scale and rationale, likelihood, hierarchy, computation, interval construction, and diagnostics. Separate these interpretations:
+
+- **Statistical:** conditional on the model and observed data, a stated fraction of posterior mass lies in the interval.
+- **Biological:** the interval's effect sizes range from negligible to meaningful, harmful to beneficial, or otherwise consequential in the studied system.
+
+Posterior exclusion of zero is not by itself a claim of practical importance, causal identification, or generalizability. Report probabilities relative to biologically meaningful thresholds and show sensitivity to priors and design assumptions.
+
+# Connections and Take-home Messages
+
+- [Bayesian priors, likelihoods, and posteriors](bayesian-priors-likelihoods-and-posteriors.qmd) develops the posterior distribution summarized here.
+- [Maximum a posteriori estimation](maximum-a-posteriori-estimation.qmd) explains why a posterior mode alone does not describe interval uncertainty.
+- [Confidence intervals](confidence-intervals.qmd) gives the contrasting repeated-sampling interpretation.
+- [Sampling distributions](sampling-distributions.qmd) defines frequentist operating characteristics used to evaluate coverage.
+- [Standard errors](standard-errors.qmd) explains why posterior standard deviations and frequentist standard errors may differ.
+- [Bayes' theorem and Bayesian updating](../probability-randomness/bayes-theorem-and-bayesian-updating.qmd) gives the probability foundation and conjugate examples.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) identifies settings where credible and confidence intervals may not converge.
+
+A credible interval contains a stated posterior probability conditional on a model, prior, and observed data. Equal-tailed, HPD, one-sided, marginal, and joint sets answer different questions and can behave differently under transformation or multimodality. Reliable intervals require computation diagnostics, posterior predictive checks, and prior and likelihood sensitivity. Biological interpretation must respect experimental units and meaningful effect scales; posterior precision cannot rescue an unidentified or misspecified scientific comparison.
+
+# References
+
+- Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and Rubin, D. B. *Bayesian Data Analysis*, 3rd ed. Chapman & Hall/CRC, 2013. [Book page](https://www.stat.columbia.edu/~gelman/book/).
+- Bernardo, J. M. and Smith, A. F. M. *Bayesian Theory*. Wiley, 1994. [Publisher page](https://doi.org/10.1002/9780470316870).
+- Rubin, D. B. “Bayesianly Justifiable and Relevant Frequency Calculations for the Applied Statistician.” *The Annals of Statistics* 12 (1984): 1151--1172. [Article](https://doi.org/10.1214/aos/1176346785).
+- Gelman, A., Meng, X.-L., and Stern, H. “Posterior Predictive Assessment of Model Fitness via Realized Discrepancies.” *Statistica Sinica* 6 (1996): 733--760. [Article](https://www.jstor.org/stable/24306036).
+- van der Vaart, A. W. *Asymptotic Statistics*. Cambridge University Press, 1998, Chapter 10. [Publisher page](https://doi.org/10.1017/CBO9780511802256).
+- Vehtari, A., Gelman, A., Simpson, D., Carpenter, B., and Bürkner, P.-C. “Rank-Normalization, Folding, and Localization: An Improved $\widehat R$ for Assessing Convergence of MCMC.” *Bayesian Analysis* 16 (2021): 667--718. [Article](https://doi.org/10.1214/20-BA1221).
