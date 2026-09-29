@@ -1,0 +1,190 @@
+---
+title: "Nonparametric Bootstrap"
+subtitle: "Resampling observed units to approximate sampling uncertainty"
+description: "The empirical-distribution bootstrap, design-aware resampling, uncertainty estimation, failure cases, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-09-29"
+date-modified: "2026-09-29"
+categories: [Statistics, Inference, Resampling]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Replace the Population with the Empirical Distribution
+
+Let $X_1,\ldots,X_n\stackrel{iid}{\sim}F$, let the estimand be $\theta=\tau(F)$, and let $\hat\theta=T(X_1,\ldots,X_n)$. The empirical distribution is
+
+$$
+\hat F_n=\frac{1}{n}\sum_{i=1}^n\delta_{X_i},
+$$
+
+which assigns probability $1/n$ to each observed unit. The **ordinary nonparametric bootstrap** draws
+
+$$
+X_1^*,\ldots,X_n^*\stackrel{iid}{\sim}\hat F_n
+$$
+
+and recomputes $\hat\theta^*=T(X_1^*,\ldots,X_n^*)$. Conditional on the observed data, the distribution of $\hat\theta^*$ approximates the sampling distribution of $\hat\theta$ under repeated sampling from $F$.
+
+Equivalently, the bootstrap counts $(N_1^*,\ldots,N_n^*)$ for the observed units satisfy
+
+$$
+(N_1^*,\ldots,N_n^*)\sim
+\operatorname{Multinomial}
+\left(n;\frac1n,\ldots,\frac1n\right).
+$$
+
+Thus a replicate omits some observations and repeats others. “Nonparametric” means that no finite-dimensional family such as normal or Poisson is imposed on $F$; it does **not** mean assumption-free. Exchangeability, the sampling design, the statistic's regularity, and the definition of an independent unit still determine validity.
+
+# Why the Approximation Can Work
+
+The sampling distribution of interest is commonly the law of a centered and scaled statistic,
+
+$$
+\sqrt n\{T(F_n)-T(F)\}.
+$$
+
+The bootstrap substitutes $F_n$ for the unknown $F$ and uses the conditional law
+
+$$
+\sqrt n\{T(F_n^*)-T(F_n)\}\mid X_1,\ldots,X_n.
+$$
+
+For smooth statistical functionals and suitable moment conditions, the empirical distribution approaches $F$ closely enough that these two laws converge to the same limit. This covers many means, regression coefficients, quantiles with positive density at the target, and other regular estimators.
+
+The argument can fail when the statistic is not smooth, the convergence rate is not $\sqrt n$, a parameter lies on a boundary, moments do not exist, dimension grows too quickly, or the empirical distribution cannot reproduce a feature that determines the true sampling law. Resampling is an estimated probability model, not a proof that the estimator is regular.
+
+# The Basic Workflow
+
+For $b=1,\ldots,B$:
+
+1. sample $n$ experimental units with replacement according to the original design;
+2. retain all measurements belonging to each sampled unit;
+3. repeat the complete analysis pipeline; and
+4. store the estimate, standard error or test statistic, and any failure indicator.
+
+Then estimate the bootstrap standard error and bias by
+
+$$
+\widehat{\operatorname{SE}}_{\mathrm{np}}(\hat\theta)
+=
+\left\{
+\frac{1}{B-1}\sum_{b=1}^B
+(\hat\theta^{*(b)}-\bar\theta^*)^2
+\right\}^{1/2},
+$$
+
+$$
+\widehat{\operatorname{bias}}_{\mathrm{np}}
+=\bar\theta^*-\hat\theta_{\mathrm{obs}}.
+$$
+
+Percentile, basic, studentized, and bias-corrected and accelerated intervals use the replicates differently and have different accuracy conditions. Reporting only “a bootstrap 95% interval” hides an important methodological choice. State the interval construction, $B$, random-number handling, resampling unit, strata or clusters, and which analysis steps were repeated.
+
+Finite $B$ adds Monte Carlo error. Standard-error estimates usually stabilize sooner than tail quantiles. Increase $B$ until relevant endpoints and decisions are stable; displaying many digits from a small number of replicates creates false precision.
+
+# Worked Example: Bootstrap Distribution of a Mean
+
+For observed values
+
+$$
+x=(2,4,7,7),
+$$
+
+the estimand is the population mean $\mu(F)$, the estimator is $\bar X$, and the estimate is $5$. A bootstrap observation equals 2, 4, or 7 with empirical probabilities $1/4$, $1/4$, and $1/2$. Under $F_n$,
+
+$$
+E_*(X^*)=5,
+\qquad
+\operatorname{Var}_*(X^*)
+=\frac{(2-5)^2+(4-5)^2+2(7-5)^2}{4}
+=4.5.
+$$
+
+Because a replicate mean averages four conditionally independent draws,
+
+$$
+E_*(\bar X^*)=5,
+\qquad
+\operatorname{Var}_*(\bar X^*)=\frac{4.5}{4}=1.125,
+$$
+
+so the ideal bootstrap standard error is about $1.061$. The usual plug-in standard error based on the unbiased sample variance is
+
+$$
+\frac{s}{\sqrt n}
+=\sqrt{\frac{6}{4}}
+\approx1.225.
+$$
+
+Their small-sample difference comes from the empirical distribution using denominator $n$ rather than $n-1$ for its variance. As $n$ grows the factor disappears, but with four observations the empirical distribution is a crude population model. Simulation with large $B$ approximates the conditional value $1.061$; it cannot create population values beyond the observed support or add biological information absent from the sample.
+
+# The Resampling Unit Must Match the Design
+
+The iid bootstrap is only one member of a design-specific family:
+
+| Data structure | Appropriate resampling idea | What is preserved |
+|---|---|---|
+| Independent units | Resample units | Empirical population of units |
+| Randomized groups or strata | Resample within each group or stratum | Allocation and stratum sizes |
+| Paired measurements | Resample whole pairs | Within-pair dependence |
+| Clustered specimens | Resample clusters, retaining nested observations | Intracluster dependence |
+| Longitudinal or spatial sequence | Resample suitable blocks | Local dependence |
+| Regression with random covariates | Resample response--predictor rows or clusters | Joint empirical distribution |
+| Fixed-design regression | Residual or wild bootstrap under justified error assumptions | Design matrix and modeled error structure |
+| Complex survey | Use design-based replicate weights or replicate PSUs | Selection probabilities and survey design |
+
+With few clusters, cluster resampling has little empirical information and can omit influential treatment levels or covariate patterns. A hierarchical bootstrap that independently resamples every level can also target the wrong repetition. The correct scheme follows the scientific sampling process, not merely the file's row structure.
+
+# Important Failure Cases
+
+## Sample maxima and support boundaries
+
+For a continuous distribution with an unknown upper endpoint, the observed maximum is always the largest value available to $F_n$. Every bootstrap maximum is therefore at most the observed maximum, and the observed maximum itself appears with probability approaching $1-e^{-1}$. The true next-sample maximum has no such atom at the current maximum and can exceed it. The ordinary $n$-out-of-$n$ bootstrap is consequently inconsistent for many endpoint problems.
+
+## Heavy tails and unstable moments
+
+If the population variance is infinite, the sample mean need not have the usual $\sqrt n$ normal limit, and the ordinary bootstrap for its distribution can fail. Even with finite but heavy tails, a few observations may dominate the empirical distribution. Tail diagnostics, robust estimators, subsampling, or an $m$-out-of-$n$ bootstrap may be more appropriate, but each changes the method and needs its own justification.
+
+## Dependence mistaken for replication
+
+Resampling individual observations destroys dependence and exaggerates the effective sample size. Cells from one donor, reads from one library, repeated measures from one person, and nearby genomic sites are not automatically independent sampling units. Use cluster or block methods only when their asymptotic regime and block choice match the intended generalization.
+
+## Selection, tuning, and non-identifiability
+
+If a pipeline filters features, selects variables, tunes hyperparameters, or chooses a model after seeing the data, freezing those steps estimates uncertainty conditional on the selected pipeline. Repeating them captures some selection variability but does not guarantee valid post-selection inference. Non-identifiable mixtures, separation, and boundary estimates can produce failed fits or discontinuous statistics; the bootstrap may faithfully reveal instability or may be theoretically inconsistent. Record and investigate failures.
+
+# Bioinformatics Examples and Interpretation
+
+For a two-group expression study, donors—not genes, reads, or cells—are the experimental units for a population treatment contrast. Resample donors within treatment groups, carry each donor's nested measurements together, and rerun specimen-level aggregation, normalization, filtering, and estimation. If the study is paired, resample pairs. Technical replication can refine a donor's measurement but does not create additional independent donors.
+
+Phylogenetic bootstrapping traditionally resamples alignment columns and asks how often a clade is recovered. That procedure treats characters as the resampling units and assumes their exchangeability or effective independence. Linkage, recombination, alignment uncertainty, and shared evolutionary processes can violate that scheme. A bootstrap proportion is support under the specified character-resampling procedure; it is not automatically the posterior probability that a clade is true.
+
+Statistically, a nonparametric bootstrap distribution estimates repeated-sampling variability under an empirical resampling model. Biologically, it cannot establish representativeness, remove confounding, compensate for too few independent specimens, or convert an associational estimand into a causal one. Interpret effect sizes and uncertainty in the target population after checking how specimens entered the study.
+
+# Choosing Between Nonparametric and Parametric Bootstrap
+
+Use the ordinary nonparametric bootstrap when observed units plausibly form an iid or design-adjusted sample and the empirical distribution contains the variation relevant to a regular statistic. Use the [parametric bootstrap](parametric-bootstrap.qmd) when a credible generative model is central, the sample is sparse relative to the outcome space, or the design contains censoring, latent structure, or constraints best reproduced through simulation.
+
+The nonparametric method is less exposed to a wrong distributional family but can be noisy in small samples and cannot generate unseen support. The parametric method can smooth beyond observed values and encode complex structure, but a misspecified model can give confidently wrong results. Comparing both methods and scientifically plausible simulations is a useful sensitivity analysis, not a rule for choosing whichever interval is narrower.
+
+# Connections and Take-home Messages
+
+- [Sampling distributions](sampling-distributions.qmd) identifies the target distribution for resampling.
+- [Standard errors](standard-errors.qmd) explains how bootstrap spread relates to repeated-sampling precision.
+- [Confidence intervals](confidence-intervals.qmd) covers interval construction and coverage.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) distinguishes the quantities estimated from replicates.
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd) clarifies why row-wise resampling can be invalid.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) discusses nonregularity, heavy tails, and changing dimension.
+
+The nonparametric bootstrap treats the empirical distribution as an estimated population and reruns the estimator on resampled units. Its success requires a resampling scheme aligned with the study design and a statistic whose sampling law is reproducible from the empirical distribution. Clusters, pairs, strata, temporal dependence, and technical nesting require adapted schemes. Large $B$ reduces simulation noise but cannot cure few biological replicates, dependence, selection bias, or bootstrap inconsistency.
+
+# References
+
+- Efron, B. “Bootstrap Methods: Another Look at the Jackknife.” *The Annals of Statistics* 7 (1979): 1--26. [Article](https://doi.org/10.1214/aos/1176344552).
+- Bickel, P. J. and Freedman, D. A. “Some Asymptotic Theory for the Bootstrap.” *The Annals of Statistics* 9 (1981): 1196--1217. [Article](https://doi.org/10.1214/aos/1176345637).
+- Hall, P. *The Bootstrap and Edgeworth Expansion*. Springer, 1992. [Publisher page](https://doi.org/10.1007/978-1-4612-4384-7).
+- Davison, A. C. and Hinkley, D. V. *Bootstrap Methods and Their Application*. Cambridge University Press, 1997. [Publisher page](https://doi.org/10.1017/CBO9780511802843).
+- Efron, B. and Tibshirani, R. J. *An Introduction to the Bootstrap*. Chapman & Hall/CRC, 1993. [Publisher page](https://doi.org/10.1201/9780429246593).
+- Felsenstein, J. “Confidence Limits on Phylogenies: An Approach Using the Bootstrap.” *Evolution* 39 (1985): 783--791. [Article](https://doi.org/10.1111/j.1558-5646.1985.tb00420.x).

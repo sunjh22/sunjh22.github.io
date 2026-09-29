@@ -18,6 +18,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [Standard errors](standard-errors.qmd)
 - [Confidence intervals](confidence-intervals.qmd)
 - [Bayesian credible intervals](bayesian-credible-intervals.qmd)
+- [Parametric bootstrap](parametric-bootstrap.qmd)
+- [Nonparametric bootstrap](nonparametric-bootstrap.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)

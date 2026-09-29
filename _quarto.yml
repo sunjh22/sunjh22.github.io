@@ -126,6 +126,8 @@ website:
                   - knowledge/statistics/statistical-inference/standard-errors.qmd
                   - knowledge/statistics/statistical-inference/confidence-intervals.qmd
                   - knowledge/statistics/statistical-inference/bayesian-credible-intervals.qmd
+                  - knowledge/statistics/statistical-inference/parametric-bootstrap.qmd
+                  - knowledge/statistics/statistical-inference/nonparametric-bootstrap.qmd
               - section: "Regression & Statistical Models"
                 href: knowledge/statistics/regression-models/index.qmd
                 contents:

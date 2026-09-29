@@ -1,0 +1,169 @@
+---
+title: "Parametric Bootstrap"
+subtitle: "Approximating repeated-sampling uncertainty from a fitted probability model"
+description: "Parametric bootstrap simulation, uncertainty estimation, interval construction, diagnostics, and design-aware interpretation."
+author: "Jiahong Sun"
+date: "2026-09-29"
+date-modified: "2026-09-29"
+categories: [Statistics, Inference, Resampling]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Simulate the Study from a Fitted Model
+
+Suppose data $X$ arise from a model $P_\eta$, where $\eta$ contains every parameter needed to generate a new dataset. The scientific target is an estimand $\theta=\tau(P_\eta)$, an estimator is the rule $\hat\theta=T(X)$, and $\hat\theta_{\mathrm{obs}}=T(x)$ is the observed estimate. The **parametric bootstrap** replaces the unknown data-generating distribution $P_\eta$ by the fitted distribution $P_{\hat\eta}$ and repeatedly simulates the complete study:
+
+$$
+X^{*(b)}\sim P_{\hat\eta},
+\qquad
+\hat\theta^{*(b)}=T\{X^{*(b)}\},
+\qquad b=1,\ldots,B.
+$$
+
+The conditional distribution of $\hat\theta^*$ given the observed data approximates the sampling distribution of $\hat\theta$ under the fitted model. This is a plug-in argument, not an assumption-free reconstruction of reality. It is useful when analytic sampling theory is difficult but the probability model can be simulated faithfully.
+
+The four objects remain distinct:
+
+| Object | Meaning |
+|---|---|
+| $\theta=\tau(P_\eta)$ | Population estimand under the model |
+| $T$ | Estimation rule, including preprocessing and fitting |
+| $\hat\theta_{\mathrm{obs}}=T(x)$ | Estimate from the observed data |
+| $\mathcal L_{\hat\eta}(\hat\theta^*\mid x)$ | Bootstrap approximation to repeated-sampling behavior |
+
+# The Algorithm and What Must Be Repeated
+
+A defensible parametric bootstrap has five steps:
+
+1. Specify the estimand, experimental units, sampling design, and probability model.
+2. Fit the model to obtain $\hat\eta$ and $\hat\theta_{\mathrm{obs}}$.
+3. Generate a dataset from $P_{\hat\eta}$ with the original design, sample sizes, offsets, censoring, and dependence structure.
+4. Apply the **entire original analysis rule** to that dataset, including nuisance-parameter estimation, normalization, filtering, selection, and convergence checks.
+5. Summarize the distribution of the successful $\hat\theta^{*(b)}$ values and report failures rather than silently discarding them.
+
+Holding an estimated nuisance parameter fixed in step 4 answers a conditional question and usually omits part of the procedure's variability. Conversely, some design quantities really are fixed. In a regression bootstrap conditional on a planned design matrix, one normally holds the predictors fixed and simulates new responses. If predictors are themselves randomly sampled and the desired inference is unconditional, their generating mechanism also belongs in the simulation.
+
+The Monte Carlo size $B$ controls simulation noise, not statistical information. A few hundred replicates may expose gross instability, while tail probabilities and interval endpoints generally need thousands or more. Increase $B$ and verify that reported digits and scientific conclusions are stable.
+
+# Standard Errors, Bias, and Intervals
+
+The bootstrap standard-error estimate is
+
+$$
+\widehat{\operatorname{SE}}_{\mathrm{par}}(\hat\theta)
+=
+\left\{
+\frac{1}{B-1}\sum_{b=1}^B
+(\hat\theta^{*(b)}-\bar\theta^*)^2
+\right\}^{1/2},
+\qquad
+\bar\theta^*=\frac{1}{B}\sum_{b=1}^B\hat\theta^{*(b)}.
+$$
+
+The estimated bias at the fitted model is
+
+$$
+\widehat{\operatorname{bias}}_{\mathrm{par}}
+=\bar\theta^*-\hat\theta_{\mathrm{obs}}.
+$$
+
+The bias-corrected point estimate $2\hat\theta_{\mathrm{obs}}-\bar\theta^*$ can have greater variance and is not automatically preferable. Bias, standard error, and mean squared error answer different questions and should be judged on the estimand's scientific scale.
+
+Let $q^*_p$ be the empirical $p$ quantile of the bootstrap estimates. Two common intervals are:
+
+$$
+\text{percentile: }
+[q^*_{\alpha/2},q^*_{1-\alpha/2}],
+$$
+
+$$
+\text{basic: }
+[2\hat\theta_{\mathrm{obs}}-q^*_{1-\alpha/2},
+ 2\hat\theta_{\mathrm{obs}}-q^*_{\alpha/2}].
+$$
+
+They reflect bootstrap skewness differently and neither has universal finite-sample coverage. A studentized bootstrap recalculates an uncertainty estimate $\widehat{\operatorname{SE}}^{*(b)}$ within every replicate and forms
+
+$$
+t^{*(b)}=
+\frac{\hat\theta^{*(b)}-\hat\theta_{\mathrm{obs}}}
+{\widehat{\operatorname{SE}}^{*(b)}}.
+$$
+
+Quantiles of $t^*$ are then inverted around the observed estimate. Studentization can improve calibration but is computationally expensive and unreliable when replicate-level standard errors are unstable. A bootstrap interval remains a frequentist confidence procedure: its interpretation concerns coverage under repetitions, not the posterior probability that the realized interval contains $\theta$.
+
+For a test of $H_0:\theta=\theta_0$, simulations should usually come from a model fitted **under the null**. Simulating from the unrestricted fit approximates a different distribution and can miscalibrate the test.
+
+# Worked Example: A Poisson Rate
+
+Suppose counts from six independent biological samples are
+
+$$
+x=(8,11,9,12,10,10),
+$$
+
+and the working model is $X_i\stackrel{iid}{\sim}\operatorname{Poisson}(\lambda)$. The estimand is the population event rate $\lambda$, the estimator is $\hat\lambda=\bar X$, and the estimate is $10$.
+
+A parametric bootstrap generates six new counts independently from $\operatorname{Poisson}(10)$ and recomputes their mean. In this simple case the conditional bootstrap moments are available exactly:
+
+$$
+E_*(\hat\lambda^*)=10,
+\qquad
+\operatorname{Var}_*(\hat\lambda^*)=\frac{10}{6},
+\qquad
+\operatorname{SE}_*(\hat\lambda^*)\approx1.291.
+$$
+
+Simulation would reproduce those quantities up to Monte Carlo error. The example is intentionally transparent: in a nonlinear estimator, censored survival model, mixed model, or selected pipeline, the same simulation principle can approximate a distribution that is awkward to derive.
+
+The answer is valid only for the Poisson model. If samples are overdispersed, correlated, zero-inflated, or have unequal exposures that were ignored, repeating the wrong model precisely does not recover the right uncertainty.
+
+# Model Adequacy Is the Central Assumption
+
+Parametric resampling preserves whatever the fitted model says about means, variances, tails, dependence, and censoring. It also preserves its mistakes. Diagnostics should therefore target features that matter to the statistic:
+
+| Diagnostic question | Consequence if wrong | Sensitivity response |
+|---|---|---|
+| Does the mean--variance relationship fit? | Standard errors and tail probabilities can be wrong | Compare Poisson, quasi-Poisson, and negative-binomial scenarios |
+| Are units independent at the modeled level? | Simulated information is exaggerated | Add cluster effects or simulate whole clusters |
+| Are tails and boundaries represented? | Extreme or constrained estimates are miscalibrated | Use alternative distributions and boundary-aware methods |
+| Are nuisance parameters well identified? | Plug-in simulation can look too certain | Refit every replicate and inspect profile or simulation sensitivity |
+| Does the optimizer fail in some replicates? | The estimator's operational distribution includes instability | Report failure frequency and diagnose the fitting rule |
+| Was the analysis selected from the data? | Fixed-pipeline simulation omits selection variation | Repeat selection and tuning inside every replicate |
+
+A goodness-of-fit bootstrap has an additional requirement: generate under the fitted null model, refit it, and compare a discrepancy statistic calculated in exactly the same way. Using the data twice is handled by the refitting step; comparing observations only with simulations from fixed fitted parameters can give the wrong reference distribution.
+
+# Bioinformatics Design and Interpretation
+
+For RNA-seq, a parametric bootstrap might simulate negative-binomial counts with the fitted design matrix, library-size offsets, gene-specific mean, and dispersion. Biological specimens are the experimental units. The simulation should preserve blocking, repeated measures, paired samples, and batch allocation; reads are conditionally generated measurements, not new biological replicates.
+
+If the target is a treatment log fold change, the estimator includes normalization, dispersion estimation, coefficient fitting, and any prespecified shrinkage. Repeating only the final coefficient calculation treats upstream estimates as known. Repeating feature filtering or model selection may be necessary when the reported result is conditional on those data-dependent operations, although post-selection inference can remain difficult even then.
+
+Statistically, the bootstrap distribution describes how a specified estimator would vary if the fitted data-generating model and design were repeated. Biologically, it does not show that the model captures heterogeneity in a broader population, that a treatment contrast is causal, or that an estimated effect is important. Those claims require design knowledge, sensitivity analysis, and effect-size interpretation.
+
+# Parametric, Nonparametric, and Bayesian Simulation
+
+The [nonparametric bootstrap](nonparametric-bootstrap.qmd) samples from the empirical distribution rather than a finite-dimensional fitted model. It reduces distributional assumptions but still assumes that the resampled units represent the intended repetition. Parametric resampling can be more efficient when the model is credible and can generate values not present in the sample, but it is more exposed to misspecification.
+
+A posterior predictive distribution is different again. Parametric bootstrap simulation commonly plugs in $\hat\eta$; posterior predictive simulation averages $P_\eta$ over the posterior $p(\eta\mid x)$. Both can simulate replicated data, but they encode parameter uncertainty and support inferential claims differently.
+
+# Connections and Take-home Messages
+
+- [Sampling distributions](sampling-distributions.qmd) defines the repeated-sample law being approximated.
+- [Standard errors](standard-errors.qmd) explains the spread estimated from bootstrap replicates.
+- [Confidence intervals](confidence-intervals.qmd) gives the coverage interpretation of bootstrap intervals.
+- [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd) supplies fitted parameters for many parametric bootstraps.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) explains why simulation is useful but not automatically valid.
+- [Negative binomial distribution and overdispersion](../probability-randomness/negative-binomial-distribution-and-overdispersion.qmd) provides a common count model for biological heterogeneity.
+
+The parametric bootstrap replaces an unknown population law with a fitted generative model and repeats the full study and analysis. It can estimate bias, standard errors, intervals, and null distributions when analytic calculations are difficult. Its credibility depends on model adequacy, correct simulation of independent units and dependence, complete refitting, and explicit handling of failed or selected analyses. More bootstrap replicates reduce Monte Carlo noise; they do not repair a wrong biological or statistical model.
+
+# References
+
+- Efron, B. “Bootstrap Methods: Another Look at the Jackknife.” *The Annals of Statistics* 7 (1979): 1--26. [Article](https://doi.org/10.1214/aos/1176344552).
+- Davison, A. C. and Hinkley, D. V. *Bootstrap Methods and Their Application*. Cambridge University Press, 1997. [Publisher page](https://doi.org/10.1017/CBO9780511802843).
+- Hall, P. *The Bootstrap and Edgeworth Expansion*. Springer, 1992. [Publisher page](https://doi.org/10.1007/978-1-4612-4384-7).
+- Efron, B. and Tibshirani, R. J. *An Introduction to the Bootstrap*. Chapman & Hall/CRC, 1993. [Publisher page](https://doi.org/10.1201/9780429246593).
+- Morris, J. S. “The BLUPs Are Not ‘Best’ When It Comes to Bootstrapping.” *Statistics & Probability Letters* 56 (2002): 425--430. [Article](https://doi.org/10.1016/S0167-7152(02)00041-X).
