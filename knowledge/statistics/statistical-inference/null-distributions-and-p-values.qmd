@@ -1,0 +1,214 @@
+---
+title: "Null Distributions and P-values"
+subtitle: "Calibrating observed discrepancies under a specified null model"
+description: "Null reference distributions, valid p-values, discreteness, composite hypotheses, interpretation, and multiplicity."
+author: "Jiahong Sun"
+date: "2026-09-30"
+date-modified: "2026-09-30"
+categories: [Statistics, Inference, P-values]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Tail Probability Under a Model
+
+Let $T(X)$ be a statistic for which larger values are more incompatible with a null hypothesis. After observing $X=x$, write $t_{\mathrm{obs}}=T(x)$. For a simple null $H_0:\theta=\theta_0$, the upper-tail p-value is
+
+$$
+\boxed{
+p(x)=P_{\theta_0}\{T(X)\geq t_{\mathrm{obs}}\}.
+}
+$$
+
+The probability refers to hypothetical data $X$ generated under the null model; the observed value $t_{\mathrm{obs}}$ is fixed inside the calculation. A p-value measures how far the data fall into a prespecified tail of a null reference distribution. It is not $P(H_0\mid x)$, not the probability that chance alone produced the data, and not the probability that a rejection is a false positive.
+
+For a composite null $H_0:\theta\in\Theta_0$, a conservative construction is
+
+$$
+p(x)=
+\sup_{\theta\in\Theta_0}
+P_\theta\{T(X)\geq T(x)\}.
+$$
+
+Other valid constructions can eliminate or condition on nuisance parameters, use pivots, or invert a family of tests. Simply substituting nuisance estimates into a simple-null formula need not control error in finite samples.
+
+# Validity Is a Repeated-sampling Property
+
+A p-value is **valid** for $H_0$ when, for every $u\in[0,1]$,
+
+$$
+\boxed{
+\sup_{\theta\in\Theta_0}
+P_\theta\{p(X)\leq u\}\leq u.
+}
+$$
+
+Consequently, the rule “reject when $p\leq\alpha$” is a level-$\alpha$ test. This probability statement is about repetitions under the null, not about the truth of the null after one dataset is observed.
+
+If $T$ has a continuous null cumulative distribution function $F_0$, then for an upper-tail test
+
+$$
+p=1-F_0(T),
+$$
+
+and the probability integral transform gives $p\sim\operatorname{Uniform}(0,1)$ under the simple null. Uniformity therefore describes a correctly calibrated continuous p-value under the complete null—not the distribution of p-values when real effects exist.
+
+With discrete data, attainable tail probabilities occur in jumps. The p-value is commonly **super-uniform** rather than exactly uniform, so
+
+$$
+P_{H_0}(p\leq u)<u
+$$
+
+for some $u$. This conservatism follows from discreteness, not from stronger evidence. Randomized p-values can fill the jumps and achieve exact uniformity, while mid-p values reduce conservatism but generally sacrifice the usual finite-sample validity guarantee.
+
+# “As or More Extreme” Requires an Ordering
+
+The phrase “as or more extreme” is incomplete until the statistic and direction are specified.
+
+For a right-tailed alternative, use
+
+$$
+p_R=P_0\{T\geq t_{\mathrm{obs}}\};
+$$
+
+for a left-tailed alternative, use
+
+$$
+p_L=P_0\{T\leq t_{\mathrm{obs}}\}.
+$$
+
+A common two-sided definition for a continuous null distribution symmetric about zero is
+
+$$
+p_2=P_0\{|T|\geq|t_{\mathrm{obs}}|\}.
+$$
+
+Doubling the smaller one-sided tail gives the same result in many symmetric cases, but not for every asymmetric or discrete null distribution. Alternatives include ordering by likelihood ratio or by null probability mass. Software packages can therefore return different legitimate “exact two-sided” p-values for the same discrete data. The definition should be reported rather than hidden behind the label “two-sided.”
+
+Tail direction must follow the scientific alternative, not the observed sign. Halving a two-sided p-value after seeing a favorable direction is not a valid prespecified one-sided analysis.
+
+# Worked Example: A Standardized Mean Difference
+
+Suppose an independently randomized study estimates a population mean difference as
+
+$$
+\hat\Delta=0.40,
+\qquad
+\widehat{\operatorname{SE}}(\hat\Delta)=0.18.
+$$
+
+For $H_0:\Delta=0$ against $H_1:\Delta\ne0$, assume the studentized statistic is adequately approximated by $N(0,1)$ under the null. Then
+
+$$
+z_{\mathrm{obs}}=\frac{0.40}{0.18}=2.22,
+$$
+
+and
+
+$$
+p=2\{1-\Phi(2.22)\}\approx0.026.
+$$
+
+The p-value says that, under the null model and its assumptions, a statistic at least this far from zero in either direction would occur about 2.6% of the time. It does **not** say there is a 2.6% probability that $\Delta=0$.
+
+The corresponding approximate 95% confidence interval is
+
+$$
+0.40\pm1.96(0.18)\approx[0.047,0.753].
+$$
+
+The estimate and interval reveal information the p-value omits: plausible magnitudes range from small to potentially substantial on the outcome scale. Whether that range matters biologically requires domain context. The calculation is only as credible as the standard error and normal approximation; clustering, sparse data, selection, or model misspecification can change both the interval and p-value.
+
+# Exact, Asymptotic, Permutation, and Bootstrap P-values
+
+The number alone does not reveal how its null distribution was constructed.
+
+| Type | Reference mechanism | Essential condition |
+|---|---|---|
+| Exact parametric | Finite-sample distribution under a probability model | The model and nuisance handling are correct |
+| Asymptotic | Limiting distribution of a statistic | The approximation is accurate in the relevant tail |
+| Permutation or randomization | Allowed rearrangements under the null and design | Exchangeability or randomization justifies those rearrangements |
+| Parametric bootstrap | Simulation from a null-constrained fitted model | The fitted null model reproduces the study and analysis |
+
+For $B$ Monte Carlo null replicates with statistics $T_1^*,\ldots,T_B^*$, a commonly valid finite-simulation estimate is
+
+$$
+\hat p=
+\frac{1+\sum_{b=1}^B I(T_b^*\geq t_{\mathrm{obs}})}{B+1}.
+$$
+
+The added 1 accounts for the observed dataset's place among exchangeable null replicates and avoids reporting zero. With $B=999$, the smallest attainable value is $0.001$. More simulations reduce Monte Carlo error and provide finer resolution; they do not repair an invalid null model or permutation scheme.
+
+# What a P-value Does Not Measure
+
+Several interpretations reverse the conditioning or ask the p-value to answer a different question:
+
+| Incorrect interpretation | Why it fails | What to report or analyze instead |
+|---|---|---|
+| “The null has probability $p$.” | The calculation is $P(\text{data-extremeness}\mid H_0)$, not $P(H_0\mid\text{data})$ | A Bayesian posterior requires prior and likelihood |
+| “$1-p$ is the probability the result replicates.” | Replication depends on the true effect, design, and analysis | Prediction or design-based replication analysis |
+| “A smaller p-value means a larger effect.” | Standard error and sample size also drive the statistic | Effect estimate and uncertainty interval |
+| “$p>0.05$ proves no effect.” | Low power and imprecision can produce large p-values | Compatibility interval or a planned equivalence test |
+| “$p<0.05$ means an important discovery.” | The threshold says nothing about utility or biology | Prespecified practical threshold and effect magnitude |
+| “The p-value is the false-positive probability.” | Type I error is a procedure-level long-run rate | Report the test level and multiplicity procedure |
+
+A p-value can quantify incompatibility between data and a model, but it cannot identify which assumption failed. A small value might reflect a nonzero target effect, dependence, variance misspecification, an outlier, selection, or another departure from the null model.
+
+# Selection, Multiplicity, and Optional Stopping
+
+For one valid test under its null, $P(p\leq0.05)\leq0.05$. If $m$ independent true null hypotheses are each tested at 0.05, the probability of at least one rejection is
+
+$$
+1-(1-0.05)^m,
+$$
+
+which is about 0.994 for $m=100$. Dependence changes the numerical value but does not remove the selection problem.
+
+An **adjusted p-value** is the smallest family-level threshold at which a hypothesis would be rejected by a specified multiple-testing procedure. Its meaning depends on the procedure and defined family. Bonferroni or Holm adjustments target family-wise error; Benjamini--Hochberg adjustments are used with a false-discovery-rate procedure. An adjusted p-value is not the posterior probability that the feature is null.
+
+Searching outcomes, subgroups, transformations, covariates, or model specifications and reporting the smallest ordinary p-value makes the reported value non-uniform under the null. The same issue appears when a fixed-sample analysis is repeatedly inspected and stopped at the first favorable result. Valid selective or sequential methods must account for the rule that determined what was tested and when observation stopped.
+
+# Bioinformatics Design and Interpretation
+
+High-throughput experiments may test thousands of genes, peaks, taxa, proteins, or variants. The experimental unit for a treatment contrast is usually the independently sampled or randomized biological specimen. Treating reads or cells from the same specimen as independent shrinks the null variance, makes test statistics too large, and produces anti-conservative p-values. More technical measurements do not restore missing biological replication.
+
+The null reference model should preserve the design matrix, pairing or blocking, library-size offsets, mean--variance relationship, batch structure, and relevant dependence. In a randomized experiment, permute only assignments allowed by the design. In an observational study, arbitrary label permutations may destroy covariate relationships required under the null. For RNA-seq and similar count data, inaccurate dispersion estimation or unmodeled heterogeneity directly affects tail calibration.
+
+Report raw and adjusted p-values with the effect estimate, interval, sample counts, experimental unit, tested contrast, filtering rule, null-calibration method, and multiplicity family. Statistical interpretation concerns compatibility with the working null model. Biological interpretation concerns effect direction and magnitude, pathway coherence, design quality, and evidence from independent data. Neither should be reduced to whether a number crossed 0.05.
+
+# Diagnostic Questions
+
+Before interpreting a p-value, ask:
+
+1. What estimand and null model were tested?
+2. What statistic and tail ordering defined “more extreme”?
+3. Which observations are independent experimental units?
+4. Is the null distribution exact, asymptotic, permuted, or simulated?
+5. Were nuisance parameters, preprocessing, and selection handled inside calibration?
+6. How many analyses formed the relevant search or testing family?
+7. Do the estimate and interval distinguish scientifically important from negligible effects?
+
+Calibration cannot be diagnosed from one p-value. Simulation under plausible null data-generating processes can reveal tail distortion, especially with few clusters, rare outcomes, boundaries, or complex pipelines. Such checks validate only the scenarios that were simulated.
+
+# Connections and Take-home Messages
+
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd) defines the rule that a p-value summarizes.
+- [Sampling distributions](sampling-distributions.qmd) provides the reference law for a statistic.
+- [Confidence intervals](confidence-intervals.qmd) displays compatible effect values instead of only a tail area.
+- [Standard errors](standard-errors.qmd) explains how biological replication and dependence affect studentized tests.
+- [Parametric bootstrap](parametric-bootstrap.qmd) develops model-based null simulation.
+- [Nonparametric bootstrap](nonparametric-bootstrap.qmd) distinguishes sampling-distribution resampling from a valid null randomization.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) identifies conditions that distort approximate tails.
+
+A p-value is a tail-area calibration under a specified null model and a prespecified ordering of outcomes. Valid p-values are super-uniform under every distribution in the null, which makes thresholding a repeated-sampling error-control rule. The value is not a hypothesis probability, effect size, replication probability, or measure of biological importance. Design, experimental units, selection, stopping, multiplicity, and the method used to generate the null distribution all belong in its interpretation.
+
+# References
+
+- Fisher, R. A. *Statistical Methods for Research Workers*. Oliver and Boyd, 1925.
+- Neyman, J. and Pearson, E. S. “On the Problem of the Most Efficient Tests of Statistical Hypotheses.” *Philosophical Transactions of the Royal Society A* 231 (1933): 289--337. [Article](https://doi.org/10.1098/rsta.1933.0009).
+- Lehmann, E. L. and Romano, J. P. *Testing Statistical Hypotheses*, 3rd ed. Springer, 2005. [Publisher page](https://doi.org/10.1007/0-387-27605-X).
+- Wasserstein, R. L. and Lazar, N. A. “The ASA's Statement on P-Values: Context, Process, and Purpose.” *The American Statistician* 70 (2016): 129--133. [Article](https://doi.org/10.1080/00031305.2016.1154108).
+- Greenland, S., Senn, S. J., Rothman, K. J., et al. “Statistical Tests, P Values, Confidence Intervals, and Power: A Guide to Misinterpretations.” *European Journal of Epidemiology* 31 (2016): 337--350. [Article](https://doi.org/10.1007/s10654-016-0149-3).
+- Phipson, B. and Smyth, G. K. “Permutation P-values Should Never Be Zero: Calculating Exact P-values When Permutations Are Randomly Drawn.” *Statistical Applications in Genetics and Molecular Biology* 9 (2010), Article 39. [Article](https://doi.org/10.2202/1544-6115.1585).
+- R Core Team. “Adjust P-values for Multiple Comparisons.” *R stats documentation*. [Documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).

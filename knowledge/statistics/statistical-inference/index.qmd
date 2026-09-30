@@ -20,6 +20,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [Bayesian credible intervals](bayesian-credible-intervals.qmd)
 - [Parametric bootstrap](parametric-bootstrap.qmd)
 - [Nonparametric bootstrap](nonparametric-bootstrap.qmd)
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd)
+- [Null distributions and p-values](null-distributions-and-p-values.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)

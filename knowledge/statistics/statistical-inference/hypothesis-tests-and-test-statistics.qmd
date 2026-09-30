@@ -1,0 +1,221 @@
+---
+title: "Hypothesis Tests and Test Statistics"
+subtitle: "Turning a scientific contrast into a calibrated decision rule"
+description: "Hypotheses, test statistics, rejection regions, size, power, calibration, and design-aware interpretation."
+author: "Jiahong Sun"
+date: "2026-09-30"
+date-modified: "2026-09-30"
+categories: [Statistics, Inference, Hypothesis Testing]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Test Is a Rule Defined Before Seeing Its Result
+
+Let observed data $X$ have distribution $P_\theta$, and let $\theta$ index the relevant population or data-generating process. A statistical hypothesis restricts that process:
+
+$$
+H_0:\theta\in\Theta_0,
+\qquad
+H_1:\theta\in\Theta_1.
+$$
+
+The null hypothesis $H_0$ is the set of parameter values against which type I error is calibrated. The alternative $H_1$ identifies departures the study is intended to detect. Neither hypothesis is the test itself. A nonrandomized test is a decision rule
+
+$$
+\phi(X)=
+\begin{cases}
+1, & X\in\mathcal R,\\
+0, & X\notin\mathcal R,
+\end{cases}
+$$
+
+where $\mathcal R$ is the rejection region. The observed decision is $\phi(x)$. Rejecting $H_0$ means that the rule returned 1; failing to reject means that it returned 0. The latter is not proof that $H_0$ is true.
+
+This language keeps four objects separate:
+
+| Object | Role |
+|---|---|
+| $\theta$ or a function $\psi(\theta)$ | Population parameter or estimand |
+| $H_0,H_1$ | Sets of data-generating processes under comparison |
+| $T(X)$ | Test statistic, random before sampling |
+| $T(x)$ and $\phi(x)$ | Observed statistic and resulting decision |
+
+A useful test starts with a meaningful estimand. Testing an arbitrary model coefficient merely because software supplies a p-value does not create a scientific question.
+
+# From Scientific Question to Statistical Hypothesis
+
+Suppose an experiment compares a treatment and control population. A target might be the population mean difference
+
+$$
+\Delta=E(Y\mid\text{treatment})-E(Y\mid\text{control}).
+$$
+
+Possible hypotheses include:
+
+$$
+H_0:\Delta=0
+\quad\text{versus}\quad
+H_1:\Delta\ne0,
+$$
+
+or, when only a prespecified increase matters,
+
+$$
+H_0:\Delta\leq0
+\quad\text{versus}\quad
+H_1:\Delta>0.
+$$
+
+These are different questions with different rejection regions. Choosing the direction after inspecting the estimated sign invalidates the advertised calibration. If scientific equivalence means $|\Delta|<\delta$ for a meaningful margin $\delta$, the hypotheses must encode that claim; failing to reject the point null $\Delta=0$ does not establish equivalence.
+
+The model also determines what the parameter means. A treatment coefficient adjusted for batch and baseline covariates is generally a conditional contrast, not automatically a marginal population effect or a causal effect. Randomization supports a causal interpretation for the assigned treatment contrast under the study design; regression alone does not.
+
+# Test Statistics Order the Evidence
+
+A **test statistic** is a function $T(X)$ chosen so that particular values are less compatible with $H_0$ than others. Common forms include:
+
+- a standardized estimator, such as $(\hat\theta-\theta_0)/\widehat{\operatorname{SE}}(\hat\theta)$;
+- a likelihood ratio comparing constrained and unconstrained fits;
+- a score measuring the slope of the log-likelihood at the null;
+- a difference in means, rank sum, maximum, or other design-specific discrepancy.
+
+Large values need not always be more extreme. A left-tailed test may reject for small $T$, and a two-sided test may use $|T|$ or another ordering. The statistic, tail rule, and treatment of nuisance parameters together define the test. They should be fixed without using the same data to select the most favorable result.
+
+Standardization is useful because it compares an estimated departure with its sampling variability:
+
+$$
+Z=\frac{\hat\theta-\theta_0}
+{\widehat{\operatorname{SE}}(\hat\theta)}.
+$$
+
+Yet a large $|Z|$ can result from a tiny estimated effect measured very precisely. The statistic is evidence relative to a model and sample size, not a measure of biological magnitude.
+
+# Null Distribution and Rejection Region
+
+The **null distribution** is the sampling distribution of $T(X)$ when the data-generating process lies in $H_0$. For a simple null $H_0:\theta=\theta_0$ and an upper-tail statistic, choose $c_\alpha$ so that
+
+$$
+P_{\theta_0}\{T(X)\geq c_\alpha\}\leq\alpha.
+$$
+
+Then $\mathcal R=\{x:T(x)\geq c_\alpha\}$ is a level-$\alpha$ rejection region. For a composite null, level requires uniform control:
+
+$$
+\boxed{
+\sup_{\theta\in\Theta_0}
+P_\theta\{X\in\mathcal R\}\leq\alpha.
+}
+$$
+
+The **size** is the supremum on the left. A test can have level $\alpha$ while its size is smaller, as often happens with discrete outcomes. “Exact” calibration means finite-sample error control under the stated model or randomization scheme; it does not mean those assumptions are exactly true.
+
+Null distributions can be obtained in several ways:
+
+| Calibration | What generates the reference distribution | Main vulnerability |
+|---|---|---|
+| Exact parametric | A finite-sample probability model under $H_0$ | Model assumptions may be wrong |
+| Asymptotic | A limiting law such as normal or chi-squared | Small effective samples and nonregularity |
+| Randomization or permutation | Assignments allowed by the experimental design | Invalid exchanges or post-randomization complications |
+| Parametric bootstrap | Simulated datasets from a null-constrained fitted model | Misspecification and incomplete refitting |
+
+A permutation distribution is not created by shuffling arbitrary rows. The transformation must be justified by the null and design—for example, permuting randomized treatment labels or swapping labels within randomized pairs.
+
+# Worked Example: A Mean with Known Variance
+
+Suppose $X_1,\ldots,X_n\stackrel{iid}{\sim}N(\mu,\sigma^2)$ with known $\sigma$, and consider
+
+$$
+H_0:\mu=\mu_0
+\quad\text{versus}\quad
+H_1:\mu>\mu_0.
+$$
+
+The statistic
+
+$$
+Z=\frac{\bar X-\mu_0}{\sigma/\sqrt n}
+$$
+
+has a standard normal distribution under $H_0$. The level-$\alpha$ test rejects when $Z\geq z_{1-\alpha}$. Equivalently,
+
+$$
+\bar X\geq
+\mu_0+z_{1-\alpha}\frac{\sigma}{\sqrt n}.
+$$
+
+If the true mean is $\mu_1>\mu_0$, the power is
+
+$$
+\begin{aligned}
+\pi(\mu_1)
+&=P_{\mu_1}\left(
+\bar X\geq\mu_0+z_{1-\alpha}\frac{\sigma}{\sqrt n}
+\right)\\
+&=1-\Phi\left(
+z_{1-\alpha}-\frac{(\mu_1-\mu_0)\sqrt n}{\sigma}
+\right).
+\end{aligned}
+$$
+
+Power therefore depends on effect size relative to noise, independent sample size, and the chosen type I error rate. It is a property of the rule at a specified alternative, not a posterior probability that a reported discovery is correct.
+
+When $\sigma$ is estimated, substituting it into $Z$ does not preserve the exact standard normal null law. Under iid normal sampling the corresponding Student statistic has a $t_{n-1}$ distribution. Under other conditions its calibration may be only asymptotic or require another method.
+
+# Errors, Power, and Optimality
+
+For any $\theta$, define the power function
+
+$$
+\pi(\theta)=P_\theta\{\phi(X)=1\}.
+$$
+
+For $\theta\in\Theta_0$, this is the type I rejection probability and should not exceed $\alpha$. For $\theta\in\Theta_1$, it is the probability of detecting that alternative; $1-\pi(\theta)$ is the type II error probability there.
+
+Lowering $\alpha$ while keeping design and sample size fixed usually lowers power. Increasing technical observations may improve the precision of a specimen-level measurement, but power for a population treatment effect is primarily governed by the number and heterogeneity of independent biological units.
+
+For testing one simple hypothesis against another, the Neyman--Pearson lemma shows that a likelihood-ratio rule is most powerful among tests of a given level. This is an important benchmark, not a universal guarantee. Composite hypotheses, nuisance parameters, multiple endpoints, robustness requirements, and data-adaptive selection can prevent a uniformly most powerful test from existing.
+
+# Assumptions and Failure Modes
+
+| Question | Why it matters | Diagnostic or response |
+|---|---|---|
+| What is the experimental unit? | Independence determines the null variance | Map treatment assignment and sampling to biological units |
+| Was the statistic and tail chosen in advance? | Data-driven choice inflates rejection probability | Preregister or account for the selection process |
+| Is calibration exact or asymptotic? | Tail errors can be severe with sparse data | Compare exact, permutation, bootstrap, or simulation calibration |
+| Are nuisance parameters well identified? | Plug-in reference laws may be inaccurate | Inspect likelihood shape and perform sensitivity analyses |
+| Were assumptions checked using the tested data? | Model repair after inspection changes the procedure | Treat the full adaptive workflow as the inferential procedure |
+| How many hypotheses were examined? | Single-test level does not control a family of searches | Define the family and apply an appropriate multiplicity procedure |
+
+Model checking and testing are not independent if the same observations determine both the check and the chosen test. A sequence such as “test normality, then choose a $t$ or rank test” has a combined sampling behavior that is not described by either textbook test in isolation.
+
+Optional stopping likewise changes calibration unless the design uses a valid sequential procedure. Repeatedly checking an ordinary fixed-sample test and stopping when it rejects makes the eventual type I error exceed its nominal value.
+
+# Bioinformatics Design and Interpretation
+
+In differential-expression studies, the scientific estimand might be a population log fold change between conditions. Donors or independently randomized specimens are the experimental units. Reads, libraries, technical lanes, and cells nested within a donor help measure that donor; they do not ordinarily supply independent population replicates. A test that treats every cell as independent can produce an extremely large statistic by underestimating biological variability.
+
+The null model should include the design features needed for valid calibration: treatment allocation, pairing, blocking, batch, library size, dispersion, and within-specimen dependence. A label permutation across batches or pairs can violate the randomization scheme. Filtering genes after viewing association results, choosing contrasts retrospectively, or reporting only the smallest statistics turns one planned test into a selected family of tests.
+
+Report the estimand and effect estimate, its uncertainty interval, the null and alternative, the statistic, the reference distribution, the number of independent units, multiplicity handling, and relevant diagnostics. Statistical rejection says that the observed statistic crossed a calibrated threshold under the working null model. Biological interpretation additionally asks whether the compatible effect sizes are meaningful, reproducible, and supported by the design.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) defines the target before a hypothesis is written.
+- [Sampling distributions](sampling-distributions.qmd) explains the repeated-sampling law used for calibration.
+- [Standard errors](standard-errors.qmd) develops the denominator of standardized statistics.
+- [Confidence intervals](confidence-intervals.qmd) shows how compatible parameter values can be obtained by inverting tests.
+- [Likelihood and log-likelihood](likelihood-and-log-likelihood.qmd) motivates likelihood-ratio, score, and related procedures.
+- [Parametric bootstrap](parametric-bootstrap.qmd) describes simulation from a null-constrained fitted model.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) covers weak and nonregular reference approximations.
+
+A hypothesis test is a predeclared rule with repeated-sampling error properties, while a test statistic only orders outcomes by a chosen notion of incompatibility. Validity depends on the hypotheses, experimental units, null distribution, tail rule, nuisance handling, and every data-adaptive step. Rejection is not effect size, importance, causality, or certainty; failing to reject is not confirmation of the null. Estimate and interval information should accompany the calibrated decision.
+
+# References
+
+- Neyman, J. and Pearson, E. S. “On the Problem of the Most Efficient Tests of Statistical Hypotheses.” *Philosophical Transactions of the Royal Society A* 231 (1933): 289--337. [Article](https://doi.org/10.1098/rsta.1933.0009).
+- Fisher, R. A. *The Design of Experiments*. Oliver and Boyd, 1935.
+- Lehmann, E. L. and Romano, J. P. *Testing Statistical Hypotheses*, 3rd ed. Springer, 2005. [Publisher page](https://doi.org/10.1007/0-387-27605-X).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002, Chapters 8--10. [Publisher page](https://www.routledge.com/Statistical-Inference/Casella-Berger/p/book/9781032593036).
+- Greenland, S., Senn, S. J., Rothman, K. J., et al. “Statistical Tests, P Values, Confidence Intervals, and Power: A Guide to Misinterpretations.” *European Journal of Epidemiology* 31 (2016): 337--350. [Article](https://doi.org/10.1007/s10654-016-0149-3).

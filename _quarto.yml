@@ -128,6 +128,8 @@ website:
                   - knowledge/statistics/statistical-inference/bayesian-credible-intervals.qmd
                   - knowledge/statistics/statistical-inference/parametric-bootstrap.qmd
                   - knowledge/statistics/statistical-inference/nonparametric-bootstrap.qmd
+                  - knowledge/statistics/statistical-inference/hypothesis-tests-and-test-statistics.qmd
+                  - knowledge/statistics/statistical-inference/null-distributions-and-p-values.qmd
               - section: "Regression & Statistical Models"
                 href: knowledge/statistics/regression-models/index.qmd
                 contents:
