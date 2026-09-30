@@ -1,0 +1,27 @@
+---
+title: "Daily Translation: A Late Takeout Delivery"
+author: "Ryan Sun"
+date: "2026-09-15"
+categories: [English Learning, Daily Translation]
+---
+
+## 中文原文
+你午休点了外卖，外卖比预计时间晚了很久送到。饭拿到手已经有点凉了，简单吃完之后，你只剩下很短的休息时间，很快就要回去继续工作
+
+## My translation
+I ordered take-out food during the lunch break, but it took much longer time to be delivered than expected.
+The meal was a bit cold when I got it, then I had a quick lunch.
+After the meal, I only had very little time to have a rest, then I had to go back to work.
+
+## Revised version
+I ordered takeout for my lunch break, but the delivery took a lot longer than I'd expected.
+My food was already slightly cold by the time I got it, so I ate quickly.
+After finishing my meal, I barely had any time for a break before I had to get back to work.
+
+## Key phrases
+- takeout, 外卖
+- for my lunch break, 比during the lunch break更自然
+- delivery took a lot longer, 比it开头更简洁
+- by the time I got it, 饭拿到手时，表示一个时间点，when有小小时间区间的意思？
+- barely had any time，几乎没有时间，常用的副词短语
+- get back to work, 固定搭配，不要用go back to work
