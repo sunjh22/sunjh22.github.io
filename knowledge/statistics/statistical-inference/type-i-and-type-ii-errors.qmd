@@ -1,0 +1,184 @@
+---
+title: "Type I and Type II Errors"
+subtitle: "Two decision errors calibrated across repeated studies"
+description: "Type I and Type II errors, size, power, trade-offs, interpretation, and design-aware use in bioinformatics."
+author: "Jiahong Sun"
+date: "2026-10-01"
+date-modified: "2026-10-01"
+categories: [Statistics, Inference, Hypothesis Testing]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Errors Belong to a Decision Rule
+
+Let data $X$ follow a distribution $P_\theta$, and suppose a test compares
+
+$$
+H_0:\theta\in\Theta_0
+\qquad\text{with}\qquad
+H_1:\theta\in\Theta_1.
+$$
+
+A nonrandomized test is a rule $\phi(X)$ that equals 1 when $H_0$ is rejected and 0 otherwise. Before data are observed, $\phi(X)$ is random. After observing $X=x$, the outcome $\phi(x)$ is fixed. Two kinds of mismatch between the data-generating state and the decision are possible:
+
+| Data-generating state | Do not reject $H_0$ | Reject $H_0$ |
+|---|---:|---:|
+| $\theta\in\Theta_0$ | Correct non-rejection | **Type I error** |
+| $\theta\in\Theta_1$ | **Type II error** | Correct rejection |
+
+For a simple null and alternative, define
+
+$$
+\alpha(\theta_0)=P_{\theta_0}\{\phi(X)=1\},
+\qquad
+\beta(\theta_1)=P_{\theta_1}\{\phi(X)=0\}.
+$$
+
+Thus $\alpha$ is a false-rejection probability under a specified null process, while $\beta$ is a missed-detection probability under a specified alternative process. These are repeated-sampling probabilities of the procedure. They are not posterior probabilities that an observed decision is wrong.
+
+# Size, Level, and the Power Function
+
+The **power function** records the rejection probability at every parameter value:
+
+$$
+\boxed{\pi(\theta)=P_\theta\{\phi(X)=1\}.}
+$$
+
+Its meaning depends on where $\theta$ lies:
+
+$$
+\pi(\theta)=
+\begin{cases}
+\text{type I rejection probability}, & \theta\in\Theta_0,\\
+1-\beta(\theta), & \theta\in\Theta_1.
+\end{cases}
+$$
+
+For a composite null, a level-$\alpha$ test satisfies
+
+$$
+\sup_{\theta\in\Theta_0}\pi(\theta)\leq\alpha.
+$$
+
+The supremum is the test's **size**. A test may have level 0.05 but size below 0.05, especially when discrete outcomes make the attainable rejection probabilities jump. Writing “the type I error is 5%” suppresses important qualifications: 5% is usually a chosen upper bound under the null model, not an observed error rate or a universal property under misspecification.
+
+Type II error is not one number unless the alternative is simple. For a two-sided alternative such as $H_1:\mu\ne\mu_0$, $\beta(\mu)$ changes with the true mean. Alternatives close to the null are hard to distinguish; sufficiently distant alternatives are easier.
+
+# Worked Derivation: A One-sided Mean Test
+
+Suppose
+
+$$
+X_1,\ldots,X_n\stackrel{iid}{\sim}N(\mu,\sigma^2),
+$$
+
+with known $\sigma$, and test $H_0:\mu\leq\mu_0$ against $H_1:\mu>\mu_0$. Reject when
+
+$$
+Z=\frac{\bar X-\mu_0}{\sigma/\sqrt n}\geq z_{1-\alpha}.
+$$
+
+At the null boundary $\mu=\mu_0$, $Z\sim N(0,1)$ and the type I error is $\alpha$. If the true mean is $\mu_1>\mu_0$, then
+
+$$
+Z\sim N\left(
+\frac{(\mu_1-\mu_0)\sqrt n}{\sigma},1
+\right).
+$$
+
+Writing $\delta=\mu_1-\mu_0$, the type II error and power are
+
+$$
+\boxed{
+\beta(\mu_1)=
+\Phi\left(z_{1-\alpha}-\frac{\delta\sqrt n}{\sigma}\right),
+\qquad
+\pi(\mu_1)=1-\beta(\mu_1).
+}
+$$
+
+This equation exposes the main trade-offs. Holding everything else fixed, power rises with $n$ and $|\delta|$, falls with $\sigma$, and usually falls when $\alpha$ is made smaller. No method can remove these information constraints.
+
+# Error Trade-offs Are Scientific Decisions
+
+Neyman--Pearson testing treats the rejection rule as a decision procedure whose long-run errors can be designed. Choosing $\alpha$ is therefore not a ritual. The relative consequences of a false alarm and a missed effect should help determine the threshold, design, and evidentiary standard.
+
+Examples differ:
+
+- a screening assay may tolerate more false alarms to avoid missing treatable cases;
+- a confirmatory safety claim may demand strong false-positive control;
+- an early discovery experiment may prioritize estimation and follow-up rather than a binary declaration;
+- a genome-wide analysis must address the family of many tested features, not only each gene's marginal error.
+
+Lowering one error without changing the data or model generally raises the other. Increasing independent information can improve both. Better measurement may reduce within-unit noise, while more representative biological units improve information about population heterogeneity.
+
+The optimality result for simple hypotheses is precise: among level-$\alpha$ tests of one simple null against one simple alternative, the Neyman--Pearson likelihood-ratio test has greatest power. It does not imply that one test is uniformly best for every composite alternative, nuisance parameter, robustness requirement, or selected analysis.
+
+# What an Observed Decision Does Not Reveal
+
+After a test rejects, the event “a type I error occurred” is not assigned probability $\alpha$ by frequentist calibration. The relevant quantities condition in opposite directions:
+
+$$
+\alpha=P(\text{reject}\mid H_0),
+$$
+
+whereas the probability that a rejected claim is null would resemble
+
+$$
+P(H_0\mid\text{reject}).
+$$
+
+The second quantity also depends on the prevalence of true alternatives, the power against them, selection, and the collection of hypotheses under study. If a fraction $\pi_0$ of tested hypotheses are null and all alternatives have power $1-\beta$, an idealized positive false-discovery probability is
+
+$$
+P(H_0\mid\text{reject})=
+\frac{\pi_0\alpha}
+{\pi_0\alpha+(1-\pi_0)(1-\beta)}.
+$$
+
+It can be much larger than $\alpha$ when true effects are rare or power is low. This calculation is illustrative, not an estimate from a single p-value.
+
+Similarly, failing to reject does not mean that a type II error occurred with probability $\beta$, nor does it establish equivalence. Equivalence requires hypotheses built around a scientifically meaningful margin and a test or interval procedure calibrated for that purpose.
+
+# Calibration Can Fail
+
+Nominal errors describe a complete procedure under stated assumptions. Actual errors can differ when the analysis departs from that procedure.
+
+| Failure mechanism | Effect on error behavior | Design or analysis response |
+|---|---|---|
+| Treating dependent observations as independent | Standard errors shrink and type I error can inflate | Identify clusters and experimental units; model or resample dependence |
+| Choosing endpoints, tails, or models after seeing results | The selected rule has a larger search space than the advertised test | Prespecify or include selection in calibration |
+| Sparse data or weak identification | Asymptotic reference tails can be inaccurate | Use exact, simulation, profile, or boundary-aware methods |
+| Ignoring multiplicity | Per-test $\alpha$ does not control family-wise errors | Define the family and apply FWER or FDR procedures |
+| Low power plus publication selection | Reported estimates are selected upward | Design for informative precision and report all planned analyses |
+| Model misspecification | Both null calibration and alternative power calculations may be wrong | Simulate plausible departures and use robust sensitivity analyses |
+
+Observed false-positive and false-negative fractions in a benchmark are empirical performance measures. They estimate the theoretical errors only when the benchmark's truth labels, sampling process, prevalence, and decision threshold match the intended use.
+
+# Bioinformatics Design and Interpretation
+
+Suppose an RNA-seq experiment asks whether a treatment changes population mean expression. The experimental units are independently sampled or randomized biological specimens. Multiple lanes, reads, or cells from the same specimen are technical or subsample observations. Treating them as independent specimens makes the nominal type I error meaningless for the population contrast and exaggerates power.
+
+The null distribution must reflect the count model, normalization offsets, dispersion, batch structure, pairing, and the intended contrast. For thousands of genes, marginal type I error is not the same as family-wise error or false discovery rate. Power also varies across genes because abundance, dispersion, effect size, filtering, and multiplicity thresholds differ.
+
+Statistically, a rejection is the outcome of a calibrated rule under a working design and model. Biologically, it says nothing by itself about effect magnitude, mechanism, reproducibility, or practical importance. Report the log fold change and uncertainty, the independent sample counts, the error criterion, the multiple-testing method, and the assumptions used to obtain power.
+
+# Connections and Take-home Messages
+
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd) defines the decision rule and rejection region.
+- [Null distributions and p-values](null-distributions-and-p-values.qmd) explains the reference distribution used to control type I error.
+- [Confidence intervals](confidence-intervals.qmd) shows the compatible effect values behind a binary decision.
+- [Standard errors](standard-errors.qmd) develops the repeated-sampling variability that drives both errors.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) describes inaccurate tail calibration.
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd) clarifies assumptions about replication.
+
+Type I error is rejection under a null process; type II error is non-rejection under a specified alternative. Both are properties of a complete repeated-sampling procedure, not posterior probabilities that an observed conclusion is wrong. The power function connects them across parameter values. Error guarantees are credible only when experimental units, model assumptions, selection steps, stopping rules, and multiplicity match the advertised procedure.
+
+# References
+
+- Neyman, J. and Pearson, E. S. “On the Problem of the Most Efficient Tests of Statistical Hypotheses.” *Philosophical Transactions of the Royal Society A* 231 (1933): 289--337. [Article](https://doi.org/10.1098/rsta.1933.0009).
+- Lehmann, E. L. and Romano, J. P. *Testing Statistical Hypotheses*, 3rd ed. Springer, 2005. [Publisher page](https://doi.org/10.1007/0-387-27605-X).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002, Chapters 8--10. [Publisher page](https://www.routledge.com/Statistical-Inference/Casella-Berger/p/book/9781032593036).
+- Greenland, S., Senn, S. J., Rothman, K. J., et al. “Statistical Tests, P Values, Confidence Intervals, and Power: A Guide to Misinterpretations.” *European Journal of Epidemiology* 31 (2016): 337--350. [Article](https://doi.org/10.1007/s10654-016-0149-3).

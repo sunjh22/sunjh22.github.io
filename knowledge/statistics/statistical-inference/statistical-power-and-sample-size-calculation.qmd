@@ -1,0 +1,221 @@
+---
+title: "Statistical Power and Sample-size Calculation"
+subtitle: "Designing an informative study before observing its outcomes"
+description: "Prospective power, sample-size equations, effect assumptions, multiplicity, simulation, and bioinformatics study design."
+author: "Jiahong Sun"
+date: "2026-10-01"
+date-modified: "2026-10-01"
+categories: [Statistics, Inference, Study Design]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Power Is a Prospective Property of a Design
+
+For a test rule $\phi(X)$ and data-generating parameter $\theta$, the power function is
+
+$$
+\boxed{\pi(\theta)=P_\theta\{\phi(X)=1\}.}
+$$
+
+For $\theta\in\Theta_1$, power is the probability that the planned analysis rejects the null when that particular alternative generates the data. The corresponding type II error is $\beta(\theta)=1-\pi(\theta)$. Power is not a property of an effect estimate alone, and there is no single study-wide power without specifying an alternative, model, test, threshold, sample size, and analysis pipeline.
+
+A prospective sample-size calculation asks for the smallest feasible design satisfying a criterion such as
+
+$$
+\pi(\theta_*)\geq 1-\beta_*,
+$$
+
+where $\theta_*$ represents an effect important enough to detect and $1-\beta_*$ is the target power. This is a planning calculation, not evidence about the effect after data have been observed.
+
+# Define the Design Inputs
+
+A defensible calculation begins with scientific quantities, not a conventional 80% target entered into software.
+
+| Input | Question to answer |
+|---|---|
+| Estimand | Which population contrast or parameter will the analysis target? |
+| Experimental unit | What is independently sampled or randomized? |
+| Minimum effect of interest | What magnitude would change a scientific or practical decision? |
+| Variability and dependence | What variance, dispersion, event rate, clustering, or repeated-measure correlation is plausible? |
+| Test and model | What statistic, sidedness, covariates, and analysis method will be used? |
+| Error criterion | Per-test error, family-wise error, false discovery rate, or precision target? |
+| Allocation and loss | How will units be divided, and how much attrition or unusable data is expected? |
+| Sensitivity range | Which uncertain inputs must be varied rather than fixed optimistically? |
+
+The effect used for design should usually be a **minimum effect of scientific interest**, not the estimate from a small pilot selected because it was significant. Pilot data may be useful for variance and feasibility, but both effect and variance estimates can be unstable. External evidence, mechanistic constraints, and blinded internal estimates may provide safer inputs.
+
+# Deriving a Simple Sample-size Formula
+
+Consider the one-sided known-variance mean test
+
+$$
+H_0:\mu\leq\mu_0
+\qquad\text{versus}\qquad
+H_1:\mu>\mu_0.
+$$
+
+The level-$\alpha$ rule rejects when
+
+$$
+\frac{\bar X-\mu_0}{\sigma/\sqrt n}\geq z_{1-\alpha}.
+$$
+
+At $\mu_1=\mu_0+\delta$, its power is
+
+$$
+1-\Phi\left(
+z_{1-\alpha}-\frac{\delta\sqrt n}{\sigma}
+\right).
+$$
+
+Requiring this to be at least $1-\beta$ gives
+
+$$
+\frac{\delta\sqrt n}{\sigma}
+\geq z_{1-\alpha}+z_{1-\beta},
+$$
+
+and therefore
+
+$$
+\boxed{
+n\geq
+\frac{\sigma^2(z_{1-\alpha}+z_{1-\beta})^2}{\delta^2}.
+}
+$$
+
+For a two-sided test, a common normal approximation replaces $z_{1-\alpha}$ by $z_{1-\alpha/2}$. For two independent, equally sized groups with common variance $\sigma^2$ and mean difference $\delta$, the approximate sample size **per group** is
+
+$$
+\boxed{
+n_{\text{group}}\approx
+\frac{2\sigma^2(z_{1-\alpha/2}+z_{1-\beta})^2}{\delta^2}.
+}
+$$
+
+These equations reveal a square law: halving the target effect while holding other inputs fixed requires roughly four times as many independent units. They are approximations. A finite-sample $t$ test uses a noncentral $t$ distribution and usually requires numerical solution; count, survival, clustered, and longitudinal designs need models matching their data-generating processes.
+
+# Worked Planning Example
+
+Suppose an experiment compares two independently randomized groups. A mean difference of $\delta=0.5$ outcome standard deviations is the minimum scientifically important effect. For a two-sided $\alpha=0.05$ test and target power 0.80,
+
+$$
+z_{0.975}\approx1.96,
+\qquad
+z_{0.80}\approx0.84.
+$$
+
+Using standardized effect $d=\delta/\sigma=0.5$,
+
+$$
+n_{\text{group}}
+\approx
+\frac{2(1.96+0.84)^2}{0.5^2}
+=62.72.
+$$
+
+Rounding upward gives 63 analyzable independent units per group under the normal approximation. If 10% of randomized units are expected to lack a usable outcome, divide by the retention fraction:
+
+$$
+n_{\text{recruit, group}}
+=\left\lceil\frac{63}{0.90}\right\rceil
+=70.
+$$
+
+This inflation addresses loss of outcomes, not bias from informative dropout. The calculation also assumes the stated variance, effect, allocation, model, and test. It should be accompanied by a sensitivity table over plausible effect sizes and standard deviations.
+
+# Precision, Assurance, and Other Design Criteria
+
+“Enough power” is not the only or always the best design goal.
+
+- **Precision:** choose $n$ so that a confidence interval has a desired expected or maximum width.
+- **Estimation risk:** bound the mean squared error of an estimator.
+- **Events rather than participants:** survival and binary-outcome models may be driven mainly by the number of observed events.
+- **Assurance:** in a Bayesian design, average the conditional power or success probability over a design prior for uncertain parameters.
+- **Decision utility:** balance sampling cost and the consequences of actions under each state.
+
+Precision-based planning can be more transparent for exploratory work because it focuses on what effect sizes the study can distinguish, rather than on crossing a threshold. A study may have high power to detect an uninterestingly large effect yet provide inadequate precision for scientifically relevant smaller effects.
+
+# Multiplicity and Heterogeneous Power
+
+When many hypotheses will be tested, using $\alpha=0.05$ independently for every feature does not describe the planned error criterion. A Bonferroni family-wise-error design might use $\alpha/m$ per test, increasing the required sample size. False-discovery-rate procedures use data-dependent thresholds, so their power depends on the number of features, fraction of true signals, effect distribution, dependence, filtering, and null p-value calibration.
+
+In omics studies, there is no single “power to detect differential expression.” Gene-specific power varies with mean abundance, dispersion, fold change, library size, sample allocation, and multiple-testing threshold. Useful summaries may include power for a prespecified gene, average power over a scientifically motivated feature set, or the expected number and composition of discoveries. State which one is being designed.
+
+# Simulation for Realistic Designs
+
+Closed-form formulas are valuable for intuition, but simulation is often safer when the planned workflow includes clustering, nonlinear models, missingness, filtering, normalization, or multiple testing.
+
+A design simulation should:
+
+1. specify plausible data-generating scenarios, including null and alternative settings;
+2. generate independent biological units and nested technical observations in their proper hierarchy;
+3. reproduce randomization, batch allocation, measurement, missingness, and quality filtering;
+4. rerun the complete planned analysis, including normalization, model fitting, selection, and multiplicity correction;
+5. estimate type I error, power, interval coverage, bias, and failure rates over many replicates; and
+6. repeat across uncertain effect, variance, dependence, and attrition assumptions.
+
+If $R$ simulated studies yield $S$ rejections under an alternative, estimated power is $\hat\pi=S/R$ with Monte Carlo standard error
+
+$$
+\operatorname{MCSE}(\hat\pi)
+=\sqrt{\frac{\hat\pi(1-\hat\pi)}{R}}.
+$$
+
+With $R=10{,}000$ and power near 0.80, the Monte Carlo standard error is about 0.004. More simulations reduce numerical uncertainty but cannot make unrealistic scenarios informative.
+
+# Clustering, Allocation, and Effective Information
+
+If $m$ observations within each of $K$ clusters have intraclass correlation $\rho$, a common approximation to variance inflation is the design effect
+
+$$
+D=1+(m-1)\rho.
+$$
+
+Multiplying an iid sample size by $D$ gives a rough starting point, but the number of clusters itself matters for variance estimation and reference distributions. Ten thousand cells from four donors do not behave like ten thousand independent donors.
+
+For two groups with different per-unit costs or variances, equal allocation need not be optimal. Covariate adjustment can improve power when prespecified covariates strongly predict outcomes, but calculations should reflect the intended model and plausible covariate distribution. Pairing helps only when pairs can be formed reliably and within-pair correlation is substantial.
+
+# Common Planning Failures
+
+| Failure | Why it misleads | Better practice |
+|---|---|---|
+| Post hoc “observed power” using $\hat\delta$ | It largely restates the p-value and adds no new evidence | Report the estimate and confidence interval |
+| Designing around a published significant effect | Selection and sampling error often inflate the effect | Use a minimum effect and sensitivity range |
+| Counting technical observations as sample size | It ignores within-specimen dependence | Count independently sampled or randomized units |
+| Assuming variance is known exactly | Required $n$ can be highly sensitive to noise | Use external/pilot uncertainty and scenario analysis |
+| Ignoring multiplicity or filtering | The real rejection threshold differs from the formula | Simulate or approximate the full planned procedure |
+| Rounding or inflating incorrectly | Fractional or lost units leave the target unmet | Round up, then inflate for expected retention |
+| Treating 80% as a universal standard | The acceptable miss rate depends on consequences | Justify the target and show operating curves |
+
+Retrospective power conditional on the observed estimate should not be used to explain a nonsignificant result. The confidence interval already shows which effects remain compatible with the data. If design assumptions were wrong, diagnose variance, dependence, adherence, and model fit rather than recomputing power from the same noisy estimate.
+
+# Bioinformatics Study Design
+
+For an RNA-seq comparison, begin with the biological estimand and experimental unit—for example, a population log fold change across independently sampled donors. Biological replicates determine information about between-donor variability. Extra sequencing depth and technical replicates can reduce measurement noise, particularly for low-abundance features, but cannot replace donors for population inference.
+
+Prospective scenarios should use plausible mean--dispersion relationships, library sizes, batch structure, group allocation, fold changes, filtering, and the exact differential-expression and FDR workflow. Reference data should resemble the planned tissue, organism, protocol, and population. RNA-seq benchmarking has repeatedly shown that increasing biological replication can produce greater gains than sequencing already adequate libraries more deeply, but the crossover depends on abundance, dispersion, cost, and the scientific target.
+
+Report both statistical and biological interpretations. Statistically, a design might achieve a stated probability of rejecting under a particular negative-binomial scenario and FDR procedure. Biologically, investigators must decide whether that fold change matters, whether the sampled population supports generalization, and whether the design separates condition from batch and other confounders.
+
+# Connections and Take-home Messages
+
+- [Type I and Type II errors](type-i-and-type-ii-errors.qmd) defines the operating characteristics being designed.
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd) connects scientific alternatives to rejection rules.
+- [Standard errors](standard-errors.qmd) explains how independent information and dependence determine precision.
+- [Confidence intervals](confidence-intervals.qmd) supports precision-based alternatives to threshold-focused planning.
+- [Parametric bootstrap](parametric-bootstrap.qmd) develops model-based simulation that can be adapted to design evaluation.
+- [Negative binomial distribution and overdispersion](../probability-randomness/negative-binomial-distribution-and-overdispersion.qmd) provides a foundation for RNA-seq count scenarios.
+
+Power is the probability that a fully specified procedure rejects under a specified alternative. Sample-size calculations are conditional projections, not guarantees. They are only as credible as the estimand, experimental unit, effect, variance, dependence, attrition, multiplicity, and analysis assumptions supplied. Show operating curves or sensitivity scenarios, count biological replication correctly, and consider precision when a binary success criterion obscures the real scientific goal.
+
+# References
+
+- Neyman, J. and Pearson, E. S. “On the Problem of the Most Efficient Tests of Statistical Hypotheses.” *Philosophical Transactions of the Royal Society A* 231 (1933): 289--337. [Article](https://doi.org/10.1098/rsta.1933.0009).
+- Cohen, J. *Statistical Power Analysis for the Behavioral Sciences*, 2nd ed. Lawrence Erlbaum Associates, 1988. [Publisher record](https://doi.org/10.4324/9780203771587).
+- Chow, S.-C., Shao, J., Wang, H., and Lokhnygina, Y. *Sample Size Calculations in Clinical Research*, 3rd ed. Chapman & Hall/CRC, 2017. [Publisher page](https://doi.org/10.1201/9781315183084).
+- R Core Team. “Power Calculations for One and Two Sample t Tests.” *R stats documentation*. [Official documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/power.t.test.html).
+- Liu, Y., Zhou, J., and White, K. P. “RNA-seq Differential Expression Studies: More Sequence or More Replication?” *Bioinformatics* 30 (2014): 301--304. [Article](https://doi.org/10.1093/bioinformatics/btt688).
+- Hart, S. N., Therneau, T. M., Zhang, Y., Poland, G. A., and Kocher, J.-P. “Calculating Sample Size Estimates for RNA Sequencing Data.” *Journal of Computational Biology* 20 (2013): 970--978. [Article](https://doi.org/10.1089/cmb.2012.0283).

@@ -130,6 +130,8 @@ website:
                   - knowledge/statistics/statistical-inference/nonparametric-bootstrap.qmd
                   - knowledge/statistics/statistical-inference/hypothesis-tests-and-test-statistics.qmd
                   - knowledge/statistics/statistical-inference/null-distributions-and-p-values.qmd
+                  - knowledge/statistics/statistical-inference/type-i-and-type-ii-errors.qmd
+                  - knowledge/statistics/statistical-inference/statistical-power-and-sample-size-calculation.qmd
               - section: "Regression & Statistical Models"
                 href: knowledge/statistics/regression-models/index.qmd
                 contents:

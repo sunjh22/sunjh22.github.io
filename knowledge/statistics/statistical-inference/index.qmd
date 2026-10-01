@@ -22,6 +22,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [Nonparametric bootstrap](nonparametric-bootstrap.qmd)
 - [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd)
 - [Null distributions and p-values](null-distributions-and-p-values.qmd)
+- [Type I and Type II errors](type-i-and-type-ii-errors.qmd)
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)
