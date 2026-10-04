@@ -1,0 +1,198 @@
+---
+title: "Effect Sizes"
+subtitle: "Quantifying the magnitude of a population contrast or association"
+description: "Effect-size estimands, estimates, standardized measures, uncertainty, scale choice, and design-aware interpretation in bioinformatics."
+author: "Jiahong Sun"
+date: "2026-09-29"
+date-modified: "2026-09-29"
+categories: [Statistics, Inference, Effect Size]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Magnitude Must Be Defined Before It Is Estimated
+
+An **effect size** is a quantitative summary of a difference, association, or change. It is not one universal statistic. The scientific question, outcome scale, population, intervention or exposure, and comparison determine the estimand. Data then provide an estimator and an observed estimate.
+
+| Object | Example for a two-group expression study |
+|---|---|
+| Scientific question | How much does treatment change expression in the target population? |
+| Estimand | Population log fold change $\Delta=E(Y\mid A=1)-E(Y\mid A=0)$ on a prespecified log scale |
+| Estimator | Adjusted coefficient $\hat\Delta$ from the planned model |
+| Estimate | The numerical value computed from the observed specimens |
+| Uncertainty | A standard error, confidence interval, or posterior distribution for $\Delta$ |
+
+The word *effect* does not by itself imply causation. A randomized treatment contrast can have a causal interpretation under adherence and other design assumptions. A regression coefficient from observational data is ordinarily an association unless identification assumptions justify a causal claim.
+
+# Raw Effects Preserve Scientific Units
+
+For two populations with means $\mu_1$ and $\mu_0$, the mean difference is
+
+$$
+\boxed{\Delta=\mu_1-\mu_0.}
+$$
+
+It preserves the outcome's units. A difference of 8 mm Hg, 3 days, or 1.2 log2 units can often be compared directly with biological knowledge, assay resolution, cost, toxicity, or a decision threshold. Other unit-bearing effects include a median difference, a slope per unit exposure, and a difference in survival time over a fixed horizon.
+
+For positive quantities, a ratio may be more stable or interpretable:
+
+$$
+R=\frac{\mu_1}{\mu_0},
+\qquad
+\log R=\log\mu_1-\log\mu_0.
+$$
+
+RNA-seq analyses commonly report a log2 fold change, so $\Delta=1$ means a twofold ratio and $\Delta=-1$ means one half. The sign and magnitude only have meaning after the contrast direction, transformation, normalization, and model adjustment have been stated.
+
+# Standardized Mean Differences
+
+When outcomes use different units, a standardized mean difference expresses separation relative to a standard deviation. A population version is
+
+$$
+d=\frac{\mu_1-\mu_0}{\sigma_*},
+$$
+
+where $\sigma_*$ must be defined. Under two independent groups with a common within-group variance, the usual sample statistic is Cohen's $d$:
+
+$$
+s_p^2=
+\frac{(n_1-1)s_1^2+(n_0-1)s_0^2}{n_1+n_0-2},
+\qquad
+\hat d=\frac{\bar Y_1-\bar Y_0}{s_p}.
+$$
+
+Because this ratio is biased away from zero in small samples, Hedges' correction uses
+
+$$
+g=J(\nu)\hat d,
+\qquad
+J(\nu)\approx 1-\frac{3}{4\nu-1},
+\qquad
+\nu=n_1+n_0-2.
+$$
+
+Standardization removes physical units but introduces dependence on the reference variability. The same raw change produces a smaller standardized effect in a heterogeneous population. Changes in eligibility, measurement error, batch variability, or covariate adjustment can therefore change $d$ even when the raw contrast is unchanged. A standardized effect is not intrinsically more biological or more transportable.
+
+Conventional labels such as “small,” “medium,” and “large” are context-dependent heuristics, not natural laws. A small standardized shift can matter for a common outcome or across an entire distribution, while a large shift in a surrogate may be irrelevant.
+
+# Binary Outcomes: Several Effects Answer Different Questions
+
+Let $p_1=P(Y=1\mid A=1)$ and $p_0=P(Y=1\mid A=0)$. Common effect measures include
+
+$$
+\text{risk difference}=p_1-p_0,
+$$
+
+$$
+\text{risk ratio}=\frac{p_1}{p_0},
+\qquad
+\text{odds ratio}=
+\frac{p_1/(1-p_1)}{p_0/(1-p_0)}.
+$$
+
+They are not interchangeable. Suppose an adverse outcome falls from 10% to 5%. The risk difference is $-0.05$, the risk ratio is $0.5$, and the odds ratio is about $0.474$. Each is correct, but each emphasizes a different feature. The reciprocal of an absolute risk reduction gives a number needed to treat,
+
+$$
+\operatorname{NNT}=\frac{1}{p_0-p_1}=20,
+$$
+
+provided the time horizon, population, treatment policy, and sign are clear. Relative measures can look impressive when baseline risk is tiny; absolute effects reveal the expected event difference in that population.
+
+An odds ratio from logistic regression is conditional on included covariates and is non-collapsible: it can differ from a marginal odds ratio even without confounding. Report predicted probabilities or standardized risks when those more directly answer the scientific question.
+
+# Association and Explained Variation
+
+Pearson correlation
+
+$$
+\rho=\frac{\operatorname{Cov}(X,Y)}{\sigma_X\sigma_Y}
+$$
+
+is a standardized linear association. It does not describe slope, agreement, nonlinear dependence, or causation. Squared correlation in simple linear regression equals the proportion of sample outcome variance explained by the fitted line, but $R^2$ is population-, design-, and model-dependent. Adding predictors cannot reduce ordinary in-sample $R^2$, so adjusted or out-of-sample measures are needed when comparing predictive specifications.
+
+For time-to-event outcomes, hazard ratios, survival-probability differences at a fixed time, and restricted mean survival-time differences describe different aspects of the distribution. A single relative hazard need not adequately summarize nonproportional effects. Choose the measure to match the scientific question rather than selecting whichever produces the strongest-looking number.
+
+# Estimation and Uncertainty
+
+An effect estimate without uncertainty does not show which magnitudes remain compatible with the data. For an estimator $\hat\theta$, report an interval on a scale appropriate to the parameter. A regular large-sample interval is
+
+$$
+\hat\theta\pm z_{1-\alpha/2}\widehat{\operatorname{SE}}(\hat\theta),
+$$
+
+but ratios are often better handled on the log scale, and bounded measures may need score, likelihood, transformation, or bootstrap intervals. Standardized effect estimates require uncertainty in both the numerator and estimated standardizer; treating the denominator as fixed understates uncertainty.
+
+Precision depends on independent information. If cells, reads, spots, or technical replicates are clustered within specimens, an iid standard error at the measurement level is generally too small. Use the biological experimental unit, or a model that represents the hierarchy. Selection of the largest estimate among thousands of features also causes winner's-curse inflation; an ordinary interval for a prespecified feature does not account for that selection.
+
+Statistical adjustment changes the estimand or its interpretation. State whether an estimate is marginal or conditional, which covariates were used, and whether the standardization population is the observed sample or an external target population.
+
+# Worked Example: Expression Change Across Donors
+
+Suppose normalized log2 expression is measured for six independent donors per condition:
+
+$$
+\bar y_1=8.4,\quad \bar y_0=7.6,\quad s_1=1.1,\quad s_0=0.9.
+$$
+
+The raw estimate is
+
+$$
+\hat\Delta=8.4-7.6=0.8\text{ log2 units},
+$$
+
+corresponding to an expression ratio of $2^{0.8}\approx1.74$. With equal group sizes,
+
+$$
+s_p=\sqrt{\frac{5(1.1^2)+5(0.9^2)}{10}}\approx1.005,
+\qquad
+\hat d\approx0.80.
+$$
+
+With $\nu=10$, $J(10)\approx0.923$, so $g\approx0.74$. These numbers summarize the same sample on different scales. The 1.74-fold result is more directly tied to expression; $g$ compares the shift with between-donor variation. Neither establishes that the change is precise, causal, functionally important, or reproducible. Those claims require a confidence interval, valid design, and biological evidence.
+
+The six donors per group are the experimental units. Thousands of reads per donor improve measurement but do not turn the study into one with thousands of independent replicates. If condition is confounded with batch, neither a large fold change nor a large standardized effect isolates the biological condition.
+
+# Choosing and Reporting an Effect Size
+
+| Question | Preferred emphasis |
+|---|---|
+| Does the unit have a meaningful biological scale? | Raw difference and interval |
+| Is proportional change scientifically meaningful? | Ratio or log ratio, plus baseline levels |
+| Is the outcome binary? | Absolute risk and a relative measure, with time horizon |
+| Must results be synthesized across scales? | Carefully defined standardized effect, with its standardizer |
+| Is prediction the goal? | Out-of-sample error, calibration, discrimination, and utility |
+| Is a causal claim intended? | Causal contrast, assignment policy, target population, and identification assumptions |
+
+Always report the contrast direction, units or transformation, target population, time horizon when relevant, estimate, uncertainty, sample counts at the independent-unit level, and the model or design used. If several scales are useful, present them together rather than allowing one scale to carry every interpretation.
+
+# Common Pitfalls
+
+- **Using a p-value as an effect size:** a p-value combines magnitude, uncertainty, and a reference model; it does not measure importance.
+- **Treating standardization as context-free:** the denominator reflects a particular population and measurement process.
+- **Reporting only relative change:** a large ratio can correspond to a negligible absolute change at low baseline risk.
+- **Ignoring transformations:** differences on raw, log, and probability scales answer different questions.
+- **Counting technical measurements as replication:** this inflates apparent precision without increasing independent biological information.
+- **Using causal language for association:** magnitude does not identify an intervention effect.
+- **Choosing a measure after seeing results:** outcome- or scale-shopping changes the evidence and should be disclosed or avoided through prespecification.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) separates the population target from its estimate.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) explains the repeated-sampling behavior of effect estimators.
+- [Standard errors](standard-errors.qmd) connects independent information to precision.
+- [Confidence intervals](confidence-intervals.qmd) shows how to report compatible effect magnitudes.
+- [Null distributions and p-values](null-distributions-and-p-values.qmd) explains why significance is not magnitude.
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd) uses a minimum effect of interest prospectively.
+- [Covariance and correlation](../probability-randomness/covariance-and-correlation.qmd) develops association measures and their limits.
+
+Effect size is a family of estimands, not a universal statistic. Raw, relative, standardized, and association measures answer different questions. Scientific units and absolute risks are often indispensable; standardized effects depend on their reference variability. Every estimate needs uncertainty, a declared target population and scale, and correct experimental-unit accounting. Statistical magnitude and biological importance must be argued with domain context rather than generic labels.
+
+# References
+
+- Cohen, J. *Statistical Power Analysis for the Behavioral Sciences*, 2nd ed. Lawrence Erlbaum Associates, 1988. [Publisher record](https://doi.org/10.4324/9780203771587).
+- Hedges, L. V. “Distribution Theory for Glass's Estimator of Effect Size and Related Estimators.” *Journal of Educational Statistics* 6 (1981): 107--128. [Article](https://doi.org/10.3102/10769986006002107).
+- Greenland, S., Pearl, J., and Robins, J. M. “Causal Diagrams for Epidemiologic Research.” *Epidemiology* 10 (1999): 37--48. [Article](https://doi.org/10.1097/00001648-199901000-00008).
+- Nakagawa, S. and Cuthill, I. C. “Effect Size, Confidence Interval and Statistical Significance: A Practical Guide for Biologists.” *Biological Reviews* 82 (2007): 591--605. [Article](https://doi.org/10.1111/j.1469-185X.2007.00027.x).
+- Agresti, A. *Categorical Data Analysis*, 3rd ed. Wiley, 2013. [Publisher page](https://doi.org/10.1002/0471249688).
+- Wasserstein, R. L., Schirm, A. L., and Lazar, N. A. “Moving to a World Beyond ‘p < 0.05’.” *The American Statistician* 73 (2019): 1--19. [Article](https://doi.org/10.1080/00031305.2019.1583913).

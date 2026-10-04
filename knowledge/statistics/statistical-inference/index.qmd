@@ -24,6 +24,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [Null distributions and p-values](null-distributions-and-p-values.qmd)
 - [Type I and Type II errors](type-i-and-type-ii-errors.qmd)
 - [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd)
+- [Effect sizes](effect-sizes.qmd)
+- [Statistical versus practical significance](statistical-versus-practical-significance.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)

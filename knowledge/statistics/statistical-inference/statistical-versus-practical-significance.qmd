@@ -1,0 +1,182 @@
+---
+title: "Statistical versus Practical Significance"
+subtitle: "Separating evidence against a null model from importance for science and decisions"
+description: "Statistical significance, practical importance, minimum effects of interest, interval-based decisions, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-09-29"
+date-modified: "2026-09-29"
+categories: [Statistics, Inference, Scientific Interpretation]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Two Questions That a Threshold Cannot Collapse
+
+Statistical and practical significance address different questions:
+
+1. **Statistical evidence:** How incompatible are the data with a specified null model, under the analysis assumptions?
+2. **Practical importance:** Is the magnitude large enough to matter for a biological mechanism, patient, policy, engineering decision, or follow-up experiment?
+
+A test of $H_0:\theta=0$ may reject even when the estimated effect is trivial, especially with abundant independent data. It may fail to reject when an important effect remains plausible, especially with little information. Neither outcome alone answers whether the effect matters.
+
+Let $\theta$ be a clearly defined effect estimand, $\hat\theta$ its estimate, and $C$ an uncertainty interval. Interpretation needs all three plus an importance threshold or utility model. The p-value alone contains none of the domain-specific consequences.
+
+# Why Sample Size Separates Significance from Magnitude
+
+For a regular estimator with standard error approximately $\sigma/\sqrt n$, a two-sided Wald statistic is
+
+$$
+Z=\frac{\hat\theta}{\sigma/\sqrt n}.
+$$
+
+Holding a nonzero magnitude $\hat\theta$ roughly fixed, $|Z|$ grows like $\sqrt n$. Thus a sufficiently large independent sample can make a tiny departure from zero statistically detectable. Conversely, with small $n$ or high variability, a large estimate can have a wide interval and a large p-value.
+
+This is not a defect in probability theory. A test is designed to assess compatibility with a null value, not to encode scientific value. The error arises when “detectable” is translated into “important,” or “not detected” into “no effect.”
+
+# Define Importance Before Looking at the Result
+
+A **smallest effect size of interest** (SESOI), also called a minimum important effect or decision threshold, is a magnitude $\delta>0$ chosen because effects smaller than $\delta$ would not change the intended scientific or practical action. Its justification may use:
+
+- measurement resolution and technical variation;
+- known biological variability or mechanistic constraints;
+- clinical benefit, harm, burden, and cost;
+- consequences for downstream prediction or intervention;
+- expert elicitation and stakeholder preferences;
+- effects achieved by current practice or a positive control.
+
+The threshold belongs on a declared effect scale and in a declared population. A 1.2-fold expression change, a five-percentage-point absolute risk reduction, and a standardized mean difference of 0.2 are not generic equivalents. When no defensible single threshold exists, report conclusions over a plausible range or use a utility analysis.
+
+Choosing $\delta$ after observing $\hat\theta$ invites rationalization. Prespecification separates a scientific requirement from sampling noise and aligns [sample-size planning](statistical-power-and-sample-size-calculation.qmd) with the eventual interpretation.
+
+# Read the Estimate and Interval Against Meaningful Regions
+
+For a signed effect, partition the parameter space into
+
+$$
+(-\infty,-\delta),\qquad
+[-\delta,\delta],\qquad
+(\delta,\infty),
+$$
+
+representing important harm, effects too small to matter for the stated purpose, and important benefit. Comparing a confidence interval $C$ with these regions is more informative than asking only whether $0\notin C$.
+
+| Interval pattern | Defensible interpretation under the stated procedure |
+|---|---|
+| $C$ lies beyond $\delta$ | Only important effects in that direction remain compatible |
+| $C$ excludes 0 but overlaps $[-\delta,\delta]$ | A nonzero effect is detected, but trivial magnitudes remain compatible |
+| $C$ includes 0 and extends beyond $\delta$ | The result is inconclusive about both existence and importance |
+| $C\subset[-\delta,\delta]$ | Effects outside the negligible region are excluded at the interval's confidence level |
+| $C$ spans important benefit and harm | Direction and practical consequence are poorly resolved |
+
+This table is an interpretation aid, not a new test. Formal equivalence, noninferiority, superiority, or minimum-effect tests require hypotheses, error rates, and sidedness tailored to the decision. Failure to reject a point null is not evidence of equivalence.
+
+# Worked Example: A Precise but Negligible Shift
+
+Suppose an assay comparison targets a mean log2-expression difference $\theta$. Investigators define $\delta=0.5$ log2 units—about a 1.41-fold change—as the smallest shift that would justify a costly validation experiment.
+
+A large study reports
+
+$$
+\hat\theta=0.12,
+\qquad
+95\%\ \text{CI}=[0.04,0.20],
+\qquad
+p=0.003
+$$
+
+for $H_0:\theta=0$. The result is statistically significant: zero is inconsistent with the interval and the point-null test rejects. It is not practically significant under the prespecified rule: the entire interval is below $0.5$. The evidence supports a small positive shift that would not trigger the intended action.
+
+Now suppose a pilot reports
+
+$$
+\hat\theta=0.55,
+\qquad
+95\%\ \text{CI}=[-0.15,1.25],
+\qquad
+p=0.12.
+$$
+
+The estimate exceeds the importance threshold, but the interval includes no effect, negligible effects, and effects much larger than $\delta$. Calling it “no effect” would be wrong; the study is too imprecise to decide. The appropriate response may be better measurement or more independent biological units, not a post hoc claim that the effect is important because the point estimate is large.
+
+# Statistical Significance Is Conditional
+
+A p-value is calculated from a test statistic and a null reference distribution. Its calibration depends on the sampling or randomization scheme, model, handling of nuisance parameters, stopping rule when relevant, and all data-dependent analysis choices represented in the procedure. A small p-value does not measure:
+
+- the size of the effect;
+- the probability that the null hypothesis is true;
+- the probability that the finding will replicate;
+- the absence of confounding, bias, or model misspecification;
+- the biological or clinical value of the result.
+
+The conventional 0.05 cutoff is not a boundary between truth and falsehood. Estimates just above and below it generally provide similar evidence. Reporting “significant” in one subgroup and “not significant” in another does not establish a subgroup difference; that requires a direct interaction or contrast with its own uncertainty.
+
+# Practical Importance Is Also Conditional
+
+Importance is not a property of an effect number in isolation. It can vary with baseline risk, duration, population, feasibility, side effects, cost, and the action under consideration. Relative and standardized effects can hide these dependencies.
+
+For a binary outcome, a risk ratio of 0.5 corresponds to an absolute reduction of 0.5 percentage points when risk falls from 1% to 0.5%, but 20 percentage points when it falls from 40% to 20%. The relative effect is identical; the expected numbers of events and likely decisions are not. Report absolute risks alongside relative measures whenever possible.
+
+Practical significance also does not guarantee causality or reproducibility. A large biased estimate remains biased. A decision-relevant magnitude observed in a confounded or selectively reported analysis requires design scrutiny, replication, and sensitivity analysis.
+
+# High-dimensional Bioinformatics
+
+Omics studies can combine thousands of features, very large technical data volumes, and modest numbers of biological specimens. This setting makes the distinction especially important.
+
+For differential expression, define the experimental unit—often the donor, animal, culture, or independently randomized sample. Reads and cells nested within one specimen improve measurement but are not new population replicates. Treating them as independent can create extremely small p-values and narrow intervals for effects whose between-specimen uncertainty is much larger.
+
+Multiplicity procedures control an error criterion across features; they do not impose a biological relevance threshold. A gene can pass a false-discovery-rate cutoff with a tiny fold change, while a biologically compelling change may remain uncertain. A transparent report should include:
+
+- the estimand and contrast direction;
+- log fold change or another interpretable effect scale;
+- uncertainty after appropriate biological-unit modeling;
+- adjusted evidence measure and the multiplicity procedure;
+- a justified relevance threshold or sensitivity range;
+- expression abundance, assay limitations, and independent specimen counts;
+- validation evidence and whether condition is separated from batch.
+
+Filtering by observed effect and then presenting ordinary p-values or intervals as if the feature were prespecified creates selection bias. When selection is central, use independent validation, selective procedures, shrinkage, or honest sample splitting, and state which summaries are exploratory.
+
+# A Decision-oriented Workflow
+
+1. **Define the target:** specify population, outcome, contrast, time horizon, and causal or associational interpretation.
+2. **Choose the effect scale:** prefer units that connect to mechanisms or decisions; include absolute measures when baseline risk matters.
+3. **Set importance criteria:** justify $\delta$ or a utility function before inspecting outcomes when feasible.
+4. **Design for information:** count independent units, model clustering, and assess power or expected precision across plausible effects.
+5. **Estimate with uncertainty:** report $\hat\theta$ and an interval or posterior distribution, not only a thresholded p-value.
+6. **Check assumptions and sensitivity:** examine model fit, missingness, confounding, multiplicity, selection, and alternative thresholds.
+7. **Separate conclusions:** state the statistical evidence, the compatible magnitudes, and the biological or practical implication as distinct claims.
+
+When decisions have asymmetric costs, a binary significance rule is usually too crude. Expected utility or decision analysis can combine effect uncertainty with the consequences of acting and not acting. Bayesian posterior decisions and frequentist decision rules use different probability statements, but both still require explicit losses or benefits to define what matters.
+
+# Common Language Failures
+
+| Avoid | Why | Prefer |
+|---|---|---|
+| “There was no effect ($p>0.05$).” | Non-rejection can reflect low information | “The interval includes negligible and important effects.” |
+| “The effect was highly significant.” | “Highly” may describe a tail area, not magnitude | Give the effect estimate, interval, and exact evidence measure |
+| “Group A was significant but group B was not.” | Separate thresholds do not test a difference | Report the direct between-group contrast or interaction |
+| “A large effect proves biological importance.” | Scale, bias, population, and consequences still matter | Connect magnitude to a prespecified biological criterion |
+| “FDR < 0.05 means the gene matters.” | FDR addresses errors among discoveries, not utility | Report FDR evidence and biological magnitude separately |
+
+# Connections and Take-home Messages
+
+- [Effect sizes](effect-sizes.qmd) defines raw, relative, standardized, and association measures.
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd) formalizes decision rules and alternatives.
+- [Null distributions and p-values](null-distributions-and-p-values.qmd) explains the conditional meaning of a p-value.
+- [Confidence intervals](confidence-intervals.qmd) supports reasoning about compatible magnitudes.
+- [Type I and Type II errors](type-i-and-type-ii-errors.qmd) separates long-run decision errors from the truth of one result.
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd) incorporates a minimum important effect prospectively.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) shows why precision cannot repair systematic bias.
+
+Statistical significance measures evidence relative to a model and procedure; practical significance requires a consequence-sensitive judgment about magnitude. Large samples can detect negligible departures, while small studies can leave important effects unresolved. Define a meaningful threshold and scale, then interpret the estimate and uncertainty against them. In bioinformatics, multiplicity control and biological-unit modeling are necessary but do not decide biological value. Keep statistical, biological, and decision claims visibly separate.
+
+# References
+
+- Fisher, R. A. *Statistical Methods for Research Workers*. Oliver and Boyd, 1925. [Digitized edition](https://psychclassics.yorku.ca/Fisher/Methods/).
+- Neyman, J. and Pearson, E. S. “On the Problem of the Most Efficient Tests of Statistical Hypotheses.” *Philosophical Transactions of the Royal Society A* 231 (1933): 289--337. [Article](https://doi.org/10.1098/rsta.1933.0009).
+- Cohen, J. “The Earth Is Round ($p<.05$).” *American Psychologist* 49 (1994): 997--1003. [Article](https://doi.org/10.1037/0003-066X.49.12.997).
+- Wasserstein, R. L. and Lazar, N. A. “The ASA Statement on p-Values: Context, Process, and Purpose.” *The American Statistician* 70 (2016): 129--133. [Article](https://doi.org/10.1080/00031305.2016.1154108).
+- Wasserstein, R. L., Schirm, A. L., and Lazar, N. A. “Moving to a World Beyond ‘p < 0.05’.” *The American Statistician* 73 (2019): 1--19. [Article](https://doi.org/10.1080/00031305.2019.1583913).
+- Amrhein, V., Greenland, S., and McShane, B. “Scientists Rise Up against Statistical Significance.” *Nature* 567 (2019): 305--307. [Comment](https://doi.org/10.1038/d41586-019-00857-9).
+- Nakagawa, S. and Cuthill, I. C. “Effect Size, Confidence Interval and Statistical Significance: A Practical Guide for Biologists.” *Biological Reviews* 82 (2007): 591--605. [Article](https://doi.org/10.1111/j.1469-185X.2007.00027.x).

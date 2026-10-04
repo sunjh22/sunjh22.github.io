@@ -132,6 +132,8 @@ website:
                   - knowledge/statistics/statistical-inference/null-distributions-and-p-values.qmd
                   - knowledge/statistics/statistical-inference/type-i-and-type-ii-errors.qmd
                   - knowledge/statistics/statistical-inference/statistical-power-and-sample-size-calculation.qmd
+                  - knowledge/statistics/statistical-inference/effect-sizes.qmd
+                  - knowledge/statistics/statistical-inference/statistical-versus-practical-significance.qmd
               - section: "Regression & Statistical Models"
                 href: knowledge/statistics/regression-models/index.qmd
                 contents:
