@@ -1,0 +1,216 @@
+---
+title: "One-sided, Two-sided, and Equivalence Tests"
+subtitle: "Aligning hypotheses, tails, and margins with the scientific claim"
+description: "Directional, two-sided, and equivalence hypotheses; confidence-interval duality; margin choice; design; and interpretation."
+author: "Jiahong Sun"
+date: "2026-10-04"
+date-modified: "2026-10-04"
+categories: [Statistics, Inference, Hypothesis Testing, Equivalence]
+toc: true
+number-sections: true
+draft: false
+---
+
+# The Scientific Claim Determines the Null
+
+Let $\Delta$ be a prespecified population contrast, such as a treatment-minus-control mean difference or log fold change. Three questions that sound similar require different hypotheses.
+
+| Goal | Null hypothesis | Alternative hypothesis | Supported by rejection |
+|---|---|---|---|
+| Directional superiority | $H_0:\Delta\leq0$ | $H_1:\Delta>0$ | A positive effect under the stated assumptions |
+| Any departure from zero | $H_0:\Delta=0$ | $H_1:\Delta\ne0$ | A nonzero effect in either direction |
+| Equivalence within $(-\delta_L,\delta_U)$ | $H_0:\Delta\leq-\delta_L$ or $\Delta\geq\delta_U$ | $H_1:-\delta_L<\Delta<\delta_U$ | Effects outside the prespecified equivalence region are rejected |
+
+The null is not always “no effect.” For equivalence, the null is **non-equivalence**: at least one scientifically important difference remains possible. This reversal prevents a low-powered failure to reject $\Delta=0$ from being mislabeled as evidence of sameness.
+
+The estimand, direction, scale, margins, type I error rate, and analysis must be fixed without using the observed effect. Choosing among them after inspecting the data changes the procedure and invalidates its nominal calibration.
+
+# One-sided Tests
+
+Suppose larger values of a statistic $Z$ support $H_1:\Delta>0$ and, at the boundary $\Delta=0$, $Z$ is approximately standard normal. The upper-tail p-value is
+
+$$
+p_+=P_0(Z\geq z_{\mathrm{obs}})
+=1-\Phi(z_{\mathrm{obs}}),
+$$
+
+and a level-$\alpha$ test rejects when $Z\geq z_{1-\alpha}$. For $H_1:\Delta<0$, the evidence is in the lower tail.
+
+A one-sided alternative is appropriate only when the opposite direction would not trigger the same scientific claim. It does **not** mean that harm or an unexpected reverse effect can be ignored; such outcomes still require reporting and may require separate safety or secondary analyses.
+
+Halving a two-sided p-value is valid only when the direction was prespecified and the statistic's null distribution has the required symmetry. Selecting the favorable tail after seeing the sign effectively tests in both directions without paying the two-sided error cost.
+
+# Two-sided Tests
+
+For $H_0:\Delta=0$ versus $H_1:\Delta\ne0$, a common symmetric statistic is
+
+$$
+Z=\frac{\hat\Delta}{\widehat{\operatorname{SE}}(\hat\Delta)}.
+$$
+
+The two-sided p-value is
+
+$$
+p_2=P_0(|Z|\geq|z_{\mathrm{obs}}|)
+=2\{1-\Phi(|z_{\mathrm{obs}}|)\},
+$$
+
+and a level-$\alpha$ test places $\alpha/2$ in each tail. This construction detects departures in either direction but does not establish that both directions are scientifically equivalent or equally plausible.
+
+For asymmetric or discrete null distributions, “twice the smaller tail” need not be the only defensible two-sided definition. The test statistic and ordering of outcomes must be specified. A p-value also does not encode effect magnitude: with enough independent information, a negligible difference can be highly significant.
+
+# Equivalence Tests and TOST
+
+Let $-\delta_L<0<\delta_U$ define the range judged practically equivalent. The equivalence null is a union:
+
+$$
+H_0:
+\{\Delta\leq-\delta_L\}
+\cup
+\{\Delta\geq\delta_U\}.
+$$
+
+The two one-sided tests (TOST) procedure rejects both component nulls:
+
+$$
+\begin{aligned}
+H_{0L}&:\Delta\leq-\delta_L
+&\text{versus}\quad H_{1L}&:\Delta>-\delta_L,\\
+H_{0U}&:\Delta\geq\delta_U
+&\text{versus}\quad H_{1U}&:\Delta<\delta_U.
+\end{aligned}
+$$
+
+Equivalence is concluded only if **both** one-sided tests reject at level $\alpha$. This is an intersection--union test: because every non-equivalent value belongs to at least one component null, requiring both rejections controls the overall type I error at $\alpha$ without a Bonferroni split.
+
+With an approximately normal estimator, define
+
+$$
+Z_L=\frac{\hat\Delta+\delta_L}{\widehat{\operatorname{SE}}(\hat\Delta)},
+\qquad
+Z_U=\frac{\hat\Delta-\delta_U}{\widehat{\operatorname{SE}}(\hat\Delta)}.
+$$
+
+Reject the lower null when $Z_L>z_{1-\alpha}$ and the upper null when $Z_U<-z_{1-\alpha}$. The logic extends to asymmetric margins, ratio scales, and exact or model-based reference distributions, but the formulas and interpretation must match the chosen scale.
+
+# Confidence-interval Duality
+
+Tests and confidence intervals are two views of the same family of procedures when they use matching estimators and calibrations.
+
+- A level-$\alpha$ two-sided point-null test rejects exactly when the corresponding $100(1-\alpha)\%$ confidence interval excludes the null value.
+- A level-$\alpha$ one-sided test corresponds to a $100(1-\alpha)\%$ one-sided confidence bound.
+- A level-$\alpha$ TOST concludes equivalence when the corresponding $100(1-2\alpha)\%$ two-sided confidence interval lies entirely inside the equivalence margins.
+
+Thus, for $\alpha=0.05$, the usual TOST criterion uses a 90% two-sided confidence interval, equivalently two 95% one-sided bounds. A 95% two-sided interval inside the margins is sufficient but more conservative. Interval duality can fail if the test and interval use different variance estimates, degrees of freedom, nuisance handling, or multiplicity adjustments.
+
+# Worked Example: Not Different and Yet Demonstrably Equivalent
+
+Suppose the estimand is a treatment-minus-control difference, with
+
+$$
+\hat\Delta=0.08,
+\qquad
+\widehat{\operatorname{SE}}(\hat\Delta)=0.06,
+$$
+
+and the prespecified equivalence region is $(-0.20,0.20)$. For the two-sided point-null test,
+
+$$
+Z=\frac{0.08}{0.06}=1.33,
+\qquad
+p_2\approx0.18.
+$$
+
+Failing to reject $\Delta=0$ alone would not demonstrate equivalence. TOST instead gives
+
+$$
+Z_L=\frac{0.08+0.20}{0.06}=4.67,
+\qquad
+Z_U=\frac{0.08-0.20}{0.06}=-2.00.
+$$
+
+At $\alpha=0.05$, both component tests reject. The matching 90% confidence interval is
+
+$$
+0.08\pm1.645(0.06)
+=(-0.019,0.179),
+$$
+
+which lies within $(-0.20,0.20)$. The data therefore support equivalence at the stated margins under the working model. They do not prove exact equality, nor do they show that $0.20$ was a scientifically defensible margin.
+
+# Margins Are Scientific Inputs
+
+An equivalence margin is the largest difference that can be considered unimportant for the intended use. It should be justified before outcome data are examined, using biological consequences, assay performance, clinical or operational tolerances, historical evidence, and measurement scale.
+
+Changing from a difference to a ratio or logarithmic scale changes the meaning and symmetry of the region. For a ratio $R$, margins such as $(L,U)$ become $(\log L,\log U)$ on the log scale. Back-transformed intervals are multiplicative and generally asymmetric around 1 on the original scale.
+
+A margin chosen because the observed confidence interval just fits inside it is not a valid prospective criterion. Nor is a margin justified merely because another field used the same number. Sensitivity analysis across scientifically plausible margins can show how strongly the conclusion depends on the threshold, but it does not replace prespecification for a confirmatory claim.
+
+# Superiority, Non-inferiority, and Equivalence
+
+These procedures answer distinct questions.
+
+| Claim | Typical alternative | What must be ruled out |
+|---|---|---|
+| Superiority | $\Delta>0$ | No benefit or harm |
+| Non-inferiority | $\Delta>-\delta$ | Unacceptable loss beyond $-\delta$ |
+| Equivalence | $-\delta_L<\Delta<\delta_U$ | Unacceptable differences in either direction |
+
+Non-inferiority is one-sided equivalence with respect to a lower margin. After establishing non-inferiority, a prespecified sequential procedure may test superiority without inflating family-wise error. Reversing that order or making multiple unplanned claims requires an explicit multiplicity strategy.
+
+# Assumptions, Diagnostics, and Failure Modes
+
+| Question | Why it matters | Response |
+|---|---|---|
+| Was direction chosen in advance? | Post hoc tail selection inflates type I error | Document the scientific alternative before unblinding |
+| Were margins prespecified and justified? | A data-driven margin makes equivalence circular | Ground margins in consequences and external evidence |
+| What is the experimental unit? | Pseudoreplication narrows intervals and favors equivalence | Base uncertainty on independent biological units |
+| Is the estimator biased toward zero? | Missingness, nonadherence, or shrinkage can falsely favor equivalence | Model the mechanism and perform bias sensitivity analyses |
+| Is calibration accurate? | Sparse data, boundaries, or skewness distort tail probabilities | Use exact, likelihood, bootstrap, or simulation methods when justified |
+| Are several outcomes or subgroups tested? | Multiple opportunities inflate false claims | Prespecify hierarchy or apply appropriate multiplicity control |
+| Does the scale match the claim? | Equivalence is not invariant to arbitrary transformations | State margins and interpretation on the analysis scale |
+
+Low precision usually makes equivalence harder to demonstrate because the interval is too wide. Bias toward the center, however, can make a narrow or shifted interval misleading. Both precision and validity matter.
+
+# Bioinformatics Design and Interpretation
+
+In a validation study comparing two assays, $\Delta$ might be the mean difference in log abundance across the target population of specimens. Specimens or donors are the experimental units. Repeated reads, technical wells, or cells improve measurement of each specimen but do not create independent evidence about between-specimen agreement.
+
+For gene-level analyses, an equivalence region such as $|\Delta|<\delta$ can encode a smallest effect size of biological interest. A nonsignificant differential-expression test does not show that a gene is unchanged. An equivalence test can rule out changes larger than $\delta$, but only if normalization, dispersion, batch, dependence, and multiplicity are handled appropriately. Declaring thousands of genes equivalent also requires a family-level error criterion suited to that claim.
+
+Statistical equivalence is relative to an estimand, margin, population, design, and model. Biological interchangeability can additionally depend on pathways, cell types, time points, assay detection limits, and consequences not captured by the chosen summary.
+
+# Reporting Checklist
+
+Report:
+
+1. the target population and estimand, including sign convention and scale;
+2. the directional, two-sided, non-inferiority, or equivalence hypotheses;
+3. the reason for each direction and margin, documented prospectively;
+4. the experimental units and numbers of independent biological replicates;
+5. the estimate, matching confidence interval, statistic, reference distribution, and p-value;
+6. multiplicity, missing-data, and sensitivity procedures; and
+7. separate statistical and biological interpretations.
+
+Avoid saying “the groups are the same.” State that the analysis ruled out differences beyond specified margins under stated assumptions.
+
+# Connections and Take-home Messages
+
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd) defines decision rules, level, and power.
+- [Null distributions and p-values](null-distributions-and-p-values.qmd) explains tail construction and valid interpretation.
+- [Confidence intervals](confidence-intervals.qmd) develops test inversion and coverage.
+- [Type I and Type II errors](type-i-and-type-ii-errors.qmd) separates procedure-level errors from observed conclusions.
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd) connects margins to design.
+- [Effect sizes](effect-sizes.qmd) explains raw, relative, and standardized scales.
+- [Statistical versus practical significance](statistical-versus-practical-significance.qmd) motivates a smallest effect size of interest.
+
+One-sided, two-sided, and equivalence tests are not interchangeable formatting choices. They encode different scientific claims and different null parameter sets. Equivalence requires rejecting effects outside justified margins; it cannot be inferred from a nonsignificant difference test. Direction, margins, experimental units, and calibration must be chosen before viewing the result.
+
+# References
+
+- Neyman, J. and Pearson, E. S. “On the Problem of the Most Efficient Tests of Statistical Hypotheses.” *Philosophical Transactions of the Royal Society A* 231 (1933): 289--337. [Article](https://doi.org/10.1098/rsta.1933.0009).
+- Schuirmann, D. J. “A Comparison of the Two One-Sided Tests Procedure and the Power Approach for Assessing the Equivalence of Average Bioavailability.” *Journal of Pharmacokinetics and Biopharmaceutics* 15 (1987): 657--680. [Article](https://doi.org/10.1007/BF01068419).
+- International Council for Harmonisation. *E9: Statistical Principles for Clinical Trials*. 1998. [Guideline](https://database.ich.org/sites/default/files/E9_Guideline.pdf).
+- U.S. Food and Drug Administration. *Statistical Approaches to Establishing Bioequivalence*. Final Guidance for Industry, 2026. [Official guidance](https://www.fda.gov/regulatory-information/search-fda-guidance-documents/statistical-approaches-establishing-bioequivalence).
+- Wellek, S. *Testing Statistical Hypotheses of Equivalence and Noninferiority*, 2nd ed. Chapman & Hall/CRC, 2010. [Publisher page](https://doi.org/10.1201/EBK1439808184).
+- Lakens, D. “Equivalence Tests: A Practical Primer for t Tests, Correlations, and Meta-Analyses.” *Social Psychological and Personality Science* 8 (2017): 355--362. [Article](https://doi.org/10.1177/1948550617697177).

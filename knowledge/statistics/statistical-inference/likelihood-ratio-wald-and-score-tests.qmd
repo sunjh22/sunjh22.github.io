@@ -1,0 +1,237 @@
+---
+title: "Likelihood-ratio, Wald, and Score Tests"
+subtitle: "Three large-sample views of the same parametric restriction"
+description: "Construction, asymptotic equivalence, finite-sample differences, diagnostics, and interpretation of likelihood-ratio, Wald, and score tests."
+author: "Jiahong Sun"
+date: "2026-10-04"
+date-modified: "2026-10-04"
+categories: [Statistics, Inference, Hypothesis Testing, Likelihood]
+toc: true
+number-sections: true
+draft: false
+---
+
+# One Restriction, Three Measurements
+
+Suppose a parametric model has parameter $\theta\in\Theta$ and log-likelihood $\ell(\theta)$. The scientific null hypothesis imposes $q$ restrictions,
+
+$$
+H_0:r(\theta)=0,
+\qquad
+H_1:r(\theta)\ne0,
+$$
+
+where $r(\theta)$ is a $q$-vector. Let $\hat\theta$ be the unrestricted maximum-likelihood estimator (MLE), and let
+
+$$
+\tilde\theta=
+\operatorname*{arg\,max}_{\theta:r(\theta)=0}\ell(\theta)
+$$
+
+be the null-constrained MLE. The likelihood-ratio (LR), Wald, and score tests ask the same local question in three different ways:
+
+| Test | Central question | Fit required |
+|---|---|---|
+| Likelihood-ratio | How much log-likelihood is lost by imposing $H_0$? | Restricted and unrestricted |
+| Wald | How far is the unrestricted estimate from the null, in estimated standard-error units? | Unrestricted |
+| Score | Is the likelihood still sloping away from the null at the restricted fit? | Restricted |
+
+The tests concern a model restriction, not biological importance. The estimand, parameterization, experimental unit, nuisance parameters, and sampling model must be defined before any statistic is meaningful.
+
+# Likelihood-ratio Test: Compare Best Fits
+
+The LR statistic is
+
+$$
+\boxed{
+G^2=2\{\ell(\hat\theta)-\ell(\tilde\theta)\}.
+}
+$$
+
+Because the restricted parameter space is nested within the unrestricted one, $G^2\geq0$. Larger values mean that enforcing the null causes a greater loss of maximized log-likelihood. Under standard regularity conditions and a true null,
+
+$$
+G^2\xrightarrow{d}\chi_q^2.
+$$
+
+This is Wilks' result. The degrees of freedom equal the number of locally independent restrictions, not automatically the difference in the number of labels printed by software. Models must be genuinely nested and fitted to the same observations with comparable likelihoods.
+
+The LR statistic is unchanged by a smooth one-to-one reparameterization because it compares maximized likelihood values. That invariance does not rescue an invalid model, a nonidentifiable parameter, or a nonregular null.
+
+# Wald Test: Measure Distance from the Null
+
+Let
+
+$$
+R(\theta)=\frac{\partial r(\theta)}{\partial\theta^\mathsf T}
+$$
+
+be the $q\times p$ Jacobian of the restrictions, and let $\widehat V$ estimate the covariance matrix of $\hat\theta$. The Wald statistic is
+
+$$
+\boxed{
+W=r(\hat\theta)^\mathsf T
+\{R(\hat\theta)\widehat V R(\hat\theta)^\mathsf T\}^{-1}
+r(\hat\theta).
+}
+$$
+
+Under a regular null, $W\xrightarrow{d}\chi_q^2$. For one parameter and $H_0:\theta=\theta_0$,
+
+$$
+W=
+\left\{
+\frac{\hat\theta-\theta_0}
+{\widehat{\operatorname{SE}}(\hat\theta)}
+\right\}^2.
+$$
+
+The Wald test is convenient because it uses a fitted estimate and covariance matrix that software commonly reports. Its apparent simplicity hides two weaknesses. First, a symmetric quadratic approximation can be poor for skewed likelihoods, small samples, boundaries, or weak identification. Second, nonlinear reparameterizations can change finite-sample Wald conclusions because distance and standard error are evaluated at the unrestricted estimate.
+
+# Score Test: Inspect the Null Fit
+
+Write the score and expected information as
+
+$$
+U(\theta)=\frac{\partial\ell(\theta)}{\partial\theta},
+\qquad
+I(\theta)=E_\theta\{U(\theta)U(\theta)^\mathsf T\}.
+$$
+
+For the simple null $H_0:\theta=\theta_0$, the score statistic is
+
+$$
+\boxed{
+S=U(\theta_0)^\mathsf T I(\theta_0)^{-1}U(\theta_0).
+}
+$$
+
+With nuisance parameters, the score for the target restriction must be adjusted for its correlation with nuisance scores. Partition $\theta=(\psi,\lambda)$, where $\psi$ is tested and $\lambda$ is nuisance. At the restricted fit, the efficient information for $\psi$ is
+
+$$
+I_{\psi\cdot\lambda}
+=I_{\psi\psi}-I_{\psi\lambda}
+I_{\lambda\lambda}^{-1}I_{\lambda\psi},
+$$
+
+and the corresponding score quadratic uses $I_{\psi\cdot\lambda}^{-1}$. Under regularity, $S\xrightarrow{d}\chi_q^2$.
+
+The score test needs only the null fit, which can be valuable when fitting the alternative is expensive or unstable. It is also the basis of useful diagnostic tests, such as testing whether an added term is needed. A large null score shows a locally steep direction; it does not identify whether a distant alternative will fit well.
+
+# Why the Tests Agree Asymptotically
+
+Near a regular true parameter, the log-likelihood is approximately quadratic. In one dimension, expand around the unrestricted MLE:
+
+$$
+\ell(\theta_0)
+\approx
+\ell(\hat\theta)
+-\frac{1}{2}j(\hat\theta)(\hat\theta-\theta_0)^2,
+$$
+
+where $j(\theta)=-\ell''(\theta)$ is observed information. Therefore,
+
+$$
+2\{\ell(\hat\theta)-\ell(\theta_0)\}
+\approx
+j(\hat\theta)(\hat\theta-\theta_0)^2,
+$$
+
+which is the Wald form when $j(\hat\theta)^{-1}$ estimates $\operatorname{Var}(\hat\theta)$. Expanding the score from the null toward the MLE similarly gives
+
+$$
+U(\theta_0)
+\approx
+j(\theta_0)(\hat\theta-\theta_0),
+$$
+
+and hence the score quadratic. Under local alternatives separated from the null by order $n^{-1/2}$,
+
+$$
+G^2=W=S+o_p(1).
+$$
+
+This first-order equivalence is not equality in a realized finite dataset. Disagreement is information: it often signals skewness, weak information, boundary behavior, or an inaccurate asymptotic approximation.
+
+# Worked Example: A Binomial Probability
+
+Suppose $Y\sim\operatorname{Binomial}(20,p)$, $y=14$, and test $H_0:p=0.5$. The MLE is $\hat p=0.7$.
+
+The likelihood-ratio statistic is
+
+$$
+G^2=2\left\{
+14\log\left(\frac{0.7}{0.5}\right)
++6\log\left(\frac{0.3}{0.5}\right)
+\right\}
+\approx3.29.
+$$
+
+Using the unrestricted plug-in variance, the Wald statistic is
+
+$$
+W=\frac{(0.7-0.5)^2}{0.7(0.3)/20}
+\approx3.81.
+$$
+
+The null score statistic is
+
+$$
+S=\frac{(14-20\cdot0.5)^2}{20(0.5)(0.5)}
+=3.20.
+$$
+
+Against a $\chi_1^2$ reference, the three approximate two-sided p-values are about $0.070$, $0.051$, and $0.074$. The underlying data and null are identical; only the location used for the quadratic approximation differs. An exact binomial test supplies another finite-sample calibration and should not be expected to equal any of these asymptotic calculations.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+The usual $\chi_q^2$ reference depends on conditions that are easy to violate.
+
+| Issue | Why the usual result fails | Useful response |
+|---|---|---|
+| Small or sparse sample | The likelihood is not locally quadratic enough | Compare exact, bootstrap, or simulation calibration |
+| Parameter on a boundary | The local parameter space is not open | Use the correct boundary law, often but not always a chi-squared mixture |
+| Weak or non-identification | Information is singular or nearly singular | Plot profiles, inspect Hessian eigenvalues, and redesign or simplify |
+| Model misspecification | Information equality and likelihood calibration can fail | Improve the model; use defensible robust tests and sensitivity analyses |
+| Dependence or clustering | Naive information counts correlated observations as independent | Model the dependence or use cluster-aware covariance and calibration |
+| Data-driven model search | The reported test ignores selection | Validate the complete selection-and-testing procedure |
+| Increasing model dimension | Fixed-dimensional asymptotics may not apply | Use theory or simulation appropriate to the high-dimensional regime |
+
+For a variance component tested at zero, for example, the null is on the boundary. Comparing its LR statistic with an ordinary $\chi_1^2$ distribution is generally wrong. For logistic separation, the unrestricted MLE may not be finite, so the conventional Wald statistic is especially unreliable.
+
+# Bioinformatics Interpretation
+
+Consider testing a treatment coefficient in a negative-binomial model for RNA-seq counts. The scientific estimand might be a population log fold change after adjustment for batch. Donors or independently randomized specimens are the experimental units; reads are measurement-level observations. The restricted model fixes the treatment coefficient at zero, while the unrestricted model estimates it.
+
+An LR test compares the two fitted likelihoods, a Wald test divides the estimated coefficient by its model-based or robust standard error, and a score test examines the treatment direction at the null fit. Agreement among them does not establish that the count model, normalization offsets, dispersion estimates, or independence assumptions are correct. Disagreement should prompt inspection of low counts, influential samples, dispersion uncertainty, separation-like behavior, and the number of biological replicates.
+
+Statistically, rejection concerns a specified coefficient under a working model. Biologically, the effect estimate, uncertainty interval, direction, magnitude, tissue and assay context, and reproducibility remain essential. Thousands of technical observations cannot replace independent biological replication.
+
+# Choosing and Reporting a Test
+
+- Use the **LR test** when both nested models fit reliably and the likelihood is comparable.
+- Use the **Wald test** for convenient, prespecified contrasts when the estimate is well inside the parameter space and approximately normal.
+- Use the **score test** when the null fit is available but the alternative fit is costly, or when testing an added component locally.
+- Use exact, randomization, bootstrap, or specialized nonregular methods when their assumptions better match the design.
+
+Report the null restriction, estimand, fitted models, statistic, reference distribution, degrees of freedom, p-value, effect estimate, uncertainty interval, experimental unit, and diagnostic or sensitivity results. Naming the test without its calibration is incomplete.
+
+# Connections and Take-home Messages
+
+- [Likelihood and log-likelihood](likelihood-and-log-likelihood.qmd) defines the score, curvature, and likelihood comparisons used here.
+- [Maximum-likelihood estimation](maximum-likelihood-estimation.qmd) develops restricted and unrestricted fitting.
+- [Fisher information and the Cramér--Rao bound](fisher-information-and-cramer-rao-bound.qmd) explains information matrices.
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd) defines level, power, and rejection rules.
+- [Null distributions and p-values](null-distributions-and-p-values.qmd) explains calibration and interpretation.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) covers nonregular and slow limits.
+
+The LR, Wald, and score tests compare fit loss, standardized distance, and null slope. They share a $\chi_q^2$ limit only under regular, fixed-dimensional conditions. Their finite-sample differences are expected, and severe disagreement is a diagnostic rather than a vote to select the smallest p-value.
+
+# References
+
+- Wilks, S. S. “The Large-Sample Distribution of the Likelihood Ratio for Testing Composite Hypotheses.” *Annals of Mathematical Statistics* 9 (1938): 60--62. [Article](https://doi.org/10.1214/aoms/1177732360).
+- Wald, A. “Tests of Statistical Hypotheses Concerning Several Parameters When the Number of Observations is Large.” *Transactions of the American Mathematical Society* 54 (1943): 426--482. [Article](https://doi.org/10.2307/1990256).
+- Rao, C. R. “Large Sample Tests of Statistical Hypotheses Concerning Several Parameters with Applications to Problems of Estimation.” *Proceedings of the Cambridge Philosophical Society* 44 (1948): 50--57. [Article](https://doi.org/10.1017/S0305004100023987).
+- Self, S. G. and Liang, K.-Y. “Asymptotic Properties of Maximum Likelihood Estimators and Likelihood Ratio Tests under Nonstandard Conditions.” *Journal of the American Statistical Association* 82 (1987): 605--610. [Article](https://doi.org/10.1080/01621459.1987.10478472).
+- White, H. “Maximum Likelihood Estimation of Misspecified Models.” *Econometrica* 50 (1982): 1--25. [Article](https://doi.org/10.2307/1912526).
+- Casella, G. and Berger, R. L. *Statistical Inference*, 2nd ed. Duxbury, 2002, Chapter 10. [Publisher page](https://www.routledge.com/Statistical-Inference/Casella-Berger/p/book/9781032593036).
