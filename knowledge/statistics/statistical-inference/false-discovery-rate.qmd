@@ -1,0 +1,223 @@
+---
+title: "False Discovery Rate"
+subtitle: "Controlling the expected false fraction among reported discoveries"
+description: "Definitions, Benjamini-Hochberg control, adjusted p-values, dependence, q-values, and interpretation for high-dimensional studies."
+author: "Jiahong Sun"
+date: "2026-10-05"
+date-modified: "2026-10-05"
+categories: [Statistics, Inference, Multiple Testing, FDR]
+toc: true
+number-sections: true
+draft: false
+---
+
+# From Any False Claim to the False Fraction
+
+In a high-dimensional experiment, investigators may expect many real signals and can tolerate a small, controlled proportion of false leads. The false discovery rate (FDR) formalizes that goal.
+
+For $m$ tested hypotheses, let
+
+- $R$ be the number rejected;
+- $V$ be the number of rejected true null hypotheses; and
+- $S=R-V$ be the number of rejected false null hypotheses.
+
+The realized false discovery proportion (FDP) is
+
+$$
+\operatorname{FDP}=\frac{V}{\max(R,1)}.
+$$
+
+The denominator convention assigns FDP 0 when there are no discoveries. The FDR is its repeated-sampling expectation:
+
+$$
+\boxed{
+\operatorname{FDR}=\operatorname{E}\left[\frac{V}{\max(R,1)}\right].
+}
+$$
+
+FDP describes one realized but usually unobservable result set; FDR describes the long-run average of that random fraction under the full data-generating and testing procedure. Neither quantity is the posterior probability that a particular discovery is false.
+
+# Relation to Family-wise Error
+
+Because
+
+$$
+0\leq\frac{V}{\max(R,1)}\leq\mathbf{1}(V\geq1),
+$$
+
+it follows that
+
+$$
+\operatorname{FDR}\leq\Pr(V\geq1)=\operatorname{FWER}.
+$$
+
+Under the complete null, every rejection is false, so FDP equals $\mathbf{1}(R>0)$ and FDR equals FWER. When many alternatives are real, however, FDR control can reject substantially more hypotheses because it controls the false *fraction* rather than the chance of any false rejection. See [family-wise error rate](family-wise-error-rate.qmd) for the stricter criterion.
+
+# Benjamini--Hochberg Step-up Procedure
+
+Let $p_1,\ldots,p_m$ be valid raw $p$-values and order them as
+
+$$
+p_{(1)}\leq p_{(2)}\leq\cdots\leq p_{(m)}.
+$$
+
+For target level $q$, define
+
+$$
+k=\max\left\{i:p_{(i)}\leq\frac{i}{m}q\right\}.
+$$
+
+If this set is empty, reject nothing. Otherwise, reject $H_{(1)},\ldots,H_{(k)}$. This is the Benjamini--Hochberg (BH) step-up procedure.
+
+Under independence, if the true-null $p$-values are exactly uniform,
+
+$$
+\operatorname{FDR}=\frac{m_0}{m}q\leq q,
+$$
+
+where $m_0$ is the unknown number of true nulls. Control also holds under important forms of positive dependence. It is not a consequence of the ordering alone; the validity and dependence conditions are part of the theorem.
+
+For independent conservative true-null $p$-values satisfying $\Pr(p_i\leq t)\leq t$, the equality can become an inequality, while the upper bound by $q$ remains.
+
+# BH-adjusted Values
+
+The BH-adjusted value attached to the $i$th ordered hypothesis is
+
+$$
+\boxed{
+p_{(i)}^{\mathrm{BH}}
+=\min\left\{1,\min_{j\geq i}\frac{m}{j}p_{(j)}\right\}.
+}
+$$
+
+The reverse cumulative minimum makes adjusted values nondecreasing in rank. Rejecting hypotheses with $p_i^{\mathrm{BH}}\leq q$ gives exactly the BH rejection set at level $q$.
+
+An adjusted value is the smallest BH target level at which that hypothesis would be included in the rejection set for this family. It depends on every $p$-value in the family; it is not merely the raw value multiplied by a fixed constant.
+
+# Worked Example
+
+Suppose five ordered raw values are
+
+$$
+0.001,\quad0.006,\quad0.018,\quad0.049,\quad0.20
+$$
+
+and the target is $q=0.05$. The BH critical values are
+
+$$
+0.01,\quad0.02,\quad0.03,\quad0.04,\quad0.05.
+$$
+
+The largest passing rank is $k=3$, because $0.018\leq0.03$ but neither later value passes its threshold. The first three hypotheses are rejected. Their BH-adjusted values, together with the others, are
+
+$$
+0.005,\quad0.015,\quad0.030,\quad0.06125,\quad0.20.
+$$
+
+If this complete procedure were repeated under its assumptions, the expected FDP would be at most 0.05. It does **not** follow that exactly 5% of these three discoveries are false, nor that each has a 5% chance of being false.
+
+# Dependence and the BY Safeguard
+
+Features in genomics are correlated through pathways, linkage, shared cell states, normalization, and latent technical factors. Positive dependence often falls within conditions under which BH remains valid, but arbitrary dependence is a stronger challenge.
+
+Benjamini--Yekutieli (BY) replaces $q$ in the BH thresholds with
+
+$$
+\frac{q}{c_m},
+\qquad
+c_m=\sum_{i=1}^{m}\frac{1}{i}.
+$$
+
+This provides FDR control under arbitrary dependence, at the cost of more conservative thresholds. Choosing BY solely because “genes are correlated” may sacrifice substantial power; choosing ordinary BH without describing the dependence assumptions may overstate the guarantee. Domain structure, simulations, permutation methods, or a justified model can help assess sensitivity.
+
+# FDR, Positive FDR, and q-values
+
+Related quantities are easy to conflate:
+
+| Quantity | Definition or role |
+|---|---|
+| FDP | $V/\max(R,1)$ in one realized experiment |
+| FDR | $\operatorname{E}(\operatorname{FDP})$ |
+| Positive FDR | $\operatorname{E}(V/R\mid R>0)$ |
+| BH-adjusted $p$-value | Smallest BH target level that includes a hypothesis |
+| Storey q-value | Estimated minimum positive FDR associated with calling a feature significant |
+
+Software sometimes labels BH-adjusted values as `qvalue`, but Storey's q-values are adaptive estimates that use information about the proportion $\pi_0=m_0/m$ of true nulls. The name of the software column is therefore not enough to identify the statistical procedure.
+
+Estimating $\pi_0$ can improve power when many hypotheses are non-null, but it adds modeling and tuning assumptions. The estimator, smoothing choices, and treatment of discrete or dependent $p$-values should be reported.
+
+# Choosing the Testing Family
+
+FDR control applies to the rejection set produced from a specified family. Scientifically related tests should be grouped according to the claims the study will make. Important complications include:
+
+- **Multiple contrasts:** adjusting genes separately within each contrast does not control FDR across the union of all contrast-specific discoveries.
+- **Post-selection testing:** choosing genes because they looked promising and then adjusting only those same values ignores the selection opportunity.
+- **Hierarchical questions:** genes, transcripts, pathways, and interaction terms may require staged or hierarchical procedures rather than one undifferentiated list.
+- **Directional claims:** rejecting a two-sided null does not automatically control the rate of wrong signs among reported directions.
+
+The family should be defined before viewing the outcomes whenever possible. If several scientifically distinct families are used, label them and state the guarantee for each rather than implying one study-wide FDR.
+
+# Filtering, Validity, and Power
+
+Removing uninformative features before testing can improve power by reducing $m$, but filtering is safe only when it preserves true-null $p$-value calibration. A filter based on low overall counts can be defensible when its statistic is independent of the test statistic under the null. Filtering directly on observed effect size or raw $p$-value and then applying ordinary BH only to the survivors generally invalidates the advertised control.
+
+No multiple-testing method repairs poor single-test foundations. Confounding, model misspecification, underestimated dispersion, batch imbalance, and pseudoreplication can make null $p$-values non-uniform; BH then operates on invalid inputs.
+
+Power should be evaluated for biologically meaningful alternatives. A long list of tiny but precisely estimated effects can satisfy FDR control without being useful, while a small underpowered experiment can yield no discoveries despite important biology. Report effect estimates and uncertainty, not adjusted values alone.
+
+# Bioinformatics Example: Differential Expression
+
+Consider bulk RNA-seq comparing treatment and control across independent animals. The animal is the experimental unit. Multiple libraries or sequencing lanes from one animal are technical replicates; treating them as independent animals produces anticonservative raw $p$-values that BH cannot fix.
+
+A defensible workflow is:
+
+1. pre-specify the biological contrast and eligible gene set;
+2. construct a design matrix that represents treatment, blocking, and known nuisance factors;
+3. filter low-information genes using a rule justified independently of the null test statistic;
+4. fit an appropriate count or mean--variance model and diagnose dispersion, outliers, and batch structure;
+5. apply BH to the valid raw $p$-values for the defined family; and
+6. report log-fold changes, uncertainty, and BH-adjusted values together.
+
+Declaring genes at FDR 0.05 means that the procedure targets an expected false fraction no greater than 0.05 across repeated studies under its assumptions. It does not validate pathways, causal mechanisms, or reproducibility in another population. Those are biological and transportability questions requiring effect-size assessment and independent evidence.
+
+# Assumptions and Sensitivity Checks
+
+| Assumption or choice | Failure mechanism | Useful check |
+|---|---|---|
+| Valid true-null $p$-values | Confounding or poor variance estimation creates too many small values | Null simulations, diagnostic plots, negative controls |
+| Dependence compatible with BH | Arbitrary dependence may invalidate the nominal bound | Compare BH with BY or justified permutation/model-based procedures |
+| Predefined family | Selective inclusion hides testing opportunities | Reconstruct all hypotheses eligible for reporting |
+| Defensible filtering | Outcome-driven filtering distorts null values | Repeat without filtering or with a pre-specified independent filter |
+| Stable discoveries | Threshold crossings can change with small perturbations | Bootstrap or leave-one-unit-out stability summaries |
+
+Sensitivity analysis should compare effect estimates and discovery sets, not merely count how many genes cross a threshold. A method that produces more discoveries is not automatically better calibrated.
+
+# Connections to the Knowledge Map
+
+## Prerequisites
+
+- [Null distributions and p-values](null-distributions-and-p-values.qmd)
+- [Type I and Type II errors](type-i-and-type-ii-errors.qmd)
+- [Effect sizes](effect-sizes.qmd)
+
+## Related concepts
+
+- [Family-wise error rate](family-wise-error-rate.qmd)
+- [Statistical versus practical significance](statistical-versus-practical-significance.qmd)
+- [Nonparametric bootstrap](nonparametric-bootstrap.qmd)
+
+# Take-home Messages
+
+1. **Target:** FDR is the expected false discovery proportion, not the probability that an individual discovery is false.
+2. **Procedure:** BH is a step-up rule whose control relies on valid raw $p$-values and stated dependence conditions.
+3. **Comparison:** FDR is no larger than FWER and is usually a less stringent target when many real signals are expected.
+4. **Dependence:** BY offers an arbitrary-dependence safeguard but can be substantially more conservative.
+5. **Workflow:** Selection, family definition, filtering, and directional reporting are part of the procedure and its guarantee.
+6. **Application:** Correct biological replication and a credible data-generating model come before multiplicity adjustment.
+
+# References
+
+- Benjamini, Y., & Hochberg, Y. (1995). [Controlling the false discovery rate: a practical and powerful approach to multiple testing](https://doi.org/10.1111/j.2517-6161.1995.tb02031.x). *Journal of the Royal Statistical Society: Series B*, 57(1), 289--300.
+- Benjamini, Y., & Yekutieli, D. (2001). [The control of the false discovery rate in multiple testing under dependency](https://doi.org/10.1214/aos/1013699998). *The Annals of Statistics*, 29(4), 1165--1188.
+- Storey, J. D., & Tibshirani, R. (2003). [Statistical significance for genomewide studies](https://doi.org/10.1073/pnas.1530509100). *Proceedings of the National Academy of Sciences*, 100(16), 9440--9445.
+- R Core Team. [Adjust p-values for multiple comparisons](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html). *R stats documentation*.

@@ -1,0 +1,231 @@
+---
+title: "Family-wise Error Rate"
+subtitle: "Controlling the chance of any false rejection across a planned family"
+description: "Definitions, strong and weak control, Bonferroni and Holm procedures, simultaneous inference, and design choices for family-wise error control."
+author: "Jiahong Sun"
+date: "2026-10-05"
+date-modified: "2026-10-05"
+categories: [Statistics, Inference, Multiple Testing, FWER]
+toc: true
+number-sections: true
+draft: false
+---
+
+# The Error Belongs to a Family
+
+Testing one null hypothesis at level $\alpha$ limits its Type I error probability to $\alpha$. Testing many hypotheses separately at that same level does not generally limit the chance of making *any* false rejection. Family-wise error rate (FWER) makes that broader event the target of control.
+
+For hypotheses $H_1,\ldots,H_m$, let
+
+- $I_0$ be the unknown indices of the true null hypotheses and $m_0=|I_0|$;
+- $R$ be the total number of rejected hypotheses; and
+- $V$ be the number of rejected hypotheses whose nulls are actually true.
+
+Then
+
+$$
+\boxed{\operatorname{FWER}=\Pr(V\geq 1).}
+$$
+
+The estimand is the repeated-sampling probability of at least one false rejection under a specified configuration of true and false nulls. The observed analysis supplies decisions, not an estimate of whether a particular rejected hypothesis is false.
+
+# Why Marginal Tests Accumulate Risk
+
+Suppose all $m$ null hypotheses are true, their tests are independent, and each is conducted at level $\alpha$. The chance of no false rejection is $(1-\alpha)^m$, so
+
+$$
+\Pr(V\geq1)=1-(1-\alpha)^m.
+$$
+
+With $m=20$ and $\alpha=0.05$, this is approximately $0.642$. Dependence changes this exact calculation, but the underlying issue remains: marginal Type I error control is not joint error control.
+
+This calculation does **not** imply that every collection of 20 tests has FWER 0.642. It uses independence, a common exact test size, and the complete null. Valid multiplicity procedures state which joint guarantee survives when those conditions change.
+
+# Weak and Strong Control
+
+Two guarantees are commonly distinguished:
+
+| Guarantee | Configurations covered | Consequence |
+|---|---|---|
+| **Weak FWER control** | Only the complete null, where all $m$ hypotheses are true | May fail when some nulls are false |
+| **Strong FWER control** | Every possible configuration of true and false nulls | Protects the family even when real effects exist |
+
+Strong control is normally required when individual hypotheses may be reported as discoveries. Weak control can be enough for a single global claim such as “at least one effect exists,” but it does not automatically justify identifying which effects exist.
+
+# Bonferroni Control from the Union Bound
+
+Assume each true-null $p$-value is valid:
+
+$$
+\Pr(p_i\leq t)\leq t,
+\qquad i\in I_0,
+\qquad 0\leq t\leq1.
+$$
+
+The Bonferroni rule rejects $H_i$ when
+
+$$
+p_i\leq\frac{\alpha}{m}.
+$$
+
+If any true null is rejected, at least one event $\{p_i\leq\alpha/m\}$ for $i\in I_0$ occurred. Boole's inequality gives
+
+$$
+\begin{aligned}
+\Pr(V\geq1)
+&=\Pr\left(\bigcup_{i\in I_0}\left\{p_i\leq\frac{\alpha}{m}\right\}\right)\\
+&\leq\sum_{i\in I_0}\Pr\left(p_i\leq\frac{\alpha}{m}\right)\\
+&\leq m_0\frac{\alpha}{m}
+\leq\alpha.
+\end{aligned}
+$$
+
+This is strong FWER control and requires no independence among tests. Its generality can cost power because every hypothesis is compared with the same stringent threshold.
+
+An equivalent adjusted value is
+
+$$
+p_i^{\mathrm{Bonf}}=\min(1,mp_i).
+$$
+
+Rejecting when $p_i^{\mathrm{Bonf}}\leq\alpha$ reproduces the threshold rule.
+
+# Holm's Sequentially Rejective Procedure
+
+Holm's method retains arbitrary-dependence strong control and is never less powerful than ordinary Bonferroni. Order the raw values
+
+$$
+p_{(1)}\leq p_{(2)}\leq\cdots\leq p_{(m)}
+$$
+
+with corresponding hypotheses $H_{(1)},\ldots,H_{(m)}$. Beginning at $i=1$:
+
+1. compare $p_{(i)}$ with $\alpha/(m-i+1)$;
+2. reject $H_{(i)}$ if it passes and continue; and
+3. stop at the first failure, retaining that hypothesis and every later one.
+
+The monotone Holm-adjusted values are
+
+$$
+\boxed{
+p_{(i)}^{\mathrm{Holm}}
+=\min\left\{1,\max_{1\leq j\leq i}(m-j+1)p_{(j)}\right\}.
+}
+$$
+
+The cumulative maximum is essential: without it, adjusted values could decrease as raw $p$-values increase and would not encode the step-down rule.
+
+## Why the strong guarantee holds
+
+Let $p_{(j)}$ be the first ordered $p$-value belonging to a true null. If Holm rejects any true null, it rejects this one. At least the $m_0$ true nulls remain among positions $j,\ldots,m$, so $m-j+1\geq m_0$. Rejection therefore implies
+
+$$
+p_{(j)}\leq\frac{\alpha}{m-j+1}\leq\frac{\alpha}{m_0}.
+$$
+
+Thus at least one true-null $p$-value is at most $\alpha/m_0$. Applying the union bound over the $m_0$ true nulls limits that probability to $\alpha$.
+
+# Worked Example
+
+Consider four pre-specified hypotheses with ordered raw values
+
+$$
+0.006,\quad 0.018,\quad 0.021,\quad 0.20
+$$
+
+and target FWER $\alpha=0.05$. Holm's thresholds are
+
+$$
+0.0125,\quad 0.0167,\quad 0.025,\quad 0.05.
+$$
+
+The first value passes, but the second does not. The procedure stops and rejects only the first hypothesis. It cannot skip the second and reject the third, even though $0.021<0.025$, because such skipping would break the step-down guarantee.
+
+The Holm-adjusted values are
+
+$$
+0.024,\quad 0.054,\quad 0.054,\quad 0.20.
+$$
+
+These are family-level evidence measures for the pre-specified procedure, not posterior probabilities that the hypotheses are true.
+
+# Defining the Family Is Part of the Design
+
+A *family* is the collection of claims across which “any false rejection” is scientifically meaningful. It cannot be determined from the $p$-values alone. Examples include:
+
+- all primary endpoints for one confirmatory experiment;
+- all pairwise contrasts used to support one biological conclusion; or
+- all variants in a targeted validation panel.
+
+Combining unrelated questions into one enormous family can waste power. Splitting related tests after seeing their results can evade the intended guarantee. The protocol should state the family, primary and secondary status, directional hypotheses, and any gatekeeping rule before outcomes are inspected.
+
+Adding tests after observing the data also changes $m$. An adjustment using only the selected tests generally does not repair the selection step; the relevant family includes the opportunities that could have produced the reported claims.
+
+# Simultaneous Confidence Intervals
+
+Multiplicity control has an interval counterpart. If $C_1,\ldots,C_m$ satisfy
+
+$$
+\Pr(\theta_i\in C_i\text{ for every }i=1,\ldots,m)\geq1-\alpha,
+$$
+
+they have simultaneous coverage at least $1-\alpha$. Inverting level-$\alpha/m$ two-sided tests yields Bonferroni simultaneous intervals. These answer a stronger question than $m$ separate 95% intervals: the entire reported collection covers jointly with the advertised probability.
+
+Adjusted tests and intervals should be compatible. Reporting an FWER-adjusted decision beside an unadjusted interval can make the table appear contradictory even when both calculations are individually correct.
+
+# Assumptions and Failure Modes
+
+| Issue | Why it matters | Practical response |
+|---|---|---|
+| Invalid marginal $p$-values | Multiplicity adjustment cannot repair a misspecified model, confounding, or pseudoreplication | Validate the sampling model and experimental unit first |
+| Data-dependent family | Uncounted selection opportunities inflate the actual error rate | Pre-specify the family or model the full selection process |
+| Direction chosen after inspection | A one-sided test selected from the observed sign is not a pre-specified one-sided test | Fix direction in advance or use a two-sided test |
+| Dependence-sensitive method | Some step-up or resampling procedures need assumptions beyond valid marginal values | State the dependence conditions; Holm remains valid under arbitrary dependence |
+| Low power | Strong protection can make real effects difficult to detect | Prioritize hypotheses, improve precision, or use a justified gatekeeping design |
+
+FWER is deliberately stringent. Failure to reject after adjustment is not evidence of no biologically meaningful effect; it means the data and planned procedure did not establish that claim while maintaining the chosen joint error guarantee.
+
+# Bioinformatics Example: A Targeted Validation Panel
+
+Suppose a study validates 12 pre-specified protein biomarkers in independent patient samples. The patient is the experimental unit. Duplicate assay wells are technical replicates: they may reduce measurement error, but they do not turn one patient into two independent observations.
+
+If any falsely validated biomarker would trigger expensive downstream work, controlling FWER at 0.05 across the 12 primary claims is defensible. A suitable workflow is:
+
+1. define the 12 hypotheses and effect directions before unblinding;
+2. fit the planned model using patients, not wells, as independent units;
+3. verify that each raw $p$-value is calibrated under its null model;
+4. apply Holm adjustment across all 12 primary values; and
+5. report effect estimates and simultaneous or multiplicity-compatible intervals alongside decisions.
+
+The statistical conclusion is that selected biomarkers passed a procedure whose probability of any false primary rejection is at most 0.05 under its assumptions. The biological conclusion still depends on effect size, assay reliability, transportability, and independent replication.
+
+For exploratory transcriptome-wide screening, where many non-null genes may be expected and some false leads are tolerable, [false discovery rate](false-discovery-rate.qmd) often matches the scientific loss more closely.
+
+# Connections to the Knowledge Map
+
+## Prerequisites
+
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd)
+- [Null distributions and p-values](null-distributions-and-p-values.qmd)
+- [Type I and Type II errors](type-i-and-type-ii-errors.qmd)
+
+## Related concepts
+
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd)
+- [False discovery rate](false-discovery-rate.qmd)
+- [One-sided, two-sided, and equivalence tests](one-sided-two-sided-and-equivalence-tests.qmd)
+
+# Take-home Messages
+
+1. **Target:** FWER is the probability of one or more false rejections in a defined family.
+2. **Guarantee:** Strong control protects every configuration of true and false nulls; weak control protects only the complete null.
+3. **Method:** Bonferroni and Holm provide strong control with valid marginal $p$-values under arbitrary dependence, and Holm uniformly improves on the simple Bonferroni rule.
+4. **Design:** The family and any selection or gatekeeping rules must be defined as part of the scientific design.
+5. **Interpretation:** FWER control limits a repeated-sampling event; it does not assign a probability of truth to an individual claim.
+6. **Application:** Biological samples determine replication; technical replicates do not increase the number of independent units.
+
+# References
+
+- Holm, S. (1979). [A simple sequentially rejective multiple test procedure](https://doi.org/10.2307/4615733). *Scandinavian Journal of Statistics*, 6(2), 65--70.
+- Shaffer, J. P. (1995). [Multiple hypothesis testing](https://doi.org/10.1146/annurev.ps.46.020195.003021). *Annual Review of Psychology*, 46, 561--584.
+- R Core Team. [Adjust p-values for multiple comparisons](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html). *R stats documentation*.

@@ -28,6 +28,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [Statistical versus practical significance](statistical-versus-practical-significance.qmd)
 - [Likelihood-ratio, Wald, and score tests](likelihood-ratio-wald-and-score-tests.qmd)
 - [One-sided, two-sided, and equivalence tests](one-sided-two-sided-and-equivalence-tests.qmd)
+- [Family-wise error rate](family-wise-error-rate.qmd)
+- [False discovery rate](false-discovery-rate.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)
