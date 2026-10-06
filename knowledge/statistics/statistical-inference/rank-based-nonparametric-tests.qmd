@@ -1,0 +1,171 @@
+---
+title: "Rank-based Nonparametric Tests"
+subtitle: "Inference from order information without confusing ranks with assumption-free analysis"
+description: "Wilcoxon, Mann--Whitney, Kruskal--Wallis, and Friedman tests, their estimands, assumptions, ties, and design-aware interpretation."
+author: "Jiahong Sun"
+date: "2026-10-06"
+date-modified: "2026-10-06"
+categories: [Statistics, Inference, Nonparametric Methods]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Ranks Preserve Order, Not Distance
+
+Rank-based tests replace numerical magnitudes by their order. For pooled observations $Y_1,\ldots,Y_N$, let $R_i$ be the rank of $Y_i$, assigning midranks to ties. Because any strictly increasing transformation preserves the ranks, these procedures are unaffected by changing from a concentration to its logarithm or by another monotone rescaling.
+
+That invariance can provide robustness to skewness and extreme magnitudes, but it discards distance information. Rank methods are **nonparametric** because they do not specify a finite-dimensional outcome distribution; they are not assumption-free. Independence or a valid dependence structure, exchangeability under the null, appropriate handling of ties, and a design-matched statistic remain essential.
+
+# The Wilcoxon--Mann--Whitney Statistic
+
+Let $X_1,\ldots,X_m$ and $Y_1,\ldots,Y_n$ be independent observations from distributions $F$ and $G$. A useful population effect is the probability of superiority
+
+$$
+\theta
+=P(X<Y)+\frac12P(X=Y).
+$$
+
+Its estimator is the normalized Mann--Whitney statistic
+
+$$
+\hat\theta
+=\frac{U}{mn},
+\qquad
+U=\sum_{i=1}^m\sum_{j=1}^n
+\left\{\mathbf 1(X_i<Y_j)+\frac12\mathbf 1(X_i=Y_j)\right\}.
+$$
+
+Thus $\hat\theta$ is the fraction of cross-group pairs in which $Y$ is larger, with ties split equally. Under identical continuous distributions, $E(U)=mn/2$. If $W_Y$ is the sum of the pooled ranks for the $Y$ sample, then
+
+$$
+U=W_Y-\frac{n(n+1)}2.
+$$
+
+This algebra explains why the Mann--Whitney $U$ test and the Wilcoxon rank-sum test are equivalent after a change of statistic.
+
+The exact pooled-label permutation test targets equality of the full distributions,
+
+$$
+H_0:F=G.
+$$
+
+Under a pure location-shift model $G(t)=F(t-\Delta)$ with common shape and spread, the procedure can be interpreted as a test of $\Delta=0$, and a Hodges--Lehmann estimator summarizes the shift through pairwise differences. Without that model, it is not simply a test of equal medians: differences in spread or shape can change its distribution and interpretation.
+
+# Worked Two-sample Example
+
+Consider independent samples
+
+$$
+X=(1,2,3),
+\qquad
+Y=(4,5,6).
+$$
+
+Every one of the $3\times3=9$ cross-group comparisons has $X_i<Y_j$, so $U=9$ and $\hat\theta=1$. The $Y$ rank sum is $4+5+6=15$, giving the same result:
+
+$$
+U=15-\frac{3(4)}2=9.
+$$
+
+Under the equality null, all $\binom63=20$ allocations of three pooled ranks to the $Y$ group are equally likely. Only one allocation gives $U=9$ and one gives the equally extreme $U=0$, so the usual two-sided exact p-value is $2/20=0.10$. Complete sample separation therefore does not attain 0.05 with only three observations per group.
+
+The effect estimate $\hat\theta=1$ describes these observed cross-group orderings. It does not show that every future $Y$ value will exceed every future $X$ value, and the p-value's discreteness reflects the small number of independent units.
+
+# Paired Data: Sign and Signed-rank Tests
+
+For paired measurements define differences $D_i=Y_i-X_i$. Pairing is part of the design; the $2n$ measurements must not be analyzed as independent groups.
+
+The **sign test** uses only whether each nonzero $D_i$ is positive. Under independent continuous differences with median zero, the number of positive differences is binomial with success probability $1/2$. It makes relatively weak shape assumptions but discards magnitudes.
+
+The **Wilcoxon signed-rank test** ranks $|D_i|$ and sums ranks carrying positive signs. Its exact sign-flip null distribution requires the differences to be independent and symmetric about zero, with additional care for zeros and ties. Symmetry makes positive and negative signs equally likely conditional on the absolute differences. If the distribution of differences is strongly asymmetric, the signed-rank test is not generally a distribution-free test of the median.
+
+Under a symmetric location model, the signed-rank procedure targets a central shift and the Hodges--Lehmann one-sample estimator is the median of Walsh averages $(D_i+D_j)/2$ for $i\leq j$. This is not generally identical to the sample median difference.
+
+# More Than Two Groups or Blocks
+
+For $k$ independent groups with sizes $n_g$, pooled rank sums $R_g$, and $N=\sum_g n_g$, the Kruskal--Wallis statistic is
+
+$$
+H=
+\frac{12}{N(N+1)}
+\sum_{g=1}^k\frac{R_g^2}{n_g}
+-3(N+1).
+$$
+
+With no ties and under equal group distributions, its large-sample null distribution is approximately $\chi^2_{k-1}$. Ties require a variance correction, and sparse groups can make the approximation inaccurate. A significant global test says that the rank distributions are not all alike; it does not identify the groups that differ. Planned contrasts or multiplicity-adjusted follow-up comparisons are needed.
+
+For complete block designs, the Friedman test ranks treatments **within each block** and compares treatment rank sums. It preserves the block as the independent replication unit. Applying Kruskal--Wallis to repeated measurements ignores within-block dependence, while applying Friedman to unrelated groups invents pairing that is not present.
+
+| Scientific design | Rank procedure | Key condition | Main effect description |
+|---|---|---|---|
+| Two independent groups | Wilcoxon rank-sum / Mann--Whitney | Independent units; exchangeability for exact equality-null test | Relative ordering or a shift under stronger assumptions |
+| Paired observations | Sign test | Independent pairs; equal sign probabilities under null | Direction of within-pair differences |
+| Paired observations | Wilcoxon signed-rank | Independent, symmetric differences | Symmetric location shift |
+| Several independent groups | Kruskal--Wallis | Independent units; equal distributions under null | Global rank-distribution difference |
+| Several treatments in blocks | Friedman | Independent blocks; comparable within-block ranks | Global treatment difference conditional on blocks |
+
+# Ties, Zeros, Exactness, and Software
+
+Ties occur naturally in rounded assays, ordinal scores, counts, and measurements below a detection limit. Midranks preserve a sensible ordering statistic, but the no-tie exact distribution no longer applies. Software may use tie-corrected asymptotic approximations, conditional exact methods, or Monte Carlo calibration. Zeros in paired differences also require an explicit convention.
+
+Base R's `wilcox.test()` computes an exact p-value by default for small samples only when there are no ties; otherwise it uses a normal approximation, optionally with continuity correction. The reported statistic and confidence interval depend on whether the call is one-sample, paired, or two-sample. Record the alternative, exact/asymptotic choice, tie and zero handling, continuity correction, and effect estimate rather than reporting only “a Wilcoxon test.”
+
+```{r}
+#| eval: false
+x <- c(1, 2, 3)
+y <- c(4, 5, 6)
+
+# Independent samples: exact equality-of-distributions test when there are no ties
+stats::wilcox.test(y, x, alternative = "two.sided", exact = TRUE,
+                   conf.int = TRUE)
+
+# Several independent groups: asymptotic Kruskal--Wallis test
+values <- c(2.1, 2.8, 3.0, 3.2, 4.1, 4.4, 4.8, 5.0, 5.4)
+group <- factor(rep(c("A", "B", "C"), each = 3))
+stats::kruskal.test(values ~ group)
+```
+
+An asymptotic p-value can be inaccurate with few independent units or many ties. An exact conditional or Monte Carlo method can improve calibration only if its exchangeability and design conditions are correct.
+
+# Efficiency, Robustness, and What Ranks Cannot Fix
+
+Under normal location shifts, the Wilcoxon rank-sum test has high asymptotic efficiency relative to the two-sample $t$ test, while often losing less power under heavy tails. Yet “use ranks when normality fails” is too crude. Welch's test can remain appropriate for a mean estimand with unequal variances, and robust regression or permutation of a studentized statistic may address other targets.
+
+Ranks cannot repair confounding, selection bias, dependence, informative missingness, batch effects, or pseudoreplication. They also cannot estimate a mean difference once magnitudes have been discarded. Choose a method from the estimand and design, not from a preliminary normality test performed on the same small dataset.
+
+# Bioinformatics Design and Interpretation
+
+For a two-condition assay, donors or independently sampled specimens are normally the experimental units. Genes, reads, cells, and technical replicates are nested measurements, not extra independent ranks. A donor-level rank-sum test may be defensible with independent groups; ranking thousands of cells as though each were an independent donor can yield severely anticonservative inference.
+
+With matched specimens, analyze donor-level within-pair contrasts using a sign or signed-rank procedure when its assumptions match the target. If treatments were randomized within blocks, a blocked randomization test can use ranks while preserving the design. Detection limits can create many ties; then report the tied fraction, use a calibrated method, and assess whether the scientific target is abundance, detection probability, or both.
+
+Statistically, a rank effect such as $\theta$ describes relative ordering. Biologically, it does not directly state a fold change, pathway mechanism, or clinically meaningful difference. Report raw-scale or scientifically meaningful effect summaries and intervals alongside rank-based inference, and adjust for multiplicity when many features are tested.
+
+# Common Misinterpretations
+
+- **“Mann--Whitney tests medians.”** Only with suitable common-shape or location-shift assumptions can it be reduced to that interpretation.
+- **“Nonparametric means no assumptions.”** Validity still depends on sampling, independence, exchangeability, and tie handling.
+- **“Ranks solve outliers.”** They limit magnitude influence but do not make an influential specimen scientifically irrelevant or correct data errors.
+- **“Signed-rank is the paired rank-sum test.”** It analyzes ranked within-pair differences and needs symmetry; the independent-sample rank-sum test has a different design and null.
+- **“A significant Kruskal--Wallis test identifies the changed group.”** It is a global test; follow-up comparisons require their own estimates and multiplicity control.
+
+# Connections and Take-home Messages
+
+- [Permutation and randomization tests](permutation-and-randomization-tests.qmd) explains how exchangeability or assignment generates exact reference distributions.
+- [Effect sizes](effect-sizes.qmd) distinguishes relative-ordering effects from raw and standardized differences.
+- [One-sided, two-sided, and equivalence tests](one-sided-two-sided-and-equivalence-tests.qmd) connects the scientific claim to the alternative and tail.
+- [Bonferroni, Holm, and Hochberg procedures](bonferroni-holm-and-hochberg-procedures.qmd) covers adjusted follow-up tests.
+- [Sampling distributions](sampling-distributions.qmd) explains exact and asymptotic calibration.
+
+Ranks retain ordering while discarding distance, providing monotone invariance and useful robustness. The Wilcoxon--Mann--Whitney statistic naturally estimates a probability of superiority, not automatically a median difference. Paired, independent, and blocked designs require different rank procedures. Ties, zeros, small samples, dependence, and the intended estimand determine whether exact, asymptotic, or alternative methods are appropriate.
+
+# References
+
+- Wilcoxon, F. “Individual Comparisons by Ranking Methods.” *Biometrics Bulletin* 1 (1945): 80--83. [Article](https://doi.org/10.2307/3001968).
+- Mann, H. B. and Whitney, D. R. “On a Test of Whether One of Two Random Variables Is Stochastically Larger than the Other.” *The Annals of Mathematical Statistics* 18 (1947): 50--60. [Article](https://doi.org/10.1214/aoms/1177730491).
+- Kruskal, W. H. and Wallis, W. A. “Use of Ranks in One-Criterion Variance Analysis.” *Journal of the American Statistical Association* 47 (1952): 583--621. [Article](https://doi.org/10.1080/01621459.1952.10483441).
+- Friedman, M. “The Use of Ranks to Avoid the Assumption of Normality Implicit in the Analysis of Variance.” *Journal of the American Statistical Association* 32 (1937): 675--701. [Article](https://doi.org/10.1080/01621459.1937.10503522).
+- Hollander, M., Wolfe, D. A., and Chicken, E. *Nonparametric Statistical Methods*, 3rd ed. Wiley, 2014. [Publisher page](https://doi.org/10.1002/9781119196037).
+- R Core Team. “Wilcoxon Rank Sum and Signed Rank Tests.” *R statistical software documentation*. [Documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/wilcox.test.html).

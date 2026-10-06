@@ -32,6 +32,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [False discovery rate](false-discovery-rate.qmd)
 - [Bonferroni, Holm, and Hochberg procedures](bonferroni-holm-and-hochberg-procedures.qmd)
 - [Benjamini--Hochberg and Storey q-values](benjamini-hochberg-and-storey-q-values.qmd)
+- [Permutation and randomization tests](permutation-and-randomization-tests.qmd)
+- [Rank-based nonparametric tests](rank-based-nonparametric-tests.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)

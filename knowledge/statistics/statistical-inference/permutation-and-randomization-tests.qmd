@@ -1,0 +1,172 @@
+---
+title: "Permutation and Randomization Tests"
+subtitle: "Calibrating evidence by transformations justified by the design or null"
+description: "Exact and Monte Carlo randomization inference, permutation tests, exchangeability, restricted shuffles, and design-aware interpretation."
+author: "Jiahong Sun"
+date: "2026-10-06"
+date-modified: "2026-10-06"
+categories: [Statistics, Inference, Resampling, Experimental Design]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Reassignment Creates the Reference Distribution
+
+A permutation or randomization test compares an observed statistic with values obtained by transformations that would be legitimate under a stated null hypothesis. Let $Z$ describe treatment assignment or group labels, let $Y$ be the observed outcomes, and let $T(Y,Z)$ be a statistic such as a difference in means. If $\mathcal Z$ is the set of assignments allowed by the design, the randomization distribution is
+
+$$
+\{T(Y,z):z\in\mathcal Z\}.
+$$
+
+For an upper-tail test with equally likely assignments, the exact p-value is
+
+$$
+p_{\mathrm{exact}}
+=
+\frac{1}{|\mathcal Z|}
+\sum_{z\in\mathcal Z}
+\mathbf 1\{T(Y,z)\geq T(Y,Z_{\mathrm{obs}})\}.
+$$
+
+The arithmetic is simple; the justification is not. The permissible transformations must come from the assignment mechanism or from exchangeability under the null. Shuffling arbitrary rows does not make a test nonparametric or valid.
+
+# Randomization Tests and Permutation Tests
+
+The terms are often used interchangeably, but their strongest justifications differ.
+
+| Setting | Source of the reference distribution | Typical null | Scope of interpretation |
+|---|---|---|---|
+| Randomized experiment | Known treatment-assignment mechanism | Sharp null of no unit-level treatment effect | Design-based causal inference for the randomized units |
+| Independent samples | Exchangeability of pooled observations under $H_0$ | Equality of the group distributions | Population comparison under sampling assumptions |
+| Paired or blocked design | Within-pair swaps or within-block permutations | No effect within the permitted exchange units | Contrast respecting pairing or blocking |
+| Regression or complex design | Residual, score, or label transformations with additional conditions | Model-specific restriction | Conditional on the validity of the chosen transformation |
+
+In a randomized experiment, write the potential outcomes for unit $i$ as $Y_i(1)$ and $Y_i(0)$. Fisher's sharp null is
+
+$$
+H_0^{\mathrm{sharp}}:Y_i(1)=Y_i(0)\quad\text{for every }i.
+$$
+
+Under this null every missing potential outcome is known from the observed outcome, so $T$ can be recomputed for every allowed assignment. This yields finite-sample calibration from the design without an outcome-distribution model.
+
+The weak null of zero average treatment effect,
+
+$$
+H_0^{\mathrm{avg}}:\frac1N\sum_{i=1}^N\{Y_i(1)-Y_i(0)\}=0,
+$$
+
+does not make all missing potential outcomes known. A test exact for the sharp null is not automatically exact for this weaker null. Studentized statistics can provide asymptotically valid inference for average effects under suitable randomized designs, but the target and conditions must be stated.
+
+For observational two-sample data, freely permuting labels is exact when the pooled observations are exchangeable under the null—for example, when both samples have the same distribution. Equality of means alone does not generally imply exchangeability when variances or shapes differ.
+
+# A Small Exact Randomization Test
+
+Four experimental units have observed outcomes
+
+$$
+y=(8,6,5,3),
+$$
+
+and exactly two units were randomly assigned to treatment. The observed treatment group contains outcomes 8 and 6, so
+
+$$
+T_{\mathrm{obs}}=\bar Y_T-\bar Y_C=7-4=3.
+$$
+
+There are $\binom42=6$ permitted assignments. If $s_T$ is the sum of the two treated outcomes, then the difference in means equals $s_T-11$. The six values are
+
+$$
+3,\;2,\;0,\;0,\;-2,\;-3.
+$$
+
+Only one is at least 3, so the upper-tail p-value is $1/6$. Two of the six have absolute value at least 3, so the two-sided absolute-statistic p-value is $2/6=1/3$. The smallest attainable upper-tail p-value is $1/6$: exact tests are discrete, and a small design may be incapable of attaining $0.05$.
+
+This calculation conditions on the outcomes under the sharp null and averages over the assignment mechanism. It does not claim that the four observed outcomes are a random sample from a larger biological population. Generalizing beyond these units requires additional sampling or modeling assumptions.
+
+# Exhaustive and Monte Carlo Calibration
+
+Exhaustive enumeration is feasible only when $|\mathcal Z|$ is modest. With $n_T$ treated among $N$ units, a completely randomized design has $\binom{N}{n_T}$ assignments. For large sets, draw $B$ valid random assignments and include the observed arrangement. A conservative Monte Carlo p-value is
+
+$$
+\boxed{
+\hat p=\frac{1+\sum_{b=1}^B
+\mathbf 1\{T_b^*\geq T_{\mathrm{obs}}\}}{B+1}.
+}
+$$
+
+The added ones prevent a zero p-value and give a valid randomized Monte Carlo test when the observed and simulated assignments are handled symmetrically. Its resolution is $1/(B+1)$, and its simulation uncertainty should be small relative to any decision threshold. Increasing $B$ reduces Monte Carlo error but cannot fix an invalid permutation scheme.
+
+```{r}
+#| eval: false
+# A reproducible Monte Carlo randomization test for a completely randomized design
+set.seed(20261006)
+y <- c(8, 6, 5, 3, 7, 4, 6, 5)
+z <- c(1, 1, 1, 1, 0, 0, 0, 0)
+stat <- function(labels) mean(y[labels == 1]) - mean(y[labels == 0])
+t_obs <- stat(z)
+B <- 9999
+t_star <- replicate(B, stat(sample(z, replace = FALSE)))
+p_two_sided <- (1 + sum(abs(t_star) >= abs(t_obs))) / (B + 1)
+p_two_sided
+```
+
+The code is appropriate only because every allocation with four treated units is permitted. A blocked, paired, clustered, or unequal-probability design needs a generator for its actual assignment mechanism.
+
+# Restrictions Must Follow the Design
+
+| Design feature | Valid transformation idea | Invalid shortcut |
+|---|---|---|
+| Matched pairs | Swap treatment labels within each pair | Shuffle across all specimens |
+| Randomized blocks | Permute within blocks using the assigned counts | Ignore block restrictions |
+| Cluster randomization | Reassign whole clusters | Permute individuals within clusters |
+| Repeated measures | Swap condition labels within a subject when justified | Treat visits as independent subjects |
+| Time or spatial dependence | Use design-specific shifts, blocks, or model-based methods | Freely shuffle individual observations |
+| Covariate-adaptive assignment | Reproduce the actual assignment algorithm | Use complete randomization |
+
+Post-treatment missingness, noncompliance, interference between units, and outcome-adaptive stopping can break the simple reassignment argument. They require an estimand and procedure that explicitly address those features.
+
+# Choosing a Statistic and Tail
+
+Exactness under a sharp null does not require the statistic itself to follow a parametric distribution. Power, however, depends strongly on the statistic. A mean difference is sensitive to average shifts; a rank statistic emphasizes ordering; a maximum may target a sparse extreme response; and a studentized contrast adjusts for estimated variability.
+
+The alternative determines the tail. A two-sided p-value can be defined through $|T|$, doubled one-sided probabilities, or an ordering based on probability mass; these definitions need not agree for asymmetric or discrete randomization distributions. Specify the statistic and extremeness rule before examining the outcome.
+
+Inverting a family of randomization tests can produce a confidence set, but under a constant additive-effect model this targets a model parameter stronger than an average effect. Report an effect estimate and compatible interval alongside the p-value; randomization calibration does not make magnitude optional.
+
+# Bioinformatics Design and Interpretation
+
+Suppose treatment was randomized to biological specimens and thousands of genes were measured. The specimen is the assignment and permutation unit. Reads, technical lanes, and cells nested within a specimen must travel with that specimen; permuting cell labels independently creates pseudoreplication. If randomization occurred within batches or matched donor pairs, permutations must remain within those sets.
+
+For an observational case--control expression study, exchangeability is an assumption rather than a consequence of randomization. Batch, ancestry, age, or other confounders can make unrestricted case-label permutations invalid. Residual permutation methods also rely on model conditions and are not universally exact. A sensitivity analysis should compare plausible adjustment and transformation schemes rather than selecting the smallest p-value.
+
+Statistically, a small randomization p-value says the chosen statistic is unusual among assignments permitted under the null and design. Biologically, it does not establish a large effect, a mechanism, absence of interference, or generalizability to another population. Multiplicity across genes remains a separate problem.
+
+# Assumptions and Failure Modes
+
+- **Wrong unit:** permuting cells, reads, or repeated measurements instead of independently assigned specimens exaggerates information.
+- **Wrong null:** a sharp-null test is presented as an exact test of a zero average effect.
+- **Wrong transformation group:** unrestricted shuffles violate pairs, blocks, clusters, or unequal assignment probabilities.
+- **Exchangeability assumed from “nonparametric”:** different variances, shapes, or confounder distributions can invalidate pooled-label permutation under a mean-only null.
+- **Adaptive statistic:** trying several outcomes, transformations, or tails and reporting the most favorable test omits the selection step from calibration.
+- **Too few assignments or simulations:** attainable p-values are coarse, and Monte Carlo error can change threshold decisions.
+
+# Connections and Take-home Messages
+
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd) defines the decision rule and calibration target.
+- [Null distributions and p-values](null-distributions-and-p-values.qmd) explains tail areas and valid p-values.
+- [Nonparametric bootstrap](nonparametric-bootstrap.qmd) resamples units with replacement to estimate sampling uncertainty; permutation tests transform labels or assignments under a null.
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd) clarifies exchangeability and dependence.
+- [Family-wise error rate](family-wise-error-rate.qmd) and [false discovery rate](false-discovery-rate.qmd) address multiplicity after individual tests are calibrated.
+
+Randomization inference obtains its strongest finite-sample guarantee from the treatment-assignment mechanism. Permutation inference in observational samples instead needs null exchangeability or a justified model-based transformation. The experimental unit, restricted assignment set, statistic, tail, and null must all align. Enumeration or many simulations improve numerical accuracy only after that scientific and design logic is correct.
+
+# References
+
+- Fisher, R. A. *The Design of Experiments*. Oliver and Boyd, 1935.
+- Pitman, E. J. G. “Significance Tests Which May Be Applied to Samples from Any Populations.” *Supplement to the Journal of the Royal Statistical Society* 4 (1937): 119--130. [Article](https://doi.org/10.2307/2984124).
+- Lehmann, E. L. and Romano, J. P. *Testing Statistical Hypotheses*, 3rd ed. Springer, 2005. [Publisher page](https://doi.org/10.1007/0-387-27605-X).
+- Ernst, M. D. “Permutation Methods: A Basis for Exact Inference.” *Statistical Science* 19 (2004): 676--685. [Article](https://doi.org/10.1214/088342304000000396).
+- Phipson, B. and Smyth, G. K. “Permutation P-values Should Never Be Zero: Calculating Exact P-values When Permutations Are Randomly Drawn.” *Statistical Applications in Genetics and Molecular Biology* 9 (2010), Article 39. [Article](https://doi.org/10.2202/1544-6115.1585).
+- Chung, E. and Romano, J. P. “Exact and Asymptotically Robust Permutation Tests.” *The Annals of Statistics* 41 (2013): 484--507. [Article](https://doi.org/10.1214/13-AOS1090).
