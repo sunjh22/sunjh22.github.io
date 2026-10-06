@@ -2,5 +2,7 @@
 /_site/
 /site_libs/
 /.jupyter_cache/
+/_freeze/
+**/*_cache/
 **/*.quarto_ipynb
 **/.ipynb_checkpoints/

@@ -30,6 +30,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [One-sided, two-sided, and equivalence tests](one-sided-two-sided-and-equivalence-tests.qmd)
 - [Family-wise error rate](family-wise-error-rate.qmd)
 - [False discovery rate](false-discovery-rate.qmd)
+- [Bonferroni, Holm, and Hochberg procedures](bonferroni-holm-and-hochberg-procedures.qmd)
+- [Benjamini--Hochberg and Storey q-values](benjamini-hochberg-and-storey-q-values.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)

@@ -1,0 +1,178 @@
+---
+title: "Benjamini--Hochberg and Storey q-values"
+subtitle: "Controlling and estimating false discovery rates"
+description: "The Benjamini--Hochberg step-up procedure, Storey's adaptive q-values, their assumptions, and responsible use in high-dimensional studies."
+author: "Jiahong Sun"
+date: "2026-10-06"
+date-modified: "2026-10-06"
+categories: [Statistics, Inference, Multiple Testing, Bioinformatics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# From Any False Positive to a False Fraction
+
+Among $m$ tested hypotheses, let $R$ be the total number rejected and $V$ the number of rejected true null hypotheses. Define the false discovery proportion (FDP) by
+
+$$
+\operatorname{FDP}=\frac{V}{\max(R,1)}
+$$
+
+and the [false discovery rate](false-discovery-rate.qmd) by
+
+$$
+\operatorname{FDR}=\operatorname{E}(\operatorname{FDP}).
+$$
+
+The Benjamini--Hochberg (BH) procedure controls this expectation through an ordered rejection rule. Storey's framework estimates the proportion of true null hypotheses and defines a q-value for each test. These are related ideas, but a BH-adjusted p-value and a Storey q-value are not automatically interchangeable.
+
+# The Benjamini--Hochberg Procedure
+
+Let $p_{(1)}\le\cdots\le p_{(m)}$ be valid ordered p-values. For a target FDR level $q$, BH finds
+
+$$
+k=\max\left\{i:p_{(i)}\le\frac{i}{m}q\right\}
+$$
+
+and rejects $H_{(1)},\ldots,H_{(k)}$. If the set is empty, it rejects none. It is a step-up procedure: one crossing at rank $k$ makes every smaller p-value a discovery, even if an earlier point lies above its own line.
+
+The ordered BH-adjusted p-values are
+
+$$
+\widetilde p_{(i)}^{\mathrm{BH}}
+=\min\left\{1,\min_{j\ge i}\frac{m}{j}p_{(j)}\right\}.
+$$
+
+The backward cumulative minimum makes the values monotone in rank. Rejecting tests with $\widetilde p_i^{\mathrm{BH}}\le q$ reproduces the step-up rule.
+
+If $m_0$ of the $m$ null hypotheses are true and their p-values are independent, classical BH satisfies
+
+$$
+\operatorname{FDR}=\frac{m_0}{m}q\le q.
+$$
+
+The guarantee also extends to specific positive dependence conditions. It does not hold for every possible dependence structure. The Benjamini--Yekutieli modification replaces $q$ by $q/c_m$, where
+
+$$
+c_m=\sum_{i=1}^{m}\frac{1}{i},
+$$
+
+to obtain FDR control under arbitrary dependence, usually at a substantial power cost.
+
+# Storey's Estimate of the Null Proportion
+
+Write $\pi_0=m_0/m$ for the unknown proportion of true null hypotheses. Under a continuous, correctly calibrated null, null p-values are uniform, while sufficiently large p-values are unlikely to come from strong alternatives. For a tuning value $0<\lambda<1$, Storey's basic estimator is
+
+$$
+\widehat\pi_0(\lambda)
+=\min\left\{1,
+\frac{\#\{p_i>\lambda\}}{m(1-\lambda)}
+\right\}.
+$$
+
+Using $\widehat\pi_0<1$ can increase power because the method estimates that some tested hypotheses are non-null. In practice, relying on one arbitrary $\lambda$ is unstable. The `qvalue` software can estimate a smooth relationship over several $\lambda$ values or use a bootstrap choice, and the result should be checked for sensitivity.
+
+For a p-value threshold $t$, let $R(t)=\#\{p_i\le t\}$. A plug-in estimate of the FDR at that threshold is
+
+$$
+\widehat{\operatorname{FDR}}(t)
+=\frac{\widehat\pi_0 mt}{\max\{R(t),1\}}.
+$$
+
+For ordered p-values, the corresponding monotone q-value estimate is
+
+$$
+\widehat q_{(i)}
+=\min\left\{1,
+\min_{j\ge i}\frac{\widehat\pi_0 m p_{(j)}}{j}
+\right\}.
+$$
+
+Conceptually, a Storey q-value is the smallest estimated positive false discovery rate attainable when calling that test significant through a p-value threshold. It is a property of the entire family and the estimation procedure, not a posterior probability that this particular null is true. The local false discovery rate is a different quantity.
+
+# Worked Example
+
+Suppose eight pre-specified tests yield
+
+$$
+(0.001,\ 0.006,\ 0.012,\ 0.028,\ 0.300,\ 0.550,\ 0.700,\ 0.900).
+$$
+
+At $q=0.05$, the first four BH boundaries are $0.00625$, $0.0125$, $0.01875$, and $0.025$. The largest crossing is rank 3 because $0.012\le0.01875$ but $0.028>0.025$ and no later p-value crosses. BH therefore rejects the first three hypotheses.
+
+With $\lambda=0.5$, three p-values exceed $0.5$, giving the illustrative estimate
+
+$$
+\widehat\pi_0=\frac{3}{8(1-0.5)}=0.75.
+$$
+
+The first four plug-in q-values are $0.006$, $0.018$, $0.024$, and $0.042$, so the adaptive calculation would include the fourth test at 0.05. This extra discovery depends on estimating $\pi_0$ well. Eight tests are far too few for a stable tail-based estimate; the calculation illustrates the mechanism, not a recommended analysis.
+
+# Reproducible Implementation
+
+Base R computes BH- and BY-adjusted p-values. The Bioconductor `qvalue` package estimates $\pi_0$, q-values, and local FDR values.
+
+```{r}
+#| eval: false
+p <- c(0.001, 0.006, 0.012, 0.028, 0.300, 0.550, 0.700, 0.900)
+
+p.adjust(p, method = "BH")
+p.adjust(p, method = "BY")
+
+# BiocManager::install("qvalue")
+fit <- qvalue::qvalue(p)
+fit$pi0
+fit$qvalues
+```
+
+Keep the full, unrounded p-values for computation and record the package version, tuning method, and number of hypotheses. Software output does not determine which hypotheses belong in the family.
+
+# Assumptions and Diagnostics
+
+| Issue | Why it matters | Useful check or response |
+|---|---|---|
+| Invalid null p-values | Neither BH nor q-values can repair anti-conservative tests | Use diagnostics, permutation, simulation, or negative controls to assess null calibration |
+| Dependence | Classical BH is not guaranteed under arbitrary dependence | Justify positive-dependence conditions, compare BY or suitable dependence-aware methods, and perform sensitivity analysis |
+| Estimation of $\pi_0$ | Storey q-values can be unstable or anti-conservative when the p-value tail is poorly estimated | Plot the p-value histogram and $\widehat\pi_0(\lambda)$; compare tuning choices and BH results |
+| Discrete p-values | A uniform null approximation and tail estimator may be conservative or irregular | Use exact/discrete-aware methods or simulation appropriate to the test |
+| Data-dependent filtering | Filtering may change null p-value behavior and the effective family | Establish independence under the null or incorporate selection into the analysis |
+| Hidden structure | Batch effects, confounding, or model misspecification can create an excess of small p-values | Correct the design/model first; inspect genomic inflation and control features |
+
+A flat p-value histogram is not universally expected: alternatives concentrate values near zero, discrete tests produce spikes, and correlated hypotheses create visible sampling variation. Diagnostics must be interpreted relative to the data-generating process.
+
+# Bioinformatics Study Design
+
+In differential-expression or association studies, genes, peaks, taxa, or variants are the hypotheses; donors, organisms, or independently randomized samples are usually the experimental units. Cells, reads, technical wells, and sequencing lanes nested within a sample are not independent biological replicates. Pseudoreplication can make the input p-values anti-conservative, after which an FDR procedure merely adjusts invalid evidence.
+
+Before testing, specify the contrast, eligible feature universe, independent-filtering rule, and analysis family. Filtering low-information features can improve power when the filter is independent of the null test statistic, but filtering on observed effects or p-values invalidates the usual interpretation. Report effect sizes and uncertainty alongside q-values: an FDR threshold ranks statistical evidence within a family and does not establish biological importance, mechanism, or reproducibility.
+
+# Interpretation and Common Pitfalls
+
+- **FDR is an expectation over repeated studies**, not a guarantee that exactly 5% of one realized discovery list is false.
+- **A q-value is not $\Pr(H_i\text{ is null}\mid\text{data})$**. That individual posterior-type quantity is closer to a model-based local FDR.
+- **BH-adjusted p-values are often labeled q-values in software**, but Storey's q-values additionally estimate $\pi_0$; state the method rather than relying on the column name.
+- **The largest crossing determines BH rejections**. Do not stop at the first ordered p-value that misses its own boundary.
+- **Choosing the family after seeing results defeats prospective error control**. Document all tested features and contrasts, including those not reported.
+- **Discovery control is not selection-bias correction**. Effect estimates among selected features can still be exaggerated by winner's curse.
+
+# Connections and Take-home Messages
+
+- [Null distributions and p-values](null-distributions-and-p-values.qmd) explains the calibration required of every input p-value.
+- [Family-wise error rate](family-wise-error-rate.qmd) and [Bonferroni, Holm, and Hochberg procedures](bonferroni-holm-and-hochberg-procedures.qmd) address the stricter event of any false rejection.
+- [False discovery rate](false-discovery-rate.qmd) distinguishes FDP, FDR, positive FDR, and local false discovery rates.
+- [Effect sizes](effect-sizes.qmd) and [statistical versus practical significance](statistical-versus-practical-significance.qmd) keep scientific magnitude separate from a discovery threshold.
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd) shows why the number of tests and expected signal fraction belong in study planning.
+
+BH provides a transparent step-up rule with well-defined guarantees under independence and suitable positive dependence. Storey's method can gain power by estimating $\pi_0$, but that gain makes null calibration, tuning, and sensitivity analysis more important. Neither method compensates for the wrong experimental unit or a misspecified model.
+
+# References
+
+- Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: A practical and powerful approach to multiple testing. *Journal of the Royal Statistical Society: Series B*, 57(1), 289--300. [doi:10.1111/j.2517-6161.1995.tb02031.x](https://doi.org/10.1111/j.2517-6161.1995.tb02031.x).
+- Benjamini, Y., & Yekutieli, D. (2001). The control of the false discovery rate in multiple testing under dependency. *The Annals of Statistics*, 29(4), 1165--1188. [doi:10.1214/aos/1013699998](https://doi.org/10.1214/aos/1013699998).
+- Storey, J. D. (2002). A direct approach to false discovery rates. *Journal of the Royal Statistical Society: Series B*, 64(3), 479--498. [doi:10.1111/1467-9868.00346](https://doi.org/10.1111/1467-9868.00346).
+- Storey, J. D., & Tibshirani, R. (2003). Statistical significance for genomewide studies. *Proceedings of the National Academy of Sciences*, 100(16), 9440--9445. [doi:10.1073/pnas.1530509100](https://doi.org/10.1073/pnas.1530509100).
+- Storey, J. D., Taylor, J. E., & Siegmund, D. (2004). Strong control, conservative point estimation and simultaneous conservative consistency of false discovery rates: A unified approach. *Journal of the Royal Statistical Society: Series B*, 66(1), 187--205. [doi:10.1111/j.1467-9868.2004.00439.x](https://doi.org/10.1111/j.1467-9868.2004.00439.x).
+- R Core Team. `p.adjust`: Adjust p-values for multiple comparisons. [R documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).
+- Storey, J. D., Bass, A. J., Dabney, A., & Robinson, D. `qvalue`: Q-value estimation for false discovery rate control. [Bioconductor documentation](https://bioconductor.org/packages/release/bioc/html/qvalue.html).

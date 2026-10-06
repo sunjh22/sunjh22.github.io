@@ -1,0 +1,161 @@
+---
+title: "Bonferroni, Holm, and Hochberg Procedures"
+subtitle: "Controlling family-wise error with single-step and ordered tests"
+description: "How Bonferroni, Holm, and Hochberg procedures control family-wise error, how their algorithms differ, and when their guarantees apply."
+author: "Jiahong Sun"
+date: "2026-10-06"
+date-modified: "2026-10-06"
+categories: [Statistics, Inference, Multiple Testing]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# One Family, Three Procedures
+
+Suppose a study tests hypotheses $H_1,\ldots,H_m$ with valid marginal p-values $p_1,\ldots,p_m$. If all $m$ tests are run at level $\alpha$, the chance of at least one false rejection can be much larger than $\alpha$. The [family-wise error rate](family-wise-error-rate.qmd) (FWER) is
+
+$$
+\operatorname{FWER}=\Pr(V\ge 1),
+$$
+
+where $V$ is the number of rejected true null hypotheses. Bonferroni, Holm, and Hochberg all target FWER, but they use the ordered p-values differently.
+
+| Procedure | Direction | Strong FWER guarantee | Relative behavior |
+|---|---|---|---|
+| Bonferroni | Single step | Arbitrary dependence | Simple, but uniformly dominated by Holm |
+| Holm | Step down | Arbitrary dependence | Never rejects fewer hypotheses than Bonferroni |
+| Hochberg | Step up | Independence or suitable positive dependence | Can reject more than Holm under its stronger assumptions |
+
+The family of hypotheses and the target level $\alpha$ should be defined from the scientific question, not reconstructed after seeing which results look promising.
+
+# Bonferroni from the Union Bound
+
+For every true null $H_i$, validity means $\Pr(p_i\le u)\le u$ for $0\le u\le1$. If $I_0$ indexes the $m_0$ true nulls, the union bound gives
+
+$$
+\begin{aligned}
+\Pr(V\ge1)
+&=\Pr\left(\bigcup_{i\in I_0}\left\{p_i\le\frac{\alpha}{m}\right\}\right)\\
+&\le \sum_{i\in I_0}\Pr\left(p_i\le\frac{\alpha}{m}\right)\\
+&\le m_0\frac{\alpha}{m}\le\alpha.
+\end{aligned}
+$$
+
+Therefore Bonferroni rejects $H_i$ when
+
+$$
+p_i\le\frac{\alpha}{m}.
+$$
+
+Equivalently, its adjusted p-value is $\widetilde p_i=\min(1,mp_i)$. The proof makes no assumption about dependence among tests. It can nevertheless be conservative because it protects against a worst-case union of false-rejection events and uses $m$, although only $m_0$ hypotheses are truly null.
+
+# Holm's Step-down Procedure
+
+Let
+
+$$
+p_{(1)}\le p_{(2)}\le\cdots\le p_{(m)}
+$$
+
+be the ordered p-values, with $H_{(i)}$ their corresponding hypotheses. Holm's algorithm starts with the smallest p-value:
+
+1. Compare $p_{(1)}$ with $\alpha/m$.
+2. If it passes, compare $p_{(2)}$ with $\alpha/(m-1)$, then continue with $p_{(i)}\le\alpha/(m-i+1)$.
+3. At the first failure, stop and retain that hypothesis and every hypothesis with a larger p-value.
+
+The ordered Holm-adjusted p-values are
+
+$$
+\widetilde p_{(i)}^{\text{Holm}}
+=\min\left\{1,\max_{1\le j\le i}(m-j+1)p_{(j)}\right\}.
+$$
+
+The running maximum preserves monotonicity: a larger raw p-value cannot receive a smaller adjusted value. Holm can be derived as a closed-testing procedure with Bonferroni local tests, which explains its strong FWER control under every configuration of true and false nulls and under arbitrary dependence. Because its first cutoff equals Bonferroni's and later cutoffs become less stringent, Holm never rejects fewer hypotheses than Bonferroni.
+
+# Hochberg's Step-up Procedure
+
+Hochberg uses the same critical values but searches from the largest p-value downward:
+
+1. Find the largest index $k$ satisfying
+
+   $$
+   p_{(k)}\le\frac{\alpha}{m-k+1}.
+   $$
+
+2. Reject $H_{(1)},\ldots,H_{(k)}$. If no such $k$ exists, reject none.
+
+Its ordered adjusted p-values are
+
+$$
+\widetilde p_{(i)}^{\text{Hochberg}}
+=\min\left\{1,\min_{i\le j\le m}(m-j+1)p_{(j)}\right\}.
+$$
+
+Hochberg may reject several hypotheses because one later ordered p-value crosses its boundary. This gain is not free: the classical guarantee relies on independent p-values or forms of non-negative dependence that make the underlying Simes test valid. Under arbitrary or poorly understood dependence, Holm is the safer default of these three methods.
+
+# Worked Example
+
+Consider four pre-specified hypotheses with ordered p-values
+
+$$
+(0.010,\ 0.020,\ 0.024,\ 0.500)
+$$
+
+and $\alpha=0.05$.
+
+| Rank $i$ | $p_{(i)}$ | $\alpha/(m-i+1)$ | Bonferroni adjusted | Holm adjusted | Hochberg adjusted |
+|---:|---:|---:|---:|---:|---:|
+| 1 | 0.010 | 0.0125 | 0.040 | 0.040 | 0.040 |
+| 2 | 0.020 | 0.0167 | 0.080 | 0.060 | 0.048 |
+| 3 | 0.024 | 0.0250 | 0.096 | 0.060 | 0.048 |
+| 4 | 0.500 | 0.0500 | 1.000 | 0.500 | 0.500 |
+
+Bonferroni rejects only $H_{(1)}$. Holm also rejects only $H_{(1)}$ because its step-down sequence stops at rank 2. Hochberg finds that $p_{(3)}=0.024\le0.025$ and rejects the first three hypotheses, provided its dependence assumptions are defensible.
+
+An adjusted p-value here is the smallest family-wise level at which that procedure would reject the hypothesis. It is not the probability that the null is true and not an estimate of the fraction of reported findings that are false.
+
+# Choosing and Defining the Family
+
+Multiplicity is attached to a set of claims. A confirmatory experiment might define one family as all primary contrasts needed to support a single conclusion. Separate scientific questions can sometimes form separate families, but splitting must follow the design and logical structure rather than the observed p-values.
+
+| Situation | Reasonable starting point |
+|---|---|
+| Any false positive would undermine a confirmatory claim | Holm |
+| A transparent one-line bound or unequal pre-specified weights are needed | Bonferroni or weighted Bonferroni |
+| FWER is required and independence or suitable positive dependence is justified | Hochberg |
+| Thousands of exploratory discoveries are expected | Consider [false discovery rate](false-discovery-rate.qmd) control instead |
+
+These adjustments correct a valid collection of p-values; they do not repair biased sampling, model misspecification, selective reporting, or an invalid null distribution.
+
+# Bioinformatics Design and Interpretation
+
+For a targeted validation panel, genes or contrasts may be the hypotheses, but biological samples remain the experimental units. Repeated sequencing lanes, technical wells, or multiple cells from the same donor do not create independent biological replication. The model must first account for pairing, blocking, repeated measures, or clustering; multiplicity adjustment comes after valid per-hypothesis inference.
+
+Genome-wide assays also produce strongly dependent tests because genes share pathways, samples, and latent factors. Holm retains its guarantee without modeling that dependence, although it may have low power. Hochberg should not be selected merely because it yields more rejections. Report the family definition, number of tests, adjustment method, effect estimates, and uncertainty intervals so that statistical control is separated from biological importance.
+
+# Common Pitfalls
+
+- **Using $0.05/m$ after filtering on the observed p-values:** data-dependent filtering changes the tested family unless the filter is demonstrably independent of the null p-values.
+- **Treating Holm as $m$ unrelated thresholds:** it is a sequential rule; after the first failure, later hypotheses are not rejected.
+- **Applying Hochberg under arbitrary dependence without justification:** its classical advantage relies on stronger assumptions than Holm's.
+- **Calling an adjusted p-value a posterior error probability:** it calibrates a repeated-sampling decision rule, not belief in an individual hypothesis.
+- **Reporting only rejections:** multiplicity control says nothing about effect magnitude, direction, or practical importance.
+
+# Connections and Take-home Messages
+
+- [Hypothesis tests and test statistics](hypothesis-tests-and-test-statistics.qmd) explains what each underlying test must establish.
+- [Null distributions and p-values](null-distributions-and-p-values.qmd) develops p-value validity and calibration.
+- [Family-wise error rate](family-wise-error-rate.qmd) distinguishes weak and strong error control.
+- [False discovery rate](false-discovery-rate.qmd) targets the expected false fraction rather than the chance of any false rejection.
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd) shows why multiplicity belongs in prospective design.
+
+The central practical rule is simple: use Holm rather than unmodified Bonferroni when strong FWER control under arbitrary dependence is wanted; use Hochberg only when its dependence conditions are credible. In every case, define the family before inspecting results and interpret adjusted evidence alongside effects and uncertainty.
+
+# References
+
+- Bonferroni, C. E. (1936). *Teoria statistica delle classi e calcolo delle probabilità*. Pubblicazioni del R Istituto Superiore di Scienze Economiche e Commerciali di Firenze, 8, 3--62.
+- Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian Journal of Statistics*, 6(2), 65--70. [JSTOR](https://www.jstor.org/stable/4615733).
+- Hochberg, Y. (1988). A sharper Bonferroni procedure for multiple tests of significance. *Biometrika*, 75(4), 800--802. [doi:10.1093/biomet/75.4.800](https://doi.org/10.1093/biomet/75.4.800).
+- R Core Team. `p.adjust`: Adjust p-values for multiple comparisons. [R documentation](https://stat.ethz.ch/R-manual/R-devel/library/stats/html/p.adjust.html).
