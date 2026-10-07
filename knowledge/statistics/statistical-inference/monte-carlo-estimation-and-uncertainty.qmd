@@ -1,0 +1,187 @@
+---
+title: "Monte Carlo Estimation and Uncertainty"
+subtitle: "Separating simulation error from scientific sampling uncertainty"
+description: "Monte Carlo estimators, standard errors, effective sample size, variance reduction, stopping rules, and reproducible simulation practice."
+author: "Jiahong Sun"
+date: "2026-10-07"
+date-modified: "2026-10-07"
+categories: [Statistics, Inference, Monte Carlo, Simulation]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Simulation Turns Expectations into Averages
+
+Many statistical targets can be written as an expectation
+
+$$
+\mu=\operatorname E_p\{h(X)\}=\int h(x)p(x)\,dx,
+$$
+
+even when the integral is analytically unavailable. If $X_1,\ldots,X_M$ are independent draws from $p$, the basic Monte Carlo estimator is
+
+$$
+\boxed{\hat\mu_M=\frac1M\sum_{m=1}^M h(X_m).}
+$$
+
+Provided $\operatorname E_p|h(X)|<\infty$, the law of large numbers gives $\hat\mu_M\to\mu$ almost surely. If $\sigma_h^2=\operatorname{Var}_p\{h(X)\}<\infty$, then
+
+$$
+\sqrt M(\hat\mu_M-\mu)\xrightarrow{d}N(0,\sigma_h^2),
+\qquad
+\operatorname{SE}_{\mathrm{MC}}(\hat\mu_M)\approx\frac{s_h}{\sqrt M},
+$$
+
+where $s_h^2$ is the sample variance of the simulated $h(X_m)$ values. The $M^{-1/2}$ rate is universal for ordinary independent Monte Carlo: gaining one extra decimal digit usually costs about 100 times as many draws.
+
+The quantity $\mu$ is the **computational estimand**, $\hat\mu_M$ is the estimator, its realized value is the estimate, and $\operatorname{SE}_{\mathrm{MC}}$ measures uncertainty caused only by finite simulation. It is not the standard error arising from finite biological sampling.
+
+# A Bernoulli Example
+
+Suppose a fitted model implies that an event $A$ has probability $p=P(A)$. Set $h(X)=\mathbf 1\{X\in A\}$. Then
+
+$$
+\hat p_M=\frac1M\sum_{m=1}^M\mathbf 1\{X_m\in A\},
+\qquad
+\operatorname{SE}_{\mathrm{MC}}(\hat p_M)
+\approx\sqrt{\frac{\hat p_M(1-\hat p_M)}{M}}.
+$$
+
+If 2,438 of $M=10{,}000$ simulated datasets meet the event, $\hat p=0.2438$ and the estimated Monte Carlo standard error is about $0.00429$. A simulation-only 95% interval is approximately $0.2438\pm1.96(0.00429)$, or $(0.2354,0.2522)$. This interval describes numerical uncertainty in estimating the model-implied probability. It does not account for whether the fitted model or its estimated parameters are correct.
+
+For a rare probability, observing zero events does not prove the probability is zero and makes the plug-in standard error zero. Exact binomial limits, importance sampling, or a much larger targeted simulation are preferable.
+
+# Three Layers of Uncertainty
+
+Monte Carlo appears inside bootstrap, permutation, posterior, power, and missing-data procedures. The layers must be kept distinct.
+
+| Layer | Repeated object | Example uncertainty | Reduced by |
+|---|---|---|---|
+| Scientific sampling | New independent experimental units from the target population or design | Standard error of a treatment effect | More informative biological units or a better design |
+| Model or assumption | Alternative plausible data-generating mechanisms | Bias from unmeasured confounding or model misspecification | Better measurement, design, and sensitivity analysis |
+| Monte Carlo | New random-number streams under the same fitted procedure | Variation of a simulated p-value or posterior mean | More efficient or more numerous valid draws |
+
+Increasing $M$ attacks only the third layer. Ten million simulations from the wrong model estimate the wrong target very precisely.
+
+For nested procedures, conditional and unconditional targets also differ. A parametric-bootstrap Monte Carlo error conditional on the fitted parameters is not the sampling uncertainty of the original estimator. Repeating multiple imputation more times reduces finite-imputation noise but cannot make an implausible missingness model credible.
+
+# Dependent Draws and Effective Sample Size
+
+Markov chain Monte Carlo draws are dependent. For a stationary chain with autocorrelations $\rho_k$ for $h(X_m)$, the asymptotic variance of the mean is
+
+$$
+\operatorname{Var}(\hat\mu_M)
+\approx
+\frac{\sigma_h^2}{M}
+\left(1+2\sum_{k=1}^{\infty}\rho_k\right)
+=\frac{\sigma_h^2\tau}{M}.
+$$
+
+The integrated autocorrelation time $\tau$ motivates
+
+$$
+M_{\mathrm{eff}}=\frac{M}{\tau},
+\qquad
+\operatorname{SE}_{\mathrm{MC}}(\hat\mu_M)
+\approx\frac{\sigma_h}{\sqrt{M_{\mathrm{eff}}}}.
+$$
+
+Treating correlated draws as independent usually understates error. Batch-means and spectral-variance estimators estimate the long-run variance rather than the ordinary marginal variance. Effective sample size is function-specific: a chain can estimate one posterior mean well while poorly exploring a tail probability. Convergence diagnostics assess evidence of failure; they do not certify that all important modes have been visited.
+
+# Precision Planning and Stopping
+
+Simulation effort should be chosen from the required numerical precision. For independent draws, a target Monte Carlo standard error $\epsilon$ suggests
+
+$$
+M\gtrsim\frac{\sigma_h^2}{\epsilon^2}.
+$$
+
+Because $\sigma_h$ is unknown, run a pilot, estimate it, calculate the additional effort, and re-estimate precision. A sequential rule should be specified before looking for a favorable answer. Examples include stopping when a valid confidence-sequence width is below a tolerance or when an estimated Monte Carlo standard error is small relative to the reported scientific standard error.
+
+Threshold decisions require special care. If a Monte Carlo p-value is near $0.05$, it is not enough to print more digits. Increase $M$ until simulation uncertainty is negligible for the scientific decision, or report that the finite simulation does not resolve the threshold. For $B$ randomly sampled null transformations, the valid correction
+
+$$
+\hat p=\frac{1+K}{B+1}
+$$
+
+prevents zero p-values, where $K$ simulated statistics are at least as extreme as the observed statistic.
+
+# Variance Reduction
+
+More computation is not the only route to precision.
+
+| Method | Central idea | Main requirement |
+|---|---|---|
+| Antithetic variables | Pair negatively associated draws | A construction that preserves the target distribution |
+| Control variates | Subtract a correlated quantity with known expectation | Correct known expectation and stable coefficient estimation |
+| Importance sampling | Draw from $q$ and weight by $p/q$ | $q>0$ wherever the target contribution is nonzero; manageable weights |
+| Stratification | Allocate draws across important regions | Known stratum probabilities and appropriate allocation |
+| Common random numbers | Reuse random streams when comparing procedures | Interest in a difference, with induced positive correlation |
+| Quasi-Monte Carlo | Use low-discrepancy deterministic point sets | A suitable transformation and uncertainty assessment by randomization |
+
+For importance sampling,
+
+$$
+\mu=\operatorname E_q\left[h(X)\frac{p(X)}{q(X)}\right].
+$$
+
+The identity is exact, but a few enormous weights can produce an unstable finite estimate or even infinite variance. Weight distributions, repeated runs, and effective sample size are diagnostics—not substitutes for checking support and moment conditions.
+
+# Reproducible Implementation
+
+```{r}
+#| eval: false
+set.seed(20261007)
+M <- 100000L
+
+# Estimate P(Z > 2) for Z ~ N(0, 1)
+hit <- rnorm(M) > 2
+p_hat <- mean(hit)
+mcse <- sqrt(p_hat * (1 - p_hat) / M)
+c(estimate = p_hat, mcse = mcse)
+```
+
+A reproducible analysis records the pseudo-random-number generator, seed or stream-management scheme, software versions, number of draws, discarded draws if any, estimator, variance estimator, and stopping rule. Parallel simulations need independent, non-overlapping streams; calling the same seed separately on every worker can duplicate output. Reproducibility means another analyst can regenerate the calculation, not that one lucky seed should be preserved without checking Monte Carlo error.
+
+# Bioinformatics Applications
+
+Monte Carlo computation is common in gene-set tests, permutation calibration, sequencing-depth simulations, posterior summaries, power studies, and parametric bootstrap checks. In a differential-expression power simulation, the biological specimen remains the experimental unit. Simulating thousands of reads or cells within each of three specimens does not create thousands of independent biological replicates.
+
+A useful study separates two axes:
+
+1. vary the scientific data-generating conditions, such as effect size, dispersion, batch imbalance, dropout, and number of biological replicates;
+2. within each condition, use enough Monte Carlo replicates to estimate power, false-positive rate, or interval coverage to a stated numerical precision.
+
+Statistically, simulation can estimate operating characteristics under a specified mechanism. Biologically, it cannot show that the mechanism resembles a new organism, tissue, protocol, or laboratory. Calibrate inputs from defensible data, explore plausible alternatives, and interpret conclusions conditional on those scenarios.
+
+# Failure Modes and Checks
+
+- **No Monte Carlo error reported:** another seed could materially change the last digits or even a threshold decision.
+- **Ordinary standard error for dependent draws:** autocorrelation is ignored; use a long-run variance estimator.
+- **Too few tail events:** naive Monte Carlo cannot resolve an extreme probability.
+- **Numerical precision confused with scientific precision:** larger $M$ does not add experimental units or remove model bias.
+- **Adaptive stopping for significance:** repeatedly simulate until a p-value crosses a threshold without valid sequential calibration.
+- **Invalid simulation mechanism:** omitted dependence, selection, batch structure, or parameter uncertainty makes the computational target scientifically irrelevant.
+- **Single performance number:** average power or error hides sensitivity to effect heterogeneity and nuisance parameters.
+
+Independent repeated runs, trace and autocorrelation plots for chains, batch estimates, weight diagnostics, and comparison with analytically solvable special cases help reveal computational problems. Simulation-based calibration can check an inferential algorithm under draws from its own assumed model, but success is conditional on that model.
+
+# Connections and Take-home Messages
+
+- [Expectation, variance, and moments](../probability-randomness/expectation-variance-and-moments.qmd) supplies the expectation and variance identities behind Monte Carlo averages.
+- [Law of large numbers](../asymptotic-thinking/law-of-large-numbers.qmd) explains consistency, while the [central limit theorem](../asymptotic-thinking/central-limit-theorem.qmd) supports standard errors.
+- [Standard errors](standard-errors.qmd) distinguishes estimator variability from a realized error.
+- [Parametric bootstrap](parametric-bootstrap.qmd), [nonparametric bootstrap](nonparametric-bootstrap.qmd), and [permutation and randomization tests](permutation-and-randomization-tests.qmd) use simulation for different reference distributions.
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd) uses Monte Carlo when analytic operating characteristics are unavailable.
+
+Monte Carlo estimation converts an expectation into an average, and its error must be estimated like any other sampling error. Dependence, heavy tails, rare events, and unstable weights can invalidate the familiar $s/\sqrt M$ calculation. Report simulation precision separately from scientific uncertainty, plan $M$ around a meaningful tolerance, and use sensitivity analysis to examine the assumptions that extra simulation cannot repair.
+
+# References
+
+- Robert, C. P. and Casella, G. *Monte Carlo Statistical Methods*, 2nd ed. Springer, 2004. [Publisher page](https://doi.org/10.1007/978-1-4757-4145-2).
+- Owen, A. B. *Monte Carlo Theory, Methods and Examples*. 2013. [Online book](https://artowen.su.domains/mc/).
+- Flegal, J. M. and Jones, G. L. “Batch Means and Spectral Variance Estimators in Markov Chain Monte Carlo.” *The Annals of Statistics* 38 (2010): 1034--1070. [Article](https://doi.org/10.1214/09-AOS735).
+- Phipson, B. and Smyth, G. K. “Permutation P-values Should Never Be Zero: Calculating Exact P-values When Permutations Are Randomly Drawn.” *Statistical Applications in Genetics and Molecular Biology* 9 (2010), Article 39. [Article](https://doi.org/10.2202/1544-6115.1585).
+- R Core Team. “Random Number Generation.” *R statistical software documentation*. [Documentation](https://stat.ethz.ch/R-manual/R-devel/library/base/html/Random.html).

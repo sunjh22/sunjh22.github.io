@@ -34,6 +34,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [Benjamini--Hochberg and Storey q-values](benjamini-hochberg-and-storey-q-values.qmd)
 - [Permutation and randomization tests](permutation-and-randomization-tests.qmd)
 - [Rank-based nonparametric tests](rank-based-nonparametric-tests.qmd)
+- [Monte Carlo estimation and uncertainty](monte-carlo-estimation-and-uncertainty.qmd)
+- [Sensitivity analysis and robustness](sensitivity-analysis-and-robustness.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)

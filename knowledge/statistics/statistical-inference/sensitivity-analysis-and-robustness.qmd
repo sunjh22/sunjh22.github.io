@@ -1,0 +1,205 @@
+---
+title: "Sensitivity Analysis and Robustness"
+subtitle: "Testing whether conclusions survive plausible changes in assumptions"
+description: "A structured guide to robustness, quantitative sensitivity analysis, tipping points, multiverse analyses, and design-aware interpretation."
+author: "Jiahong Sun"
+date: "2026-10-07"
+date-modified: "2026-10-07"
+categories: [Statistics, Inference, Sensitivity Analysis, Robustness]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Robust Conclusions Survive Relevant Perturbations
+
+Every analysis combines data with choices and assumptions: the experimental unit, inclusion rule, outcome definition, adjustment set, missing-data model, likelihood, prior, transformation, and decision threshold. A sensitivity analysis changes one or more uncertain inputs and recomputes the inferential target.
+
+Let $\hat\theta(a)$ be an estimate under analysis specification $a\in\mathcal A$. The useful object is not merely a list of estimates but a **sensitivity map**
+
+$$
+a\longmapsto
+\left\{\hat\theta(a),\ \operatorname{SE}_a,\ I_a,\ D_a\right\},
+$$
+
+where $I_a$ is an interval and $D_a$ is a decision or scientific conclusion. A conclusion is robust over $\mathcal A$ if the scientifically relevant interpretation remains stable for defensible specifications. It is sensitive when plausible alternatives materially change the effect magnitude, direction, interval, prediction, or decision.
+
+Robustness is always relative to a perturbation set and a target. “The result is robust” is incomplete unless it says robust to what, over what range, and by what criterion.
+
+# Robust Estimation Is Not Sensitivity Analysis
+
+The terms overlap but answer different questions.
+
+| Concept | Question | Example |
+|---|---|---|
+| Robust estimator | Does an estimator retain acceptable behavior under a neighborhood of data distributions? | Median versus mean under contamination |
+| Diagnostic | Does the observed dataset reveal tension with an assumption? | Residual plot or influence measure |
+| Sensitivity analysis | How would the result change under explicit alternative assumptions or bias parameters? | Vary an unmeasured-confounding strength |
+| Specification curve or multiverse | How do defensible analytical choices affect results? | Alternative inclusion rules and covariate sets |
+| Stability analysis | Would small perturbations of data or fitting change the output? | Refit after leaving out influential specimens |
+
+A robust standard error changes the estimated variance under heteroskedasticity; it does not make a biased causal estimand unbiased. A robust regression estimator can limit the influence of extreme observations; it does not repair confounding or selection. Conversely, a sensitivity analysis may deliberately use a conventional estimator while varying assumptions that the data cannot test.
+
+# Start with the Estimand and the Threat
+
+Before changing code, state the scientific estimand. For example,
+
+$$
+\theta=\operatorname E\{Y(1)-Y(0)\}
+$$
+
+is a population average causal effect, whereas a sample mean difference is only an estimator under a design and identification assumptions. Sensitivity should target the assumption that links the observed data to $\theta$, not arbitrary cosmetic choices.
+
+A disciplined workflow is:
+
+1. **Name the estimand and decision.** Specify the effect scale and the smallest scientifically important difference.
+2. **Draw the data-generating process.** Identify sampling, treatment assignment, measurement, missingness, dependence, and selection.
+3. **List nonidentified assumptions.** Prioritize assumptions that the observed data cannot verify.
+4. **Parameterize deviations.** Use interpretable bias parameters or bounded alternative models.
+5. **Choose plausible ranges before seeing favorable results.** Justify them with design knowledge, validation data, negative controls, or external studies.
+6. **Recompute estimates and uncertainty.** Preserve dependence and repeat the complete analysis pipeline.
+7. **Find tipping points.** Report how strong a departure must be to change a scientific conclusion.
+
+This process distinguishes **uncertainty analysis**, which propagates a probability model for uncertain inputs, from **sensitivity analysis**, which maps outcomes over specified alternatives. Assigning a probability distribution to an unidentified bias parameter is an additional assumption, not an automatic fact.
+
+# Local and Global Sensitivity
+
+Suppose an analysis result is $T(\eta)$, where $\eta$ is a nuisance or bias parameter. A local sensitivity measure is
+
+$$
+S_j(\eta_0)=
+\left.\frac{\partial T(\eta)}{\partial\eta_j}\right|_{\eta=\eta_0}.
+$$
+
+It describes an infinitesimal change near the baseline $\eta_0$ and can be computationally efficient. It may miss nonlinearities, thresholds, interactions, or distant but plausible alternatives.
+
+Global sensitivity evaluates $T(\eta)$ over a region $\mathcal H$. One-at-a-time changes are easy to explain but cannot expose interacting assumptions. A grid, factorial design, or carefully sampled parameter region can show joint departures. The region must remain scientifically coherent: not every mathematical combination corresponds to a possible study.
+
+Useful summaries include:
+
+- the range of point estimates and interval endpoints;
+- the fraction of prespecified specifications supporting each conclusion;
+- the boundary at which effect direction, practical importance, or interval compatibility changes;
+- worst-case bounds under explicit constraints;
+- a graph retaining the full relationship rather than only the most favorable analysis.
+
+# Quantitative Bias Analysis
+
+Standard intervals usually condition on measured data and a statistical model; they do not automatically include bias from unmeasured confounding, selection, or misclassification. Quantitative bias analysis introduces parameters for those mechanisms.
+
+For a binary exposure and outcome, a simple confounding bias factor can be written
+
+$$
+B=
+\frac{RR_{UY}RR_{EU}}
+{RR_{UY}+RR_{EU}-1},
+$$
+
+under a particular bounding setup, where $RR_{UY}$ bounds the confounder--outcome risk-ratio association and $RR_{EU}$ bounds the exposure--confounder association. A corrected observed risk ratio can be explored as $RR_{\mathrm{obs}}/B$. The formula is useful only when its definitions and structural conditions fit the problem.
+
+For linear regression, omitted-variable sensitivity can be expressed through partial $R^2$ values describing the association of an unobserved confounder with treatment and outcome after measured covariates. Benchmarking these strengths against observed covariates makes a tipping point interpretable, but an observed covariate is not automatically an upper bound for an unobserved one.
+
+The E-value is another bound for risk-ratio effects: for $RR\geq1$,
+
+$$
+E\text{-value}=RR+\sqrt{RR(RR-1)}.
+$$
+
+It describes a minimum joint association strength that an unmeasured confounder would need, on the risk-ratio scale under stated conditions, to explain away an association. It does not address selection bias, measurement error, multiple biases acting together, or the plausibility of such a confounder. A single scalar should not replace a mechanism-specific analysis.
+
+# A Tipping-point Example
+
+Suppose the primary estimate is a log fold change of $0.60$, and domain experts regard $0.20$ as the smallest biologically important magnitude. Let $b$ denote additive bias on the log scale, so the bias-adjusted effect is
+
+$$
+\theta(b)=0.60-b.
+$$
+
+The sign changes at $b=0.60$, while practical importance is lost at $b=0.40$. Reporting both thresholds is more informative than saying that several alternative models remained “significant.” A defensible analysis then asks whether batch imbalance, selection, normalization, or measurement error could plausibly produce bias of those sizes.
+
+Uncertainty should also be updated when the bias correction is estimated rather than fixed. Treating an uncertain correction as known can move the point estimate while leaving intervals implausibly narrow.
+
+# Model, Data, and Workflow Perturbations
+
+Sensitivity domains should follow the actual failure mechanisms.
+
+| Domain | Examples of planned perturbations | What stability would support |
+|---|---|---|
+| Sampling and inclusion | Eligibility windows, influential units, selection weights | Results not driven by a narrow inclusion decision |
+| Measurement | Misclassification rates, detection limits, alternative outcome definitions | Conclusions tolerate plausible measurement error |
+| Missing data | Complete case, multiple models under MAR, delta adjustments under MNAR | Dependence on unverifiable missingness assumptions is visible |
+| Functional form | Transformations, splines, interactions, link functions | Effect not created by a restrictive shape |
+| Dependence | Cluster level, correlation structure, block definition | Uncertainty respects the experimental unit |
+| Causal adjustment | Alternative defensible adjustment sets, unmeasured-confounding parameters | Identification claim is transparent |
+| Bayesian specification | Prior scales, likelihood tails, hierarchical structure | Posterior conclusion is not an artifact of one prior/model |
+| Multiplicity and selection | Full hypothesis family, filtering rules, selective-analysis scenarios | Error claims match the actual search process |
+
+Perturbations should be **defensible alternatives**, not every possible model and not a search for the desired answer. If several pipelines answer different estimands, their disagreement is not mere instability; the targets must first be separated.
+
+# Specification Curves Without Vote Counting
+
+A multiverse analysis runs many reasonable specifications. Its value is transparency about analyst choices, but naive summaries can mislead. Specifications are dependent, may encode contradictory estimands, and are rarely sampled uniformly from a well-defined population of analyses. Counting how many p-values fall below $0.05$ is therefore not a calibrated probability that a claim is true.
+
+Organize specifications by the assumptions they represent, display effect estimates and intervals, and mark the prespecified primary analysis. If an analytical choice is influenced by the observed results, ordinary intervals and p-values do not account for that selection. Sensitivity displays reveal dependence on choices; they do not automatically solve selective inference.
+
+# Bioinformatics Design and Interpretation
+
+Consider an RNA-seq comparison with six donors per group, two sequencing lanes, and thousands of genes. Donors are biological experimental units; lanes and reads are technical observations. Useful sensitivity analyses might vary:
+
+- whether lane or extraction batch is included in the design;
+- defensible filtering thresholds fixed without using treatment labels;
+- normalization strategy when composition bias is plausible;
+- dispersion or prior-shrinkage settings;
+- donor-level quality exclusions using prespecified criteria;
+- hidden-factor adjustment while guarding against removal of biological signal;
+- effect-size thresholds and false-discovery procedures.
+
+Refitting after dropping individual cells or reads is not a meaningful independence check. A leave-one-donor-out analysis can reveal influence, but with a small sample it may also change balance and the estimand. Batch correction performed before cross-validation can leak information, and an alternative correction may change both signal and uncertainty.
+
+Statistical robustness means that a result is stable over justified analysis and bias scenarios. Biological robustness additionally asks whether the magnitude, pathway interpretation, and generalization persist across tissues, cohorts, protocols, and laboratories. Neither is established by repeatedly analyzing the same specimens until a preferred method agrees.
+
+# Reporting a Sensitivity Analysis
+
+A useful report states:
+
+- the primary estimand, analysis, and scientific decision criterion;
+- each threatened assumption and why the observed data cannot settle it;
+- the alternative models or bias parameters and the rationale for their ranges;
+- which elements were prespecified;
+- estimates and compatible intervals on a scientifically interpretable scale;
+- tipping points and whether they are plausible;
+- cases where the analysis changes the target population or estimand;
+- code and data provenance sufficient to reproduce every scenario.
+
+Do not hide sensitivity results in a supplement when they materially alter the main claim. A fragile result can still be valuable if its dependence on assumptions is stated clearly; a stable result can still be biased if the explored perturbation set missed the dominant threat.
+
+# Common Failure Modes
+
+- **Changing everything at once:** disagreement cannot be traced to an assumption; use structured single and joint perturbations.
+- **Data-driven plausible ranges:** ranges are chosen after seeing which values preserve the claim.
+- **Only alternative p-values reported:** magnitude, interval, and practical threshold are omitted.
+- **Robust standard errors called robust inference:** variance adjustment is confused with protection from bias.
+- **One-at-a-time comfort:** interacting departures are ignored.
+- **Implausible worst cases:** mathematically extreme scenarios are presented without domain calibration.
+- **Researcher degrees of freedom ignored:** a multiverse is shown as if the final specification had been chosen independently of the data.
+- **Pseudoreplication preserved:** many technical observations make every pipeline look precise while the number of biological units stays small.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) anchors every perturbation to a target.
+- [Statistical versus practical significance](statistical-versus-practical-significance.qmd) supplies the scientific threshold for a tipping-point analysis.
+- [Effect sizes](effect-sizes.qmd) helps distinguish stability of magnitude from stability of a threshold decision.
+- [Monte Carlo estimation and uncertainty](monte-carlo-estimation-and-uncertainty.qmd) quantifies numerical error when a sensitivity grid is simulated.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd) motivates finite-sample and alternative-model checks.
+
+Sensitivity analysis asks how conclusions change when uncertain assumptions change. It should begin with the estimand and a concrete failure mechanism, use scientifically defensible ranges, propagate uncertainty, and report tipping points rather than a binary robustness label. Robustness to a narrow menu is not proof of validity; it is evidence conditional on the perturbations actually examined.
+
+# References
+
+- Huber, P. J. *Robust Statistics*. Wiley, 1981. [Publisher page](https://doi.org/10.1002/0471725250).
+- Greenland, S. “Basic Methods for Sensitivity Analysis of Biases.” *International Journal of Epidemiology* 25 (1996): 1107--1116. [Article](https://doi.org/10.1093/ije/25.6.1107-a).
+- Rosenbaum, P. R. *Observational Studies*, 2nd ed. Springer, 2002. [Publisher page](https://doi.org/10.1007/978-1-4757-3692-2).
+- VanderWeele, T. J. and Ding, P. “Sensitivity Analysis in Observational Research: Introducing the E-value.” *Annals of Internal Medicine* 167 (2017): 268--274. [Article](https://doi.org/10.7326/M16-2607).
+- Cinelli, C. and Hazlett, C. “Making Sense of Sensitivity: Extending Omitted Variable Bias.” *Journal of the Royal Statistical Society: Series B* 82 (2020): 39--67. [Article](https://doi.org/10.1111/rssb.12348).
+- Steegen, S., Tuerlinckx, F., Gelman, A., and Vanpaemel, W. “Increasing Transparency Through a Multiverse Analysis.” *Perspectives on Psychological Science* 11 (2016): 702--712. [Article](https://doi.org/10.1177/1745691616658637).
