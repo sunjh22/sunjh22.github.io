@@ -36,6 +36,8 @@ This level organizes notes about likelihood, estimators, sampling distributions,
 - [Rank-based nonparametric tests](rank-based-nonparametric-tests.qmd)
 - [Monte Carlo estimation and uncertainty](monte-carlo-estimation-and-uncertainty.qmd)
 - [Sensitivity analysis and robustness](sensitivity-analysis-and-robustness.qmd)
+- [Selection bias and winner's curse](selection-bias-and-winners-curse.qmd)
+- [Reproducibility and effect-size inflation](reproducibility-and-effect-size-inflation.qmd)
 - [Asymptotic Thinking](../asymptotic-thinking/index.qmd)
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Statistics overview](../index.qmd)

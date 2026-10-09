@@ -1,0 +1,175 @@
+---
+title: "Selection Bias and Winner's Curse"
+subtitle: "Why selecting observations or discoveries changes what an estimate means"
+description: "Selection mechanisms, collider bias, post-selection effect inflation, winner's-curse derivations, diagnostics, and design-aware remedies."
+author: "Jiahong Sun"
+date: "2026-10-08"
+date-modified: "2026-10-08"
+categories: [Statistics, Inference, Selection Bias, Winner's Curse]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Selection Changes the Distribution Being Analyzed
+
+Selection bias occurs when entry into the analyzed data, or entry into the reported set of results, depends on variables that also determine the association or estimate of interest. Let $S=1$ mean that an experimental unit or result is retained. The analyzed distribution is
+
+$$
+p(x,y\mid S=1)=\frac{P(S=1\mid x,y)p(x,y)}{P(S=1)},
+$$
+
+which equals the target distribution $p(x,y)$ only under restrictive conditions. A large selected sample can therefore estimate the wrong target very precisely.
+
+The **winner's curse** is a post-selection form of effect-size inflation. Among noisy estimates, investigators preferentially follow the most extreme, best-ranked, or statistically significant ones. Conditional on winning that competition, the same favorable noise that caused selection remains inside the reported estimate.
+
+Selection bias is broader than the winner's curse. It includes biased recruitment, loss to follow-up, complete-case analysis, case-control sampling used with an inappropriate estimand, conditioning on a collider, and selective reporting. The winner's curse specifically concerns estimates selected because of their observed strength.
+
+# Start with the Target and Selection Rule
+
+Suppose the target-population estimand is an association or effect $\theta$. An estimator $\hat\theta$ may be unbiased before selection,
+
+$$
+\operatorname E(\hat\theta)=\theta,
+$$
+
+but the relevant property after a discovery rule $A$ is
+
+$$
+\operatorname E(\hat\theta\mid A)-\theta.
+$$
+
+These are different operating characteristics. A realized estimate answers the intended question only if the sampling, missingness, inclusion, and reporting mechanisms preserve identification of the estimand or are correctly handled.
+
+Three selections should be distinguished:
+
+1. **Units:** which people, specimens, cells, records, or measurements enter the analysis?
+2. **Variables and models:** which outcomes, predictors, transformations, and specifications are retained?
+3. **Results:** which estimates cross a threshold and are reported, interpreted, or sent to replication?
+
+The selection indicator and the information used to construct it belong in the analysis description. Saying that data were “quality controlled” is insufficient if the quality rule depends on exposure, outcome, batch, or a downstream consequence of both.
+
+# Structural Selection Bias
+
+A causal diagram makes one important mechanism visible. If exposure $X$ and outcome $Y$ both influence selection,
+
+```text
+X  →  S  ←  Y
+```
+
+then $S$ is a collider. Even if $X$ and $Y$ are independent in the target population, conditioning on $S=1$ can associate them. More generally, selection opens an otherwise blocked path when it conditions on a collider or its descendant.
+
+For example, suppose either a strong biomarker $X$ or severe disease $Y$ makes referral to a specialty clinic more likely. Within referred patients, low biomarker values may occur disproportionately among severe cases admitted for other reasons. A clinic-only association can differ in magnitude or direction from the population association.
+
+Not all conditioning is harmful and not all selection produces bias for every target. Case-control sampling can consistently estimate an exposure odds ratio under its design, although the sampled outcome prevalence is not a population prevalence. The effect depends on the estimand, graph, sampling fractions, and model—not on the word “selection” alone.
+
+# Deriving the Winner's Curse
+
+Consider an approximately normal estimate
+
+$$
+\hat\theta\sim N(\theta,s^2)
+$$
+
+with known standard error $s$. A one-sided discovery is declared when $\hat\theta/s>c$, equivalently $\hat\theta>a=cs$. For a truncated normal distribution,
+
+$$
+\operatorname E(\hat\theta\mid\hat\theta>a)
+=\theta+s\frac{\phi(\alpha)}{1-\Phi(\alpha)},
+\qquad
+\alpha=\frac{a-\theta}{s},
+$$
+
+where $\phi$ and $\Phi$ are the standard-normal density and distribution functions. The second term is positive. Selection above a threshold inflates the signed estimate even though $\hat\theta$ was unbiased without selection.
+
+For a two-sided rule $|\hat\theta|/s>c$, effects reported in their observed direction are exaggerated in magnitude, especially when $|\theta|/s$ is small. Under the null, selected estimates are false positives rather than inflated estimates of a nonzero effect. When many non-null candidates compete, the top-ranked estimate combines the underlying effect with unusually favorable noise; heterogeneous true effects do not remove this conditioning problem.
+
+## A numerical example
+
+Let the true effect be $\theta=0.20$, $s=0.20$, and use a one-sided threshold $c=1.645$. Then $a=0.329$ and $\alpha=0.645$. Because $\phi(0.645)/\{1-\Phi(0.645)\}\approx1.25$,
+
+$$
+\operatorname E(\hat\theta\mid\text{discovery})
+\approx0.20+0.20(1.25)=0.45.
+$$
+
+The discovery estimate is expected to exceed twice the true effect. Its unconditional standard error has not changed; what changed is the distribution conditional on being selected.
+
+# Regression to the Mean Is Not Biological Reversal
+
+An independent replication estimate does not contain the discovery study's favorable noise. Consequently, it often lies closer to the underlying effect. This **regression to the mean** is expected after selecting extremes and does not by itself show misconduct, biological reversal, or a failed replication.
+
+Nevertheless, several other mechanisms can produce discovery--replication differences:
+
+- population, ancestry, tissue, protocol, or endpoint heterogeneity;
+- biased discovery or replication sampling;
+- measurement and batch differences;
+- model misspecification or different estimands;
+- false-positive discovery;
+- sampling variation in both studies.
+
+A replication probability computed from the naive discovery estimate is usually too optimistic. It treats a selected overestimate as though it were the design effect and can leave the replication underpowered.
+
+# Prevention and Post-selection Inference
+
+Design is usually stronger than correction after the fact.
+
+- Separate discovery, estimation, and validation samples. Use discovery data to select and independent data to estimate or confirm.
+- Prespecify eligibility, quality control, outcomes, models, contrasts, and the hypothesis family.
+- Increase the number of independent experimental units; higher information reduces the noise that selection can exploit.
+- Report the full search process, including null and unfavorable results.
+- Reserve external cohorts and laboratories for transportability and replication, not repeated tuning.
+
+When the same data must be used, methods include conditional or truncated likelihoods, selective confidence intervals, shrinkage or hierarchical models, empirical Bayes estimation, data splitting, and bootstrap bias correction. They answer different conditional or marginal questions and depend on correctly specifying the selection rule and model. A correction can reduce mean squared error yet overcorrect strong signals; there is no universal multiplier.
+
+Inverse-probability selection weighting can identify a target-population estimand when selection probabilities are estimable, all relevant causes of selection and outcome are measured, positivity holds, and the outcome model or weighting strategy is appropriate. Weight instability signals weak support. Neither weighting nor imputation repairs an entirely unmeasured determinant without additional assumptions.
+
+# Diagnostics and Sensitivity Analysis
+
+Selection bias is often not empirically testable from selected data alone. Useful checks expose mechanisms rather than certify their absence.
+
+| Threat | Evidence to examine | Useful response |
+|---|---|---|
+| Differential participation or attrition | Inclusion rates and covariate balance by exposure and outcome proxies | Selection models, weighting, bounds, follow-up of nonparticipants |
+| Thresholded discovery | Effect magnitude versus standard error and distance from threshold | Conditional estimation, shrinkage, independent estimation |
+| Flexible analysis selection | Full specification set and analysis provenance | Prespecification, multiverse display, selective-inference methods |
+| Missingness-related selection | Missingness patterns and auxiliary variables | Explicit missingness model and MNAR sensitivity analysis |
+| Top-hit replication | Winner-corrected effect and prospective power | Plan from a defensible external effect or conservative range |
+
+Compare target-population and selected-sample covariates when external data exist. Vary plausible selection odds or bias parameters and find the tipping point at which the scientific conclusion changes. A funnel plot or discovery--replication contrast can reveal patterns compatible with selection, but neither uniquely identifies its cause.
+
+# Bioinformatics Design and Interpretation
+
+In a genome-wide association study, people are the experimental units and genotypes are predictors measured on those people. Millions of variants are hypotheses, not replicates. Selecting variants with $p<5\times10^{-8}$ and quoting their discovery odds ratios without adjustment invites winner's-curse inflation. Replication planning should use corrected, external, or conservatively specified effects and should preserve the ancestry and phenotype definitions relevant to the target population.
+
+In single-cell analysis, donors or independently randomized biological samples—not cells, droplets, reads, or genes—are normally the experimental units for condition-level inference. Filtering cells using a variable affected by both biological condition and cell state can change cell composition and induce selection. Differential-expression screening followed by pathway estimation in the same data also makes pathway summaries conditional on selection.
+
+Statistically, a selected estimate describes the selected-data mechanism unless assumptions transport it to a wider population. Biologically, replication also asks whether the mechanism generalizes across cohorts, tissues, protocols, and laboratories. Correcting sampling bias does not guarantee biological transportability.
+
+# Common Misinterpretations
+
+- **“A representative-looking sample cannot be selected.”** Balance on observed variables does not rule out selection through unobserved variables or their joint effects.
+- **“Only the p-value is selected; the effect estimate remains unbiased.”** The p-value and effect are functions of the same noisy data.
+- **“A smaller replication estimate disproves the original mechanism.”** Regression to the mean is expected, although heterogeneity and bias must also be assessed.
+- **“More cells solve selection bias.”** Technical observations cannot replace independent biological sampling.
+- **“Cross-validation removes winner's curse.”** Cross-validation can estimate predictive performance if all selection is nested within folds; it does not automatically debias a reported scientific coefficient.
+- **“One adjustment fixes all selection.”** Weighting, imputation, shrinkage, and selective likelihood target different mechanisms and require different assumptions.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](populations-samples-parameters-and-estimands.qmd) defines the population to which a selected sample is meant to refer.
+- [Point estimators: bias, variance, and mean squared error](point-estimators-bias-variance-and-mean-squared-error.qmd) provides the unconditional and conditional bias language.
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd) explains why low-information discoveries have severe exaggeration and why naive effects underpower replication.
+- [Multiple-testing procedures](benjamini-hochberg-and-storey-q-values.qmd) control error rates for selected hypotheses but do not automatically provide unbiased effect estimates.
+- [Sensitivity analysis and robustness](sensitivity-analysis-and-robustness.qmd) supplies a framework for uncertain selection mechanisms.
+
+Selection changes the distribution under analysis. The winner's curse follows when noisy estimates are retained because they are extreme, making unbiased unselected estimators biased after discovery. State the estimand and every material selection rule, preserve the experimental unit, separate discovery from estimation when possible, and treat post-selection correction as assumption-dependent rather than automatic.
+
+# References
+
+- Hernán, M. A., Hernández-Díaz, S., and Robins, J. M. “A Structural Approach to Selection Bias.” *Epidemiology* 15 (2004): 615--625. [Article](https://doi.org/10.1097/01.ede.0000135174.63482.43).
+- Ioannidis, J. P. A. “Why Most Discovered True Associations Are Inflated.” *Epidemiology* 19 (2008): 640--648. [Article](https://doi.org/10.1097/EDE.0b013e31818131e7).
+- Xiao, R. and Boehnke, M. “Quantifying and Correcting for the Winner's Curse in Genetic Association Studies.” *Genetic Epidemiology* 33 (2009): 453--462. [Article](https://doi.org/10.1002/gepi.20398).
+- Ferguson, J. P., Cho, J. H., Yang, C., and Zhao, H. “Empirical Bayes Correction for the Winner's Curse in Genetic Association Studies.” *Genetic Epidemiology* 37 (2013): 60--68. [Article](https://doi.org/10.1002/gepi.21683).
+- Taylor, J. and Tibshirani, R. J. “Statistical Learning and Selective Inference.” *Proceedings of the National Academy of Sciences* 112 (2015): 7629--7634. [Article](https://doi.org/10.1073/pnas.1507583112).

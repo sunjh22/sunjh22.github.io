@@ -1,0 +1,208 @@
+---
+title: "Reproducibility and Effect-size Inflation"
+subtitle: "Separating computational reproducibility, replication, and stable estimation"
+description: "A statistical guide to reproducibility, replication, Type M errors, selective reporting, heterogeneity, and effect-size calibration."
+author: "Jiahong Sun"
+date: "2026-10-08"
+date-modified: "2026-10-08"
+categories: [Statistics, Inference, Reproducibility, Effect Size]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Reproducible Is Not a Single Statistical Property
+
+Several questions are often collapsed into “Does it reproduce?”
+
+| Property | What is repeated? | Main target |
+|---|---|---|
+| Computational reproducibility | Same data and analysis | Same numerical result |
+| Analytic reproducibility | Same data, independently implemented workflow | Agreement after resolving implementation choices |
+| Direct replication | New experimental units under closely matched conditions | Same prespecified estimand or claim |
+| Conceptual replication | New operationalization of a proposed mechanism | Generality of the scientific explanation |
+| Robustness | Plausible alternative assumptions or analyses | Stability of the conclusion |
+| Generalizability | New populations, laboratories, times, or protocols | Transport of the effect |
+
+A perfectly reproducible script can reproduce a biased estimate. A valid replication can differ because of sampling error. A genuine effect can vary across biological contexts. Reproducibility therefore requires a defined estimand, a transparent workflow, an uncertainty model, and a criterion for what agreement would mean.
+
+# Effect-size Inflation
+
+Let $\theta$ be a population effect and
+
+$$
+\hat\theta\sim N(\theta,s^2).
+$$
+
+Without selection, $\hat\theta$ is unbiased in this model. If results are highlighted only when $|\hat\theta|/s>c$, the reported distribution is truncated. Estimates that cross the threshold tend to have unusually large magnitudes.
+
+For a positive true effect, Gelman and Carlin's **Type M** exaggeration ratio is
+
+$$
+M=\frac{\operatorname E\left(|\hat\theta|\mid |\hat\theta|/s>c\right)}{|\theta|}.
+$$
+
+A **Type S** error is the conditional probability of estimating the wrong sign,
+
+$$
+S=P\left(\operatorname{sign}(\hat\theta)\ne
+\operatorname{sign}(\theta)\mid |\hat\theta|/s>c\right).
+$$
+
+When the signal-to-noise ratio $|\theta|/s$ is small, power is low, Type M exaggeration can be large, and a selected result can even have the wrong sign. Statistical significance does not protect the magnitude or direction.
+
+# Why Low Power Inflates Selected Effects
+
+Suppose $\theta=0.20$, $s=0.20$, and a two-sided $5\%$ test uses $c=1.96$. Discovery requires $|\hat\theta|>0.392$. The true effect is smaller than this threshold, so most estimates near the truth are not selected. Published discoveries must usually contain a positive noise excursion; a smaller negative tail can also cross in the wrong direction.
+
+This mechanism is sometimes called the significance filter, winner's curse, or regression-to-the-mean setup. Its severity is driven by the signal-to-noise ratio and selection rule, not merely by whether the true effect is nonzero. Larger studies reduce $s$, increasing power and reducing conditional exaggeration for a fixed effect.
+
+Inflation can accumulate beyond a single test:
+
+```text
+Noisy data
+  → many outcomes, subgroups, transformations, or models
+  → select favorable analyses
+  → select favorable studies for publication
+  → promote the most striking narrative
+```
+
+Ordinary confidence intervals condition on the chosen analysis as though it had been fixed in advance. They usually do not include uncertainty from searching across analyses, studies, or interpretations.
+
+# Replication Is an Estimation Problem
+
+For independent original and replication estimates,
+
+$$
+\hat\theta_O\sim N(\theta_O,s_O^2),
+\qquad
+\hat\theta_R\sim N(\theta_R,s_R^2).
+$$
+
+Exact equality is neither expected nor generally the scientific hypothesis. Even if $\theta_O=\theta_R=\theta$, their difference has standard error
+
+$$
+\operatorname{SE}(\hat\theta_R-\hat\theta_O)
+=\sqrt{s_R^2+s_O^2}.
+$$
+
+If the original estimate was selected, its conditional center is not $\theta$. Comparing whether two p-values fall on the same side of $0.05$ discards magnitude and uncertainty: identical effects can yield different significance decisions, and different effects can both be significant.
+
+A replication should specify before data collection:
+
+- the population, intervention or exposure, outcome, time point, and effect scale;
+- the experimental unit and randomization or sampling design;
+- the primary estimand and analysis;
+- a scientifically meaningful agreement, equivalence, or prediction criterion;
+- sample size based on a defensible effect, not the selected original estimate;
+- how protocol departures and heterogeneity will be handled.
+
+Useful analyses report both effect estimates and intervals, the difference between them, and—when scientifically justified—an equivalence interval or prediction interval. A replication p-value alone does not estimate reproducibility.
+
+# Sampling Variation, Bias, and Heterogeneity
+
+A smaller replication effect has several possible explanations.
+
+| Mechanism | Expected pattern | What helps distinguish it |
+|---|---|---|
+| Sampling variation | Differences compatible with joint uncertainty | Intervals, repeated studies, hierarchical synthesis |
+| Original selection | Original is unusually extreme; replication regresses toward the mean | Full selection rule, independent estimation, shrinkage |
+| Population or protocol heterogeneity | Effects vary systematically across contexts | Moderator data, harmonized outcomes, multisite design |
+| Measurement or implementation differences | Operationalizations target different quantities | Protocol audit, validation and reliability studies |
+| Bias or model failure | Difference follows confounding, attrition, batch, or misspecification | Design review, diagnostics, negative controls, sensitivity analysis |
+| False-positive original | Replications center near the null | Adequately powered independent evidence and cumulative synthesis |
+
+Heterogeneity should not become an unfalsifiable explanation. Proposed moderators need biological justification and enough independent studies or sites to estimate. Post hoc subgroup stories are another selection process and need new validation.
+
+# Reproducible Workflows Reduce Hidden Selection
+
+Computational practice cannot guarantee statistical validity, but it makes the analysis auditable.
+
+1. Preserve raw data and create processed data with scripted, versioned steps.
+2. Record inclusion, exclusion, filtering, normalization, and quality-control decisions.
+3. Fix random seeds and report stochastic algorithms, simulation error, and software versions.
+4. Use dependency-locked environments and machine-readable parameters.
+5. Separate exploratory analyses from prespecified confirmatory analyses.
+6. Nest preprocessing and variable selection inside resampling or cross-validation folds.
+7. Publish code, metadata, and provenance when consent and privacy permit; otherwise provide controlled-access instructions and synthetic tests.
+8. Test the pipeline on data with known answers and rerun it from a clean environment.
+
+Preregistration and registered reports reduce undisclosed flexibility, but a poor prespecified design remains poor. Sharing code exposes what was run, not why the assumptions identify the target. Reproducible workflows complement design, diagnostics, sensitivity analysis, and replication.
+
+# Planning with Type M and Type S Errors
+
+Traditional power asks how often a rule rejects the null under an assumed effect. A more informative design analysis also simulates or calculates:
+
+- the distribution of estimates and interval widths;
+- Type S probability among selected results;
+- Type M exaggeration among selected results;
+- probability of estimating an effect above a practical threshold;
+- interval coverage after the complete selection pipeline;
+- predictive performance in a genuinely external sample.
+
+The assumed true-effect range should come from prior studies corrected for selection, a meta-analysis that addresses heterogeneity and reporting bias, mechanistic constraints, or the smallest effect worth detecting. Using the original selected estimate as truth understates required sample size.
+
+Shrinkage and hierarchical models can improve estimation by combining noisy effects with an estimated effect distribution. Their gains depend on exchangeability and an adequate prior or population model. They do not transform technical replicates into biological information, and shrinkage toward a poorly estimated center can itself mislead.
+
+# Evidence Synthesis and Publication Selection
+
+If study inclusion depends on significance, direction, or novelty, the published literature is selected. Small studies require larger observed effects to cross a fixed threshold, creating a small-study-effect pattern. Funnel-plot asymmetry and regression tests can detect some patterns but are low-powered with few studies and are not specific to publication bias; genuine heterogeneity can produce the same shape.
+
+Meta-analysis of biased inputs can yield a precise biased summary. Sensible practice includes prospective study registration, comprehensive searches, inclusion of null results, risk-of-bias assessment, sensitivity to selection models, and prediction intervals when effects vary. No single trim-and-fill or bias-correction method should be treated as proof that publication selection has been removed.
+
+Cumulative evidence is better evaluated by the distribution of compatible effects, heterogeneity, design quality, and prospective predictions than by counting successful replications. Meta-analytic pooling also requires commensurate estimands; combining differently defined outcomes does not manufacture a common target.
+
+# Bioinformatics Design and Interpretation
+
+Consider differential expression measured in thousands of genes from six treated and six control donors. Donors are the experimental units. Reads, technical library replicates, and cells improve measurement or characterize within-donor variation but do not raise the condition-level biological sample size to thousands.
+
+Effect-size inflation arises when only genes with small adjusted p-values are plotted and their same-data log fold changes are interpreted literally. Shrinkage can stabilize estimates, but discovery estimates should still be distinguished from effects in independent donors. Pathways selected because they summarize the same top genes require validation in a new cohort or a selection-aware procedure.
+
+Reproducibility requires the count matrix or a traceable route from raw reads, sample metadata, reference genome and annotation versions, filtering and normalization rules, the design matrix, contrast, software versions, and all quality-control exclusions. Batch correction must be learned without leaking validation outcomes. In single-cell experiments, donor-aware pseudobulk or mixed models preserve replication; repeating cells from the same donor does not demonstrate cross-donor reproducibility.
+
+Statistical replication asks whether a prespecified effect is compatible across independent samples. Biological replication asks whether the conclusion persists across relevant organisms, tissues, environments, protocols, and laboratories. A stable p-value is neither definition.
+
+# A Decision Framework
+
+Before calling a result reproducible, ask:
+
+1. **Same target?** Are the estimand, population, outcome, and scale aligned?
+2. **Independent information?** Are the replication units independent of discovery and analyzed at the correct level?
+3. **Visible selection?** Were hypotheses, analyses, exclusions, and reporting rules disclosed?
+4. **Adequate precision?** Can the new study distinguish absence, meaningful similarity, and meaningful difference?
+5. **Magnitude and uncertainty?** Are estimates and intervals reported rather than only threshold decisions?
+6. **Heterogeneity modeled?** Are contextual differences planned rather than invented after results?
+7. **Workflow auditable?** Can another analyst regenerate processing and analysis from documented inputs?
+8. **Claims calibrated?** Does the conclusion stay within the observed populations and design assumptions?
+
+# Common Failure Modes
+
+- **Same code equals replication:** it establishes computational reproducibility only.
+- **Both studies must be significant:** dichotomized p-values are compared instead of effects and uncertainty.
+- **The original estimate powers the replication:** selection makes the design effect too large.
+- **More technical measurements imply more power:** the biological experimental unit is ignored.
+- **A correction is treated as ground truth:** selection models and shrinkage assumptions are not checked.
+- **Unexpected differences are automatically heterogeneity:** sampling error, selection, and bias are not quantified first.
+- **Only successful pipelines are disclosed:** analyst-level selection remains invisible despite shared final code.
+- **A non-significant replication proves no effect:** an imprecise study can be compatible with both important and negligible effects.
+
+# Connections and Take-home Messages
+
+- [Effect sizes](effect-sizes.qmd) defines magnitude on interpretable scales.
+- [Statistical versus practical significance](statistical-versus-practical-significance.qmd) supplies meaningful agreement and decision thresholds.
+- [Selection bias and winner's curse](selection-bias-and-winners-curse.qmd) derives the conditioning that inflates discoveries.
+- [Statistical power and sample-size calculation](statistical-power-and-sample-size-calculation.qmd) supports prospective replication design.
+- [Confidence intervals](confidence-intervals.qmd) and [equivalence tests](one-sided-two-sided-and-equivalence-tests.qmd) replace significance matching with explicit compatibility questions.
+- [Sensitivity analysis and robustness](sensitivity-analysis-and-robustness.qmd) examines dependence on unverifiable assumptions and workflow choices.
+
+Reproducibility has computational, statistical, and biological dimensions. Effect-size inflation is expected when noisy, low-powered estimates are filtered for significance or extremeness. Replication should be designed around a prespecified estimand and defensible effect range, then interpreted through magnitude, uncertainty, selection, and heterogeneity—not matching p-value labels.
+
+# References
+
+- Gelman, A. and Carlin, J. “Beyond Power Calculations: Assessing Type S (Sign) and Type M (Magnitude) Errors.” *Perspectives on Psychological Science* 9 (2014): 641--651. [Article](https://doi.org/10.1177/1745691614551642).
+- Ioannidis, J. P. A. “Why Most Discovered True Associations Are Inflated.” *Epidemiology* 19 (2008): 640--648. [Article](https://doi.org/10.1097/EDE.0b013e31818131e7).
+- Open Science Collaboration. “Estimating the Reproducibility of Psychological Science.” *Science* 349 (2015): aac4716. [Article](https://doi.org/10.1126/science.aac4716).
+- Button, K. S. et al. “Power Failure: Why Small Sample Size Undermines the Reliability of Neuroscience.” *Nature Reviews Neuroscience* 14 (2013): 365--376. [Article](https://doi.org/10.1038/nrn3475).
+- Munafò, M. R. et al. “A Manifesto for Reproducible Science.” *Nature Human Behaviour* 1 (2017): 0021. [Article](https://doi.org/10.1038/s41562-016-0021).
+- Patil, P., Peng, R. D., and Leek, J. T. “A Statistical Definition for Reproducibility and Replicability.” *Proceedings of the National Academy of Sciences* 113 (2016): 14648--14653. [Article](https://doi.org/10.1073/pnas.1600793113).
