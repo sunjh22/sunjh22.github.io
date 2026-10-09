@@ -150,6 +150,8 @@ website:
                 href: knowledge/statistics/regression-models/index.qmd
                 contents:
                   - knowledge/statistics/regression-models/statistical-modelling.qmd
+                  - knowledge/statistics/regression-models/simple-linear-regression.qmd
+                  - knowledge/statistics/regression-models/multiple-linear-regression.qmd
               - section: "Advanced Modeling"
                 href: knowledge/statistics/advanced-modeling/index.qmd
                 contents:

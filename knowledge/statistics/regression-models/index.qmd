@@ -5,8 +5,10 @@ categories: [Statistics, Modelling]
 ---
 
 - [Statistical modelling overview](statistical-modelling.qmd)
+- [Simple linear regression](simple-linear-regression.qmd)
+- [Multiple linear regression](multiple-linear-regression.qmd)
 
-Future notes in this level will cover linear, logistic, Poisson, and negative-binomial regression; ANOVA; generalized linear models; diagnostics; and model selection.
+Future notes in this level will cover regression geometry and uncertainty; linear-model diagnostics; logistic, Poisson, and negative-binomial regression; ANOVA; generalized linear models; and model selection.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)

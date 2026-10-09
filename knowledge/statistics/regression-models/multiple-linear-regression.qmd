@@ -1,0 +1,273 @@
+---
+title: "Multiple Linear Regression"
+subtitle: "Conditional mean comparisons with several predictors"
+description: "Multiple linear regression, coefficient interpretation, least squares geometry, assumptions, diagnostics, and sensitivity in biological studies."
+author: "Jiahong Sun"
+date: "2026-10-09"
+date-modified: "2026-10-09"
+categories: [Statistics, Regression, Linear Models]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# From One Predictor to Many
+
+For independent units $i=1,\ldots,n$, multiple linear regression models the
+conditional mean of a continuous response using $p$ predictors:
+
+$$
+Y_i=\beta_0+\beta_1X_{i1}+\cdots+\beta_pX_{ip}+\varepsilon_i,
+\qquad
+\operatorname{E}(\varepsilon_i\mid X_i)=0.
+$$
+
+The model is **linear in the unknown coefficients**. Predictors themselves may be
+transformed, represented by indicators, or combined through prespecified
+interactions while the model remains linear in $\boldsymbol\beta$.
+
+In matrix form,
+
+$$
+\mathbf Y=\mathbf X\boldsymbol\beta+\boldsymbol\varepsilon,
+$$
+
+where the first column of $\mathbf X$ is usually all ones. The target
+$\boldsymbol\beta$ is a population parameter under a specified model;
+$\hat{\boldsymbol\beta}$ is an estimator before observing data and a numerical
+estimate afterward.
+
+# What a Coefficient Means
+
+Holding the other modeled predictors fixed,
+
+$$
+\beta_j=
+\frac{\partial}{\partial x_j}
+\operatorname{E}(Y\mid X_1=x_1,\ldots,X_p=x_p)
+$$
+
+when the mean is linear and $X_j$ is continuous. Thus $\beta_j$ is the difference
+in conditional mean per one-unit change in $X_j$, at common values of the other
+predictors. For a binary indicator, it is the adjusted mean contrast between the
+two encoded groups.
+
+"Holding fixed" is a mathematical comparison, not necessarily a feasible
+intervention. If two covariates cannot vary independently in the target
+population, the coefficient may depend heavily on extrapolation. If a predictor
+is a confounder, adjustment may reduce bias; if it is a mediator or collider,
+adjustment may instead change or bias the target. Predictor selection must follow
+the scientific question and data-generating process, not an automated p-value
+search.
+
+Without interaction terms, the model asserts that the slope for $X_j$ is the same
+at every modeled value of the other predictors. With an interaction
+$\beta_{12}X_1X_2$,
+
+$$
+\frac{\partial}{\partial x_1}\operatorname{E}(Y\mid X)
+=\beta_1+\beta_{12}x_2,
+$$
+
+so the main-effect coefficient $\beta_1$ is the slope when $X_2=0$. Centering can
+make that reference value scientifically meaningful without changing fitted
+values.
+
+# Least Squares and Projection
+
+OLS minimizes
+
+$$
+\operatorname{RSS}(\mathbf b)
+=(\mathbf Y-\mathbf X\mathbf b)^\mathsf{T}
+ (\mathbf Y-\mathbf X\mathbf b).
+$$
+
+Differentiation gives the normal equations
+
+$$
+\mathbf X^\mathsf{T}\mathbf X\hat{\boldsymbol\beta}
+=\mathbf X^\mathsf{T}\mathbf Y.
+$$
+
+If $\mathbf X$ has full column rank,
+
+$$
+\boxed{
+\hat{\boldsymbol\beta}
+=(\mathbf X^\mathsf{T}\mathbf X)^{-1}\mathbf X^\mathsf{T}\mathbf Y
+}.
+$$
+
+Geometrically, the fitted vector
+$\hat{\mathbf Y}=\mathbf H\mathbf Y$ is the orthogonal projection of
+$\mathbf Y$ onto the column space of $\mathbf X$, where
+
+$$
+\mathbf H=\mathbf X(\mathbf X^\mathsf{T}\mathbf X)^{-1}\mathbf X^\mathsf{T}.
+$$
+
+The residual vector is orthogonal to every included design column:
+$\mathbf X^\mathsf{T}\mathbf e=\mathbf 0$. These sample identities do not prove
+that omitted causes are unrelated to included predictors.
+
+The Frisch--Waugh--Lovell result gives an especially useful interpretation.
+Regress $X_j$ on the other predictors and retain its residuals; regress $Y$ on
+those same predictors and retain its residuals. The slope between the two sets of
+residuals equals $\hat\beta_j$. A coefficient therefore uses only the variation in
+$X_j$ that is not linearly explained by the other design columns.
+
+# Identification and Sampling Uncertainty
+
+Full column rank is an identification condition. Exact linear dependence---for
+example, an intercept plus indicators for every category---means that multiple
+coefficient vectors produce the same fitted values. Near dependence makes
+coefficients estimable but unstable.
+
+Conditional on $\mathbf X$, if
+
+$$
+\operatorname{E}(\boldsymbol\varepsilon\mid\mathbf X)=\mathbf 0,
+\qquad
+\operatorname{Var}(\boldsymbol\varepsilon\mid\mathbf X)=\sigma^2\mathbf I,
+$$
+
+then
+
+$$
+\operatorname{E}(\hat{\boldsymbol\beta}\mid\mathbf X)
+=\boldsymbol\beta,
+\qquad
+\operatorname{Var}(\hat{\boldsymbol\beta}\mid\mathbf X)
+=\sigma^2(\mathbf X^\mathsf{T}\mathbf X)^{-1}.
+$$
+
+Estimate $\sigma^2$ by
+
+$$
+s^2=\frac{\operatorname{RSS}}{n-p-1}.
+$$
+
+The standard error of coefficient $j$ is the square root of the corresponding
+diagonal element of
+$s^2(\mathbf X^\mathsf{T}\mathbf X)^{-1}$. Conditional normal errors give exact
+small-sample $t$ and $F$ reference distributions. Heteroskedasticity-consistent
+standard errors relax constant variance but do not repair a wrong mean function,
+dependence, confounding, or poor overlap.
+
+# Omitted Variables and Changing Coefficients
+
+Suppose the true mean includes $Z$,
+
+$$
+Y=\beta_0+\beta_1X+\gamma Z+\varepsilon,
+$$
+
+but $Z$ is omitted. In a population linear projection, the short-regression slope
+is
+
+$$
+\tilde\beta_1
+=\beta_1+\gamma\frac{\operatorname{Cov}(X,Z)}{\operatorname{Var}(X)}.
+$$
+
+Omitted-variable bias therefore needs both an association between $Z$ and the
+outcome conditional on $X$ and an association between $Z$ and $X$. Adding a
+variable can legitimately change a coefficient because it changes the conditional
+comparison, not merely because the original model was "incorrect."
+
+In causal work, the right adjustment set is determined by the causal structure.
+In prediction, a variable may be useful without having a causal interpretation.
+In descriptive work, both adjusted and unadjusted associations may answer useful
+but different questions.
+
+# Worked Bioinformatics Design
+
+Consider an RNA-expression summary $Y_i$ for each of 60 independent patient
+specimens. A prespecified model is
+
+$$
+Y_i=\beta_0+\beta_1\operatorname{Treatment}_i
+ +\beta_2\operatorname{Age}_i
+ +\beta_3\operatorname{BatchB}_i+\varepsilon_i.
+$$
+
+- $\beta_1$ compares adjusted mean expression between treatment groups at the
+  same age and batch under the model.
+- $\beta_2$ is the adjusted mean difference per year of age.
+- $\beta_3$ describes a batch contrast; it is not a biological effect.
+
+The experimental units are the 60 patients. Multiple lanes, reads, or technical
+replicates improve measurement or help estimate technical variation but do not
+turn the study into a larger patient sample. If treatment is completely
+confounded with batch, the design matrix cannot distinguish $\beta_1$ from
+$\beta_3$; no regression algorithm can recover information absent from the
+design.
+
+Statistically, an estimated treatment coefficient and interval summarize an
+adjusted contrast on the chosen expression scale. Biologically, interpretation
+also requires the gene's function, effect magnitude, normalization, tissue
+composition, and whether the specimens represent the target population.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Assumption or issue | Consequence | Assessment | Sensitivity or remedy |
+|---|---|---|---|
+| Correct conditional mean | Misspecification makes coefficients misleading averages | Residual plots, partial-residual plots, domain knowledge | Transformations, splines, interactions, alternative model |
+| Independent units | Correlated errors invalidate ordinary SEs | Sampling hierarchy and time/order metadata | Cluster-robust inference, mixed model, generalized least squares |
+| Zero conditional error mean | Omitted causes and selection can bias coefficients | Design reasoning, causal diagram, negative controls | Better design, justified adjustment, quantitative sensitivity analysis |
+| Constant variance | Classical SEs may be wrong and OLS inefficient | Residual spread by fitted values and groups | Robust SEs or explicit variance model |
+| Full rank and adequate overlap | Coefficients may be unidentified or unstable | Rank, condition indices, predictor distributions | Redesign, combine parameters, regularize for prediction, narrow target |
+| No dominant observations | A few units can control estimates | Leverage, studentized residuals, Cook's distance, DFBETAs | Verify records and report deletion diagnostics transparently |
+| Accurate variables | Measurement error can bias several coefficients | Validation data, reliability studies | Measurement-error model; calibration; replicate assays |
+
+A useful diagnostic sequence is: verify design and units; inspect missingness and
+overlap; visualize residuals; examine leverage and influence; compare conventional
+and robust uncertainty; test scientifically plausible nonlinearities and
+interactions; and report how conclusions change. Diagnostics should be tied to a
+failure mechanism, not used as a ritual pass/fail checklist.
+
+Variable selection after looking at the same outcome changes the sampling
+behavior of coefficients and p-values. If selection is unavoidable, separate
+exploration from confirmation, validate out of sample, and acknowledge
+post-selection uncertainty.
+
+# Connections and Take-home Messages
+
+- [Simple linear regression](simple-linear-regression.qmd) develops the one-predictor
+  case and basic prediction intervals.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  connects Gaussian regression to likelihood-based estimation.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a framework for checking dependence on assumptions.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  explains why data-dependent reporting can inflate coefficients.
+
+1. A multiple-regression coefficient is a conditional comparison given the other
+   modeled predictors.
+2. Least squares projects the response onto the design space; full column rank is
+   required for unique coefficients.
+3. Adjustment changes the estimand and can reduce, create, or leave bias depending
+   on the data-generating structure.
+4. Robust standard errors address variance misspecification, not confounding,
+   dependence, lack of overlap, or an incorrect mean model.
+5. In bioinformatics, independent biological specimens determine inferential
+   replication; technical observations do not substitute for them.
+
+# References
+
+- Frisch, R., and Waugh, F. V. (1933). Partial time regressions as compared with
+  individual trends. *Econometrica*, 1(4), 387--401.
+  <https://doi.org/10.2307/1907330>
+- Lovell, M. C. (1963). Seasonal adjustment of economic time series and multiple
+  regression analysis. *Journal of the American Statistical Association*,
+  58(304), 993--1010. <https://doi.org/10.1080/01621459.1963.10480682>
+- White, H. (1980). A heteroskedasticity-consistent covariance matrix estimator
+  and a direct test for heteroskedasticity. *Econometrica*, 48(4), 817--838.
+  <https://doi.org/10.2307/1912934>
+- Weisberg, S. (2014). *Applied Linear Regression* (4th ed.). Wiley.
+- Gelman, A., Hill, J., and Vehtari, A. (2020). *Regression and Other Stories*.
+  Cambridge University Press. <https://doi.org/10.1017/9781139161879>
+- R Core Team. `lm`: Fitting linear models. *R statistical software
+  documentation*. <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/lm.html>

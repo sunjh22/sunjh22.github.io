@@ -1,0 +1,239 @@
+---
+title: "Simple Linear Regression"
+subtitle: "A line for a conditional mean, with uncertainty and diagnostics"
+description: "Simple linear regression as a data-generating model, an estimation problem, and a framework for prediction and scientific interpretation."
+author: "Jiahong Sun"
+date: "2026-10-09"
+date-modified: "2026-10-09"
+categories: [Statistics, Regression, Linear Models]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Question and the Model
+
+Suppose each independent experimental unit contributes a predictor $X_i$ and a
+continuous response $Y_i$. Simple linear regression describes how the
+**conditional mean** of the response changes with the predictor:
+
+$$
+Y_i=\beta_0+\beta_1X_i+\varepsilon_i,
+\qquad
+\operatorname{E}(\varepsilon_i\mid X_i)=0.
+$$
+
+Equivalently,
+
+$$
+\operatorname{E}(Y_i\mid X_i=x)=\beta_0+\beta_1x.
+$$
+
+The model is about the mean of $Y$ at each value of $X$, not a claim that every
+observation lies on a line. Biological heterogeneity, measurement error, and
+unmodeled causes appear in the residual variation around that mean.
+
+| Quantity | Meaning |
+|---|---|
+| $\beta_0$ | Mean response when $X=0$ |
+| $\beta_1$ | Change in mean response for a one-unit increase in $X$ |
+| $\varepsilon_i$ | Unit-specific deviation from the conditional mean |
+| $\sigma^2$ | Conditional residual variance, if assumed constant |
+| $\hat\beta_0,\hat\beta_1$ | Estimators before data are observed; estimates afterward |
+
+The scientific estimand must be stated before fitting. It may be a descriptive
+conditional association, a predictive relationship, or---under substantially
+stronger design and causal assumptions---an average causal effect. A regression
+slope alone does not decide which interpretation is justified.
+
+# Least Squares
+
+Ordinary least squares (OLS) chooses the line that minimizes the residual sum of
+squares
+
+$$
+\operatorname{RSS}(b_0,b_1)
+=\sum_{i=1}^{n}(Y_i-b_0-b_1X_i)^2.
+$$
+
+Write $\bar X=n^{-1}\sum_iX_i$ and $\bar Y=n^{-1}\sum_iY_i$. Differentiating
+RSS with respect to $b_0$ and $b_1$ gives the normal equations. Their solution is
+
+$$
+\boxed{
+\hat\beta_1=
+\frac{\sum_i(X_i-\bar X)(Y_i-\bar Y)}
+     {\sum_i(X_i-\bar X)^2}
+},
+\qquad
+\boxed{\hat\beta_0=\bar Y-\hat\beta_1\bar X}.
+$$
+
+Thus the fitted line passes through $(\bar X,\bar Y)$. The slope is sample
+covariation divided by variation in $X$; it is undefined if every $X_i$ is the
+same. This connects regression directly to
+[covariance and correlation](../probability-randomness/covariance-and-correlation.qmd).
+
+The fitted value and residual for unit $i$ are
+
+$$
+\hat Y_i=\hat\beta_0+\hat\beta_1X_i,
+\qquad
+e_i=Y_i-\hat Y_i.
+$$
+
+With an intercept, $\sum_i e_i=0$ and $\sum_iX_ie_i=0$. These are algebraic
+properties of the fitted sample, not proof that the population errors have mean
+zero or are unrelated to $X$.
+
+# Sampling Behavior and Uncertainty
+
+Condition on the observed predictor values. If errors are independent with
+$\operatorname{E}(\varepsilon_i\mid X)=0$ and
+$\operatorname{Var}(\varepsilon_i\mid X)=\sigma^2$, then
+
+$$
+\operatorname{E}(\hat\beta_1\mid X)=\beta_1,
+\qquad
+\operatorname{Var}(\hat\beta_1\mid X)
+=\frac{\sigma^2}{S_{xx}},
+$$
+
+where $S_{xx}=\sum_i(X_i-\bar X)^2$. More independent units, less noise, and a
+wider informative spread of predictor values make the slope more precise.
+
+Estimate the residual variance with
+
+$$
+s^2=\frac{\operatorname{RSS}}{n-2},
+\qquad
+\operatorname{SE}(\hat\beta_1)=\frac{s}{\sqrt{S_{xx}}}.
+$$
+
+If the errors are conditionally normal, the exact pivot
+
+$$
+\frac{\hat\beta_1-\beta_1}{\operatorname{SE}(\hat\beta_1)}
+\sim t_{n-2}
+$$
+
+produces a confidence interval and a test of a prespecified slope. Without
+normality, OLS can still be unbiased under the mean model, while $t$ inference is
+generally approximate. Robust standard errors, bootstrap procedures, or a model
+for changing variance may be more appropriate.
+
+Distinguish three uncertainty targets:
+
+- a confidence interval for the unknown mean slope $\beta_1$;
+- a confidence interval for the mean response at a chosen $x_0$;
+- a prediction interval for a new response at $x_0$, which is wider because it
+  includes new unit-level variation.
+
+At $x_0$, their estimated standard-error components are
+
+$$
+\operatorname{SE}\{\widehat{\operatorname{E}(Y\mid x_0)}\}
+=s\sqrt{\frac1n+\frac{(x_0-\bar X)^2}{S_{xx}}},
+$$
+
+and
+
+$$
+\operatorname{SE}(Y_{\mathrm{new}}-\hat Y_0)
+=s\sqrt{1+\frac1n+\frac{(x_0-\bar X)^2}{S_{xx}}}.
+$$
+
+Both grow away from the center of the observed predictor range.
+
+# Worked Example
+
+For five independent specimens, suppose standardized exposure is
+$X=(-2,-1,0,1,2)$ and normalized expression is $Y=(4,5,7,8,11)$. Here
+$\bar X=0$, $\bar Y=7$, $S_{xx}=10$, and
+
+$$
+\sum_i(X_i-\bar X)(Y_i-\bar Y)=17.
+$$
+
+Therefore $\hat\beta_1=1.7$ and $\hat\beta_0=7$. The fitted mean expression
+increases by 1.7 normalized units per one-unit increase in exposure. This is an
+estimate of association among specimens. It is not automatically an effect of
+intervening on exposure, and its biological meaning depends on the normalization
+scale.
+
+The residuals are $(0.4,-0.3,0,-0.7,0.6)$, so RSS is $1.10$ and
+$s^2=1.10/3$. The calculation makes clear that the sample size for inference is
+five specimens---not the number of reads or repeated technical measurements used
+to construct each specimen-level expression value.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Assumption or goal | Why it matters | Diagnostic evidence | Response |
+|---|---|---|---|
+| Linear conditional mean | Otherwise one slope averages a changing relationship | Residual-versus-fitted plot; smooth trend; domain knowledge | Transform variables, add curvature, or restrict the range |
+| Independent experimental units | Dependence makes ordinary SEs too small | Study design, clusters, time order | Model clusters/repeated measures or aggregate at the correct unit |
+| Zero conditional mean | Confounding or systematic error biases the slope | Design knowledge; negative controls; sensitivity analysis | Randomize, adjust measured causes, redesign; diagnostics alone cannot prove it |
+| Constant conditional variance | Classical SEs and efficiency rely on it | Residual spread across fitted values | Robust SEs, variance modeling, transformation |
+| No dominant observations | One point can determine the line | Leverage, studentized residuals, Cook's distance | Verify data; report leave-one-out sensitivity; do not delete automatically |
+| Relevant predictor range | Extrapolation is unsupported by observed data | Compare requested $x_0$ with observed range | Avoid or justify extrapolation mechanistically |
+
+Normal residuals are needed for exact small-sample $t$ and $F$ inference, not for
+the definition of OLS. A histogram or quantile--quantile plot can reveal severe
+skewness and outliers, but small samples make normality hard to assess.
+
+Measurement error in $Y$ usually increases residual variation. Classical random
+measurement error in $X$ is more dangerous: it commonly attenuates the estimated
+slope toward zero. Replicating the assay technically can characterize measurement
+error, but it does not create additional biological replication.
+
+# Association, Prediction, and Causation
+
+The same fitted line can serve different aims:
+
+- **Description:** summarize the observed specimen-level association.
+- **Prediction:** predict outcomes for future units drawn under the same data
+  process; evaluate out-of-sample error.
+- **Causal estimation:** interpret $\beta_1$ as an intervention effect only with a
+  credible design and assumptions about confounding, selection, interference,
+  measurement, and model form.
+
+Randomization can justify a causal comparison, but a linear functional form may
+still be a poor summary. Conversely, an excellent predictive fit does not remove
+confounding.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](../statistical-inference/populations-samples-parameters-and-estimands.qmd)
+  clarifies the target before the slope is estimated.
+- [Standard errors](../statistical-inference/standard-errors.qmd) and
+  [confidence intervals](../statistical-inference/confidence-intervals.qmd)
+  develop repeated-sampling uncertainty.
+- [Multiple linear regression](multiple-linear-regression.qmd) replaces the single
+  predictor with a vector and changes coefficient interpretation to a conditional
+  comparison.
+- [Statistical versus practical significance](../statistical-inference/statistical-versus-practical-significance.qmd)
+  explains why a small p-value does not establish biological importance.
+
+1. Simple regression models a conditional mean; observations need not lie on a line.
+2. The OLS slope is sample covariation divided by predictor variation.
+3. Uncertainty depends on independent experimental units, residual variation, and
+   the informative spread of $X$.
+4. Residual diagnostics can expose model tension but cannot prove absence of
+   confounding or selection bias.
+5. Biological, technical, predictive, and causal interpretations must be stated
+   separately.
+
+# References
+
+- Fisher, R. A. (1922). The goodness of fit of regression formulae, and the
+  distribution of regression coefficients. *Journal of the Royal Statistical
+  Society*, 85(4), 597--612. <https://doi.org/10.2307/2341124>
+- Gauss, C. F. (1823). Theoria combinationis observationum erroribus minimis
+  obnoxiae. *Commentationes Societatis Regiae Scientiarum Gottingensis
+  Recentiores*, 5.
+- Weisberg, S. (2014). *Applied Linear Regression* (4th ed.). Wiley.
+- Gelman, A., Hill, J., and Vehtari, A. (2020). *Regression and Other Stories*.
+  Cambridge University Press. <https://doi.org/10.1017/9781139161879>
+- R Core Team. `lm`: Fitting linear models. *R statistical software
+  documentation*. <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/lm.html>
