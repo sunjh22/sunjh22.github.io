@@ -1,0 +1,289 @@
+---
+title: "Least Squares and the Geometry of Regression"
+subtitle: "Projection, residualization, leverage, and numerical stability"
+description: "A geometric account of ordinary least squares, including projection matrices, partial regression, rank, leverage, and weighted least squares."
+author: "Jiahong Sun"
+date: "2026-10-11"
+date-modified: "2026-10-11"
+categories: [Statistics, Regression, Linear Models]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The optimization problem
+
+For $n$ experimental units, let $\mathbf y\in\mathbb R^n$ be the observed
+responses and let the $n\times p$ design matrix $\mathbf X$ contain the
+predictors used by the model. The linear mean model is
+
+$$
+\mathbf y=\mathbf X\boldsymbol\beta+\boldsymbol\varepsilon,
+\qquad
+\operatorname{E}(\boldsymbol\varepsilon\mid\mathbf X)=\mathbf 0.
+$$
+
+Ordinary least squares (OLS) chooses the coefficient vector whose fitted values
+are closest to $\mathbf y$ in squared Euclidean distance:
+
+$$
+\hat{\boldsymbol\beta}
+=\arg\min_{\mathbf b}\|\mathbf y-\mathbf X\mathbf b\|_2^2.
+$$
+
+The model space is the column space $\mathcal C(\mathbf X)$: every possible
+fitted vector $\mathbf X\mathbf b$ lies in this subspace of $\mathbb R^n$.
+Least squares is therefore a projection problem, not just an algebraic recipe.
+
+The rows of $\mathbf X$ represent experimental units. In an RNA-expression
+study, those units might be independent patients; reads, cells from the same
+patient, or repeated technical measurements do not become independent rows
+merely because software can store them that way.
+
+# Normal equations and orthogonal projection
+
+Write the residual vector as $\mathbf e=\mathbf y-\mathbf X\mathbf b$. Expanding
+the residual sum of squares and differentiating gives
+
+$$
+\frac{\partial}{\partial\mathbf b}
+(\mathbf y-\mathbf X\mathbf b)^\mathsf T
+(\mathbf y-\mathbf X\mathbf b)
+=-2\mathbf X^\mathsf T(\mathbf y-\mathbf X\mathbf b).
+$$
+
+At a minimum,
+
+$$
+\boxed{\mathbf X^\mathsf T\mathbf X\hat{\boldsymbol\beta}
+=\mathbf X^\mathsf T\mathbf y},
+\qquad
+\boxed{\mathbf X^\mathsf T\hat{\mathbf e}=\mathbf 0}.
+$$
+
+Thus the residual is orthogonal to every design column. If $\mathbf X$ has full
+column rank,
+
+$$
+\hat{\boldsymbol\beta}
+=(\mathbf X^\mathsf T\mathbf X)^{-1}\mathbf X^\mathsf T\mathbf y.
+$$
+
+The fitted vector is
+
+$$
+\hat{\mathbf y}=\mathbf H\mathbf y,
+\qquad
+\mathbf H=\mathbf X(\mathbf X^\mathsf T\mathbf X)^{-1}\mathbf X^\mathsf T.
+$$
+
+The hat matrix is symmetric and idempotent:
+$\mathbf H^\mathsf T=\mathbf H$ and $\mathbf H^2=\mathbf H$. These are the
+defining algebraic properties of an orthogonal projector. The residual-maker
+$\mathbf M=\mathbf I-\mathbf H$ is also symmetric and idempotent, with
+$\hat{\mathbf e}=\mathbf M\mathbf y$.
+
+Because the fitted and residual vectors are orthogonal,
+
+$$
+\|\mathbf y\|_2^2
+=\|\hat{\mathbf y}\|_2^2+\|\hat{\mathbf e}\|_2^2.
+$$
+
+With an intercept, the same geometry applied after centering yields the familiar
+decomposition
+
+$$
+\sum_i(y_i-\bar y)^2
+=\sum_i(\hat y_i-\bar y)^2+\sum_i(y_i-\hat y_i)^2.
+$$
+
+This identity is exact in the fitted sample. It does not show that the mean
+function is correct, that the predictors are causal, or that the model will
+predict new observations well.
+
+# What full rank means
+
+Full column rank means that no design column is an exact linear combination of
+the others. It gives a unique coefficient vector. If rank is deficient, fitted
+values can still be unique while individual coefficients are not: several
+vectors $\mathbf b$ produce the same point in $\mathcal C(\mathbf X)$.
+
+Common causes include an intercept plus indicators for every category, a batch
+indicator identical to treatment, or more fitted coefficients than independent
+units. Near-linear dependence does not destroy uniqueness, but it creates long,
+flat directions in the least-squares surface. Small changes in the data can then
+produce large coefficient changes.
+
+The projection should not be computed by explicitly forming
+$(\mathbf X^\mathsf T\mathbf X)^{-1}$. Forming the cross-product squares the
+condition number. QR factorization is the standard stable route for a full-rank
+problem; singular-value decomposition exposes rank and ill-conditioned
+directions directly.
+
+# Residualization and the Frisch--Waugh--Lovell result
+
+Partition the design as $\mathbf X=[\mathbf X_1\;\mathbf x_2]$, and let
+
+$$
+\mathbf M_1=\mathbf I-
+\mathbf X_1(\mathbf X_1^\mathsf T\mathbf X_1)^{-1}\mathbf X_1^\mathsf T.
+$$
+
+The coefficient of $\mathbf x_2$ in the full regression is
+
+$$
+\boxed{
+\hat\beta_2
+=\frac{\mathbf x_2^\mathsf T\mathbf M_1\mathbf y}
+{\mathbf x_2^\mathsf T\mathbf M_1\mathbf x_2}
+}.
+$$
+
+To see the result, minimize over $\boldsymbol\beta_1$ for any fixed $b_2$.
+The remaining residual is
+$\mathbf M_1(\mathbf y-\mathbf x_2b_2)$; differentiating its squared length
+with respect to $b_2$ gives the displayed expression.
+
+Geometrically, first remove from both $\mathbf y$ and $\mathbf x_2$ the
+components explained linearly by $\mathbf X_1$. The slope between those two
+residual vectors is the full-model coefficient. A coefficient therefore uses
+only predictor variation orthogonal to the other design columns. If almost no
+such variation remains, the denominator is small and the estimate is unstable.
+
+# Leverage and influence in the projection
+
+The diagonal element $h_{ii}$ of $\mathbf H$ is the leverage of unit $i$:
+
+$$
+\hat y_i=\sum_{j=1}^n h_{ij}y_j,
+\qquad
+0\le h_{ii}\le 1,
+\qquad
+\sum_i h_{ii}=\operatorname{tr}(\mathbf H)=p.
+$$
+
+High leverage means that a row of the design is unusual in predictor space. It
+does not by itself imply a large residual or an error. Influence combines
+leverage with outcome disagreement: a high-leverage unit whose response follows
+the fitted pattern may change the coefficients little, whereas a high-leverage
+unit with a large residual can dominate them.
+
+Under homoskedastic errors,
+
+$$
+\operatorname{Var}(\hat e_i\mid\mathbf X)=\sigma^2(1-h_{ii}),
+$$
+
+so raw residuals have different variances even when the original errors do not.
+Studentized residuals account for this geometric fact. Cook's distance and
+DFBETAs then quantify how deleting a unit changes the fitted vector or a
+particular coefficient. Deletion diagnostics are sensitivity analyses, not
+automatic rules for discarding inconvenient observations.
+
+# Weighted geometry
+
+If the conditional error covariance is known up to scale as
+$\operatorname{Var}(\boldsymbol\varepsilon\mid\mathbf X)=\sigma^2\mathbf V$,
+generalized least squares minimizes
+
+$$
+(\mathbf y-\mathbf X\mathbf b)^\mathsf T
+\mathbf V^{-1}(\mathbf y-\mathbf X\mathbf b).
+$$
+
+This is ordinary projection after whitening by a matrix $\mathbf L$ satisfying
+$\mathbf L^\mathsf T\mathbf L=\mathbf V^{-1}$. Weighted least squares is the
+diagonal special case. The choice of weights changes the metric and therefore
+the projection; weights should encode a justified variance or sampling model,
+not merely shrink observations that fit poorly.
+
+# A small worked geometry
+
+Fit an intercept and a centered predictor
+$\mathbf x=(-1,0,1)^\mathsf T$ to
+$\mathbf y=(1,2,6)^\mathsf T$. Orthogonality of the intercept and centered
+predictor gives
+
+$$
+\hat\beta_0=\bar y=3,
+\qquad
+\hat\beta_1=\frac{\mathbf x^\mathsf T\mathbf y}
+{\mathbf x^\mathsf T\mathbf x}=\frac{5}{2}.
+$$
+
+Hence $\hat{\mathbf y}=(0.5,3,5.5)^\mathsf T$ and
+$\hat{\mathbf e}=(0.5,-1,0.5)^\mathsf T$. Direct calculation confirms
+$\mathbf 1^\mathsf T\hat{\mathbf e}=0$ and
+$\mathbf x^\mathsf T\hat{\mathbf e}=0$. The normal equations are visible as
+right angles.
+
+# Bioinformatics design example
+
+Suppose 48 independent donor samples are assayed for a pathway score. The design
+contains an intercept, treatment, age, sex, and sequencing batch. Each column is
+a direction in donor-level observation space. The adjusted treatment coefficient
+uses only the treatment direction remaining after its projection on the other
+columns.
+
+If all treated donors were processed in batch B and all controls in batch A,
+treatment and batch point in the same design direction. Their separate effects
+are not identified. More reads or repeated libraries cannot create the missing
+donor-level contrast. If treatment and batch are merely highly associated, the
+contrast exists but is short, so uncertainty is large and estimates are
+sensitive to a few donors.
+
+The statistical statement is about an adjusted mean contrast on the pathway-score
+scale under the model. Biological interpretation additionally depends on donor
+selection, tissue composition, assay normalization, effect magnitude, and
+external replication.
+
+# Assumptions and sensitivity checks
+
+| Issue | Geometric symptom | Consequence | Check or response |
+|---|---|---|---|
+| Rank deficiency | Redundant design directions | Coefficients not unique | Inspect design rank and estimable contrasts; redesign or reparameterize |
+| Near collinearity | Very small singular values | Large coefficient variance | Inspect singular values and partial predictor spread; report sensitivity |
+| Nonlinear mean | Residual pattern outside the chosen model space | Projection is a misleading summary | Residual and partial-residual plots; add justified transformations or splines |
+| Unequal variance | Error ellipsoid not spherical | Classical standard errors are wrong or inefficient | Plot residual spread; use justified variance modeling or robust covariance |
+| Dependence | Off-diagonal error covariance | Ordinary uncertainty is too small or otherwise wrong | Respect sampling hierarchy; use cluster, mixed, or generalized least-squares methods |
+| Influential units | High leverage combined with large residual | Fit depends on few units | Verify records and report transparent deletion or robust-fit sensitivity |
+
+# Connections and take-home messages
+
+- [Simple linear regression](simple-linear-regression.qmd) introduces the
+  one-predictor model.
+- [Multiple linear regression](multiple-linear-regression.qmd) develops adjusted
+  coefficients and omitted-variable reasoning.
+- [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+  connects this geometry to standard errors, contrasts, and prediction.
+- [Standard errors](../statistical-inference/standard-errors.qmd) explains
+  repeated-sampling uncertainty more generally.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a broader framework for assumption checks.
+
+1. OLS projects the response onto the column space of the design matrix.
+2. The normal equations say that the residual is orthogonal to every included
+   design direction.
+3. Full rank identifies coefficients; small singular values reveal unstable
+   directions even when a unique solution exists.
+4. Partial-regression geometry shows exactly which predictor variation estimates
+   an adjusted coefficient.
+5. The geometry is a sample identity. Scientific interpretation and valid
+   uncertainty still require assumptions about design, errors, and experimental
+   units.
+
+# References
+
+- Frisch, R., and Waugh, F. V. (1933). Partial time regressions as compared with
+  individual trends. *Econometrica*, 1(4), 387--401.
+  <https://doi.org/10.2307/1907330>
+- Lovell, M. C. (1963). Seasonal adjustment of economic time series and multiple
+  regression analysis. *Journal of the American Statistical Association*,
+  58(304), 993--1010. <https://doi.org/10.1080/01621459.1963.10480682>
+- Golub, G. H., and Van Loan, C. F. (2013). *Matrix Computations* (4th ed.).
+  Johns Hopkins University Press.
+- Weisberg, S. (2014). *Applied Linear Regression* (4th ed.). Wiley.
+- R Core Team. `lm`: Fitting linear models. *R statistical software
+  documentation*. <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/lm.html>

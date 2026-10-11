@@ -1,0 +1,313 @@
+---
+title: "Regression Uncertainty and Coefficient Interpretation"
+subtitle: "From an estimand to intervals, contrasts, and predictions"
+description: "How regression coefficients, standard errors, confidence intervals, and prediction intervals depend on the target, design, and error assumptions."
+author: "Jiahong Sun"
+date: "2026-10-11"
+date-modified: "2026-10-11"
+categories: [Statistics, Regression, Statistical Inference]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Start with the target
+
+A regression output mixes several distinct objects unless the question is stated
+first:
+
+| Object | Meaning |
+|---|---|
+| **Target population** | Units to which the conclusion is meant to apply |
+| **Estimand** | Population quantity defined by the scientific question and model |
+| **Estimator** | Random rule, such as OLS, used before observing the sample |
+| **Estimate** | Numerical value produced for the observed sample |
+| **Standard error** | Estimated repeated-sampling standard deviation of the estimator |
+
+For a linear conditional-mean model,
+
+$$
+\operatorname{E}(Y_i\mid\mathbf x_i)
+=\mathbf x_i^\mathsf T\boldsymbol\beta,
+$$
+
+$\beta_j$ is the conditional mean difference per unit change in predictor $j$,
+holding the other modeled predictors fixed. For an indicator, it is the adjusted
+conditional mean contrast between its coded groups. The phrase "holding fixed"
+describes a model comparison; it does not by itself describe a feasible
+intervention or a causal effect.
+
+If the conditional mean is not exactly linear, OLS can instead target the best
+linear projection for a specified predictor distribution:
+
+$$
+\boldsymbol\beta^*
+=\arg\min_{\mathbf b}
+\operatorname{E}\{(Y-\mathbf X^\mathsf T\mathbf b)^2\}.
+$$
+
+That projection can be useful, but its coefficients may change when the
+population distribution of predictors changes. The estimand is therefore not
+fully described by the coefficient name alone.
+
+# Sampling uncertainty under the classical model
+
+For
+
+$$
+\mathbf y=\mathbf X\boldsymbol\beta+\boldsymbol\varepsilon,
+\qquad
+\operatorname{E}(\boldsymbol\varepsilon\mid\mathbf X)=\mathbf 0,
+$$
+
+the OLS estimator is
+
+$$
+\hat{\boldsymbol\beta}
+=(\mathbf X^\mathsf T\mathbf X)^{-1}\mathbf X^\mathsf T\mathbf y.
+$$
+
+If, conditional on the observed design,
+$\operatorname{Var}(\boldsymbol\varepsilon\mid\mathbf X)=\sigma^2\mathbf I$,
+then
+
+$$
+\operatorname{Var}(\hat{\boldsymbol\beta}\mid\mathbf X)
+=\sigma^2(\mathbf X^\mathsf T\mathbf X)^{-1}.
+$$
+
+Estimate $\sigma^2$ by
+
+$$
+s^2=\frac{\|\mathbf y-\mathbf X\hat{\boldsymbol\beta}\|_2^2}{n-p},
+$$
+
+where $p$ is the rank of the design, including the intercept when present. The
+standard error for coefficient $j$ is the square root of diagonal element $j$ of
+$s^2(\mathbf X^\mathsf T\mathbf X)^{-1}$.
+
+With independent normal errors, the interval
+
+$$
+\hat\beta_j\ \pm\ t_{n-p,1-\alpha/2}
+\operatorname{SE}(\hat\beta_j)
+$$
+
+has exact conditional coverage $1-\alpha$ under the model. Without normality,
+similar intervals are generally asymptotic and need regularity conditions. A
+95% confidence interval is a procedure with 95% long-run coverage under those
+conditions; it is not a 95% probability statement about a fixed frequentist
+coefficient after the interval is observed.
+
+# Contrasts are often the real estimands
+
+Scientific questions commonly concern a linear contrast
+$\theta=\mathbf c^\mathsf T\boldsymbol\beta$, not one raw coefficient. Its
+estimate and classical variance are
+
+$$
+\hat\theta=\mathbf c^\mathsf T\hat{\boldsymbol\beta},
+\qquad
+\widehat{\operatorname{Var}}(\hat\theta)
+=s^2\mathbf c^\mathsf T
+(\mathbf X^\mathsf T\mathbf X)^{-1}\mathbf c.
+$$
+
+Examples include a difference between two factor levels, an average treatment
+contrast across prespecified covariate values, or the slope at a chosen modifier
+value in an interaction model. Estimability requires that the contrast be
+determined by the design; software cannot recover a treatment-versus-batch
+contrast when treatment and batch are perfectly confounded.
+
+Simultaneously examining many coefficients or choosing a contrast after seeing
+the estimates changes the relevant error rate. Prespecified contrasts,
+simultaneous intervals, multiplicity adjustment, or honest exploratory labeling
+should match the analysis goal.
+
+# Coding, scaling, and interactions
+
+Coefficient values depend on parameterization even when fitted values do not.
+
+- Replacing age in years by age in decades multiplies its coefficient and
+  standard error by 10 but leaves its $t$ statistic and fitted values unchanged.
+- Changing the reference level of a factor changes individual coefficients, not
+  the modeled group means or appropriate contrasts.
+- Centering a predictor changes the intercept and, with interactions, changes
+  which conditional slope is labeled a "main effect."
+
+For
+
+$$
+\operatorname{E}(Y\mid X,Z)
+=\beta_0+\beta_1X+\beta_2Z+\beta_3XZ,
+$$
+
+the slope of $X$ at $Z=z$ is
+
+$$
+\frac{\partial}{\partial x}\operatorname{E}(Y\mid X=x,Z=z)
+=\beta_1+\beta_3z.
+$$
+
+Thus $\beta_1$ is the slope only at $Z=0$. Interpreting it as an overall effect
+is wrong unless zero is the intended reference value and a constant slope is the
+question. Report fitted contrasts across scientifically meaningful values when
+an interaction is present.
+
+# Robust covariance: what it fixes and what it does not
+
+Under independent but heteroskedastic errors with covariance
+$\boldsymbol\Omega$, the conditional covariance is
+
+$$
+\operatorname{Var}(\hat{\boldsymbol\beta}\mid\mathbf X)
+=(\mathbf X^\mathsf T\mathbf X)^{-1}
+\mathbf X^\mathsf T\boldsymbol\Omega\mathbf X
+(\mathbf X^\mathsf T\mathbf X)^{-1}.
+$$
+
+Heteroskedasticity-consistent estimators replace the unknown error variances by
+functions of squared residuals. HC2 and HC3 adjust for leverage and often behave
+better than the original HC0 estimator in modest samples. These methods change
+the estimated covariance, not the OLS coefficients.
+
+Robust standard errors do **not** repair a wrong mean function, omitted-variable
+bias, dependence between units, measurement error, selection bias, or poor
+overlap. Cluster-robust covariance needs enough independent clusters and a
+scientifically correct clustering level. When there are few clusters, ordinary
+large-sample reference distributions can be unreliable.
+
+# Uncertainty for a mean and for a new observation
+
+At a predictor vector $\mathbf x_0$, the fitted conditional mean is
+$\hat\mu_0=\mathbf x_0^\mathsf T\hat{\boldsymbol\beta}$. Under the classical
+model,
+
+$$
+\widehat{\operatorname{Var}}(\hat\mu_0)
+=s^2\mathbf x_0^\mathsf T
+(\mathbf X^\mathsf T\mathbf X)^{-1}\mathbf x_0.
+$$
+
+A confidence interval for the mean response uses this variance. A prediction
+interval for one future response must also include irreducible outcome variation:
+
+$$
+\widehat{\operatorname{Var}}(Y_{\mathrm{new}}-\hat\mu_0)
+=s^2\left[1+
+\mathbf x_0^\mathsf T(\mathbf X^\mathsf T\mathbf X)^{-1}\mathbf x_0\right].
+$$
+
+The prediction interval is therefore wider. Both formulas are model-based and
+refer to predictor values supported by the design. Extrapolation can produce
+numerical intervals while requiring untestable assumptions far beyond the data.
+Prediction for a new donor also differs from predicting another technical
+measurement from an already observed donor because the sources of variation are
+different.
+
+# Association, prediction, and causation
+
+The same fitted coefficient can serve different goals:
+
+- **Description:** summarize conditional associations in the observed or target
+  population.
+- **Prediction:** combine predictors to forecast outcomes for new units.
+- **Causal estimation:** estimate a contrast under hypothetical interventions.
+
+Causal interpretation requires design and identification assumptions beyond the
+regression equation: consistency, exchangeability after justified adjustment,
+positivity, and a well-defined intervention are typical requirements. Adding
+every available covariate is not a substitute. Adjustment for a confounder can
+reduce bias; adjustment for a mediator changes the target; adjustment for a
+collider can create bias.
+
+For prediction, unbiased causal interpretation may be irrelevant, but
+out-of-sample validation, calibration, and transport to the deployment population
+become central. For description, the target population and scale must still be
+specified.
+
+# Worked bioinformatics interpretation
+
+Suppose 80 independent patient biopsies are assigned to treatment or control and
+processed in four balanced sequencing batches. For log-expression $Y_i$, fit
+
+$$
+Y_i=\beta_0+\beta_1\operatorname{Treatment}_i
++\beta_2\operatorname{Age}_i
++\beta_3\operatorname{Batch2}_i
++\beta_4\operatorname{Batch3}_i
++\beta_5\operatorname{Batch4}_i+\varepsilon_i.
+$$
+
+If $\hat\beta_1=0.40$ with a 95% confidence interval $(0.12,0.68)$, the
+statistical interpretation is an estimated adjusted mean difference of 0.40 on
+the chosen log-expression scale, with an interval produced by a procedure whose
+coverage depends on the model and design assumptions. On a natural-log scale,
+$\exp(0.40)\approx1.49$ is a ratio of geometric means under the log-linear
+interpretation; it is not automatically a 49% change for every patient.
+
+The experimental units are the 80 patients. Technical libraries or millions of
+reads improve measurement but do not increase the treatment replication to more
+than 80. Statistical evidence does not establish biological importance: pathway
+context, absolute expression, tissue heterogeneity, a prespecified meaningful
+effect, and replication in new patients remain relevant.
+
+# Diagnostics and sensitivity
+
+| Threat | What happens to interpretation or uncertainty | Assessment | Response |
+|---|---|---|---|
+| Wrong mean structure | Coefficient averages an unmodeled pattern | Residual and partial-residual plots; subject knowledge | Add prespecified nonlinearities or interactions; compare target contrasts |
+| Heteroskedasticity | Classical covariance is wrong | Residual spread against fits and groups | HC2/HC3 covariance or a justified variance model |
+| Correlated units | Effective information is overstated | Inspect sampling hierarchy and time/order | Cluster-aware, mixed, or generalized least-squares analysis |
+| Weak overlap or collinearity | Conditional comparison depends on little data | Predictor distributions, leverage, singular values | Restrict the target, redesign, or report instability |
+| Influential observations | Estimate and interval depend on few units | Cook's distance, DFBETAs, leave-one-unit-out checks | Verify data and report sensitivity; do not delete mechanically |
+| Model or contrast selected after inspection | Ordinary interval ignores selection | Audit the analysis path | Separate exploration and confirmation; validate; use simultaneous or selective methods when appropriate |
+| Measurement error | Coefficients may be attenuated or distorted | Validation samples and replicate assays | Calibration or an explicit measurement-error model |
+
+Uncertainty statements should be paired with effect estimates on meaningful
+scales, the number of independent units, the fitting and covariance method, and
+the exact contrast. A p-value alone leaves the target and magnitude unclear.
+
+# Connections and take-home messages
+
+- [Least squares and the geometry of regression](least-squares-and-regression-geometry.qmd)
+  explains projection, partial regression, and leverage.
+- [Multiple linear regression](multiple-linear-regression.qmd) introduces
+  adjusted coefficients and omitted-variable bias.
+- [Confidence intervals](../statistical-inference/confidence-intervals.qmd) and
+  [standard errors](../statistical-inference/standard-errors.qmd) develop the
+  general inferential concepts.
+- [Effect sizes](../statistical-inference/effect-sizes.qmd) separates magnitude
+  from evidence strength.
+- [Statistical versus practical significance](../statistical-inference/statistical-versus-practical-significance.qmd)
+  connects intervals to scientifically meaningful thresholds.
+
+1. Define the target population and estimand before interpreting a coefficient.
+2. A coefficient is a conditional comparison determined by coding, scale, other
+   predictors, and any interactions.
+3. Standard errors quantify estimator variability under assumptions; they do not
+   measure confounding, external validity, or biological importance.
+4. Confidence intervals for mean responses and prediction intervals for new
+   observations answer different questions.
+5. Robust covariance addresses some variance misspecification, not a flawed
+   data-generating model or nonindependent experimental units.
+
+# References
+
+- White, H. (1980). A heteroskedasticity-consistent covariance matrix estimator
+  and a direct test for heteroskedasticity. *Econometrica*, 48(4), 817--838.
+  <https://doi.org/10.2307/1912934>
+- MacKinnon, J. G., and White, H. (1985). Some heteroskedasticity-consistent
+  covariance matrix estimators with improved finite sample properties.
+  *Journal of Econometrics*, 29(3), 305--325.
+  <https://doi.org/10.1016/0304-4076(85)90158-7>
+- Freedman, D. A. (2006). On the so-called "Huber sandwich estimator" and
+  "robust standard errors." *The American Statistician*, 60(4), 299--302.
+  <https://doi.org/10.1198/000313006X152207>
+- Gelman, A., Hill, J., and Vehtari, A. (2020). *Regression and Other Stories*.
+  Cambridge University Press. <https://doi.org/10.1017/9781139161879>
+- Weisberg, S. (2014). *Applied Linear Regression* (4th ed.). Wiley.
+- R Core Team. `predict.lm`: Predict method for linear model fits. *R statistical
+  software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/predict.lm.html>
