@@ -9,8 +9,10 @@ categories: [Statistics, Modelling]
 - [Multiple linear regression](multiple-linear-regression.qmd)
 - [Least squares and the geometry of regression](least-squares-and-regression-geometry.qmd)
 - [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+- [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
+- [Robust standard errors and robust regression](robust-standard-errors-and-robust-regression.qmd)
 
-Future notes in this level will cover linear-model diagnostics; logistic, Poisson, and negative-binomial regression; ANOVA; generalized linear models; and model selection.
+Future notes in this level will cover logistic, Poisson, and negative-binomial regression; ANOVA; generalized linear models; and model selection.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)

@@ -1,0 +1,290 @@
+---
+title: "Linear-model Assumptions and Diagnostics"
+subtitle: "What OLS needs, what residuals can reveal, and what they cannot"
+description: "A practical guide to linear-model assumptions, residual and influence diagnostics, sensitivity analysis, and defensible interpretation."
+author: "Jiahong Sun"
+date: "2026-10-13"
+date-modified: "2026-10-13"
+categories: [Statistics, Regression, Linear Models, Diagnostics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Assumptions Belong to Claims
+
+For independent experimental units, a linear model starts with a conditional
+mean:
+
+$$
+Y_i=\mathbf{x}_i^\mathsf{T}\boldsymbol\beta+\varepsilon_i,
+\qquad
+\operatorname{E}(\varepsilon_i\mid\mathbf X)=0.
+$$
+
+Different conclusions require different assumptions. Ordinary least squares
+(OLS) can always compute the best-fitting linear projection when the design
+matrix has full column rank. Interpreting its coefficients as a correctly
+specified conditional mean additionally requires the mean model to be adequate.
+Classical standard errors require the variance and dependence model; exact
+small-sample $t$ and $F$ inference adds conditional normality. Causal
+interpretation needs design assumptions that residual plots cannot establish.
+
+| Goal | Central requirements |
+|---|---|
+| Compute a unique OLS fit | Full column rank and more observations than fitted coefficients |
+| Estimate the stated conditional-mean coefficients without bias | $\operatorname{E}(\boldsymbol\varepsilon\mid\mathbf X)=\mathbf 0$ |
+| Use the classical covariance formula | Constant conditional variance and uncorrelated errors |
+| Use exact small-sample $t$ and $F$ laws | Conditional Gaussian errors in addition to the classical conditions |
+| Generalize to a target population | A defensible sampling frame and stable data-generating process |
+| Interpret a coefficient causally | Exchangeability or randomization, positivity, consistency, and an appropriate adjustment set |
+
+The experimental unit is the unit whose error contributes independent
+information. Replicate reads, wells, images, or cells nested within the same
+specimen are not automatically independent experimental units.
+
+# The Assumptions, One by One
+
+## Linear conditional mean
+
+The model asserts
+
+$$
+\operatorname{E}(Y_i\mid\mathbf x_i)
+=\mathbf x_i^\mathsf{T}\boldsymbol\beta.
+$$
+
+"Linear" means linear in $\boldsymbol\beta$; predictors may enter through
+polynomials, splines, indicators, or interactions. A curved residual trend can
+indicate a missing transformation or nonlinear term. A group-specific trend can
+indicate a missing interaction. If the mean is misspecified, an OLS coefficient
+usually estimates a design-dependent linear projection rather than the intended
+scientific contrast.
+
+## Zero conditional mean
+
+The condition
+
+$$
+\operatorname{E}(\varepsilon_i\mid\mathbf X)=0
+$$
+
+rules out systematic residual association with the included design. It can fail
+because of omitted causes, selection, reverse causation, measurement error, or a
+wrong mean function. Residuals are algebraically orthogonal to fitted design
+columns, so a residual plot against an included predictor cannot prove this
+population condition. Study design, subject-matter knowledge, negative controls,
+and sensitivity analysis are essential.
+
+## Variance and dependence
+
+The classical model uses
+
+$$
+\operatorname{Var}(\boldsymbol\varepsilon\mid\mathbf X)
+=\sigma^2\mathbf I.
+$$
+
+Its two parts are distinct:
+
+- **Homoskedasticity:** every unit has the same conditional error variance.
+- **No residual dependence:** off-diagonal conditional covariances are zero.
+
+Heteroskedasticity does not by itself bias OLS coefficients under a correct mean
+model, but it invalidates the usual covariance estimator and makes OLS
+inefficient. Correlation within people, plates, families, time series, or spatial
+regions requires a cluster-aware, longitudinal, spatial, mixed, or generalized
+least-squares analysis. A heteroskedasticity-consistent standard error does not
+repair dependence.
+
+## Rank, overlap, and extrapolation
+
+With $k$ fitted coefficients, $\mathbf X$ must have rank $k$ for a unique
+coefficient vector. Near collinearity can leave fitted values stable while making
+individual coefficients highly variable. Even with full rank, a conditional
+contrast may depend on sparse combinations of covariates. Diagnostics should
+therefore examine predictor distributions, cross-tabulations, condition numbers,
+and the range over which predictions are requested—not only residuals.
+
+## Conditional normality
+
+Gaussian errors are not needed to define OLS or to make it unbiased under the
+mean model. They yield exact finite-sample reference distributions:
+
+$$
+\frac{\hat\beta_j-\beta_j}{\widehat{\operatorname{SE}}(\hat\beta_j)}
+\sim t_{n-k}.
+$$
+
+Without normality, large-sample inference may still work under suitable moment,
+leverage, and independence conditions. Severe skewness, heavy tails, sparse
+groups, or a few dominant observations can make that approximation inaccurate.
+
+# Residuals and Leverage
+
+Let
+
+$$
+\mathbf H=\mathbf X(\mathbf X^\mathsf{T}\mathbf X)^{-1}\mathbf X^\mathsf{T},
+\qquad
+\mathbf e=(\mathbf I-\mathbf H)\mathbf Y.
+$$
+
+The diagonal $h_{ii}$ is the leverage of unit $i$. It depends only on the design
+matrix and measures how unusual the predictor configuration is relative to the
+others. Because $\sum_i h_{ii}=k$, average leverage is $k/n$.
+
+Raw residual variances are unequal even under the homoskedastic model:
+
+$$
+\operatorname{Var}(e_i\mid\mathbf X)=\sigma^2(1-h_{ii}).
+$$
+
+An internally studentized residual is therefore
+
+$$
+r_i=\frac{e_i}{s\sqrt{1-h_{ii}}}.
+$$
+
+Externally studentized residuals replace $s$ with an estimate computed after
+deleting unit $i$, making them more useful for judging an unusual response. A
+large residual means poor vertical fit; high leverage means an unusual predictor
+pattern. Influence requires the combination: an observation far out in predictor
+space can materially move the fit when its response disagrees with the trend.
+
+Cook's distance summarizes the change in all fitted values after deleting unit
+$i$:
+
+$$
+D_i=
+\frac{e_i^2}{k s^2}
+\frac{h_{ii}}{(1-h_{ii})^2}.
+$$
+
+There is no universal cutoff that turns an observation into an error. Leverage,
+studentized residuals, Cook's distance, DFBETAs, and deletion fits are prompts for
+record verification and sensitivity analysis, not automatic deletion rules.
+
+# A Diagnostic Sequence
+
+Diagnostics work best as a structured comparison between observed data and the
+model's implications.
+
+1. **Verify design and units.** Confirm randomization, nesting, repeated measures,
+   batches, missingness, coding, and which units are independent.
+2. **Inspect predictors before fitting.** Check ranges, sparse categories,
+   impossible combinations, overlap, rank, and potential extrapolation.
+3. **Check the mean structure.** Plot residuals against fitted values, continuous
+   predictors, time or order, and scientifically important groups. Add a smooth
+   trend as a diagnostic, not as proof of a replacement model.
+4. **Check conditional spread.** Look for funnels, group-specific variance, and
+   variance related to expected measurement scale.
+5. **Check distributional shape when it matters.** A normal quantile--quantile
+   plot is relevant to exact small-sample inference and tail behavior, not to the
+   existence of the OLS estimate.
+6. **Assess influence.** Examine leverage, externally studentized residuals,
+   Cook's distance, and coefficient changes under justified deletion checks.
+7. **Refit scientifically plausible alternatives.** Compare transformations,
+   curvature, interactions, variance models, cluster-aware uncertainty, and
+   robust procedures.
+8. **Validate the intended use.** For prediction, assess held-out calibration and
+   error. For explanation, check whether the coefficient still answers the
+   prespecified estimand.
+
+Formal tests of normality or heteroskedasticity can supplement this workflow, but
+they do not replace plots and design reasoning. With small $n$, they have little
+power; with very large $n$, they can flag negligible deviations. Repeatedly
+changing a model until every diagnostic test is nonsignificant also makes the
+reported inference conditional on an unreported selection process.
+
+# Reading Common Diagnostic Displays
+
+| Display or quantity | Pattern worth investigating | Possible mechanisms | Appropriate response |
+|---|---|---|---|
+| Residuals versus fitted values | Curvature | Nonlinear mean, omitted interaction, wrong link | Add justified structure; compare partial effects and predictions |
+| Scale--location plot | Increasing or group-specific spread | Heteroskedasticity, scale-dependent measurement | Transform, model variance, or use valid robust covariance |
+| Normal Q--Q plot | Strong tail departures or asymmetry | Heavy tails, mixture, coding error, wrong outcome model | Verify records; use robust or outcome-appropriate model; simulate finite-sample behavior |
+| Residuals versus order, time, or batch | Runs or shifts | Drift, autocorrelation, unmodeled batch | Include design factors or use dependence-aware model |
+| Leverage and Cook's distance | A few dominant units | Sparse design, extreme predictor values, unusual outcomes | Verify and report deletion or perturbation sensitivity |
+| Component-plus-residual plot | Predictor-specific curvature | Missing transformation or nonlinear partial effect | Use a prespecified transformation or flexible smooth |
+
+The same visual pattern can have several causes. A funnel may reflect true
+heteroskedasticity, an inappropriate response scale, or a mean--variance relation
+requiring a generalized linear model. Diagnostics localize tension; they do not
+identify a unique repair.
+
+# Worked Bioinformatics Example
+
+Suppose normalized gene expression is measured for 48 independent patient
+specimens, with treatment, age, and sequencing batch as predictors. Each specimen
+was sequenced in two lanes and lane counts were combined before analysis.
+
+- The 48 patients—not the 96 lanes or millions of reads—are the experimental
+  units for treatment inference.
+- A residual shift by batch suggests incomplete technical adjustment or an
+  interaction, while a residual trend with fitted expression suggests mean or
+  variance misspecification.
+- One high-leverage patient may combine an age and treatment pattern scarcely
+  represented elsewhere. Its influence reveals weak support for that conditional
+  comparison; deletion cannot create the missing overlap.
+- If residual variance increases with mean expression, robust standard errors may
+  protect coefficient inference asymptotically, but a count model or mean--variance
+  model may better represent the measurement process.
+
+Statistically, diagnostics ask whether the coefficient and its uncertainty are
+stable under credible alternatives. Biologically, they do not establish that a
+gene-expression association is causal, functionally important, or transferable
+to another tissue or population.
+
+# What Diagnostics Cannot Prove
+
+Residual checks use observed variables and the fitted sample. They cannot prove:
+
+- absence of unmeasured confounding or selection bias;
+- independence when the sampling hierarchy was discarded;
+- correct measurement of the response and predictors;
+- validity outside the observed predictor range or target population;
+- biological importance of a statistically precise coefficient.
+
+A satisfactory residual plot means only that the chosen diagnostic did not expose
+that kind of discrepancy at its available resolution. It is not a certificate
+that the model is true.
+
+# Connections and Take-home Messages
+
+- [Multiple linear regression](multiple-linear-regression.qmd) defines the
+  conditional-mean model and coefficient comparisons being diagnosed.
+- [Least squares and the geometry of regression](least-squares-and-regression-geometry.qmd)
+  derives projection, residual orthogonality, leverage, and rank.
+- [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+  separates coefficient, contrast, mean-response, and prediction uncertainty.
+- [Robust standard errors and robust regression](robust-standard-errors-and-robust-regression.qmd)
+  distinguishes covariance protection from resistance to influential outcomes.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  organizes conclusions across plausible assumptions and analysis choices.
+
+1. State the inferential goal before deciding which assumptions matter.
+2. Residuals diagnose the fitted mean and error structure but cannot establish
+   exogeneity, causality, or correct replication.
+3. Heteroskedasticity, dependence, nonlinearity, and influence are different
+   problems and require different responses.
+4. Investigate influential observations transparently; never delete them solely
+   because a generic threshold was crossed.
+5. In bioinformatics, preserving the biological experimental unit is more
+   important than the nominal number of technical measurements.
+
+# References
+
+- Belsley, D. A., Kuh, E., and Welsch, R. E. (1980). *Regression Diagnostics:
+  Identifying Influential Data and Sources of Collinearity*. Wiley.
+  <https://doi.org/10.1002/0471725153>
+- Cook, R. D. (1977). Detection of influential observations in linear
+  regression. *Technometrics*, 19(1), 15--18.
+  <https://doi.org/10.1080/00401706.1977.10489493>
+- Weisberg, S. (2014). *Applied Linear Regression* (4th ed.). Wiley.
+- Gelman, A., Hill, J., and Vehtari, A. (2020). *Regression and Other Stories*.
+  Cambridge University Press. <https://doi.org/10.1017/9781139161879>
+- R Core Team. `lm.influence`: regression diagnostics. *R statistical software
+  documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/lm.influence.html>

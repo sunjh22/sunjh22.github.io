@@ -154,6 +154,8 @@ website:
                   - knowledge/statistics/regression-models/multiple-linear-regression.qmd
                   - knowledge/statistics/regression-models/least-squares-and-regression-geometry.qmd
                   - knowledge/statistics/regression-models/regression-uncertainty-and-coefficient-interpretation.qmd
+                  - knowledge/statistics/regression-models/linear-model-assumptions-and-diagnostics.qmd
+                  - knowledge/statistics/regression-models/robust-standard-errors-and-robust-regression.qmd
               - section: "Advanced Modeling"
                 href: knowledge/statistics/advanced-modeling/index.qmd
                 contents:

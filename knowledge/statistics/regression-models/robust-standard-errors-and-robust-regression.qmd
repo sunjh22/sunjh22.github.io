@@ -1,0 +1,321 @@
+---
+title: "Robust Standard Errors and Robust Regression"
+subtitle: "Two different responses to variance misspecification and influential observations"
+description: "Heteroskedasticity-consistent covariance estimation, cluster-aware uncertainty, M-estimation, influence, and robust interpretation in linear models."
+author: "Jiahong Sun"
+date: "2026-10-13"
+date-modified: "2026-10-13"
+categories: [Statistics, Regression, Robust Statistics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# "Robust" Refers to Different Targets
+
+Two methods with similar names solve different problems:
+
+| Method | Point estimate | Main protection | Does not automatically fix |
+|---|---|---|---|
+| Heteroskedasticity-robust standard errors | Ordinary least squares | Covariance inference when conditional variance changes across independent units | Wrong mean, dependence, confounding, influential point estimates |
+| Cluster-robust standard errors | Usually OLS | Covariance inference with within-cluster dependence and many independent clusters | Few-cluster bias, wrong clustering level, confounding |
+| Robust regression | Changes the fitted coefficients | Sensitivity of the point estimate to large residuals or contamination | High leverage, dependence, omitted variables, causal bias |
+
+A robust standard error leaves the fitted line unchanged. Robust regression
+changes the fitting criterion. Choosing between them begins with the failure
+mechanism, not with a preference for a reassuring word.
+
+# Heteroskedasticity-robust Covariance
+
+Consider
+
+$$
+\mathbf Y=\mathbf X\boldsymbol\beta+\boldsymbol\varepsilon,
+\qquad
+\operatorname{E}(\boldsymbol\varepsilon\mid\mathbf X)=\mathbf 0,
+$$
+
+with independent errors but unequal conditional variances
+$\operatorname{Var}(\varepsilon_i\mid\mathbf X)=\sigma_i^2$. OLS remains
+
+$$
+\hat{\boldsymbol\beta}
+=(\mathbf X^\mathsf{T}\mathbf X)^{-1}\mathbf X^\mathsf{T}\mathbf Y.
+$$
+
+Its conditional covariance is
+
+$$
+\operatorname{Var}(\hat{\boldsymbol\beta}\mid\mathbf X)
+=(\mathbf X^\mathsf{T}\mathbf X)^{-1}
+\mathbf X^\mathsf{T}\boldsymbol\Omega\mathbf X
+(\mathbf X^\mathsf{T}\mathbf X)^{-1},
+$$
+
+where $\boldsymbol\Omega=\operatorname{diag}(\sigma_1^2,\ldots,\sigma_n^2)$.
+The heteroskedasticity-consistent estimator replaces unknown variances with
+functions of the fitted residuals:
+
+$$
+\boxed{
+\widehat{\mathbf V}_{\mathrm{HC}}
+=(\mathbf X^\mathsf{T}\mathbf X)^{-1}
+\left(\sum_{i=1}^{n}\omega_i e_i^2
+\mathbf x_i\mathbf x_i^\mathsf{T}\right)
+(\mathbf X^\mathsf{T}\mathbf X)^{-1}
+}.
+$$
+
+The outer matrices are the **bread** and the residual cross-products are the
+**meat**, hence "sandwich covariance." Under appropriate moment, independence,
+rank, and leverage conditions, it consistently estimates the sampling covariance
+without specifying a parametric variance function.
+
+## HC0 through HC3
+
+The variants differ in finite-sample residual corrections:
+
+| Estimator | Residual multiplier $\omega_i$ | Interpretation |
+|---|---:|---|
+| HC0 | $1$ | White's basic large-sample estimator |
+| HC1 | $n/(n-k)$ | Degrees-of-freedom inflation |
+| HC2 | $1/(1-h_{ii})$ | Corrects residual shrinkage using leverage |
+| HC3 | $1/(1-h_{ii})^2$ | Stronger leverage correction, related to leave-one-out ideas |
+
+HC0 can be too optimistic in small samples because OLS residuals are shrunken,
+especially at high-leverage points. HC2 or HC3 is often preferable when the
+number of independent units is not large. None supplies exact finite-sample
+inference in general; the reference distribution and degrees of freedom still
+need justification.
+
+# What Robust Standard Errors Assume
+
+Heteroskedasticity-consistent inference is not assumption-free. It still needs:
+
+- an estimand defined by an adequate mean model or linear projection;
+- zero conditional mean for an unbiased conditional-mean interpretation;
+- independent observations for the usual HC estimator;
+- a nonsingular, sufficiently stable design with no asymptotically dominant unit;
+- enough independent units for the sandwich approximation and tail calibration.
+
+If errors are correlated within $G$ independent clusters, the cluster sandwich
+uses cluster score sums:
+
+$$
+\widehat{\mathbf V}_{\mathrm{CL}}
+=(\mathbf X^\mathsf{T}\mathbf X)^{-1}
+\left(
+\sum_{g=1}^{G}
+\mathbf X_g^\mathsf{T}\mathbf e_g\mathbf e_g^\mathsf{T}\mathbf X_g
+\right)
+(\mathbf X^\mathsf{T}\mathbf X)^{-1},
+$$
+
+with a suitable small-sample correction. Precision is driven primarily by the
+number and balance of independent clusters, not the total number of nested
+records. With few clusters, ordinary cluster-robust tests may be unreliable;
+design-based methods, small-sample corrections, or a justified hierarchical
+model may be needed.
+
+# Robust Regression Changes the Estimate
+
+Least squares minimizes a quadratic loss:
+
+$$
+\hat{\boldsymbol\beta}_{\mathrm{OLS}}
+=\arg\min_{\mathbf b}\sum_i r_i(\mathbf b)^2,
+\qquad
+r_i(\mathbf b)=Y_i-\mathbf x_i^\mathsf{T}\mathbf b.
+$$
+
+Because squared loss grows rapidly, one extreme response can dominate the fit.
+An M-estimator instead solves
+
+$$
+\hat{\boldsymbol\beta}_{M}
+=\arg\min_{\mathbf b}
+\sum_i \rho\!\left(\frac{r_i(\mathbf b)}{s}\right),
+$$
+
+where $s$ is a robust residual scale. Huber's loss is quadratic near zero and
+linear in the tails:
+
+$$
+\rho_c(u)=
+\begin{cases}
+\tfrac12u^2, & |u|\le c,\\
+c|u|-\tfrac12c^2, & |u|>c.
+\end{cases}
+$$
+
+Its derivative, $\psi_c(u)=\min(c,\max(-c,u))$, bounds the contribution of a
+large standardized residual. The estimating equation is
+
+$$
+\sum_i
+\psi_c\!\left(\frac{r_i}{s}\right)\mathbf x_i=\mathbf 0.
+$$
+
+Iteratively reweighted least squares expresses this as repeated weighted fits
+with
+
+$$
+w_i=\frac{\psi_c(u_i)}{u_i},
+\qquad
+u_i=r_i/s,
+$$
+
+using $w_i=1$ at $u_i=0$. Small residuals receive nearly full weight; large
+residuals receive less. The tuning constant trades Gaussian efficiency against
+tail resistance and should be reported.
+
+# Resistance Is Not Universal
+
+Huber M-estimation limits the effect of large vertical residuals, but a point with
+extreme predictors can have high leverage and pull the fitted line toward itself,
+leaving a deceptively small residual. Robust regression therefore also needs
+design-space diagnostics. High-breakdown regression procedures jointly protect
+against more severe contamination, but can sacrifice efficiency, require tuning,
+and behave poorly when the uncontaminated design has weak support.
+
+Downweighting is not evidence that an observation is erroneous. A discordant unit
+may reveal a real subgroup, a missing interaction, a batch effect, or a different
+data-generating regime. Report which units receive low weight, verify their
+provenance, and compare scientifically plausible models.
+
+# A Small Example
+
+Suppose five specimens have
+
+$$
+X=(0,1,2,3,4),
+\qquad
+Y=(1.0,2.1,2.9,4.2,12.0).
+$$
+
+The last response is far above the trend of the first four. OLS gives
+$\hat\beta_0=-0.38$ and $\hat\beta_1=2.41$, so every fitted value is pulled by
+that unit. HC3 standard errors would acknowledge unstable OLS uncertainty but
+would leave those two coefficient estimates unchanged. Huber regression would
+downweight the large residual and estimate a line closer to the majority trend.
+
+Neither response decides whether the last specimen is a recording error or a
+real biological subtype. The defensible analysis checks the record, examines its
+predictor leverage and batch, fits prespecified alternatives, and reports how the
+scientific contrast changes.
+
+# Choosing a Response to Model Tension
+
+| Observed problem | Suitable first response | Why a superficially similar response fails |
+|---|---|---|
+| Mean is adequate; variance changes with fitted mean | HC2/HC3 covariance or explicit variance model | Robust regression needlessly changes the target fit |
+| Errors share patient, plate, family, time, or location | Cluster-, mixed-, time-, or spatially aware method | HC standard errors still assume independent units |
+| A few large response residuals dominate OLS | Verify data; robust regression and deletion sensitivity | HC covariance does not reduce point-estimate influence |
+| Extreme predictor configurations dominate | Leverage diagnostics, design repair, high-leverage robust method | Residual-only M-estimation may not protect the fit |
+| Conditional mean is curved or has missing interactions | Improve the mean model | Neither robust SEs nor robust loss repairs systematic bias |
+| Omitted confounding or selection | Redesign, justified adjustment, sensitivity analysis | No covariance estimator creates exchangeability |
+| Counts, proportions, or survival outcomes have structural mean--variance relations | Use an appropriate outcome model and diagnostics | A linear model may predict impossible values and target the wrong scale |
+
+# Uncertainty for Robust Regression
+
+Robust-regression coefficients require their own sampling covariance calculation.
+A sandwich estimator can be built from the M-estimating equations, but it is not
+the same calculation as attaching HC standard errors to OLS. A bootstrap can be
+useful when it resamples independent experimental units and repeats every fitting
+and tuning step. Resampling individual cells or reads when inference concerns
+patients recreates pseudoreplication rather than uncertainty.
+
+With small samples, heavy contamination, high leverage, or data-driven tuning,
+asymptotic normal intervals can be inaccurate. Simulation under scientifically
+plausible contamination, variance, and clustering patterns is a useful
+sensitivity check.
+
+# Bioinformatics Design and Interpretation
+
+Consider protein abundance measured in multiple technical runs for 40 patient
+specimens. Treatment is the predictor of interest, while age and batch are
+adjustment variables.
+
+- If variability differs by batch but patients are independent, HC3 may improve
+  uncertainty for the OLS treatment contrast.
+- If several observations come from each patient, uncertainty must recognize
+  patient clustering; treating runs as independent makes either classical or HC
+  standard errors too small.
+- If one patient has a large residual, robust regression measures whether the
+  fitted treatment contrast is driven by that response. It does not justify
+  silently removing the patient.
+- If treatment and batch barely overlap, neither method restores the missing
+  comparison. The design—not the residual loss—is the limiting factor.
+
+The statistical conclusion concerns a treatment coefficient on the chosen
+abundance scale and under the specified design. Biological interpretation also
+depends on assay reliability, pathway context, effect magnitude, tissue and
+population transportability, and whether the association represents an
+intervention effect.
+
+# Reporting Checklist
+
+Report enough detail to identify both the estimator and its uncertainty:
+
+1. experimental unit, clustering level, and number of independent units or clusters;
+2. mean model, coefficient estimand, and whether OLS or robust regression produced
+   the point estimate;
+3. HC variant or cluster correction, degrees of freedom, and reference distribution;
+4. robust loss, scale estimator, tuning constant, and convergence information;
+5. leverage, residual, and influence findings without automatic deletion;
+6. sensitivity of effect estimates, intervals, and scientific conclusions to
+   credible alternatives.
+
+Calling a result merely "robust" hides the most important information.
+
+# Connections and Take-home Messages
+
+- [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
+  distinguishes mean, variance, dependence, rank, and distributional conditions.
+- [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+  defines coefficient covariance, contrasts, and prediction uncertainty.
+- [Standard errors](../statistical-inference/standard-errors.qmd) develops
+  sandwich and cluster-aware uncertainty more generally.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  separates robust procedures from robustness of an entire scientific conclusion.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd)
+  explains why a large nominal record count may provide little independent information.
+
+1. Robust standard errors change uncertainty, not OLS coefficients.
+2. Robust regression changes the point estimate by limiting the influence of
+   large residuals.
+3. HC covariance requires independent units; clustered data require a
+   dependence-aware covariance or model.
+4. Neither method repairs a wrong mean, confounding, poor overlap, or a mistaken
+   experimental unit.
+5. Report the exact estimator, covariance variant, tuning choices, diagnostics,
+   and sensitivity—not simply that the analysis was robust.
+
+# References
+
+- White, H. (1980). A heteroskedasticity-consistent covariance matrix estimator
+  and a direct test for heteroskedasticity. *Econometrica*, 48(4), 817--838.
+  <https://doi.org/10.2307/1912934>
+- MacKinnon, J. G., and White, H. (1985). Some heteroskedasticity-consistent
+  covariance matrix estimators with improved finite sample properties.
+  *Journal of Econometrics*, 29(3), 305--325.
+  <https://doi.org/10.1016/0304-4076(85)90158-7>
+- Huber, P. J. (1964). Robust estimation of a location parameter. *The Annals of
+  Mathematical Statistics*, 35(1), 73--101.
+  <https://doi.org/10.1214/aoms/1177703732>
+- Hampel, F. R., Ronchetti, E. M., Rousseeuw, P. J., and Stahel, W. A. (1986).
+  *Robust Statistics: The Approach Based on Influence Functions*. Wiley.
+  <https://doi.org/10.1002/9781118186435>
+- Zeileis, A. (2004). Econometric computing with HC and HAC covariance matrix
+  estimators. *Journal of Statistical Software*, 11(10), 1--17.
+  <https://doi.org/10.18637/jss.v011.i10>
+- Zeileis, A., Köll, S., and Graham, N. (2020). Various versatile variances: An
+  object-oriented implementation of clustered covariances in R. *Journal of
+  Statistical Software*, 95(1), 1--36. <https://doi.org/10.18637/jss.v095.i01>
+- R Core Team. `lm.influence`: regression diagnostics. *R statistical software
+  documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/lm.influence.html>
+- Zeileis, A. `vcovHC`: heteroskedasticity-consistent covariance matrix
+  estimation. *sandwich documentation*.
+  <https://sandwich.r-forge.r-project.org/reference/vcovHC.html>
