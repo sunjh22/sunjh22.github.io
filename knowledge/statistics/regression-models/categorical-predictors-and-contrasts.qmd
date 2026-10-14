@@ -1,0 +1,251 @@
+---
+title: "Categorical Predictors and Contrasts"
+subtitle: "Turning scientific comparisons among groups into estimable linear functions"
+description: "Indicator coding, planned contrasts, marginal means, uncertainty, and interpretation for categorical predictors in regression models."
+author: "Jiahong Sun"
+date: "2026-10-14"
+date-modified: "2026-10-14"
+categories: [Statistics, Regression, Categorical Predictors, Contrasts]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Categories Enter through a Design Matrix
+
+A categorical predictor records membership in a finite set of levels: treatment
+arm, genotype, tissue, sequencing batch, or disease subtype. Regression software
+cannot estimate a separate unconstrained coefficient for every level together
+with an intercept, because the level indicators sum to the intercept. It therefore
+represents a factor with $K$ levels using $K-1$ independent columns.
+
+For a one-factor conditional-mean model,
+
+$$
+Y_i=\mu_{g(i)}+\varepsilon_i,
+\qquad
+\operatorname{E}(\varepsilon_i\mid g(i))=0,
+$$
+
+the scientifically meaningful parameters are the level means
+$\boldsymbol\mu=(\mu_1,\ldots,\mu_K)^\mathsf{T}$. A coding scheme chooses a
+full-rank coordinate system for the same $K$ means. Changing coordinates changes
+the displayed coefficients, but not fitted values or any estimable comparison
+computed consistently from the model.
+
+This distinction is central:
+
+- **Coding coefficients** describe a parameterization.
+- **A contrast** describes a scientific comparison.
+- **An estimate** is the contrast evaluated from the fitted model.
+
+# Treatment Coding and Its Interpretation
+
+With three levels—control, drug A, and drug B—and control as the reference,
+treatment coding gives
+
+$$
+\operatorname{E}(Y_i\mid g_i)
+=\beta_0+\beta_A I(g_i=A)+\beta_B I(g_i=B).
+$$
+
+The coefficients are
+
+$$
+\beta_0=\mu_C,
+\qquad
+\beta_A=\mu_A-\mu_C,
+\qquad
+\beta_B=\mu_B-\mu_C.
+$$
+
+Thus the intercept is the control mean and each slope is a difference from
+control. Changing the reference level changes all three coefficient meanings,
+but the fitted group means remain $(\hat\mu_C,\hat\mu_A,\hat\mu_B)$.
+
+Reference coding is convenient when one level is a genuine scientific baseline.
+It is less useful when the questions concern a dose trend, an average of several
+controls, or A versus B. Those questions should be stated as contrasts rather
+than inferred indirectly from whichever coefficients software happens to print.
+
+# A Contrast Is the Estimand
+
+A linear contrast of level means is
+
+$$
+\psi=\mathbf c^\mathsf{T}\boldsymbol\mu
+=\sum_{k=1}^{K}c_k\mu_k,
+\qquad
+\sum_{k=1}^{K}c_k=0.
+$$
+
+The zero-sum condition makes the comparison invariant to adding the same
+constant to every level. Examples for $(C,A,B)$ include
+
+| Question | Contrast weights $\mathbf c$ | Estimand |
+|---|---:|---|
+| A versus control | $(-1,1,0)$ | $\mu_A-\mu_C$ |
+| B versus control | $(-1,0,1)$ | $\mu_B-\mu_C$ |
+| A versus B | $(0,1,-1)$ | $\mu_A-\mu_B$ |
+| Average drug versus control | $(-1,1/2,1/2)$ | $(\mu_A+\mu_B)/2-\mu_C$ |
+
+Let $\hat{\boldsymbol\beta}$ be the fitted coefficient vector with covariance
+$\widehat{\mathbf V}$. If the desired comparison is
+$\psi=\mathbf l^\mathsf{T}\boldsymbol\beta$, then
+
+$$
+\hat\psi=\mathbf l^\mathsf{T}\hat{\boldsymbol\beta},
+\qquad
+\widehat{\operatorname{SE}}(\hat\psi)
+=\sqrt{\mathbf l^\mathsf{T}\widehat{\mathbf V}\mathbf l}.
+$$
+
+An interval or test follows from this estimate and standard error using a
+reference distribution appropriate to the design and covariance estimator. The
+contrast should be chosen because it answers a prespecified question, not because
+it produces the smallest p-value.
+
+# Other Coding Systems
+
+Different full-rank codings emphasize different coordinates:
+
+| Coding | Typical coefficient interpretation | Important caution |
+|---|---|---|
+| Treatment/reference | Each nonreference level minus a baseline | Intercept and slopes depend on the chosen reference |
+| Sum-to-zero | Deviations from an equally weighted grand mean | The grand mean is not the sample-size-weighted mean in an unbalanced design |
+| Helmert | A level compared with an average of subsequent or previous levels | Direction and scaling conventions differ among software |
+| Polynomial | Linear, quadratic, and higher-order patterns across ordered levels | Meaningful only when ordering and spacing are defensible |
+| Custom | Coordinates aligned with planned scientific hypotheses | Must have adequate rank and documented weights |
+
+Orthogonal contrast vectors satisfy $\mathbf c_j^\mathsf{T}\mathbf c_k=0$ for
+$j\ne k$. In a balanced one-way design, their sums of squares partition the
+factor sum of squares. In unbalanced or covariate-adjusted data, algebraic
+orthogonality of the weights does not necessarily imply uncorrelated estimates.
+
+A factor with $K$ levels contributes $K-1$ degrees of freedom. A single
+coefficient test answers one coordinate-specific question; an omnibus
+$K-1$ degree-of-freedom test asks whether all relevant level differences are
+zero. A nonsignificant omnibus test does not validate every equality, and a
+significant omnibus test does not identify which contrast matters.
+
+# Adjustment Changes What Is Being Compared
+
+With additional covariates,
+
+$$
+\operatorname{E}(Y_i\mid g_i,\mathbf z_i)
+=\alpha+\text{factor terms}(g_i)+\mathbf z_i^\mathsf{T}\boldsymbol\gamma,
+$$
+
+factor coefficients are conditional comparisons at the same $\mathbf z$. If
+there are no factor-by-covariate interactions, the adjusted difference is
+constant over $\mathbf z$. With interactions, there is no single group
+difference until values or a distribution of $\mathbf z$ are specified.
+
+Estimated marginal means compute model-based predictions for each level and
+average them over a declared reference distribution of covariates. Equal
+weighting across cells, weighting by the observed sample, and weighting by a
+target population answer different questions. In unbalanced observational data,
+calling one of them “the adjusted mean” without stating the averaging rule hides
+part of the estimand.
+
+Adjusted comparisons also require overlap. If a treatment occurs only in one
+batch, the treatment and batch columns are aliased: no coding scheme can recover
+their separate effects. Sparse treatment-by-tissue cells may technically permit
+a fit while making the requested contrast largely extrapolative.
+
+# Worked Example: Three Library-preparation Methods
+
+Suppose RNA integrity is measured for independent donor samples processed by a
+standard method $S$ or alternatives $A$ and $B$. The fitted adjusted means are
+
+$$
+(\hat\mu_S,\hat\mu_A,\hat\mu_B)=(7.10,7.45,7.20).
+$$
+
+The planned contrast comparing the average alternative with the standard method
+is
+
+$$
+\hat\psi
+=-\hat\mu_S+\tfrac12\hat\mu_A+\tfrac12\hat\mu_B
+=0.225.
+$$
+
+That estimate does not equal the A-versus-S coefficient, the B-versus-S
+coefficient, or an unweighted average of all three means. Its standard error
+must use the covariance among the three fitted means; treating their individual
+standard errors as independent is generally wrong.
+
+If the same donor material was split across methods, donor is a blocking or
+repeated-measures unit and the model must retain that pairing. If different donors
+received different methods, donors are the independent experimental units.
+Technical lanes, aliquots, and reads do not increase the biological replication
+unless the target explicitly concerns technical repeatability.
+
+# Diagnostics, Sensitivity, and Reporting
+
+Before interpreting a factor or contrast:
+
+1. **Verify levels and reference meaning.** Check spelling, unused levels,
+   ordering, and whether a numeric code was accidentally treated as continuous.
+2. **Inspect the design matrix.** Confirm rank, columns, aliases, empty cells,
+   and the coding actually used by the software.
+3. **Inspect cell counts and overlap.** Report independent units per relevant
+   factor combination, not only the total record count.
+4. **Check the outcome model.** Residual, variance, dependence, and influence
+   diagnostics still apply; factor coding does not repair misspecification.
+5. **Define the contrast family.** Prespecify the comparisons and use simultaneous
+   intervals or multiplicity adjustment when many claims form one family.
+6. **Test coding invariance.** Refit with another full-rank coding and confirm
+   that fitted values and explicitly reconstructed contrasts agree.
+7. **State the averaging population.** For marginal means, document covariate
+   values and weights.
+
+Report the contrast weights or plain-language comparison, estimate, uncertainty
+interval, scale and units, covariance method, adjustment set, and multiplicity
+procedure. A coefficient table alone is not a complete account of a multi-level
+factor.
+
+# Connections and Take-home Messages
+
+- [Multiple linear regression](multiple-linear-regression.qmd) defines the
+  design-matrix model in which factor columns are fitted.
+- [Least squares and the geometry of regression](least-squares-and-regression-geometry.qmd)
+  explains rank, estimability, and covariance of linear functions.
+- [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+  develops conditional coefficients, contrasts, and prediction uncertainty.
+- [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
+  shows why a factor effect can depend on another predictor.
+- [Bonferroni, Holm, and Hochberg procedures](../statistical-inference/bonferroni-holm-and-hochberg-procedures.qmd)
+  addresses multiplicity across planned or exploratory contrasts.
+
+1. A coding scheme parameterizes group means; a contrast defines the scientific
+   comparison.
+2. Full-rank recoding changes coefficient labels, not fitted values or consistently
+   computed estimable contrasts.
+3. In unbalanced data, adjusted or marginal means depend on an explicit covariate
+   distribution and weighting rule.
+4. Empty cells, aliasing, and poor overlap are design problems that recoding
+   cannot solve.
+5. Biological inference follows the number and structure of independent samples,
+   not the number of technical observations.
+
+# References
+
+- Fisher, R. A. (1935). *The Design of Experiments*. Oliver and Boyd.
+- Searle, S. R., Speed, F. M., and Milliken, G. A. (1980). Population marginal
+  means in the linear model: an alternative to least squares means. *The American
+  Statistician*, 34(4), 216--221. <https://doi.org/10.1080/00031305.1980.10483031>
+- Schad, D. J., Vasishth, S., Hohenstein, S., and Kliegl, R. (2020). How to
+  capitalize on a priori contrasts in linear (mixed) models: a tutorial. *Journal
+  of Memory and Language*, 110, 104038.
+  <https://doi.org/10.1016/j.jml.2019.104038>
+- Gelman, A., Hill, J., and Vehtari, A. (2020). *Regression and Other Stories*.
+  Cambridge University Press. <https://doi.org/10.1017/9781139161879>
+- R Core Team. `contrasts`: get and set contrast matrices, and `model.matrix`:
+  construct design matrices. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/contrasts.html>
+- Lenth, R. V. `emmeans`: estimated marginal means. *R package documentation*.
+  <https://rvlenth.github.io/emmeans/>

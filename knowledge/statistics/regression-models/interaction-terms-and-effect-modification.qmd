@@ -1,0 +1,296 @@
+---
+title: "Interaction Terms and Effect Modification"
+subtitle: "When a comparison changes across another variable, population, or effect scale"
+description: "Regression interactions, conditional effects, scale dependence, causal effect modification, uncertainty, diagnostics, and interpretation."
+author: "Jiahong Sun"
+date: "2026-10-14"
+date-modified: "2026-10-14"
+categories: [Statistics, Regression, Interaction, Effect Modification]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# An Effect Can Depend on Context
+
+An interaction term represents nonadditivity on the scale of a statistical
+model: the association between one predictor and the outcome changes with
+another predictor. Effect modification is the corresponding scientific idea
+that a specified effect differs across levels of a modifier or across
+populations.
+
+These statements are incomplete until the outcome scale, effect measure,
+covariates, and target population are specified. The same data can exhibit no
+interaction in mean differences but interaction in ratios, or vice versa.
+Statistical interaction also does not by itself establish a physical or causal
+mechanism.
+
+# The Product-term Model
+
+For predictors $X$ and $Z$, the linear conditional-mean model
+
+$$
+\operatorname{E}(Y\mid X,Z)
+=\beta_0+\beta_1X+\beta_2Z+\beta_3XZ
+$$
+
+has conditional slope
+
+$$
+\frac{\partial\operatorname{E}(Y\mid X,Z)}{\partial X}
+=\beta_1+\beta_3Z.
+$$
+
+Thus $\beta_3$ is the change in the $X$ slope for a one-unit increase in $Z$.
+The “main effect” $\beta_1$ is the $X$ slope specifically at $Z=0$, while
+$\beta_2$ is the $Z$ slope at $X=0$. They are not average effects unless the
+coding and design make them so.
+
+Centering $Z$ at a meaningful value $z_0$ makes $\beta_1$ the $X$ slope at
+$Z=z_0$. It changes the lower-order coefficients but not fitted values or the
+interaction coefficient when the same linear scale is used. Centering can improve
+interpretability; it cannot create overlap or remove genuine collinearity between
+the scientific quantities of interest.
+
+# Categorical Interactions Are Differences in Differences
+
+Let $A$ and $B$ be binary indicators. The model
+
+$$
+\operatorname{E}(Y\mid A,B)
+=\beta_0+\beta_AA+\beta_BB+\beta_{AB}AB
+$$
+
+implies four conditional means:
+
+| $A$ | $B$ | Conditional mean |
+|---:|---:|---|
+| 0 | 0 | $\beta_0$ |
+| 1 | 0 | $\beta_0+\beta_A$ |
+| 0 | 1 | $\beta_0+\beta_B$ |
+| 1 | 1 | $\beta_0+\beta_A+\beta_B+\beta_{AB}$ |
+
+The interaction is the difference in differences:
+
+$$
+\boxed{
+\beta_{AB}
+=\{\mu_{11}-\mu_{01}\}-\{\mu_{10}-\mu_{00}\}
+}.
+$$
+
+It asks whether the A difference at $B=1$ differs from the A difference at
+$B=0$. Reversing the order gives the same additive interaction. With factors
+having more than two levels, an interaction is a set of contrasts and should
+usually be assessed through scientifically chosen comparisons or an omnibus
+multi-degree-of-freedom test rather than one arbitrarily selected coefficient.
+
+# Scale Determines the Interaction
+
+In a generalized linear model,
+
+$$
+g\{\operatorname{E}(Y\mid X,Z)\}
+=\beta_0+\beta_1X+\beta_2Z+\beta_3XZ,
+$$
+
+$\beta_3$ describes interaction on the link scale.
+
+- In a linear model with identity link, it is departure from additivity of means.
+- In a log-link model, it is departure from multiplicativity of means or risks.
+- In logistic regression, it is departure from multiplicativity of odds.
+
+A zero product coefficient in logistic regression does not imply constant risk
+differences or risk ratios. Conversely, heterogeneous odds ratios can coexist
+with nearly constant risk differences. For binary outcomes, report predicted
+risks for joint exposure groups and contrasts on scientifically relevant scales;
+do not let the default link silently define “no interaction.”
+
+For two binary exposures, additive interaction in risks can be summarized by
+
+$$
+\operatorname{RERI}
+=RR_{11}-RR_{10}-RR_{01}+1,
+$$
+
+when risk ratios use the unexposed group as reference. $\operatorname{RERI}=0$
+means no departure from additivity of risk relative to baseline. This is a
+different null from a product-term coefficient of zero in a log or logit model.
+
+# Statistical Interaction and Causal Effect Modification
+
+An observed conditional association is not automatically a causal effect. A
+causal effect modifier is defined relative to an intervention contrast, outcome
+scale, covariate set, and target population. For example, an additive conditional
+average treatment effect at $Z=z$ is
+
+$$
+\tau(z)=
+\operatorname{E}\{Y(1)-Y(0)\mid Z=z\},
+$$
+
+where $Y(a)$ is the potential outcome under exposure $a$. Identifying $\tau(z)$
+from observational data requires consistency, conditional exchangeability,
+positivity within modifier strata, and an adequate measurement and sampling
+process. A regression product term supplies a functional form; it does not supply
+those assumptions.
+
+Effect modification is population dependent. Stratum-specific effects may be
+stable while a marginal effect changes because the distribution of baseline
+risk or other covariates changes. Noncollapsible measures such as the odds ratio
+can also change between conditional and marginal analyses without confounding.
+Specify whether the target is conditional or marginal and how standardization
+to the target population is performed.
+
+# Estimation and Uncertainty
+
+Suppose the fitted covariance matrix of
+$(\hat\beta_1,\hat\beta_3)$ is $\widehat{\mathbf V}_{13}$. The estimated $X$
+slope at $Z=z$ is
+
+$$
+\hat s(z)=\hat\beta_1+z\hat\beta_3,
+$$
+
+with variance
+
+$$
+\widehat{\operatorname{Var}}\{\hat s(z)\}
+=
+\begin{pmatrix}1&z\end{pmatrix}
+\widehat{\mathbf V}_{13}
+\begin{pmatrix}1\\z\end{pmatrix}.
+$$
+
+Plotting $\hat s(z)$ or predicted outcomes with pointwise or simultaneous
+uncertainty is usually clearer than reporting only the p-value for $\beta_3$.
+Inference must still respect heteroskedasticity, clustering, repeated measures,
+and the number of independent experimental units.
+
+Interaction tests often have low power because the modifier splits the available
+information and the product term is correlated with lower-order terms. Absence
+of statistical significance is not evidence of homogeneous effects. Report
+effect estimates and intervals in prespecified strata, and design studies around
+the interaction contrast rather than the easier main-effect calculation.
+
+# The Hierarchy Principle and Model Specification
+
+When $XZ$ is included, retain $X$ and $Z$ unless a scientifically justified
+parameterization deliberately omits them. Dropping lower-order terms imposes
+constraints such as equality of groups at $Z=0$; it does not merely simplify the
+model. Keeping hierarchy also makes the model invariant to shifts of the
+predictor origin.
+
+Product terms encode a linear change in a linear slope. They may be inadequate
+when either predictor has a nonlinear effect. A flexible model can include
+spline-by-group interactions, but flexibility increases data requirements and
+the risk of discovering unstable subgroups. Choices of cutpoints, modifiers,
+transformations, and outcome scales should be prespecified or transparently
+treated as exploratory.
+
+# Worked Bioinformatics Example
+
+Suppose normalized expression of a pathway score is measured in independent
+patient biopsies. Treatment $A$ is randomized, tissue type $Z$ is measured at
+baseline, and the model includes treatment, tissue, their interaction, and
+prespecified batch covariates.
+
+If fitted treatment differences are $1.2$ log-expression units in tissue 0 and
+$0.3$ in tissue 1, then the additive interaction estimate is
+
+$$
+0.3-1.2=-0.9.
+$$
+
+Statistically, the data suggest that the treatment contrast on this scale is
+smaller in tissue 1. Biologically, that pattern might motivate a tissue-specific
+mechanism, but the interaction alone does not prove one. Tissue-specific assay
+behavior, batch imbalance, compositional shifts, or sparse treatment-by-tissue
+cells may produce the same pattern.
+
+The patient is the experimental unit. Multiple cells, spots, images, or technical
+runs from one biopsy refine its measurement but do not become independent
+replicates of the treatment-by-tissue interaction. A cell-level model must retain
+patient clustering or aggregate to justified sample-level summaries. If tissue
+was not randomized, causal claims about tissue and mechanistic synergy require
+additional assumptions beyond treatment randomization.
+
+# Diagnostics and Sensitivity
+
+An interaction analysis should examine more than the product-term p-value:
+
+| Question | Diagnostic or sensitivity analysis |
+|---|---|
+| Is there support for every comparison? | Cell counts, predictor overlap, joint-density plots, leverage |
+| Is the chosen functional form adequate? | Predicted-versus-observed patterns, residuals by modifier, splines or prespecified transformations |
+| Does one unit determine the interaction? | Interaction-specific influence and leave-one-independent-unit-out fits |
+| Does the conclusion depend on scale? | Report predictions and contrasts on additive and multiplicative scales when relevant |
+| Is uncertainty calibrated? | Cluster-aware covariance or model, finite-sample corrections, design-respecting bootstrap |
+| Was the modifier selected after inspection? | Distinguish confirmatory from exploratory analysis; validate in new samples |
+| Is a causal interpretation defensible? | Check exchangeability, positivity, consistency, measurement, and target-population assumptions |
+
+Dichotomizing a continuous modifier discards information, creates an arbitrary
+threshold, and can make subgroup conclusions unstable. Prefer a continuous
+functional form and show predictions over regions with adequate data. Avoid
+claims that an effect exists in one subgroup but not another merely because one
+subgroup p-value crosses 0.05 and the other does not; the relevant test compares
+the subgroup effects directly.
+
+# Reporting the Scientific Result
+
+Report:
+
+1. the outcome scale and effect measure;
+2. the modifier, coding, reference values, and target population;
+3. joint cell counts or the range of continuous-modifier support;
+4. predicted outcomes and conditional effects with intervals at meaningful values;
+5. the interaction contrast with uncertainty, not two separate significance labels;
+6. adjustment, clustering, multiplicity, and exploratory selection procedures;
+7. sensitivity to functional form, influential units, and alternative effect scales.
+
+The result should say “the estimated treatment difference changed by ... on the
+... scale,” rather than vaguely claiming that two variables “interact.”
+
+# Connections and Take-home Messages
+
+- [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
+  shows how group comparisons become estimable linear functions.
+- [Multiple linear regression](multiple-linear-regression.qmd) provides the
+  conditional-mean and design-matrix foundation.
+- [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+  derives uncertainty for linear combinations of coefficients.
+- [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
+  covers functional-form, leverage, dependence, and extrapolation checks.
+- [Statistical power and sample-size calculation](../statistical-inference/statistical-power-and-sample-size-calculation.qmd)
+  explains why the intended interaction must drive design planning.
+
+1. An interaction is a departure from additivity on a declared model or effect
+   scale; it is not an intrinsic property of two variables.
+2. Lower-order coefficients in a product-term model are conditional effects at
+   the other predictor's reference value.
+3. Interpret and plot conditional effects or predicted outcomes, with uncertainty,
+   rather than relying on a product-term p-value.
+4. Causal effect modification requires design and identification assumptions that
+   regression algebra cannot provide.
+5. Sparse joint cells, data-driven subgroup searches, and technical
+   pseudoreplication make interaction estimates especially unstable.
+
+# References
+
+- Cox, D. R. (1984). Interaction. *International Statistical Review*, 52(1),
+  1--31. <https://doi.org/10.2307/1403235>
+- VanderWeele, T. J. (2009). On the distinction between interaction and effect
+  modification. *Epidemiology*, 20(6), 863--871.
+  <https://doi.org/10.1097/EDE.0b013e3181ba333c>
+- Knol, M. J., and VanderWeele, T. J. (2012). Recommendations for presenting
+  analyses of effect modification and interaction. *International Journal of
+  Epidemiology*, 41(2), 514--520. <https://doi.org/10.1093/ije/dyr218>
+- VanderWeele, T. J., and Knol, M. J. (2014). A tutorial on interaction.
+  *Epidemiologic Methods*, 3(1), 33--72.
+  <https://doi.org/10.1515/em-2013-0005>
+- Gelman, A., Hill, J., and Vehtari, A. (2020). *Regression and Other Stories*.
+  Cambridge University Press. <https://doi.org/10.1017/9781139161879>
+- R Core Team. `formula`: model formulae and `model.matrix`: construct design
+  matrices. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/formula.html>

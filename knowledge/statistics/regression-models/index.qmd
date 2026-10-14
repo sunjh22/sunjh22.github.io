@@ -11,6 +11,8 @@ categories: [Statistics, Modelling]
 - [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
 - [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
 - [Robust standard errors and robust regression](robust-standard-errors-and-robust-regression.qmd)
+- [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
+- [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
 
 Future notes in this level will cover logistic, Poisson, and negative-binomial regression; ANOVA; generalized linear models; and model selection.
 

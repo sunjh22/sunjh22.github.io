@@ -156,6 +156,8 @@ website:
                   - knowledge/statistics/regression-models/regression-uncertainty-and-coefficient-interpretation.qmd
                   - knowledge/statistics/regression-models/linear-model-assumptions-and-diagnostics.qmd
                   - knowledge/statistics/regression-models/robust-standard-errors-and-robust-regression.qmd
+                  - knowledge/statistics/regression-models/categorical-predictors-and-contrasts.qmd
+                  - knowledge/statistics/regression-models/interaction-terms-and-effect-modification.qmd
               - section: "Advanced Modeling"
                 href: knowledge/statistics/advanced-modeling/index.qmd
                 contents:
