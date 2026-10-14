@@ -114,8 +114,7 @@ The first four plug-in q-values are $0.006$, $0.018$, $0.024$, and $0.042$, so t
 
 Base R computes BH- and BY-adjusted p-values. The Bioconductor `qvalue` package estimates $\pi_0$, q-values, and local FDR values.
 
-```{r}
-#| eval: false
+```r
 p <- c(0.001, 0.006, 0.012, 0.028, 0.300, 0.550, 0.700, 0.900)
 
 p.adjust(p, method = "BH")

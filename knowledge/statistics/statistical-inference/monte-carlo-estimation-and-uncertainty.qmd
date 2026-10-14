@@ -131,8 +131,7 @@ The identity is exact, but a few enormous weights can produce an unstable finite
 
 # Reproducible Implementation
 
-```{r}
-#| eval: false
+```r
 set.seed(20261007)
 M <- 100000L
 
