@@ -3,26 +3,35 @@ title: "Statistics"
 description: "Probability, inference, and models for biological variation."
 ---
 
+Statistics notes are organized into six topic maps. The sidebar stays compact by
+linking to these maps rather than listing every individual note.
+
 ## Probability & Randomness
 
-- [Open the Probability & Randomness map](probability-randomness/index.qmd)
+[Probability & Randomness](probability-randomness/index.qmd) covers probability
+foundations, random variables, distributions, dependence, and moments.
 
 ## Asymptotic Thinking
 
-- [Open the Asymptotic Thinking map](asymptotic-thinking/index.qmd)
+[Asymptotic Thinking](asymptotic-thinking/index.qmd) connects convergence, laws
+of large numbers, central limit theory, and large-sample approximations.
 
 ## Statistical Inference
 
-- [Open the Statistical Inference map](statistical-inference/index.qmd)
+[Statistical Inference](statistical-inference/index.qmd) organizes estimation,
+uncertainty, hypothesis testing, resampling, power, and multiplicity.
 
 ## Regression & Statistical Models
 
-- [Open the Regression & Statistical Models map](regression-models/index.qmd)
+[Regression & Statistical Models](regression-models/index.qmd) develops linear
+and generalized models, diagnostics, interpretation, and model comparison.
 
 ## Advanced Modeling
 
-- [Open the Advanced Modeling map](advanced-modeling/index.qmd)
+[Advanced Modeling](advanced-modeling/index.qmd) collects regularization,
+hierarchical models, mixtures, survival analysis, and multivariate methods.
 
 ## Real Bioinformatics Problems
 
-- [Open the Real Bioinformatics Problems map](bioinformatics-problems/index.qmd)
+[Real Bioinformatics Problems](bioinformatics-problems/index.qmd) applies
+statistical reasoning to experimental design and high-throughput biological data.

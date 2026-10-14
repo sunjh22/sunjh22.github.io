@@ -72,98 +72,12 @@ website:
           - section: "Statistics"
             href: knowledge/statistics/index.qmd
             contents:
-              - section: "Probability & Randomness"
-                href: knowledge/statistics/probability-randomness/index.qmd
-                contents:
-                  - knowledge/statistics/probability-randomness/probability-spaces-events-and-axioms.qmd
-                  - knowledge/statistics/probability-randomness/counting-rules-and-combinatorial-probability.qmd
-                  - knowledge/statistics/probability-randomness/random-variables-and-probability-distributions.qmd
-                  - knowledge/statistics/probability-randomness/expectation-variance-and-moments.qmd
-                  - knowledge/statistics/probability-randomness/joint-marginal-and-conditional-distributions.qmd
-                  - knowledge/statistics/probability-randomness/independence-and-conditional-independence.qmd
-                  - knowledge/statistics/probability-randomness/conditional-probability-and-total-probability.qmd
-                  - knowledge/statistics/probability-randomness/bayes-theorem-and-bayesian-updating.qmd
-                  - knowledge/statistics/probability-randomness/covariance-and-correlation.qmd
-                  - knowledge/statistics/probability-randomness/transformations-of-random-variables.qmd
-                  - knowledge/statistics/probability-randomness/bernoulli-and-binomial-distributions.qmd
-                  - knowledge/statistics/probability-randomness/categorical-and-multinomial-distributions.qmd
-                  - knowledge/statistics/probability-randomness/poisson-distribution-and-poisson-processes.qmd
-                  - knowledge/statistics/probability-randomness/exponential-and-geometric-distributions.qmd
-                  - knowledge/statistics/probability-randomness/normal-and-multivariate-normal-distributions.qmd
-                  - knowledge/statistics/probability-randomness/chi-squared-students-t-and-f-distributions.qmd
-                  - knowledge/statistics/probability-randomness/gamma-and-beta-distributions.qmd
-                  - knowledge/statistics/probability-randomness/dirichlet-distribution.qmd
-                  - knowledge/statistics/probability-randomness/negative-binomial-distribution-and-overdispersion.qmd
-                  - knowledge/statistics/probability-randomness/beta-binomial-distribution.qmd
-                  - knowledge/statistics/probability-randomness/dirichlet-multinomial-distribution.qmd
-                  - knowledge/statistics/probability-randomness/zero-inflated-and-hurdle-distributions.qmd
-                  - knowledge/statistics/probability-randomness/probability-generating-and-moment-generating-functions.qmd
-                  - knowledge/statistics/probability-randomness/order-statistics-and-extreme-values.qmd
-                  - knowledge/statistics/probability-randomness/distributions.qmd
-              - section: "Asymptotic Thinking"
-                href: knowledge/statistics/asymptotic-thinking/index.qmd
-                contents:
-                  - knowledge/statistics/asymptotic-thinking/convergence-in-probability-and-almost-sure-convergence.qmd
-                  - knowledge/statistics/asymptotic-thinking/law-of-large-numbers.qmd
-                  - knowledge/statistics/asymptotic-thinking/convergence-in-distribution.qmd
-                  - knowledge/statistics/asymptotic-thinking/central-limit-theorem.qmd
-                  - knowledge/statistics/asymptotic-thinking/delta-method.qmd
-                  - knowledge/statistics/asymptotic-thinking/slutskys-theorem-and-continuous-mapping.qmd
-                  - knowledge/statistics/asymptotic-thinking/asymptotic-bias-consistency-and-efficiency.qmd
-                  - knowledge/statistics/asymptotic-thinking/when-asymptotic-approximations-fail.qmd
-              - section: "Statistical Inference"
-                href: knowledge/statistics/statistical-inference/index.qmd
-                contents:
-                  - knowledge/statistics/statistical-inference/populations-samples-parameters-and-estimands.qmd
-                  - knowledge/statistics/statistical-inference/point-estimators-bias-variance-and-mean-squared-error.qmd
-                  - knowledge/statistics/statistical-inference/likelihood-and-log-likelihood.qmd
-                  - knowledge/statistics/statistical-inference/maximum-likelihood-estimation.qmd
-                  - knowledge/statistics/statistical-inference/bayesian-priors-likelihoods-and-posteriors.qmd
-                  - knowledge/statistics/statistical-inference/maximum-a-posteriori-estimation.qmd
-                  - knowledge/statistics/statistical-inference/sufficient-statistics.qmd
-                  - knowledge/statistics/statistical-inference/fisher-information-and-cramer-rao-bound.qmd
-                  - knowledge/statistics/statistical-inference/sampling-distributions.qmd
-                  - knowledge/statistics/statistical-inference/standard-errors.qmd
-                  - knowledge/statistics/statistical-inference/confidence-intervals.qmd
-                  - knowledge/statistics/statistical-inference/bayesian-credible-intervals.qmd
-                  - knowledge/statistics/statistical-inference/parametric-bootstrap.qmd
-                  - knowledge/statistics/statistical-inference/nonparametric-bootstrap.qmd
-                  - knowledge/statistics/statistical-inference/hypothesis-tests-and-test-statistics.qmd
-                  - knowledge/statistics/statistical-inference/null-distributions-and-p-values.qmd
-                  - knowledge/statistics/statistical-inference/type-i-and-type-ii-errors.qmd
-                  - knowledge/statistics/statistical-inference/statistical-power-and-sample-size-calculation.qmd
-                  - knowledge/statistics/statistical-inference/effect-sizes.qmd
-                  - knowledge/statistics/statistical-inference/statistical-versus-practical-significance.qmd
-                  - knowledge/statistics/statistical-inference/likelihood-ratio-wald-and-score-tests.qmd
-                  - knowledge/statistics/statistical-inference/one-sided-two-sided-and-equivalence-tests.qmd
-                  - knowledge/statistics/statistical-inference/family-wise-error-rate.qmd
-                  - knowledge/statistics/statistical-inference/false-discovery-rate.qmd
-                  - knowledge/statistics/statistical-inference/bonferroni-holm-and-hochberg-procedures.qmd
-                  - knowledge/statistics/statistical-inference/benjamini-hochberg-and-storey-q-values.qmd
-                  - knowledge/statistics/statistical-inference/permutation-and-randomization-tests.qmd
-                  - knowledge/statistics/statistical-inference/rank-based-nonparametric-tests.qmd
-                  - knowledge/statistics/statistical-inference/monte-carlo-estimation-and-uncertainty.qmd
-                  - knowledge/statistics/statistical-inference/sensitivity-analysis-and-robustness.qmd
-                  - knowledge/statistics/statistical-inference/selection-bias-and-winners-curse.qmd
-                  - knowledge/statistics/statistical-inference/reproducibility-and-effect-size-inflation.qmd
-              - section: "Regression & Statistical Models"
-                href: knowledge/statistics/regression-models/index.qmd
-                contents:
-                  - knowledge/statistics/regression-models/statistical-modelling.qmd
-                  - knowledge/statistics/regression-models/simple-linear-regression.qmd
-                  - knowledge/statistics/regression-models/multiple-linear-regression.qmd
-                  - knowledge/statistics/regression-models/least-squares-and-regression-geometry.qmd
-                  - knowledge/statistics/regression-models/regression-uncertainty-and-coefficient-interpretation.qmd
-                  - knowledge/statistics/regression-models/linear-model-assumptions-and-diagnostics.qmd
-                  - knowledge/statistics/regression-models/robust-standard-errors-and-robust-regression.qmd
-                  - knowledge/statistics/regression-models/categorical-predictors-and-contrasts.qmd
-                  - knowledge/statistics/regression-models/interaction-terms-and-effect-modification.qmd
-              - section: "Advanced Modeling"
-                href: knowledge/statistics/advanced-modeling/index.qmd
-                contents:
-                  - knowledge/statistics/advanced-modeling/mixture-models.qmd
-              - section: "Real Bioinformatics Problems"
-                href: knowledge/statistics/bioinformatics-problems/index.qmd
+              - knowledge/statistics/probability-randomness/index.qmd
+              - knowledge/statistics/asymptotic-thinking/index.qmd
+              - knowledge/statistics/statistical-inference/index.qmd
+              - knowledge/statistics/regression-models/index.qmd
+              - knowledge/statistics/advanced-modeling/index.qmd
+              - knowledge/statistics/bioinformatics-problems/index.qmd
           - section: "Linux"
             href: knowledge/linux/index.qmd
             contents:
