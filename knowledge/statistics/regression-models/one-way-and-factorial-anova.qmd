@@ -1,0 +1,249 @@
+---
+title: "One-way and Factorial ANOVA"
+subtitle: "Regression models for comparing means across designed groups"
+description: "One-way and factorial analysis of variance as linear models, with sums of squares, interactions, assumptions, contrasts, diagnostics, and bioinformatics design guidance."
+author: "Jiahong Sun"
+date: "2026-10-15"
+date-modified: "2026-10-15"
+categories: [Statistics, Regression, ANOVA, Experimental Design]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Question ANOVA Answers
+
+Analysis of variance (ANOVA) compares systematic differences in group means with
+variation among independent units receiving the same conditions. Despite its
+name, its primary targets are usually mean contrasts. Variance is the accounting
+device used to quantify signal and residual noise.
+
+For outcome $Y_{ij}$ from independent unit $j$ in group $i$, the one-way model is
+
+$$
+Y_{ij}=\mu+\alpha_i+\varepsilon_{ij},
+\qquad
+\operatorname{E}(\varepsilon_{ij}\mid i)=0.
+$$
+
+The population group means $\mu_i=\operatorname{E}(Y\mid i)$, or prespecified
+contrasts such as $\mu_2-\mu_1$, are the estimands. The sample means and fitted
+contrasts are estimates. ANOVA does not turn an observational group label into a
+cause; causal interpretation comes from random assignment or defensible
+identification assumptions.
+
+The experimental unit is the smallest unit independently assigned to a condition
+or sampled from the target population. Repeated wells, reads, images, cells, or
+technical runs from one specimen may improve measurement, but they do not create
+new independent biological replicates.
+
+# One-way ANOVA as a Linear Model
+
+With $g$ groups, the cell-means parameterization is
+
+$$
+Y_{ij}=\mu_i+\varepsilon_{ij}.
+$$
+
+An equivalent regression uses an intercept and $g-1$ indicator columns. The
+coefficient values depend on the chosen coding, but fitted group means and the
+same estimable contrasts do not. This is why scientific conclusions should be
+reported as group means and contrasts rather than as unexplained "main-effect"
+coefficients.
+
+For a balanced design with $n_i=n_0$ and total $N=gn_0$, the total corrected sum
+of squares decomposes as
+
+$$
+\underbrace{\sum_i\sum_j(Y_{ij}-\bar Y_{\cdot\cdot})^2}_{SS_{\mathrm{total}}}
+=
+\underbrace{n_0\sum_i(\bar Y_{i\cdot}-\bar Y_{\cdot\cdot})^2}_{SS_{\mathrm{group}}}
++
+\underbrace{\sum_i\sum_j(Y_{ij}-\bar Y_{i\cdot})^2}_{SS_{\mathrm{error}}}.
+$$
+
+The equality follows by writing
+$Y_{ij}-\bar Y_{\cdot\cdot}=(Y_{ij}-\bar Y_{i\cdot})+
+(\bar Y_{i\cdot}-\bar Y_{\cdot\cdot})$; the cross-product vanishes because
+residuals sum to zero within each group. In matrix terms, it is a projection
+decomposition from [least-squares geometry](least-squares-and-regression-geometry.qmd).
+
+Under independent Gaussian errors with common variance $\sigma^2$, the omnibus
+hypothesis
+
+$$
+H_0:\mu_1=\cdots=\mu_g
+$$
+
+is tested by
+
+$$
+F=\frac{SS_{\mathrm{group}}/(g-1)}
+        {SS_{\mathrm{error}}/(N-g)}
+\sim F_{g-1,N-g}\quad\text{under }H_0.
+$$
+
+The numerator measures improvement over an intercept-only model; the denominator
+estimates within-group noise. Rejecting the omnibus null says that the vector of
+means is not constant. It does not identify which differences matter, measure
+their size, or establish biological importance.
+
+# Factorial Designs and Interactions
+
+A factorial experiment studies two or more factors together. For factors $A$
+and $B$, a two-way fixed-effects model is
+
+$$
+Y_{ijk}=\mu+\alpha_i+\beta_j+(\alpha\beta)_{ij}+\varepsilon_{ijk}.
+$$
+
+The interaction term allows the contrast between levels of $A$ to vary across
+levels of $B$. For two-level factors, an interaction contrast is a difference in
+differences:
+
+$$
+(\mu_{11}-\mu_{01})-(\mu_{10}-\mu_{00}).
+$$
+
+If interaction is scientifically plausible, marginal main effects can hide the
+pattern. Report cell means, conditional contrasts, and an interaction plot with
+uncertainty. A nonsignificant interaction is not evidence that effects are
+identical; the design may simply be imprecise.
+
+Factorial designs are efficient because every unit informs more than one factor.
+They also distinguish a biological interaction from a nuisance block or batch
+effect. Blocking reduces residual variation when blocks are known before
+randomization. Treating a block as a biological factor changes the question, so
+the design and estimands must be declared first.
+
+# Contrasts, Omnibus Tests, and Multiplicity
+
+A contrast is a linear function
+
+$$
+L=\sum_{i=1}^{g}c_i\mu_i,
+\qquad \sum_i c_i=0.
+$$
+
+Examples include one treatment versus control, a linear dose trend, or the
+average of two treatments versus another pair. Prespecified contrasts often
+answer the scientific question more directly and with more power than an omnibus
+test followed by every pairwise comparison.
+
+For fitted coefficient vector $\hat{\boldsymbol\beta}$ and contrast vector
+$\mathbf c$,
+
+$$
+\widehat L=\mathbf c^\mathsf{T}\hat{\boldsymbol\beta},
+\qquad
+\widehat{\operatorname{Var}}(\widehat L)
+=\mathbf c^\mathsf{T}\widehat{\operatorname{Var}}(\hat{\boldsymbol\beta})\mathbf c.
+$$
+
+Report $\widehat L$, an interval, the outcome scale, and the multiplicity strategy.
+Tukey procedures suit all pairwise comparisons under their conditions; Dunnett
+procedures suit several treatments versus one control. Planned contrasts need
+not be delayed until an omnibus test rejects, but the full family of claims still
+determines the appropriate error control.
+
+# Balanced and Unbalanced Data
+
+In a balanced, complete factorial design, orthogonal model terms yield the same
+sums of squares regardless of fitting order. With unequal cell sizes, missing
+cells, or correlated predictors, "the sum of squares for factor $A$" is not unique.
+
+- **Sequential sums of squares** compare each term with those entered before it.
+- **Partial sums of squares** compare a term after adjusting for specified other
+  terms.
+- Different software labels such comparisons Type I, II, or III, but the label
+  is less informative than the exact nested models or contrasts tested.
+
+Type III tests depend on parameterization and may target averages over cell
+combinations that are poorly represented or absent. Empty cells can make some
+main effects or interactions non-estimable. Inspect the design matrix, cell
+counts, rank, and the weighting used for marginal means. State the hypothesis as
+a contrast or explicit reduced-versus-full model comparison.
+
+# Assumptions, Diagnostics, and Alternatives
+
+The classical fixed-effects ANOVA $F$ reference law uses independent Gaussian
+errors with common variance and a correctly specified mean structure.
+
+| Issue | Why it matters | Check and response |
+|---|---|---|
+| Wrong experimental unit | Degrees of freedom and standard errors become artificially small | Reconstruct assignment and nesting; aggregate or model clusters |
+| Unequal variances | Classical pooled standard errors may be wrong | Plot group spreads; use Welch's one-way test, variance modeling, or robust covariance when justified |
+| Dependence | Replicates contribute less information than assumed | Use blocked, repeated-measures, cluster-aware, or mixed models |
+| Skewness or heavy tails | Small-sample $F$ calibration and means may be unstable | Check residuals and influence; consider transformation, robust methods, or design-respecting randomization inference |
+| Sparse or empty cells | Contrasts may rely on extrapolation or be non-estimable | Show cell counts, rank, and contrast weights; simplify claims |
+| Many post hoc comparisons | False-positive risk increases | Prespecify priorities and control the relevant error family |
+
+ANOVA is often reasonably robust to moderate nonnormality in balanced designs,
+but balance does not rescue pseudoreplication, severe outliers, or dependence.
+Rank-based tests change the estimand and generally do not provide a drop-in
+factorial analysis. Permutation tests require transformations that are valid
+under the design and null being tested.
+
+# Worked Bioinformatics Design
+
+Suppose 36 mice are randomized equally to three drugs, with sex used as a second
+factor and RNA-seq pathway score as the outcome. The factorial model estimates
+six drug-by-sex cell means. Primary estimands might be each drug-versus-control
+contrast averaged equally across sexes and the drug-by-sex interactions.
+
+The mouse is the experimental unit. Two library preparations and thousands of
+reads from one mouse are technical observations, not extra randomized units.
+Sequencing lane can be included as a design or processing factor if it is not
+confounded with drug. If every control library was sequenced in one lane and every
+treated library in another, drug and lane effects cannot be separated by ANOVA.
+
+Statistically, a drug contrast estimates a difference in mean pathway score on
+the declared scale. Biologically, it supports a treatment-associated change in
+that pathway under this organism, tissue, dose, and time point; it does not by
+itself demonstrate a molecular mechanism or generalize to other settings.
+
+# Reporting and Connections
+
+Report the design, experimental unit, allocation, cell counts, outcome scale,
+model formula, prespecified contrasts, estimated means and contrasts with
+intervals, multiplicity adjustment, residual and influence checks, missing-data
+handling, and sensitivity analyses. An ANOVA table alone is not a scientific
+result.
+
+- [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
+  develops coding-invariant group comparisons.
+- [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
+  explains conditional effects and effect-scale dependence.
+- [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
+  links each regression assumption to the claim it supports.
+- [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+  derives uncertainty for coefficients, contrasts, and predictions.
+- [Family-wise error rate](../statistical-inference/family-wise-error-rate.qmd)
+  distinguishes weak and strong control over families of tests.
+- [ANCOVA and regression-based ANOVA](ancova-and-regression-based-anova.qmd)
+  adds continuous covariates and explicit nested-model comparisons.
+
+1. ANOVA is a linear model for means and contrasts, not merely a table of sums
+   of squares.
+2. The independent experimental unit determines the information and degrees of
+   freedom.
+3. In factorial designs, interactions make effects conditional on other factors.
+4. With imbalance, define hypotheses through contrasts or nested models instead
+   of relying on an unexplained sums-of-squares type.
+5. Effect estimates, intervals, diagnostics, and biological context matter more
+   than an omnibus p-value alone.
+
+# References
+
+- Fisher, R. A. (1925). *Statistical Methods for Research Workers*. Oliver and
+  Boyd. <https://psychclassics.yorku.ca/Fisher/Methods/>
+- Box, G. E. P., Hunter, J. S., and Hunter, W. G. (2005). *Statistics for
+  Experimenters* (2nd ed.). Wiley.
+- Searle, S. R. (1971). *Linear Models*. Wiley.
+- Langsrud, O. (2003). ANOVA for unbalanced data: Use Type II instead of Type III
+  sums of squares. *Statistics and Computing*, 13, 163--167.
+  <https://doi.org/10.1023/A:1023260610025>
+- R Core Team. `aov`: fit an analysis of variance model; `anova.lm`: ANOVA tables
+  for fitted linear models. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/aov.html>

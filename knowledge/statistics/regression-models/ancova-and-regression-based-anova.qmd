@@ -1,0 +1,266 @@
+---
+title: "ANCOVA and Regression-based ANOVA"
+subtitle: "Adjusted mean comparisons through one coherent linear-model framework"
+description: "Analysis of covariance and regression-based ANOVA, including adjusted contrasts, covariate interactions, baseline adjustment, assumptions, diagnostics, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-10-15"
+date-modified: "2026-10-15"
+categories: [Statistics, Regression, ANCOVA, Experimental Design]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Why Add Covariates to a Group Comparison?
+
+Analysis of covariance (ANCOVA) is a linear regression containing categorical
+group indicators and continuous or additional categorical covariates. It can
+improve precision by explaining outcome variation known before treatment, adjust
+an observational comparison for measured confounding under strong assumptions,
+or describe how group differences vary across a covariate.
+
+For group $G_i$ and covariate $X_i$, a basic model is
+
+$$
+Y_i=\beta_0+\beta_GG_i+\beta_X(X_i-x_0)+\varepsilon_i,
+\qquad
+\operatorname{E}(\varepsilon_i\mid G_i,X_i)=0.
+$$
+
+If $G_i$ is binary and there is no $G_iX_i$ interaction, $\beta_G$ is the adjusted
+mean difference at every value of $X$ represented by this model. Centering at
+$x_0$ makes the intercept scientifically meaningful but does not change fitted
+values or $\beta_G$. With multiple groups, the indicators are simply a
+multi-degree-of-freedom regression term.
+
+The estimand must precede the method. It might be a treatment effect at a common
+baseline value, an average adjusted contrast over a target covariate distribution,
+or a purely descriptive conditional association. The fitted coefficient is an
+estimator; its realized value is an estimate. Adjustment alone does not determine
+which interpretation is justified.
+
+# Adjusted Means Are Model-based Predictions
+
+Let the fitted model have coefficient vector $\hat{\boldsymbol\beta}$. An adjusted
+mean for group $g$ at covariate value $x_0$ is
+
+$$
+\widehat m_g(x_0)=\mathbf x(g,x_0)^\mathsf{T}
+\hat{\boldsymbol\beta}.
+$$
+
+An adjusted contrast is therefore
+
+$$
+\widehat\Delta(x_0)
+=\{\mathbf x(1,x_0)-\mathbf x(0,x_0)\}^\mathsf{T}
+\hat{\boldsymbol\beta}.
+$$
+
+Its estimated variance is
+
+$$
+\widehat{\operatorname{Var}}\{\widehat\Delta(x_0)\}
+=\mathbf c(x_0)^\mathsf{T}
+\widehat{\operatorname{Var}}(\hat{\boldsymbol\beta})
+\mathbf c(x_0).
+$$
+
+"Adjusted mean" is incomplete unless the analyst states where or how covariates
+were averaged. Equal weighting across groups targets a different population from
+weighting by the observed sample frequencies. Predictions at the grand mean of a
+covariate may describe no actual unit when the distribution is multimodal or
+when covariates interact.
+
+# The Parallel-slopes Assumption
+
+The model above assumes the same covariate slope in every group. A model allowing
+effect modification is
+
+$$
+Y_i=\beta_0+\beta_GG_i+\beta_X(X_i-x_0)
++\beta_{GX}G_i(X_i-x_0)+\varepsilon_i.
+$$
+
+Now the adjusted group contrast at $X=x$ is
+
+$$
+\Delta(x)=\beta_G+\beta_{GX}(x-x_0).
+$$
+
+Thus $\beta_G$ is only the contrast at the centering value. If an interaction is
+present, deleting it to recover a single ANCOVA p-value answers the wrong
+question. Show conditional contrasts or predictions over the region with support,
+and define any average contrast with explicit target-population weights.
+
+Linearity in $X$ is also an assumption, not a property of covariance adjustment.
+Transformations or splines can model curvature while retaining regression-based
+group contrasts. Categorizing a continuous covariate usually discards information,
+creates artificial thresholds, and leaves residual confounding.
+
+# Regression-based ANOVA and Nested Models
+
+ANOVA, ANCOVA, and ordinary regression use the same least-squares machinery.
+Suppose a reduced model has design matrix $\mathbf X_R$ and a full model adds
+$q$ estimable columns, producing residual sums of squares $RSS_R$ and $RSS_F$.
+Under the classical Gaussian linear model,
+
+$$
+F=rac{(RSS_R-RSS_F)/q}{RSS_F/(n-p_F)}
+\sim F_{q,n-p_F}quad\text{under the reduced-model null}.
+$$
+
+The test asks whether the added coefficients are jointly zero conditional on all
+terms retained in both models. This formulation makes the hypothesis explicit:
+
+- adding all group indicators tests an adjusted group effect;
+- adding group-by-covariate terms tests whether slopes differ;
+- adding a block or batch factor tests that term conditional on the specified
+  biological design;
+- adding nonlinear basis terms tests the chosen departure from linearity.
+
+Models compared by this partial $F$ test must be fitted to the same observations.
+If missingness changes the analysis set, a difference in residual sum of squares
+mixes model change with data change. Robust or cluster-aware Wald tests may be
+preferable when the classical variance assumptions fail.
+
+# Baseline Adjustment in Randomized Studies
+
+In a randomized two-arm study with baseline measurement $Y_0$ and follow-up
+$Y_1$, a common model is
+
+$$
+Y_{1i}=\beta_0+\beta_TT_i+\beta_BY_{0i}+\varepsilon_i.
+$$
+
+Because treatment is randomized, chance baseline imbalance does not confound the
+treatment effect. Adjusting for a prognostic baseline value generally improves
+precision and targets the follow-up mean difference conditional on the prespecified
+model. It is commonly more efficient than analyzing change
+$Y_1-Y_0$, which implicitly fixes the baseline coefficient at one and can amplify
+measurement error.
+
+Baseline must be measured before assignment or treatment. Adjusting for a
+post-treatment variable can remove part of the effect, induce collider bias, or
+change the estimand. In observational studies, pre-exposure covariates may address
+measured confounding only if the adjustment set, functional forms, positivity,
+measurement, and missingness assumptions are defensible. More covariates are not
+automatically safer.
+
+# Imbalance, Coding, and Sums of Squares
+
+With balanced orthogonal designs, sequential and partial decompositions coincide.
+With imbalance, a reported "adjusted effect" depends on the other terms in the
+model and on the contrast being tested. A useful workflow is:
+
+1. draw the design and identify experimental units, randomization, blocks, and
+   measured covariates;
+2. define the target contrast and target covariate distribution;
+3. encode the full mean structure, including prespecified interactions and
+   nonlinearities;
+4. verify rank, overlap, and estimability;
+5. express the hypothesis as a coefficient contrast or reduced-versus-full model;
+6. report predicted means and contrasts with uncertainty.
+
+Software "Type I," "Type II," or "Type III" labels cannot replace steps 2 and
+5. In particular, a main-effect test in the presence of interaction may average
+over factor levels using weights unrelated to the target population. Empty or
+sparse factor-by-covariate regions can turn adjusted comparisons into extrapolation.
+
+# Assumptions and Diagnostics
+
+ANCOVA inherits the linear-model assumptions and adds special risks around
+covariate choice and overlap.
+
+| Assumption or risk | Consequence | Diagnostic or sensitivity analysis |
+|---|---|---|
+| Independent experimental units | Pseudoreplication understates uncertainty | Map sampling and assignment; use cluster-aware or multilevel analysis |
+| Correct conditional mean | Adjusted contrasts can be biased or target a projection | Plot residual and partial relationships; compare justified interactions and smooths |
+| Common slope when interaction is omitted | One number masks changing contrasts | Fit and display prespecified group-by-covariate interactions |
+| Covariate overlap across groups | Adjustment otherwise extrapolates | Plot distributions and joint support; restrict the target population if needed |
+| Valid covariate timing and role | Post-treatment or collider adjustment can bias causal claims | Use design chronology and a causal diagram; report alternative justified sets |
+| Valid variance and dependence model | Standard errors and tests can be miscalibrated | Inspect heteroskedasticity and clustering; use appropriate robust covariance or models |
+| Reliable covariate measurement | Error leaves residual confounding and can alter slopes | Use validation data or measurement-error sensitivity analysis |
+
+Residual diagnostics cannot prove that the adjustment set controls confounding.
+Conversely, a chance correlation between treatment and baseline in a randomized
+sample is not evidence that randomization failed. Design knowledge supplies
+assumptions that the observed data alone cannot verify.
+
+# Worked Bioinformatics Example
+
+Suppose 48 patient-derived organoid lines are randomized to control or drug, and
+log-expression of a pathway at 24 hours is the outcome. Prespecified covariates
+are baseline pathway expression, tissue of origin, and sequencing batch.
+
+The organoid donor line is the experimental unit. Replicate wells, libraries,
+and reads nested within one line are technical replication. If wells receive
+treatment independently but share a donor, the model must still represent donor
+clustering and the precise assignment scheme.
+
+An ANCOVA contrast estimates the adjusted drug-control difference at specified
+baseline and tissue values, or averaged over a declared tissue and baseline
+distribution. A drug-by-baseline interaction would make that difference vary
+with baseline expression. Batch adjustment can improve precision when treatment
+is represented within batches; if treatment and batch are perfectly confounded,
+no regression can identify their separate effects.
+
+Statistically, an interval quantifies uncertainty about the adjusted contrast
+under the model and design. Biologically, a nonzero contrast supports a treatment-
+associated change in this pathway for the sampled donor population and assay; it
+does not alone prove pathway mediation, clinical relevance, or transferability
+to patients.
+
+# Reporting and Connections
+
+Report the estimand, experimental unit, design, covariate timing and selection,
+model formula, coding and centering, overlap, adjusted means and contrasts with
+their weighting scheme, intervals, joint tests, diagnostics, missing-data handling,
+and sensitivity to interactions, nonlinearities, influential units, and
+alternative justified adjustment sets.
+
+- [One-way and factorial ANOVA](one-way-and-factorial-anova.qmd) introduces
+  designed group comparisons, factorial interactions, and omnibus tests.
+- [Multiple linear regression](multiple-linear-regression.qmd) supplies the
+  conditional-mean and partial-regression foundation.
+- [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
+  explains coding, estimability, and marginal-mean weights.
+- [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
+  develops conditional contrasts and scale dependence.
+- [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
+  separates mean, variance, dependence, and causal assumptions.
+- [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+  derives uncertainty for linear combinations and predictions.
+
+1. ANCOVA is multiple regression with group indicators and covariates; adjusted
+   means are model-based predictions.
+2. Define where or over whom a contrast is averaged before interpreting it.
+3. A common adjusted group effect requires an adequate parallel-slopes model;
+   interaction makes the contrast covariate-dependent.
+4. Baseline adjustment in randomized studies can improve precision, but
+   post-treatment adjustment can change or bias the target effect.
+5. Regression cannot repair absent overlap, treatment-batch confounding, or
+   technical pseudoreplication.
+
+# References
+
+- Cochran, W. G. (1957). Analysis of covariance: Its nature and uses.
+  *Biometrics*, 13(3), 261--281. <https://doi.org/10.2307/2527916>
+- Frison, L., and Pocock, S. J. (1992). Repeated measures in clinical trials:
+  Analysis using mean summary statistics and its implications for design.
+  *Statistics in Medicine*, 11(13), 1685--1704.
+  <https://doi.org/10.1002/sim.4780111304>
+- Vickers, A. J., and Altman, D. G. (2001). Statistics notes: Analysing controlled
+  trials with baseline and follow up measurements. *BMJ*, 323, 1123--1124.
+  <https://doi.org/10.1136/bmj.323.7321.1123>
+- Van Breukelen, G. J. P. (2006). ANCOVA versus change from baseline: More power
+  in randomized studies, more bias in nonrandomized studies. *Journal of Clinical
+  Epidemiology*, 59(9), 920--925.
+  <https://doi.org/10.1016/j.jclinepi.2006.02.007>
+- Senn, S. (2006). Change from baseline and analysis of covariance revisited.
+  *Statistics in Medicine*, 25(24), 4334--4344.
+  <https://doi.org/10.1002/sim.2682>
+- R Core Team. `lm`: fitting linear models; `anova.lm`: ANOVA tables for fitted
+  linear models. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/lm.html>

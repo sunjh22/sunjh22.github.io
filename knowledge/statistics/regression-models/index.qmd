@@ -13,8 +13,10 @@ categories: [Statistics, Modelling]
 - [Robust standard errors and robust regression](robust-standard-errors-and-robust-regression.qmd)
 - [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
 - [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
+- [One-way and factorial ANOVA](one-way-and-factorial-anova.qmd)
+- [ANCOVA and regression-based ANOVA](ancova-and-regression-based-anova.qmd)
 
-Future notes in this level will cover logistic, Poisson, and negative-binomial regression; ANOVA; generalized linear models; and model selection.
+Future notes in this level will cover logistic, Poisson, and negative-binomial regression; generalized linear models; and model selection.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)
