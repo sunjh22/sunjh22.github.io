@@ -1,0 +1,300 @@
+---
+title: "Odds Ratios, Probabilities, and Calibration"
+subtitle: "Translating logistic models into effect measures and trustworthy risk predictions"
+description: "Odds ratios, absolute probabilities, non-collapsibility, standardization, calibration, discrimination, proper scores, validation, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-10-16"
+date-modified: "2026-10-16"
+categories: [Statistics, Regression, Odds Ratios, Calibration, Prediction]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# One Model, Several Quantities
+
+A binary-outcome model can yield a log-odds coefficient, an odds ratio, an
+individual predicted probability, or a population-average risk contrast. These
+quantities are not interchangeable.
+
+For outcome $Y$, exposure $A$, and covariates $\mathbf Z$, suppose
+
+$$
+\operatorname{logit}\Pr(Y=1\mid A,\mathbf Z)
+=\beta_0+\beta_AA+\boldsymbol\gamma^\mathsf T\mathbf Z.
+$$
+
+Then $\exp(\beta_A)$ is a **conditional odds ratio** comparing $A=1$ with
+$A=0$ at common values of $\mathbf Z$. Conditional risks are
+
+$$
+p_a(\mathbf z)
+=\operatorname{expit}\left(
+\beta_0+\beta_Aa+\boldsymbol\gamma^\mathsf T\mathbf z
+\right).
+$$
+
+At covariate value $\mathbf z$, the risk difference and risk ratio are
+
+$$
+\operatorname{RD}(\mathbf z)=p_1(\mathbf z)-p_0(\mathbf z),
+\qquad
+\operatorname{RR}(\mathbf z)=\frac{p_1(\mathbf z)}{p_0(\mathbf z)}.
+$$
+
+The odds ratio can stay constant while these probability-scale effects change
+with baseline risk. Report the measure that answers the scientific question,
+rather than treating the easiest model coefficient as the estimand.
+
+# Odds Are Not Probabilities
+
+For probability $p$, the odds are $p/(1-p)$. If $p_0$ is a baseline probability
+and $\operatorname{OR}$ is an odds ratio, the corresponding exposed probability is
+
+$$
+\boxed{
+p_1=\frac{\operatorname{OR}\,p_0}
+{1-p_0+\operatorname{OR}\,p_0}
+}.
+$$
+
+An odds ratio of 2 does not mean that the probability doubles. For example:
+
+| Baseline risk $p_0$ | Risk with OR = 2 | Risk difference | Risk ratio |
+|---:|---:|---:|---:|
+| 0.01 | 0.0198 | 0.0098 | 1.98 |
+| 0.20 | 0.3333 | 0.1333 | 1.67 |
+| 0.60 | 0.7500 | 0.1500 | 1.25 |
+
+The rare-outcome approximation $\operatorname{OR}\approx\operatorname{RR}$ is
+useful only when both risks are small enough for the intended precision. It does
+not turn a conditional association into a causal effect.
+
+# Conditional and Marginal Effects
+
+Logistic odds ratios are **non-collapsible**. Even if a covariate is not a
+confounder, a conditional odds ratio adjusted for that covariate can differ from
+the marginal odds ratio because averaging probabilities and taking odds are
+nonlinear operations. A change after adjustment is therefore not, by itself,
+evidence of confounding.
+
+To obtain a population-average risk under exposure level $a$, standardize the
+fitted probabilities over a declared target covariate distribution:
+
+$$
+\hat R_a
+=\sum_{i=1}^{n}w_i
+\operatorname{expit}\left(
+\hat\beta_0+\hat\beta_Aa+
+\hat{\boldsymbol\gamma}^\mathsf T\mathbf z_i
+\right),
+\qquad \sum_iw_i=1.
+$$
+
+Then $\hat R_1-\hat R_0$ and $\hat R_1/\hat R_0$ are standardized risk
+difference and risk ratio estimates for the population represented by weights
+$w_i$. Equal weights over the study sample, survey weights, and external target-
+population weights define different estimands. Confidence intervals should carry
+coefficient-estimation uncertainty and, where relevant, uncertainty in the target
+distribution; delta-method, bootstrap, or simulation-based propagation can be
+used under their respective assumptions.
+
+For a causal interpretation, standardization additionally needs conditional
+exchangeability, positivity, consistency, and correct treatment/outcome and
+covariate modeling. It is still valuable descriptively when causal identification
+is not claimed, provided the target and model are explicit.
+
+# Calibration: Do Probabilities Mean What They Say?
+
+A model is calibrated in a target setting when predicted probabilities agree with
+event frequencies at the relevant level. If all units assigned probability 0.20
+were repeatedly observed under the same process, approximately 20% should have the
+event. Calibration is a property of predictions in a population and time period,
+not a permanent label attached to an algorithm.
+
+Useful levels include:
+
+- **Calibration-in-the-large:** Is the mean predicted risk equal to the observed
+  event proportion? Systematic overprediction or underprediction shifts this.
+- **Calibration slope:** Regress the outcome on the original prediction logit,
+  $\eta=\operatorname{logit}(\hat p)$, in validation data:
+
+  $$
+  \operatorname{logit}\Pr(Y=1\mid\eta)=\alpha+\zeta\eta.
+  $$
+
+  Ideal values are $\alpha=0$ and $\zeta=1$. A slope below one often signals
+  predictions that are too extreme, as after overfitting; a slope above one means
+  they vary too little in that population.
+- **Flexible calibration:** Compare observed risk with predicted risk using a
+  smooth curve and uncertainty, revealing local departures hidden by two numbers.
+
+An intercept-only recalibration can correct a changed event rate while preserving
+relative predictions. Intercept-and-slope recalibration can also shrink or expand
+the prediction logit. Such updating should use appropriate data and be evaluated
+again; it does not repair missing predictors, changed outcome definitions,
+selection bias, or unsupported covariate regions.
+
+# Calibration, Discrimination, and Overall Accuracy
+
+These properties answer different questions:
+
+| Property | Question | Example measure | Important limitation |
+|---|---|---|---|
+| Calibration | Do predicted risks agree with observed risks? | Calibration curve, intercept, slope | Can change across settings and time |
+| Discrimination | Are events generally ranked above non-events? | ROC AUC / c-statistic | Invariant to many transformations that ruin probability calibration |
+| Overall probabilistic accuracy | Are probability forecasts close to outcomes? | Brier score, log loss | Mixes calibration and resolution; depends on outcome prevalence |
+| Decision value | Do predictions improve decisions at relevant tradeoffs? | Expected utility, net benefit | Requires explicit consequences or threshold probabilities |
+
+For binary outcomes, the Brier score is
+
+$$
+\operatorname{BS}=\frac1n\sum_{i=1}^{n}(y_i-\hat p_i)^2.
+$$
+
+The mean log loss is
+
+$$
+-\frac1n\sum_{i=1}^{n}
+\{y_i\log(\hat p_i)+(1-y_i)\log(1-\hat p_i)\}.
+$$
+
+Both are proper scoring rules: in expectation, honest probabilities optimize the
+score under the scoring convention. Log loss penalizes confident wrong
+predictions especially strongly. Compare scores with a meaningful reference model
+and use uncertainty intervals rather than reporting an isolated decimal.
+
+A high AUC can coexist with poor calibration because ranking can remain unchanged
+when all probabilities are systematically too high. Conversely, a useful
+recalibration may improve probability accuracy without changing the AUC.
+
+# Validation Without Optimism
+
+Apparent performance on the development data is optimistic, especially after
+predictor selection, transformation searches, hyperparameter tuning, or threshold
+selection. Every data-dependent modeling step must occur inside the resampling
+loop. Bootstrap validation or nested cross-validation can estimate internal
+optimism; a genuinely external sample tests transport to a new place, time, or
+population.
+
+Calibration assessment itself needs enough independent events and non-events.
+Small validation sets yield noisy curves, intercepts, and slopes. Grouping
+predictions into arbitrary deciles hides within-bin structure and can create
+misleading shapes; show a smooth curve with the prediction distribution and
+uncertainty when possible.
+
+Prevalence altered by case-control sampling requires special care. Slopes and
+exposure odds ratios can be estimable under the design, while the raw sample event
+fraction and uncorrected intercept do not estimate population risk. Absolute
+probabilities require known sampling fractions or another valid route to the
+target prevalence.
+
+# Thresholds and Decisions
+
+Turning $\hat p$ into a class label at 0.5 discards probability information and
+quietly assumes a particular balance of consequences. The relevant threshold is
+determined by the decision: costs of false positives and false negatives,
+available interventions, resource constraints, and patient or scientific values.
+
+Sensitivity and specificity describe classification at a chosen threshold; they
+do not assess probability calibration. Accuracy can favor predicting the majority
+class for rare outcomes. Select and evaluate a threshold using data independent
+of model fitting, or account for selection in the validation procedure.
+
+# Bioinformatics Example
+
+Suppose a gene-expression signature predicts whether a patient-derived organoid
+responds to a drug. Donor lines are experimental units. Multiple wells, cells,
+reads, or library preparations within a donor can improve measurement but are
+technical or subsample replication; treating them as independent validation
+cases exaggerates precision and permits donor identity to leak across train and
+test sets.
+
+Split or resample at the donor level and keep all preprocessing, feature
+selection, normalization choices, and tuning inside each training fold. Report
+the number of independent donors, events and non-events, missingness, prediction
+horizon, and outcome definition. Validate calibration in the intended target
+population, whose response prevalence and assay pipeline may differ from the
+development study.
+
+Statistically, a calibrated 0.70 prediction means that comparable predictions
+correspond to an event frequency near 70% in the target setting. Biologically, it
+does not identify the causal mechanism of response, guarantee benefit from an
+intervention, or establish that the signature transports across tissues,
+platforms, laboratories, and patient populations.
+
+# Diagnostics and Sensitivity Checklist
+
+| Question | Diagnostic or sensitivity analysis |
+|---|---|
+| Is the estimand conditional or population-average? | State the target contrast and standardization weights |
+| Are predictions supported by the data? | Plot predictor and probability distributions; identify extrapolation |
+| Does prevalence differ across settings? | Compare outcome definitions and rates; assess intercept updating |
+| Are predictions too extreme? | Calibration slope, flexible curve, shrinkage sensitivity |
+| Was performance estimated independently? | External validation or fully nested resampling |
+| Is dependence respected? | Group resampling by donor, family, site, or other experimental unit |
+| Does missingness or selection change the target? | Compare inclusion patterns; weighting or imputation sensitivity |
+| Are conclusions metric-dependent? | Report calibration, discrimination, proper scores, and decision consequences |
+
+# Common Misinterpretations
+
+- **“An odds ratio of 2 doubles risk.”** It doubles odds; the risk ratio depends
+  on baseline risk.
+- **“Adjustment moved the odds ratio, proving confounding.”** Non-collapsibility
+  can move conditional and marginal odds ratios even without confounding.
+- **“AUC of 0.9 means probabilities are accurate.”** AUC evaluates ranking, not
+  agreement between predicted and observed risks.
+- **“The Hosmer--Lemeshow p-value proves fit.”** A grouped test is sensitive to
+  grouping and sample size and cannot summarize calibration, specification, and
+  transportability.
+- **“Technical replicates enlarge the validation sample.”** Independent
+  biological units determine generalization and inferential precision.
+
+# Connections and Take-home Messages
+
+- [Logistic regression](logistic-regression.qmd) derives the Bernoulli likelihood,
+  coefficients, estimation, and separation.
+- [Effect sizes](../statistical-inference/effect-sizes.qmd) compares differences,
+  ratios, odds ratios, and standardized effects.
+- [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+  distinguishes coefficient, contrast, mean-response, and prediction uncertainty.
+- [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
+  explains why effects depend on scale and covariate level.
+- [Parametric bootstrap](../statistical-inference/parametric-bootstrap.qmd) and
+  [nonparametric bootstrap](../statistical-inference/nonparametric-bootstrap.qmd)
+  describe two different uncertainty and validation tools.
+
+1. Odds ratios, risk ratios, risk differences, and predicted probabilities answer
+   different questions and should be named explicitly.
+2. Logistic coefficients are conditional; standardized probabilities can target
+   a declared population-average contrast.
+3. Calibration must be checked in the intended population and period, separately
+   from discrimination.
+4. Honest validation repeats the entire modeling pipeline and respects the true
+   experimental unit.
+5. Probability thresholds are decisions with consequences, not intrinsic
+   properties of a fitted model.
+
+# References
+
+- Cox, D. R. (1958). The regression analysis of binary sequences. *Journal of
+  the Royal Statistical Society: Series B*, 20(2), 215--232.
+  <https://doi.org/10.1111/j.2517-6161.1958.tb00292.x>
+- Greenland, S., Robins, J. M., and Pearl, J. (1999). Confounding and
+  collapsibility in causal inference. *Statistical Science*, 14(1), 29--46.
+  <https://doi.org/10.1214/ss/1009211805>
+- Brier, G. W. (1950). Verification of forecasts expressed in terms of
+  probability. *Monthly Weather Review*, 78(1), 1--3.
+  <https://doi.org/10.1175/1520-0493(1950)078%3C0001:VOFEIT%3E2.0.CO;2>
+- Steyerberg, E. W., Vickers, A. J., Cook, N. R., et al. (2010). Assessing the
+  performance of prediction models: a framework for traditional and novel
+  measures. *Epidemiology*, 21(1), 128--138.
+  <https://doi.org/10.1097/EDE.0b013e3181c30fb2>
+- Van Calster, B., Nieboer, D., Vergouwe, Y., et al. (2016). A calibration
+  hierarchy for risk models was defined: from utopia to empirical data.
+  *Journal of Clinical Epidemiology*, 74, 167--176.
+  <https://doi.org/10.1016/j.jclinepi.2015.12.005>
+- Van Calster, B., McLernon, D. J., van Smeden, M., Wynants, L., and Steyerberg,
+  E. W. (2019). Calibration: the Achilles heel of predictive analytics.
+  *BMC Medicine*, 17, 230. <https://doi.org/10.1186/s12916-019-1466-7>

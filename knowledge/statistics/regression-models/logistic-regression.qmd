@@ -1,0 +1,270 @@
+---
+title: "Logistic Regression"
+subtitle: "A Bernoulli model for binary outcomes, conditional odds, and predicted probabilities"
+description: "Logistic regression from the binary data-generating model through likelihood estimation, coefficient interpretation, uncertainty, diagnostics, separation, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-10-16"
+date-modified: "2026-10-16"
+categories: [Statistics, Regression, Logistic Regression, Binary Outcomes]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Binary-outcome Model
+
+For independent experimental units $i=1,\ldots,n$, let $Y_i=1$ denote an event
+and $Y_i=0$ its complement. Logistic regression specifies a Bernoulli sampling
+model and a linear predictor:
+
+$$
+Y_i\mid \mathbf x_i\sim\operatorname{Bernoulli}(p_i),
+\qquad
+\log\!\left(\frac{p_i}{1-p_i}\right)
+=\eta_i=\mathbf x_i^\mathsf T\boldsymbol\beta.
+$$
+
+The inverse-logit transformation keeps fitted probabilities between zero and one:
+
+$$
+\boxed{
+p_i=\Pr(Y_i=1\mid\mathbf x_i)
+=\frac{\exp(\eta_i)}{1+\exp(\eta_i)}
+}.
+$$
+
+The outcome coding, time horizon, target population, and experimental unit must be
+declared. “Response” might mean disease within one year, successful amplification,
+or membership in a cell type; changing its definition changes the estimand and
+model. The model concerns a conditional event probability. It does not say that a
+unit's realized zero or one is deterministic.
+
+| Quantity | Meaning |
+|---|---|
+| $p_i$ | Conditional event probability for covariates $\mathbf x_i$ |
+| $\eta_i$ | Linear predictor, or log odds |
+| $\beta_j$ | Conditional log-odds coefficient |
+| $\exp(\beta_j)$ | Conditional odds ratio for a one-unit predictor contrast |
+| $\hat p_i$ | Fitted probability after estimating the coefficients |
+
+An estimand might be a conditional log odds ratio, a standardized risk difference,
+or out-of-sample event probability. The coefficient vector is a parameter under the
+working model; $\hat{\boldsymbol\beta}$ is an estimator before observing data and a
+numerical estimate afterward.
+
+# Coefficients and Contrasts
+
+With one continuous predictor,
+
+$$
+\operatorname{logit}\{p(x)\}=\beta_0+\beta_1x.
+$$
+
+A one-unit increase in $x$ multiplies the conditional odds by
+$\exp(\beta_1)$. For a contrast of $d$ units, the odds ratio is
+$\exp(d\beta_1)$. The associated probability difference is
+
+$$
+p(x+d)-p(x)
+=\operatorname{expit}\{\beta_0+\beta_1(x+d)\}
+-\operatorname{expit}(\beta_0+\beta_1x),
+$$
+
+which depends on the starting value $x$ and all other predictors. A constant odds
+ratio therefore does not imply a constant risk difference.
+
+For a binary predictor $A$ in
+
+$$
+\operatorname{logit}\Pr(Y=1\mid A,\mathbf Z)
+=\beta_0+\beta_AA+\boldsymbol\gamma^\mathsf T\mathbf Z,
+$$
+
+$\exp(\beta_A)$ compares conditional odds at common modeled values of
+$\mathbf Z$. This is an adjusted association. A causal interpretation additionally
+requires a defensible treatment definition, exchangeability, positivity,
+consistency, and appropriate handling of selection, missingness, and measurement.
+
+Interactions make the log-odds contrast depend on another predictor. With
+$\beta_{AX}AX$, the conditional odds ratio for $A$ at $X=x$ is
+$\exp(\beta_A+\beta_{AX}x)$. As with linear regression, lower-order coefficients
+refer to the other variable's reference value.
+
+# Likelihood and Estimation
+
+Conditional independence across experimental units gives the likelihood
+
+$$
+L(\boldsymbol\beta)
+=\prod_{i=1}^{n}p_i^{y_i}(1-p_i)^{1-y_i},
+$$
+
+and log-likelihood
+
+$$
+\ell(\boldsymbol\beta)
+=\sum_{i=1}^{n}\left[
+y_i\mathbf x_i^\mathsf T\boldsymbol\beta
+-\log\{1+\exp(\mathbf x_i^\mathsf T\boldsymbol\beta)\}
+\right].
+$$
+
+Let $\mathbf p=(p_1,\ldots,p_n)^\mathsf T$ and
+$\mathbf W=\operatorname{diag}\{p_i(1-p_i)\}$. Differentiation gives
+
+$$
+\mathbf U(\boldsymbol\beta)
+=\frac{\partial\ell}{\partial\boldsymbol\beta}
+=\mathbf X^\mathsf T(\mathbf y-\mathbf p),
+\qquad
+-\frac{\partial^2\ell}
+{\partial\boldsymbol\beta\partial\boldsymbol\beta^\mathsf T}
+=\mathbf X^\mathsf T\mathbf W\mathbf X.
+$$
+
+The maximum-likelihood estimate solves $\mathbf U=\mathbf0$. There is generally
+no closed form, so software uses Newton--Raphson, Fisher scoring, or the equivalent
+iteratively reweighted least-squares calculation. Concavity makes a finite,
+identified solution unique when the design has full rank and the outcomes are not
+separated by the predictors.
+
+At a regular finite solution, the model-based covariance estimate is
+
+$$
+\widehat{\operatorname{Var}}(\hat{\boldsymbol\beta})
+=(\mathbf X^\mathsf T\hat{\mathbf W}\mathbf X)^{-1}.
+$$
+
+Wald intervals use this local quadratic approximation. Likelihood-ratio or profile-
+likelihood intervals often behave better for sparse data or asymmetric likelihoods.
+All are conditional on the model, sampling structure, and prespecified analysis.
+
+# A Small Calculation
+
+Suppose a fitted model for a binary assay failure is
+
+$$
+\operatorname{logit}(p)=-2+0.8x,
+$$
+
+where $x$ is a centered quality score. At $x=0$,
+
+$$
+p(0)=\operatorname{expit}(-2)\approx0.119.
+$$
+
+At $x=1$, the odds are multiplied by $\exp(0.8)\approx2.23$, but the probability
+is $\operatorname{expit}(-1.2)\approx0.231$, a risk increase of about 0.112 rather
+than 123%. At $x=2$, the probability is about 0.401. The example shows why the
+coefficient, odds ratio, and probability contrast answer related but different
+questions.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Assumption or issue | Why it matters | Assessment | Response or sensitivity analysis |
+|---|---|---|---|
+| Correct binary outcome and sampling model | Misclassification or informative sampling changes the target and likelihood | Audit outcome timing, labeling, and sampling fractions | Validation subset, misclassification or sampling model |
+| Independent experimental units | Naive information and standard errors count correlated observations repeatedly | Map donors, batches, families, sites, and repeated measures | Cluster-aware covariance, GEE, mixed model, or justified aggregation |
+| Correct logit-scale mean structure | Omitted curvature or interaction distorts probabilities and odds ratios | Flexible plots, component-plus-residual ideas, held-out calibration | Splines, prespecified interactions, alternative links |
+| Full-rank design and overlap | Coefficients may be unidentified or extrapolative | Cross-tabulations, predictor support, rank and condition checks | Redesign, combine parameters, restrict the target population |
+| No separation | Ordinary MLEs may diverge | Perfect or near-perfect prediction, huge estimates/SEs, iteration warnings | Verify data; use bias reduction or justified penalization |
+| Adequate information | Sparse events make asymptotic intervals unstable | Event/non-event counts and effective design information | Profile likelihood, bootstrap when valid, penalization, more independent units |
+| No influential unit | One covariate pattern can determine a coefficient | Leverage, deviance/Pearson residuals, deletion diagnostics | Verify records and report leave-one-unit-out sensitivity |
+
+Residuals are not normally distributed in a Bernoulli model. Deviance and Pearson
+residuals can reveal unusual patterns, but a binary observation contains little
+unit-level residual information. Binning residuals or probabilities can aid a
+display, yet conclusions can depend on arbitrary bins. Diagnostics cannot prove
+that confounding is absent or that a future population follows the same process.
+
+## Separation and finite estimates
+
+If a linear combination of predictors perfectly distinguishes events from
+non-events, increasing a coefficient without bound keeps improving the ordinary
+likelihood. Software may report nonconvergence, fitted probabilities numerically
+equal to zero or one, enormous estimates, or misleading Wald results. Dropping a
+predictor solely to force convergence changes the estimand.
+
+Firth's bias-reducing score modification yields finite estimates in separated
+logistic models and reduces first-order bias. It is not a substitute for adequate
+design, and penalized estimates, intervals, and predicted probabilities must be
+reported as such. Bayesian regularization is another explicit modeling choice;
+its prior sensitivity matters when the data are weak.
+
+# Bioinformatics Design and Interpretation
+
+Consider whether 80 independent patient biopsies show a molecular response after
+treatment. A logistic model includes treatment, prespecified baseline severity,
+tissue type, and sequencing batch. Patients are the experimental units. Cells,
+reads, technical libraries, and repeated aliquots nested within one biopsy are not
+80 additional independent treatment replicates.
+
+If the outcome is instead defined for every cell, cell responses remain clustered
+within donors. A cell-level logistic model must represent donor dependence and the
+level at which treatment was assigned; pseudoreplication can otherwise make
+uncertainty implausibly small. If every responder was sequenced in one batch and
+every nonresponder in another, outcome and batch effects are not separately
+identified.
+
+Statistically, a treatment coefficient describes a conditional log-odds contrast
+under the fitted model. Biologically, the result also depends on how response was
+defined, assay error, effect magnitude on an interpretable probability scale,
+patient heterogeneity, and transport to the target population. A small p-value or
+large odds ratio alone does not establish clinical or mechanistic importance.
+
+# Prediction Is a Separate Goal
+
+Likelihood fit on development data does not establish predictive usefulness.
+For risk prediction, evaluate probabilities on data not used for flexible model
+development. Report calibration, discrimination, and an overall proper score;
+none replaces the others. A classification threshold additionally encodes the
+relative consequences of false positives and false negatives and should not be
+chosen from accuracy alone.
+
+For explanation or causal estimation, held-out prediction is informative about
+transport but does not diagnose confounding. Conversely, a causally interpretable
+coefficient need not produce an accurate individual risk model. State the goal
+before selecting predictors, regularization, metrics, and validation design.
+
+# Connections and Take-home Messages
+
+- [Odds ratios, probabilities, and calibration](odds-ratios-probabilities-and-calibration.qmd)
+  develops effect-scale interpretation and probability validation.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  gives the inferential foundation for the Bernoulli likelihood.
+- [Maximum-likelihood estimation](../statistical-inference/maximum-likelihood-estimation.qmd)
+  explains score equations, information, and nonregular failures.
+- [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
+  covers coding and estimable comparisons.
+- [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
+  explains conditional effects and scale dependence.
+- [Robust standard errors and robust regression](robust-standard-errors-and-robust-regression.qmd)
+  separates covariance robustness from mean-model correctness.
+
+1. Logistic regression models a conditional Bernoulli probability through a
+   linear predictor on the log-odds scale.
+2. Exponentiated coefficients are conditional odds ratios, not probability
+   differences or automatically causal effects.
+3. Maximum likelihood is numerical and can fail to have a finite solution under
+   separation.
+4. Valid uncertainty depends on independent experimental units, adequate outcome
+   information, identification, and a suitable data-generating model.
+5. Prediction requires external or resampling-based validation of probabilities;
+   coefficient inference and predictive performance are different tasks.
+
+# References
+
+- Cox, D. R. (1958). The regression analysis of binary sequences. *Journal of
+  the Royal Statistical Society: Series B*, 20(2), 215--232.
+  <https://doi.org/10.1111/j.2517-6161.1958.tb00292.x>
+- McCullagh, P., and Nelder, J. A. (1989). *Generalized Linear Models* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780203753736>
+- Firth, D. (1993). Bias reduction of maximum likelihood estimates.
+  *Biometrika*, 80(1), 27--38. <https://doi.org/10.1093/biomet/80.1.27>
+- Heinze, G., and Schemper, M. (2002). A solution to the problem of separation
+  in logistic regression. *Statistics in Medicine*, 21(16), 2409--2419.
+  <https://doi.org/10.1002/sim.1047>
+- R Core Team. `glm`: fitting generalized linear models; `family`: family objects
+  for models. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/glm.html>
