@@ -17,9 +17,11 @@ categories: [Statistics, Modelling]
 - [ANCOVA and regression-based ANOVA](ancova-and-regression-based-anova.qmd)
 - [Logistic regression](logistic-regression.qmd)
 - [Odds ratios, probabilities, and calibration](odds-ratios-probabilities-and-calibration.qmd)
+- [Poisson regression](poisson-regression.qmd)
+- [Offsets and modeling event rates](offsets-and-modeling-event-rates.qmd)
 
-Future notes in this level will cover Poisson and negative-binomial regression;
-generalized linear models; and model selection.
+Future notes in this level will cover negative-binomial regression, generalized
+linear models, and model selection.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)

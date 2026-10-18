@@ -1,0 +1,316 @@
+---
+title: "Offsets and Modeling Event Rates"
+subtitle: "Separating event intensity from unequal opportunity in count regression"
+description: "Offsets, exposure denominators, rate ratios, uncertainty, diagnostics, and bioinformatics interpretation for Poisson and related count models."
+author: "Jiahong Sun"
+date: "2026-10-18"
+date-modified: "2026-10-18"
+categories: [Statistics, Regression, Offsets, Event Rates, Count Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Counts Need an Opportunity Scale
+
+Ten events in one day and ten events in one year are equal counts but very
+different rates. Let $Y_i$ be a count, $t_i>0$ a known exposure, and $r_i$ the
+conditional event rate per exposure unit. A Poisson rate model is
+
+$$
+Y_i\mid\mathbf x_i,t_i
+\sim\operatorname{Poisson}(\mu_i),
+\qquad
+\mu_i=t_ir_i.
+$$
+
+If the rate follows a log-linear regression,
+
+$$
+\log(r_i)=\mathbf x_i^\mathsf T\boldsymbol\beta,
+$$
+
+then
+
+$$
+\boxed{
+\log(\mu_i)=\log(t_i)+\mathbf x_i^\mathsf T\boldsymbol\beta
+}.
+$$
+
+The known term $\log(t_i)$ is an **offset**: it enters the linear predictor with
+coefficient fixed at one. This constraint encodes proportionality—doubling
+exposure doubles the expected count while leaving the modeled rate unchanged.
+
+| Quantity | Meaning and units |
+|---|---|
+| $Y_i$ | Events observed for unit $i$ |
+| $t_i$ | Exposure: person-time, area, callable bases, trials, or another opportunity measure |
+| $\mu_i=t_ir_i$ | Expected count; dimensionless |
+| $r_i$ | Expected events per unit exposure |
+| $\beta_j$ | Conditional log rate-ratio coefficient |
+| $\exp(\beta_j)$ | Conditional rate ratio for a one-unit predictor contrast |
+
+The denominator is part of the estimand. Events per person-year, per callable
+megabase, and per sequenced molecule answer different questions even when the
+numerator is the same.
+
+# Why the Offset Coefficient Is One
+
+Suppose every unit has a common rate $r$. The Poisson log-likelihood is, up to
+constants,
+
+$$
+\ell(r)=\sum_i\{y_i\log(t_ir)-t_ir\}.
+$$
+
+Differentiating and setting the score to zero gives
+
+$$
+\frac{\partial\ell}{\partial r}
+=\frac{\sum_i y_i}{r}-\sum_i t_i=0,
+\qquad
+\boxed{\hat r=\frac{\sum_i y_i}{\sum_i t_i}}.
+$$
+
+The likelihood pools events over pooled exposure, not by taking an unweighted
+average of individual rates $y_i/t_i$. Units with more exposure contain more
+information under the model.
+
+The offset algebra follows from $\mu_i=t_ir_i$. It is not an empirical claim that
+must be re-estimated every time. Replacing the offset by a free term,
+
+$$
+\log(\mu_i)=\gamma\log(t_i)+\mathbf x_i^\mathsf T\boldsymbol\beta,
+$$
+
+asks a different question: whether expected counts scale as $t_i^\gamma$.
+Estimating $\gamma$ can be a useful sensitivity analysis when proportionality is
+doubtful, but it no longer defines the prespecified rate model. A result
+$\hat\gamma\ne1$ might reflect a real exposure relationship, saturation,
+measurement error, omitted covariates, or an inappropriate denominator.
+
+# Rate Ratios, Rates, and Absolute Contrasts
+
+For a binary treatment or predictor $A$,
+
+$$
+\log(\mu_i)=\log(t_i)+\beta_0+\beta_AA_i
++\boldsymbol\gamma^\mathsf T\mathbf z_i.
+$$
+
+At common $\mathbf z$, the modeled rate ratio is
+
+$$
+\frac{r(A=1,\mathbf z)}{r(A=0,\mathbf z)}=\exp(\beta_A).
+$$
+
+The rate difference is
+
+$$
+r(1,\mathbf z)-r(0,\mathbf z)
+=r(0,\mathbf z)\{\exp(\beta_A)-1\},
+$$
+
+so a constant rate ratio does not imply a constant rate difference. For
+interpretation, report adjusted rates for meaningful covariate profiles or
+standardize them over a declared target distribution:
+
+$$
+\hat R_a=\sum_{i=1}^n w_i
+\exp\left(\hat\beta_0+\hat\beta_Aa
++\hat{\boldsymbol\gamma}^\mathsf T\mathbf z_i\right),
+\qquad \sum_iw_i=1.
+$$
+
+$\hat R_1/\hat R_0$ and $\hat R_1-\hat R_0$ then describe population-average
+rate contrasts for the population represented by $w_i$. This standardization
+requires uncertainty propagation and, for causal claims, the usual identification
+conditions in addition to a suitable rate model.
+
+# Choosing and Measuring Exposure
+
+A defensible exposure denominator must satisfy three conditions:
+
+1. **Opportunity:** it represents the scale on which events could have occurred.
+2. **Comparability:** one exposure unit has a comparable meaning across analyzed
+   units, possibly after modeled stratification.
+3. **Temporal ordering and measurement:** it is not a consequence of the event
+   process in a way that creates selection or informative observation.
+
+Examples include person-time at risk, geographic area under surveillance,
+machine operating time, callable genomic bases, and sequencing-library scale.
+Population size is appropriate for an incidence rate only when it adequately
+represents the population at risk over the observation period. Total reads may
+act as a library-scale adjustment, but composition bias can make raw library size
+a poor measure of effective sampling opportunity for a gene.
+
+An offset is commonly treated as known. If $t_i$ is estimated, noisy, or
+systematically biased, ordinary model standard errors do not include that
+uncertainty. Sensitivity analyses can perturb the denominator, use validation
+data, jointly model exposure and outcome, or propagate uncertainty by bootstrap
+or Bayesian computation when the estimation process is reproducible. Multiplying
+all exposures by a constant changes the intercept and the numerical rate unit,
+but not slope estimates or fitted counts.
+
+# Grouped Counts and Individual Events
+
+Aggregation is coherent under a homogeneous rate within each group. If independent
+subunits $j$ have common modeled rate $r_g$ and exposures $t_{gj}$, then
+
+$$
+\sum_jY_{gj}\sim\operatorname{Poisson}
+\left(r_g\sum_jt_{gj}\right).
+$$
+
+The grouped analysis uses total count and total exposure. If rates vary with
+covariates inside a group, aggregation can discard confounding information,
+conceal interactions, or change the estimand. It can also hide dependence and
+overdispersion. Fine temporal splitting does not create independent experimental
+units: twelve monthly records from one person remain repeated observations from
+one person.
+
+When event times and risk sets are available, survival or recurrent-event methods
+may represent censoring, time-varying risk, and within-unit dependence more
+faithfully. Poisson regression on split person-time can approximate certain
+piecewise-exponential hazard models, but the construction and dependence must be
+explicit.
+
+# Worked Example
+
+Suppose two groups are followed for unequal times:
+
+| Group | Events | Person-years | Observed rate per 100 person-years |
+|---|---:|---:|---:|
+| A | 18 | 900 | 2.0 |
+| B | 15 | 300 | 5.0 |
+
+Comparing counts alone suggests fewer events in B. Comparing exposure-adjusted
+rates gives
+
+$$
+\widehat{\operatorname{RR}}
+=\frac{15/300}{18/900}=2.5.
+$$
+
+An intercept-plus-group Poisson model with $\log(t_i)$ as the offset reproduces
+this rate ratio for the two aggregated rows. In individual data, additional
+covariates can adjust the conditional rate comparison, provided aggregation has
+not erased them and the likelihood reflects the actual independent units.
+
+The estimate 2.5 is a statistical comparison. Its scientific importance depends
+on the event definition, absolute excess rate, follow-up mechanism, target
+population, uncertainty, confounding, and consequences of the event.
+
+# Implementation Without Treating Exposure as a Weight
+
+In R, a basic Poisson rate model is written as ordinary, non-executed example code:
+
+```r
+fit <- glm(
+  events ~ treatment + age + batch + offset(log(person_time)),
+  family = poisson(link = "log"),
+  data = dat
+)
+
+exp(coef(fit)["treatment"])
+```
+
+`offset(log(person_time))` changes the modeled mean. It is not a frequency,
+precision, survey, or inverse-probability weight. A zero exposure makes
+$\log(t_i)$ undefined and usually indicates that the unit contributes no at-risk
+time; it requires a design decision, not an arbitrary small replacement. Missing
+exposure should be handled as missing data with its mechanism considered.
+
+Predicted counts and rates are different outputs. A fitted count for specified
+exposure $t$ is $t\exp(\mathbf x^\mathsf T\hat{\boldsymbol\beta})$; the fitted
+rate sets $t=1$ on the chosen scale. Software prediction calls must therefore
+provide or deliberately neutralize the offset according to the requested target.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Assumption or issue | Failure mechanism | Diagnostic question | Response or sensitivity analysis |
+|---|---|---|---|
+| Exposure measures opportunity | Denominator does not represent time or units truly at risk | Could an event occur throughout every recorded exposure unit? | Refine risk time, eligibility, callable region, or observation model |
+| Expected count is proportional to exposure | Saturation, depletion, detection limits, or duration effects violate unit slope | Do residuals vary with exposure; does a free $\log(t)$ coefficient differ materially from one? | Stratify time, add duration structure, or compare constrained and free-slope models |
+| Exposure is measured accurately | Error in an offset biases rates and understates uncertainty | How was exposure estimated and validated? | Perturb offsets, use validation data, or jointly model measurement error |
+| Conditional mean is log-linear | Missing curvature, interactions, or time trends distort rate ratios | Residual and partial-pattern checks | Splines, interactions, time strata, or revised covariates |
+| Variance and dependence are represented | Heterogeneity or repeated units makes Poisson uncertainty too small | Conditional residuals, dispersion, cluster map, predictive checks | Negative binomial, cluster-aware covariance, GEE, mixed or recurrent-event model |
+| Observation is non-informative | Follow-up or callability can depend on prognosis or outcome | Why does exposure end or become unobservable? | Censoring/observation model, inverse-probability methods, sensitivity analysis |
+
+Always inspect counts, rates, exposures, and residuals together. A large raw count
+may be expected under large exposure, while a modest count under tiny exposure can
+be influential. Check conclusions under scientifically credible alternative
+denominators, especially when preprocessing or detection rules determine the
+offset.
+
+# Bioinformatics Design and Interpretation
+
+Consider somatic mutation counts from independently sampled tumors. The numerator
+is the number of validated mutations and the exposure might be callable megabases,
+not total genome length. A model can use $\log(\text{callable Mb})$ as an offset
+and estimate treatment, tumor-type, and batch rate ratios. Tumors are the
+experimental units. Mutations and reads within a tumor are event-level or
+technical observations, not independent tumor replicates.
+
+Callability is estimated from depth, mapping quality, filtering, copy number, and
+other sample-dependent processes. If disease state affects tissue quality and
+therefore callable sequence, the offset can participate in selection or
+measurement bias rather than merely correct opportunity. Report the callability
+definition and assess plausible alternatives. A statistically precise mutation
+rate ratio does not by itself establish a biological mechanism.
+
+For RNA-seq, an effective library-size or normalization factor is usually an
+offset in a negative-binomial log-linear model. It makes expected counts
+proportional to estimated sampling scale, while coefficients compare expression
+rates on that scale. Composition bias means raw total reads may not be the right
+offset. Biological specimens provide condition-level replication; technical
+lanes or reads chiefly improve measurement. Sensitivity should examine
+normalization choice, batch allocation, dispersion, influential specimens, and
+the intended expression estimand.
+
+# Connections and Take-home Messages
+
+- [Poisson regression](poisson-regression.qmd) develops likelihood estimation,
+  coefficient interpretation, and extra-Poisson diagnostics.
+- [Poisson distribution and Poisson processes](../probability-randomness/poisson-distribution-and-poisson-processes.qmd)
+  distinguishes a rate from the expected count over an exposure.
+- [Negative binomial distribution and overdispersion](../probability-randomness/negative-binomial-distribution-and-overdispersion.qmd)
+  motivates a broader variance function for heterogeneous rates.
+- [Multiple linear regression](multiple-linear-regression.qmd) explains
+  conditional coefficients and adjustment in a familiar additive model.
+- [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
+  develops predictor-dependent contrasts and scale dependence.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  develops structured perturbations for assumptions such as denominator choice.
+
+1. An offset separates the event rate from unequal opportunity by fixing the
+   log-exposure coefficient at one.
+2. The exposure denominator defines the scientific rate estimand; it is not a
+   generic weight or harmless preprocessing constant.
+3. Exponentiated slope coefficients are conditional rate ratios, while absolute
+   rate differences depend on the baseline rate.
+4. Estimated, outcome-dependent, or poorly measured exposure requires uncertainty
+   propagation and sensitivity analysis.
+5. Aggregation and record splitting do not create biological replication; the
+   likelihood and uncertainty must follow the true experimental units.
+
+# References
+
+- Nelder, J. A., and Wedderburn, R. W. M. (1972). Generalized linear models.
+  *Journal of the Royal Statistical Society: Series A*, 135(3), 370--384.
+  <https://doi.org/10.2307/2344614>
+- McCullagh, P., and Nelder, J. A. (1989). *Generalized Linear Models* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780203753736>
+- Frome, E. L. (1983). The analysis of rates using Poisson regression models.
+  *Biometrics*, 39(3), 665--674. <https://doi.org/10.2307/2531094>
+- Cameron, A. C., and Trivedi, P. K. (2013). *Regression Analysis of Count Data*
+  (2nd ed.). Cambridge University Press.
+  <https://doi.org/10.1017/CBO9781139013567>
+- Robinson, M. D., and Oshlack, A. (2010). A scaling normalization method for
+  differential expression analysis of RNA-seq data. *Genome Biology*, 11, R25.
+  <https://doi.org/10.1186/gb-2010-11-3-r25>
+- R Core Team. `glm`: fitting generalized linear models; `offset`: include an
+  offset in a model formula. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/offset.html>

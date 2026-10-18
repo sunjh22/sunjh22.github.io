@@ -1,0 +1,274 @@
+---
+title: "Poisson Regression"
+subtitle: "A log-linear model for conditional counts and rate ratios"
+description: "Poisson regression from its count data-generating model through likelihood estimation, coefficient interpretation, uncertainty, diagnostics, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-10-18"
+date-modified: "2026-10-18"
+categories: [Statistics, Regression, Poisson Regression, Count Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Conditional Count Model
+
+For independent experimental units $i=1,\ldots,n$, Poisson regression specifies
+
+$$
+Y_i\mid\mathbf x_i\sim\operatorname{Poisson}(\mu_i),
+\qquad
+\log(\mu_i)=\eta_i=\mathbf x_i^\mathsf T\boldsymbol\beta.
+$$
+
+The inverse link gives
+
+$$
+\boxed{E(Y_i\mid\mathbf x_i)=\mu_i
+=\exp(\mathbf x_i^\mathsf T\boldsymbol\beta)}.
+$$
+
+This is a generalized linear model with a Poisson response distribution and log
+link. It is a model for the **conditional mean**, not merely a rule for fitting a
+line to counts. The Poisson sampling distribution also implies
+
+$$
+\operatorname{Var}(Y_i\mid\mathbf x_i)=\mu_i.
+$$
+
+Mean--variance equality is therefore an assumption to assess after relevant
+predictors and exposure have been represented. A marginal sample variance larger
+than the marginal mean is not enough to reject the model: different covariate
+patterns can have different means even when every conditional distribution is
+Poisson.
+
+| Quantity | Meaning |
+|---|---|
+| $Y_i$ | Observed event count for experimental unit $i$ |
+| $\mu_i$ | Conditional expected count |
+| $\eta_i$ | Linear predictor on the log-mean scale |
+| $\beta_j$ | Conditional log mean-ratio coefficient |
+| $\exp(\beta_j)$ | Multiplicative mean ratio for a one-unit predictor contrast |
+| $\hat\mu_i$ | Fitted conditional mean after estimating the coefficients |
+
+The experimental unit must be identified before the likelihood is written. A
+count may summarize mutations in one tumor, infections in one region, or events
+during one observation period. Events within a count are not automatically
+independent experimental replicates.
+
+# Coefficients and Contrasts
+
+With one predictor,
+
+$$
+\log\{\mu(x)\}=\beta_0+\beta_1x.
+$$
+
+For a contrast of $d$ units,
+
+$$
+\frac{\mu(x+d)}{\mu(x)}=\exp(d\beta_1).
+$$
+
+Thus $\exp(\beta_1)$ is a conditional expected-count ratio when exposure is
+common. If an exposure term is included as an offset, it becomes a conditional
+**rate ratio**. For a binary treatment $A$ in
+
+$$
+\log(\mu_i)=\beta_0+\beta_AA_i+\boldsymbol\gamma^\mathsf T\mathbf z_i,
+$$
+
+$\exp(\beta_A)$ compares expected counts at common modeled values of
+$\mathbf z$. It is an adjusted association, not automatically a causal effect.
+Causal interpretation additionally requires a well-defined intervention,
+exchangeability, positivity, consistency, and defensible handling of selection,
+missingness, measurement, and interference.
+
+Interactions make the ratio depend on another variable. With a term
+$\beta_{AX}A_iX_i$, the treatment mean ratio at $X=x$ is
+$\exp(\beta_A+\beta_{AX}x)$. Lower-order coefficients refer to the other
+variable's reference value, just as in linear and logistic regression.
+
+An additive count contrast is not constant under this model:
+
+$$
+\mu(x+d)-\mu(x)
+=\mu(x)\{\exp(d\beta_1)-1\}.
+$$
+
+Absolute changes therefore depend on the baseline mean. Report fitted counts or
+rates alongside ratios when absolute scale matters scientifically.
+
+# Likelihood, Estimation, and Uncertainty
+
+Conditional independence across experimental units gives
+
+$$
+L(\boldsymbol\beta)
+=\prod_{i=1}^n
+\frac{\exp(-\mu_i)\mu_i^{y_i}}{y_i!},
+\qquad \mu_i=\exp(\mathbf x_i^\mathsf T\boldsymbol\beta).
+$$
+
+Ignoring terms that do not depend on $\boldsymbol\beta$, the log-likelihood is
+
+$$
+\ell(\boldsymbol\beta)
+=\sum_{i=1}^n
+\left\{y_i\mathbf x_i^\mathsf T\boldsymbol\beta
+-\exp(\mathbf x_i^\mathsf T\boldsymbol\beta)\right\}.
+$$
+
+Let $\boldsymbol\mu=(\mu_1,\ldots,\mu_n)^\mathsf T$ and
+$\mathbf W=\operatorname{diag}(\mu_1,\ldots,\mu_n)$. Differentiation gives
+
+$$
+\mathbf U(\boldsymbol\beta)
+=\mathbf X^\mathsf T(\mathbf y-\boldsymbol\mu),
+\qquad
+-\frac{\partial^2\ell}
+{\partial\boldsymbol\beta\partial\boldsymbol\beta^\mathsf T}
+=\mathbf X^\mathsf T\mathbf W\mathbf X.
+$$
+
+The maximum-likelihood estimate solves $\mathbf U=\mathbf0$, usually by Fisher
+scoring or iteratively reweighted least squares. At a regular, identified fit,
+
+$$
+\widehat{\operatorname{Var}}(\hat{\boldsymbol\beta})
+=(\mathbf X^\mathsf T\hat{\mathbf W}\mathbf X)^{-1}.
+$$
+
+Wald intervals exponentiate coefficient limits to obtain ratio limits.
+Likelihood-ratio or profile-likelihood intervals can better reflect asymmetric
+likelihoods. Model-based uncertainty is valid only when the conditional variance
+and independence assumptions are adequate. A sandwich covariance can protect
+coefficient inference against some variance misspecification under a correct mean
+model and suitable independent clusters; it does not repair a wrong mean,
+unmeasured confounding, or too few independent clusters.
+
+# A Small Calculation
+
+Suppose the fitted mean number of lesions is
+
+$$
+\log\{\mu(x)\}=1.2+0.35x,
+$$
+
+where $x$ is a centered exposure score. At $x=0$, the expected count is
+$\exp(1.2)\approx3.32$. A one-unit increase multiplies the mean by
+$\exp(0.35)\approx1.42$, so at $x=1$ the expected count is about $4.71$.
+The absolute increase is about $1.39$, not 42 lesions. At a baseline mean of 20,
+the same coefficient would imply an increase of about $8.38$ counts.
+
+The coefficient is the model parameter, $0.35$ is its estimate in this fitted
+example, and $1.42$ is the estimated conditional mean ratio. A confidence
+interval describes sampling uncertainty under the analysis assumptions; it does
+not describe unexplained heterogeneity among individual units.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Assumption or issue | Why it matters | Assessment | Response or sensitivity analysis |
+|---|---|---|---|
+| Count support and correct event definition | Fractional, censored, duplicated, or inconsistently defined outcomes require another observation model | Audit counting and preprocessing rules | Redefine the outcome or model measurement and censoring explicitly |
+| Correct log-mean structure | Omitted curvature, interactions, or exposure distort fitted ratios | Residual patterns against predictors and fitted means; flexible partial checks | Splines, prespecified interactions, revised offsets, or stratification |
+| Conditional Poisson variance | Extra or reduced variation invalidates model-based standard errors | Pearson statistic, residual deviance, replicate-level predictive checks | Quasi-Poisson/sandwich inference, negative binomial, or mechanism-specific model |
+| Independent experimental units | Correlation makes naive information too large | Map pairing, repeated measures, families, sites, and batches | Cluster-aware covariance, GEE, mixed model, or justified aggregation |
+| No distinct structural-zero process | Inactive states or detection failure can create a separate zero mechanism | Compare observed and fitted zeros conditionally; inspect assay mechanism | Hurdle or zero-inflated model only when scientifically defensible |
+| Full-rank design and adequate overlap | Coefficients may be unidentified or extrapolative | Rank, condition, and covariate-support checks | Redesign, combine parameters, or restrict the target population |
+| No influential experimental unit | A rare covariate pattern or large count can dominate the fit | Deviance/Pearson residuals, leverage, Cook-type deletion checks | Verify records and report leave-one-unit-out sensitivity |
+
+For $p$ fitted coefficients, the Pearson dispersion diagnostic is
+
+$$
+\hat\phi_P
+=\frac{1}{n-p}\sum_{i=1}^n
+\frac{(y_i-\hat\mu_i)^2}{\hat\mu_i}.
+$$
+
+A value far above one flags lack of fit relative to the Poisson variance, but it
+does not identify the cause. Omitted predictors, unequal exposure, clustering,
+outliers, zero inflation, and genuine rate heterogeneity can produce similar
+signals and require different remedies. Residual deviance compared mechanically
+with its degrees of freedom can also mislead in sparse counts, small samples, or
+many fitted values near zero; simulation from the fitted design is often more
+informative.
+
+Quasi-Poisson inference estimates a dispersion multiplier while retaining
+$\operatorname{Var}(Y_i\mid\mathbf x_i)=\phi\mu_i$. Negative-binomial regression
+changes the variance function, commonly to $\mu_i+\alpha\mu_i^2$. Neither choice
+excuses a misspecified mean or dependence structure. Compare coefficient,
+uncertainty, residual, and predictive conclusions across scientifically plausible
+models rather than selecting solely by one dispersion statistic.
+
+# Bioinformatics Design and Interpretation
+
+Suppose mutation counts are measured in 120 independently sampled tumors. A
+model includes treatment, tumor type, sequencing center, and callable genome
+size. Tumors are the experimental units; mutations, reads, technical libraries,
+and repeated aliquots within a tumor are not 120 additional independent treatment
+replicates. Callable bases differ across tumors, so a log-callable-bases offset is
+needed if the target is a mutation rate rather than a raw count.
+
+The Poisson variance may be too restrictive because tumors differ biologically
+after modeled covariates, mutation calls have sample-dependent error, and events
+can cluster along the genome. Diagnostics should be performed at the tumor level,
+with sensitivity to a negative-binomial mean--variance relation, robust or
+cluster-aware uncertainty where justified, influential tumors, alternative
+callability definitions, and batch adjustment.
+
+For RNA-seq, library counts are commonly modeled with negative-binomial rather
+than Poisson variation because replicate-to-replicate variability exceeds Poisson
+sampling. Sample-specific normalization factors enter as offsets, but reads are
+technical observations and genes are parallel outcomes. Independent biological
+specimens support inference about a condition effect. Statistically, an
+exponentiated coefficient is a conditional count or rate ratio under the model;
+biologically, importance also depends on absolute abundance, uncertainty,
+technical bias, tissue composition, heterogeneity, and the experimental design.
+
+# Connections and Take-home Messages
+
+- [Offsets and modeling event rates](offsets-and-modeling-event-rates.qmd) develops
+  exposure denominators, rate interpretation, and implementation.
+- [Poisson distribution and Poisson processes](../probability-randomness/poisson-distribution-and-poisson-processes.qmd)
+  gives the count law and event-process foundation.
+- [Negative binomial distribution and overdispersion](../probability-randomness/negative-binomial-distribution-and-overdispersion.qmd)
+  explains extra-Poisson variation through a Poisson--gamma mixture.
+- [Logistic regression](logistic-regression.qmd) uses the same GLM architecture
+  for binary rather than count outcomes.
+- [Robust standard errors and robust regression](robust-standard-errors-and-robust-regression.qmd)
+  separates covariance robustness from mean-model correctness.
+- [Likelihood-ratio, Wald, and score tests](../statistical-inference/likelihood-ratio-wald-and-score-tests.qmd)
+  compares likelihood-based coefficient tests.
+
+1. Poisson regression models a conditional count mean through a log-linear
+   predictor and implies conditional mean--variance equality.
+2. Exponentiated coefficients are conditional mean ratios, or rate ratios when
+   exposure is represented by an offset.
+3. Valid inference depends on the experimental units, mean structure, variance,
+   exposure, identification, and dependence—not on count support alone.
+4. Overdispersion is a symptom relative to a conditional model; diagnose its
+   mechanism before choosing quasi-Poisson, negative-binomial, mixture, or
+   dependence-aware methods.
+5. In bioinformatics, biological samples—not reads, mutations, cells, or genes—
+   usually provide replication for condition-level inference.
+
+# References
+
+- Nelder, J. A., and Wedderburn, R. W. M. (1972). Generalized linear models.
+  *Journal of the Royal Statistical Society: Series A*, 135(3), 370--384.
+  <https://doi.org/10.2307/2344614>
+- McCullagh, P., and Nelder, J. A. (1989). *Generalized Linear Models* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780203753736>
+- Cameron, A. C., and Trivedi, P. K. (2013). *Regression Analysis of Count Data*
+  (2nd ed.). Cambridge University Press.
+  <https://doi.org/10.1017/CBO9781139013567>
+- White, H. (1982). Maximum likelihood estimation of misspecified models.
+  *Econometrica*, 50(1), 1--25. <https://doi.org/10.2307/1912526>
+- Anders, S., and Huber, W. (2010). Differential expression analysis for sequence
+  count data. *Genome Biology*, 11, R106.
+  <https://doi.org/10.1186/gb-2010-11-10-r106>
+- R Core Team. `glm`: fitting generalized linear models; `family`: family objects
+  for models. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/glm.html>
