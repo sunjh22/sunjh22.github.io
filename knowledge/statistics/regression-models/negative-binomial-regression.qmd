@@ -1,0 +1,291 @@
+---
+title: "Negative Binomial Regression"
+subtitle: "Log-linear count models with a mean-dependent dispersion"
+description: "Negative binomial regression from its conditional count model through coefficients, likelihood, uncertainty, diagnostics, and bioinformatics study design."
+author: "Jiahong Sun"
+date: "2026-10-20"
+date-modified: "2026-10-20"
+categories: [Statistics, Regression, Negative Binomial Regression, Count Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Conditional Count Model
+
+Negative binomial regression models a nonnegative count whose conditional
+variance may exceed its conditional mean. For independent experimental units
+$i=1,\ldots,n$, the commonly used NB2 model is
+
+$$
+Y_i\mid\mathbf x_i\sim\operatorname{NB}(\mu_i,\alpha),
+\qquad
+\log(\mu_i)=\mathbf x_i^\mathsf T\boldsymbol\beta,
+$$
+
+with
+
+$$
+\boxed{
+E(Y_i\mid\mathbf x_i)=\mu_i,
+\qquad
+\operatorname{Var}(Y_i\mid\mathbf x_i)
+=\mu_i+\alpha\mu_i^2
+},
+\qquad \alpha>0.
+$$
+
+The mean model has the same log-linear form as [Poisson regression](poisson-regression.qmd),
+but the sampling distribution has an additional dispersion parameter. Conditional
+variance grows quadratically with the mean, so a single multiplicative variance
+factor cannot reproduce NB2 over the full mean range.
+
+| Quantity | Meaning |
+|---|---|
+| $Y_i$ | Count observed on experimental unit $i$ |
+| $\mu_i$ | Conditional expected count |
+| $\boldsymbol\beta$ | Log-mean regression coefficients |
+| $\alpha$ | NB2 dispersion; larger values imply more conditional variation |
+| $1/\alpha$ | Size or shape parameter in a common alternative convention |
+| $\exp(\beta_j)$ | Conditional mean ratio for a one-unit predictor contrast |
+
+Software conventions differ. Some packages call $1/\alpha$ the size, shape, or
+dispersion, so a larger reported value can mean *less* variation. A fitted model
+should always be documented by its variance function, not by a parameter name
+alone.
+
+# A Poisson--Gamma Construction
+
+One derivation introduces a unit-specific latent multiplier $U_i$:
+
+$$
+Y_i\mid U_i,\mathbf x_i\sim\operatorname{Poisson}(U_i\mu_i),
+\qquad
+U_i\sim\operatorname{Gamma}
+\left(\frac{1}{\alpha},\text{rate}=\frac{1}{\alpha}\right).
+$$
+
+Then $E(U_i)=1$ and $\operatorname{Var}(U_i)=\alpha$. The laws of total
+expectation and total variance give
+
+$$
+E(Y_i\mid\mathbf x_i)=E(U_i\mu_i)=\mu_i
+$$
+
+and
+
+$$
+\begin{aligned}
+\operatorname{Var}(Y_i\mid\mathbf x_i)
+&=E\{\operatorname{Var}(Y_i\mid U_i,\mathbf x_i)\}
++\operatorname{Var}\{E(Y_i\mid U_i,\mathbf x_i)\}\\
+&=\mu_i+\alpha\mu_i^2.
+\end{aligned}
+$$
+
+Marginalizing $U_i$ yields the NB2 probability mass function
+
+$$
+P(Y_i=y\mid\mu_i,\alpha)
+=\frac{\Gamma(y+1/\alpha)}{\Gamma(1/\alpha)y!}
+\left(\frac{1}{1+\alpha\mu_i}\right)^{1/\alpha}
+\left(\frac{\alpha\mu_i}{1+\alpha\mu_i}\right)^y.
+$$
+
+This construction explains one source of overdispersion: unobserved rates vary
+across units. It does not prove that gamma-distributed heterogeneity is the true
+biological mechanism. Dependence, omitted predictors, excess zeros, outliers,
+or measurement artifacts can create similar residual patterns.
+
+As $\alpha\downarrow0$, the latent multiplier concentrates at one and the model
+approaches Poisson regression. The Poisson model is therefore a boundary case;
+standard likelihood-ratio reference distributions need care when testing
+$H_0:\alpha=0$.
+
+# Coefficients, Contrasts, and Exposure
+
+For a binary condition $A_i$ and covariates $\mathbf z_i$,
+
+$$
+\log(\mu_i)=\beta_0+\beta_AA_i
++\boldsymbol\gamma^\mathsf T\mathbf z_i.
+$$
+
+At common $\mathbf z$,
+
+$$
+\frac{E(Y\mid A=1,\mathbf z)}{E(Y\mid A=0,\mathbf z)}
+=\exp(\beta_A).
+$$
+
+Dispersion changes the likelihood weights and uncertainty, not the meaning of
+this mean ratio. The contrast is conditional on the modeled covariates and is not
+automatically causal. Causal interpretation additionally needs a well-defined
+intervention, exchangeability, positivity, consistency, and adequate handling of
+selection, missingness, measurement, and interference.
+
+When unit $i$ has exposure $t_i>0$, write
+
+$$
+\log(\mu_i)=\log(t_i)+\mathbf x_i^\mathsf T\boldsymbol\beta.
+$$
+
+The fixed-coefficient term $\log(t_i)$ is an offset, and exponentiated slopes are
+conditional rate ratios. The [offset](offsets-and-modeling-event-rates.qmd) still
+defines the estimand under a negative binomial observation model; dispersion
+cannot repair an inappropriate or poorly measured denominator.
+
+# Likelihood, Estimation, and Uncertainty
+
+For NB2, the log-likelihood contribution, omitting no parameter-dependent terms,
+is
+
+$$
+\begin{aligned}
+\ell_i(\boldsymbol\beta,\alpha)
+={}&\log\Gamma(y_i+1/\alpha)-\log\Gamma(1/\alpha)-\log(y_i!)\\
+&-\frac{1}{\alpha}\log(1+\alpha\mu_i)
++y_i\log\left(\frac{\alpha\mu_i}{1+\alpha\mu_i}\right),
+\end{aligned}
+$$
+
+where $\mu_i=\exp(\mathbf x_i^\mathsf T\boldsymbol\beta)$. Numerical maximum
+likelihood estimates $\boldsymbol\beta$ and $\alpha$ jointly or by alternating
+updates. At a regular interior fit, the inverse observed or expected information
+provides model-based covariance estimates. Wald, score, likelihood-ratio, and
+profile-likelihood procedures answer different approximations to the same
+coefficient or dispersion question.
+
+The estimand might be a population conditional log mean ratio $\beta_A$; the
+maximum-likelihood rule $\hat\beta_A(Y_1,\ldots,Y_n)$ is its estimator; and the
+number obtained from the observed dataset is its estimate. Its standard error
+describes repeated-sampling uncertainty under the fitted data-generating model.
+It is not the spread of individual counts and does not measure biological
+importance.
+
+Sparse data and small numbers of independent units can make $\hat\alpha$ unstable.
+In high-dimensional sequencing, gene-wise dispersions are therefore commonly
+stabilized by borrowing information across genes. This shrinkage estimates a
+nuisance mean--variance trend more reliably, but genes are parallel outcomes,
+not additional biological replicates for a treatment contrast.
+
+# Worked Interpretation
+
+Suppose a fitted NB2 model for mutation counts is
+
+$$
+\log(\mu_i)=\log(t_i)-2.1+0.50A_i,
+\qquad \hat\alpha=0.15,
+$$
+
+where $t_i$ is callable genome exposure in a common unit. The estimated rate
+ratio is $\exp(0.50)\approx1.65$: at the same modeled covariates, condition 1 has
+an estimated mutation rate 65% higher than condition 0.
+
+If a unit has fitted mean $\hat\mu=20$, its fitted conditional variance is
+
+$$
+20+0.15(20)^2=80,
+$$
+
+not 20 as under a Poisson model. That extra variation widens predictive and
+coefficient uncertainty. It does not mean that 15% of counts are erroneous or
+that every unit's latent rate differs by 15%.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Assumption or issue | Why it matters | Assessment | Response or sensitivity analysis |
+|---|---|---|---|
+| Correct event and experimental unit | A count's component events are not independent study replicates | Trace sampling, aggregation, and preprocessing | Fit at the experimental-unit level; model repeated or clustered units explicitly |
+| Correct log-mean structure | Dispersion can absorb omitted curvature, interactions, batch, or exposure | Residuals against predictors and fitted means; partial and stratified checks | Revise the mean model before interpreting $\alpha$ |
+| NB2 variance shape | One $\alpha$ imposes $\mu+\alpha\mu^2$ | Compare residual spread across mean ranges; simulate fitted counts | Consider NB1, quasi-likelihood, covariate-dependent dispersion, or another count family |
+| Conditional independence | Correlation invalidates naive likelihood information | Map pairing, repeated measures, families, sites, and batches | GEE, mixed models, cluster-aware covariance, or justified aggregation |
+| No separate zero mechanism | NB2 may still misrepresent structural or censored zeros | Compare fitted and observed zeros conditionally; investigate assay mechanisms | Hurdle or zero-inflated model only when a distinct process is defensible |
+| Stable dispersion information | Boundary or noisy estimates distort inference | Profile $\alpha$; examine sensitivity to influential units and shrinkage | Report weak identification; use validated shrinkage or bootstrap checks |
+
+Useful diagnostics include randomized quantile or simulation-based residuals,
+observed-versus-replicated zero and upper-tail counts, residual spread across the
+fitted-mean range, leverage and deletion checks, and predictive calibration.
+A good global deviance does not exclude local lack of fit.
+
+Compare scientifically credible alternatives: Poisson with model-based and
+sandwich uncertainty, quasi-Poisson, NB1 and NB2, altered mean structures,
+cluster-aware models, and mechanism-based zero models. Stability of the target
+contrast is more informative than selecting whichever distribution has the
+smallest criterion in one dataset.
+
+# Bioinformatics Design and Interpretation
+
+For bulk RNA-seq, let $K_{gj}$ be the raw count for gene $g$ in biological sample
+$j$. A common model is
+
+$$
+K_{gj}\sim\operatorname{NB}(\mu_{gj},\alpha_g),
+\qquad
+\log(\mu_{gj})=\log(s_j)+\mathbf x_j^\mathsf T\boldsymbol\beta_g,
+$$
+
+where $s_j$ is an effective library-size factor. Independently sampled organisms,
+patients, or cultures are experimental units. Reads and technical lanes improve
+measurement of a sample; genes provide parallel tests and information for
+nuisance-trend estimation. Neither substitutes for biological replication.
+
+Design variables should represent condition, blocking, batch, pairing, and other
+prespecified structure. Normalization factors address library scale and
+composition; they do not remove arbitrary batch effects. Dispersion represents
+residual replicate variability conditional on the design, combining biological
+heterogeneity and technical variation that remains after preprocessing.
+
+Statistically, $\exp(\beta_{gA})$ is a model-based expression mean ratio and its
+interval quantifies sampling uncertainty under the analysis. Biologically, a
+credible mechanism also depends on absolute abundance, effect magnitude,
+replicate consistency, tissue or cell composition, annotation, technical bias,
+and independent validation. A small adjusted $p$-value is not itself evidence of
+large or causal biological change.
+
+# Connections and Take-home Messages
+
+- [Negative binomial distribution and overdispersion](../probability-randomness/negative-binomial-distribution-and-overdispersion.qmd)
+  derives the probability law and its Poisson--gamma mixture.
+- [Diagnosing and modeling overdispersion](diagnosing-and-modeling-overdispersion.qmd)
+  separates evidence of extra variation from its possible mechanisms and remedies.
+- [Poisson regression](poisson-regression.qmd) is the equidispersed boundary model.
+- [Offsets and modeling event rates](offsets-and-modeling-event-rates.qmd) explains
+  rate denominators and exposure uncertainty.
+- [Robust standard errors and robust regression](robust-standard-errors-and-robust-regression.qmd)
+  distinguishes covariance robustness from distributional modeling.
+- [Likelihood-ratio, Wald, and score tests](../statistical-inference/likelihood-ratio-wald-and-score-tests.qmd)
+  compares coefficient-testing procedures.
+
+1. NB2 regression combines a log-linear conditional mean with variance
+   $\mu+\alpha\mu^2$.
+2. Exponentiated slopes remain conditional count or rate ratios; dispersion
+   changes weighting and uncertainty, not coefficient scale.
+3. The Poisson--gamma mixture is an interpretation, not proof of a biological
+   latent-rate mechanism.
+4. Mean structure, exposure, dependence, zeros, and influential units must be
+   checked before attributing lack of fit to negative binomial dispersion.
+5. Bioinformatics inference is supported by independent biological samples, not
+   reads, genes, cells, or technical aliquots counted as replicates.
+
+# References
+
+- Lawless, J. F. (1987). Negative binomial and mixed Poisson regression.
+  *The Canadian Journal of Statistics*, 15(3), 209--225.
+  <https://doi.org/10.2307/3314912>
+- McCullagh, P., and Nelder, J. A. (1989). *Generalized Linear Models* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780203753736>
+- Cameron, A. C., and Trivedi, P. K. (2013). *Regression Analysis of Count Data*
+  (2nd ed.). Cambridge University Press.
+  <https://doi.org/10.1017/CBO9781139013567>
+- Robinson, M. D., McCarthy, D. J., and Smyth, G. K. (2010). edgeR: a Bioconductor
+  package for differential expression analysis of digital gene expression data.
+  *Bioinformatics*, 26(1), 139--140.
+  <https://doi.org/10.1093/bioinformatics/btp616>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>
+- Venables, W. N., and Ripley, B. D. `glm.nb`: fit a negative binomial
+  generalized linear model. *MASS package documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/MASS/html/glm.nb.html>

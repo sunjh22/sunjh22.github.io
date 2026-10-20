@@ -1,0 +1,323 @@
+---
+title: "Diagnosing and Modeling Overdispersion"
+subtitle: "From an extra-variation signal to a defensible count-data model"
+description: "A model-based workflow for detecting count overdispersion, distinguishing its causes, choosing remedies, and interpreting bioinformatics analyses."
+author: "Jiahong Sun"
+date: "2026-10-20"
+date-modified: "2026-10-20"
+categories: [Statistics, Regression, Diagnostics, Overdispersion, Count Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Overdispersion Is Relative to a Model
+
+For a Poisson regression with fitted conditional mean $\mu_i$,
+
+$$
+E(Y_i\mid\mathbf x_i)=\mu_i,
+\qquad
+\operatorname{Var}(Y_i\mid\mathbf x_i)=\mu_i.
+$$
+
+**Overdispersion** means that conditional variation is larger than this reference
+model allows. It is not the observation that a raw sample variance exceeds a raw
+sample mean. The law of total variance shows why:
+
+$$
+\operatorname{Var}(Y)
+=E\{\operatorname{Var}(Y\mid X)\}
++\operatorname{Var}\{E(Y\mid X)\}.
+$$
+
+Even when $Y\mid X$ is exactly Poisson, unequal means across covariate patterns
+make the marginal variance exceed the marginal mean. Exposure differences,
+batch, treatment, and other designed structure must enter the mean before
+residual dispersion is assessed.
+
+The target of a diagnostic is therefore explicit:
+
+$$
+H_0:\operatorname{Var}(Y_i\mid\mathbf x_i)=\mu_i
+$$
+
+against a specified departure such as
+
+$$
+H_1:\operatorname{Var}(Y_i\mid\mathbf x_i)
+=\mu_i+\alpha g(\mu_i),
+\qquad \alpha>0.
+$$
+
+Choosing $g(\mu)=\mu$ suggests an NB1-like linear variance increment; choosing
+$g(\mu)=\mu^2$ suggests the NB2 pattern used in [negative binomial regression](negative-binomial-regression.qmd).
+The same global amount of extra variation can have different scientific causes,
+and those causes imply different remedies.
+
+# Start with the Data-generating Process
+
+Before computing a dispersion statistic, map how counts arose:
+
+```text
+Experimental-unit sampling and assignment
+        ↓
+Biological event rate and heterogeneity
+        ↓
+Exposure or sampling opportunity
+        ↓
+Dependence, detection, and measurement
+        ↓
+Preprocessing and observed count
+```
+
+Ask which unit was independently sampled or randomized, which events were
+aggregated into each count, how exposure was measured, whether units repeat or
+cluster, and whether zero or extreme observations have distinct mechanisms.
+Overdispersion can be a symptom of any layer in this diagram.
+
+| Mechanism | Typical diagnostic pattern | Model implication |
+|---|---|---|
+| Omitted mean structure | Residual trend by predictor, batch, time, or exposure | Repair covariates, interactions, nonlinear terms, or offsets |
+| Unobserved rate heterogeneity | Variance rises smoothly with fitted mean | Negative binomial, random effect, or other mixture |
+| Correlated units or repeated measures | Residual association within clusters | GEE, mixed model, cluster-aware covariance, or time/spatial model |
+| Separate zero process | Too many zeros in scientifically identifiable states | Hurdle or zero-inflated model if mechanism supports it |
+| Outliers or contamination | A few units dominate dispersion and coefficients | Verify data; robust weighting or contamination model; sensitivity analysis |
+| Exposure error | Residuals track denominator quality or scale | Improve, perturb, or jointly model exposure |
+| Underlying composition | Counts compete for a total and move jointly | Multinomial/compositional or multivariate count model |
+
+# Global Dispersion Summaries
+
+For $n$ observations and $p$ fitted mean parameters, the Pearson statistic is
+
+$$
+X^2=\sum_{i=1}^n
+\frac{(y_i-\hat\mu_i)^2}{\hat\mu_i},
+$$
+
+and a common moment estimate is
+
+$$
+\boxed{\hat\phi_P=\frac{X^2}{n-p}}.
+$$
+
+Values much larger than one flag more residual variation than a fitted Poisson
+model expects. The residual deviance divided by residual degrees of freedom is
+another rough summary. Neither is a universal formal test. Their reference
+behavior can be poor with small counts, many fitted means near zero, leverage,
+sparse designs, estimated offsets, or dependence.
+
+A quasi-Poisson model uses
+
+$$
+\operatorname{Var}(Y_i\mid\mathbf x_i)=\phi\mu_i.
+$$
+
+If the mean model is correct, $\hat\phi$ inflates model-based coefficient
+covariance approximately by $\hat\phi$ and standard errors by
+$\sqrt{\hat\phi}$. Quasi-likelihood does not specify a complete probability mass
+function, so an ordinary likelihood, AIC, and count predictive distribution do
+not follow from this variance statement alone.
+
+# Regression-based and Simulation Diagnostics
+
+Cameron--Trivedi diagnostics examine whether squared residual variation changes
+with a chosen function of the fitted mean. Their central virtue is also their
+limitation: the alternative variance form must be stated. Rejection indicates
+that Poisson equidispersion is inadequate in that direction; it does not identify
+rate mixing as the cause or certify a negative binomial distribution.
+
+A practical simulation-based check is often more transparent:
+
+1. Fit the prespecified Poisson mean model, including exposure and design terms.
+2. Simulate many datasets from that fitted model while preserving the observed
+   covariate and exposure pattern.
+3. Refit each simulated dataset if the diagnostic includes estimation effects.
+4. Compare observed summaries with their simulated reference distributions.
+
+Useful summaries include Pearson dispersion, zero count, upper-tail count,
+maximum count, residual variation in fitted-mean bins, and group- or batch-level
+residual totals. A discrepancy plot localizes failure better than one omnibus
+number. Randomized quantile residuals can compare discrete observations with the
+full fitted distribution, but residual independence and patterns still need
+assessment.
+
+Formal $p$-values should not replace graphical and substantive checks. With a
+large sample, a negligible departure can be detectable; with few independent
+units, important heterogeneity can be weakly identified. Diagnostics are model
+criticism, not a contest to make every plot featureless.
+
+# Match the Remedy to the Failure
+
+| Approach | What changes | What it can address | What it does not repair |
+|---|---|---|---|
+| Richer Poisson mean | Conditional mean | Omitted predictors, curvature, interactions, exposure | Remaining heterogeneity or dependence |
+| Quasi-Poisson | Variance multiplier and coefficient covariance | Approximately proportional extra variation | Full likelihood, structural zeros, wrong mean |
+| NB1 or NB2 regression | Full count law and mean--variance relation | Smooth extra-Poisson variation | Arbitrary tails, clusters, or a separate zero state |
+| Sandwich covariance | Coefficient covariance | Some variance misspecification under a correct mean and enough independent clusters | Prediction, wrong mean, few clusters |
+| GEE or mixed model | Dependence structure or latent unit effects | Repeated and clustered counts | Unmeasured confounding or bad exposure |
+| Hurdle/zero-inflated model | Zero-generating mechanism | Defensible two-process data generation | Generic poor fit without distinct zero process |
+| Robust or weighted fit | Influence of aberrant observations | Contamination or outlier sensitivity | Systematic biological subgroups hidden as outliers |
+
+Negative binomial and quasi-Poisson methods are not interchangeable merely
+because both widen standard errors. NB2 assumes
+$\operatorname{Var}(Y\mid X)=\mu+\alpha\mu^2$, supplies a full count likelihood,
+and changes observation weights across the mean range. Quasi-Poisson assumes
+$\phi\mu$ and focuses on mean estimation and covariance. Their coefficients can
+differ when the fitted mean is not exactly correct because their weighting differs.
+
+A sandwich covariance can yield robust uncertainty for a Poisson mean estimator
+under suitable conditions, but it leaves Poisson predictive intervals wrong and
+does not model heterogeneity. Cluster-robust inference must cluster at the actual
+dependence level and needs enough independent clusters. Thousands of reads or
+cells within a handful of donors do not create thousands of independent clusters.
+
+# A Worked Diagnostic Sequence
+
+Suppose a Poisson model for counts from $n=80$ specimens has $p=5$ coefficients
+and Pearson statistic $X^2=225$. Then
+
+$$
+\hat\phi_P=\frac{225}{80-5}=3.0.
+$$
+
+This says that residual squared variation is roughly three times the Poisson
+benchmark on this summary; it does not say why. A defensible sequence is:
+
+1. Verify counts, duplicate records, exposure, and the 80 independent specimen
+   identifiers.
+2. Plot residuals by condition, batch, fitted mean, exposure, and collection site.
+3. Check whether a few observations, one batch, or within-subject repeats explain
+   the excess.
+4. Simulate from the fitted Poisson model and compare zeros, tails, and binned
+   residual spread.
+5. Fit prespecified plausible alternatives and compare the target condition
+   ratio, uncertainty, residual behavior, and predictive calibration.
+
+If adding a missing batch term reduces $\hat\phi_P$ to 1.2, the original signal
+was mainly mean misspecification. If residual variance still grows quadratically
+with $\hat\mu$, NB2 may be reasonable. If residuals remain correlated within
+subjects, a dependence-aware model is required even if NB2 fits the marginal
+variance.
+
+# Sensitivity and Model Comparison
+
+Model comparison should follow the inferential goal. For coefficient inference,
+compare effect estimates and intervals under credible mean structures, variance
+functions, and cluster definitions. For prediction, compare held-out or
+simulation-based calibration of the entire count distribution. For mechanism,
+ask whether latent heterogeneity, a zero state, or dependence is scientifically
+identified rather than merely able to fit the histogram.
+
+Likelihood criteria compare fully specified likelihood models fitted to the same
+observations and target; they do not directly compare quasi-likelihood with
+ordinary likelihood. Cross-validation must keep dependent observations together
+and reproduce the intended prediction task. Boundary parameters and model
+selection make naive chi-squared or Wald approximations unreliable in some
+comparisons.
+
+Report the analysis as a sensitivity set rather than hiding it behind a winning
+label:
+
+- the count, exposure, experimental unit, and target contrast;
+- the initial mean model and why each design term was included;
+- dispersion and residual checks, including where lack of fit occurred;
+- alternative mechanisms considered and why the chosen remedy is plausible;
+- effect estimates, uncertainty, and predictive conclusions across alternatives;
+- influential units, cluster definitions, and limitations not diagnosed by data.
+
+# Bioinformatics Design and Interpretation
+
+In bulk RNA-seq, the specimen or independently treated culture is usually the
+experimental unit. Reads are technical observations, and genes are parallel
+outcomes. The raw gene-by-sample count matrix preserves the sampling scale;
+sample-specific normalization factors enter the mean as offsets, while the
+design matrix represents condition, blocking, batch, and other prespecified
+structure.
+
+Gene-wise replicate variability is hard to estimate with few samples. Methods
+such as edgeR and DESeq2 therefore share information across genes to stabilize
+dispersion estimates. This is a structured estimation strategy, not evidence
+that all genes have identical dispersion and not a replacement for biological
+replicates. Mean--dispersion trends, outlier checks, sample-level exploratory
+plots, design rank, and replicate balance remain essential.
+
+For single-cell data, cells from the same donor share biological history and
+technical processing. Treating cells as independent replicates can produce severe
+pseudoreplication and understated uncertainty. Aggregating counts within each
+sample and cell type, or using a model that explicitly represents sample-level
+dependence, aligns inference with donor-level replication. More cells improve
+within-sample measurement but do not increase the number of randomized donors.
+
+Statistical overdispersion is evidence against a specified conditional variance,
+not a biological conclusion. A negative binomial fit can support stable condition
+contrasts while leaving the source of heterogeneity unresolved. Biological
+interpretation should integrate effect magnitude, uncertainty, experimental
+design, normalization, cell or tissue composition, technical quality, and
+external validation.
+
+# Common Misinterpretations
+
+1. **“Variance larger than the mean proves overdispersion.”** Not without
+   conditioning on covariates and exposure; unequal means inflate marginal
+   variance.
+2. **“A significant dispersion test proves negative binomial sampling.”** It
+   rejects a reference variance in a chosen direction, not every alternative
+   mechanism.
+3. **“Robust standard errors fix the model.”** They may protect coefficient
+   covariance; they do not repair the mean or predictive distribution.
+4. **“The model with the smallest AIC reveals the mechanism.”** Relative fit does
+   not identify latent biology, and AIC is unavailable for pure quasi-likelihood.
+5. **“More reads or cells solve dispersion.”** Sequencing depth reduces some
+   technical uncertainty; condition-level inference still requires independent
+   biological samples.
+
+# Connections and Take-home Messages
+
+- [Poisson regression](poisson-regression.qmd) supplies the equidispersed
+  conditional reference model and Pearson statistic.
+- [Negative binomial regression](negative-binomial-regression.qmd) develops the
+  NB2 likelihood, coefficients, and dispersion parameter.
+- [Negative binomial distribution and overdispersion](../probability-randomness/negative-binomial-distribution-and-overdispersion.qmd)
+  derives the count distribution and mixture interpretation.
+- [Zero-inflated and hurdle distributions](../probability-randomness/zero-inflated-and-hurdle-distributions.qmd)
+  distinguishes two different zero-generating mechanisms.
+- [Robust standard errors and robust regression](robust-standard-errors-and-robust-regression.qmd)
+  explains sandwich covariance and influence robustness.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a framework for structured model perturbations.
+
+1. Overdispersion is conditional and model-relative; a raw variance-to-mean
+   comparison is not a diagnosis.
+2. Pearson, deviance, regression-based, and simulation diagnostics reveal
+   different aspects of lack of fit and do not identify a mechanism by themselves.
+3. Mean misspecification, heterogeneity, dependence, zeros, exposure error, and
+   contamination require different remedies.
+4. Quasi-likelihood, negative binomial likelihood, and robust covariance answer
+   different modeling needs even when all widen uncertainty.
+5. The experimental unit and replication structure govern valid bioinformatics
+   inference; technical observations cannot manufacture biological replication.
+
+# References
+
+- Cox, D. R. (1983). Some remarks on overdispersion. *Biometrika*, 70(1),
+  269--274. <https://doi.org/10.1093/biomet/70.1.269>
+- Cameron, A. C., and Trivedi, P. K. (1990). Regression-based tests for
+  overdispersion in the Poisson model. *Journal of Econometrics*, 46(3), 347--364.
+  <https://doi.org/10.1016/0304-4076(90)90014-K>
+- McCullagh, P., and Nelder, J. A. (1989). *Generalized Linear Models* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780203753736>
+- Cameron, A. C., and Trivedi, P. K. (2013). *Regression Analysis of Count Data*
+  (2nd ed.). Cambridge University Press.
+  <https://doi.org/10.1017/CBO9781139013567>
+- Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals.
+  *Journal of Computational and Graphical Statistics*, 5(3), 236--244.
+  <https://doi.org/10.1080/10618600.1996.10474708>
+- Robinson, M. D., McCarthy, D. J., and Smyth, G. K. (2010). edgeR: a Bioconductor
+  package for differential expression analysis of digital gene expression data.
+  *Bioinformatics*, 26(1), 139--140.
+  <https://doi.org/10.1093/bioinformatics/btp616>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>

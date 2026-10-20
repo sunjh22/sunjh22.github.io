@@ -19,9 +19,11 @@ categories: [Statistics, Modelling]
 - [Odds ratios, probabilities, and calibration](odds-ratios-probabilities-and-calibration.qmd)
 - [Poisson regression](poisson-regression.qmd)
 - [Offsets and modeling event rates](offsets-and-modeling-event-rates.qmd)
+- [Negative binomial regression](negative-binomial-regression.qmd)
+- [Diagnosing and modeling overdispersion](diagnosing-and-modeling-overdispersion.qmd)
 
-Future notes in this level will cover negative-binomial regression, generalized
-linear models, and model selection.
+Future notes in this level will cover generalized linear models and model
+selection.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)
