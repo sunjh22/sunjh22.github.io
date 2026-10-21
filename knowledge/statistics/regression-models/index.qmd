@@ -21,9 +21,11 @@ categories: [Statistics, Modelling]
 - [Offsets and modeling event rates](offsets-and-modeling-event-rates.qmd)
 - [Negative binomial regression](negative-binomial-regression.qmd)
 - [Diagnosing and modeling overdispersion](diagnosing-and-modeling-overdispersion.qmd)
+- [Generalized linear models](generalized-linear-models.qmd)
+- [Link functions and exponential-family distributions](link-functions-and-exponential-family-distributions.qmd)
 
-Future notes in this level will cover generalized linear models and model
-selection.
+Future notes in this level will cover model comparison, nonlinear mean
+structures, validation, and model selection.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)

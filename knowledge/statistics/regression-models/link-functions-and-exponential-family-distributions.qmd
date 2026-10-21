@@ -1,0 +1,316 @@
+---
+title: "Link Functions and Exponential-family Distributions"
+subtitle: "How GLMs separate a mean relationship from a response distribution"
+description: "Exponential-family distributions, cumulants, variance functions, canonical and noncanonical links, interpretation, link selection, and diagnostics."
+author: "Jiahong Sun"
+date: "2026-10-21"
+date-modified: "2026-10-21"
+categories: [Statistics, Regression, Link Functions, Exponential Family]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Separate the Mean Scale from the Linear Scale
+
+In a generalized linear model, the conditional mean $\mu_i=E(Y_i\mid\mathbf x_i)$
+must respect the outcome's range, while the linear predictor
+$\eta_i=\mathbf x_i^\mathsf T\boldsymbol\beta$ can take any real value. A link
+function joins them:
+
+$$
+\boxed{g(\mu_i)=\eta_i,
+\qquad \mu_i=g^{-1}(\eta_i).}
+$$
+
+The response family and link have different jobs. The family specifies support,
+likelihood, and conditional mean--variance behavior. The link specifies the scale
+on which predictor effects are additive. Pairing “binary with logit” or “counts
+with log” is often sensible, but the family does not mechanically force that
+link. Link choice is a modeling decision tied to interpretation, constraints,
+and adequacy of the conditional mean.
+
+# Exponential Families
+
+A one-parameter exponential family has density or probability mass function
+
+$$
+f(y;\theta)=h(y)\exp\{y\theta-b(\theta)\},
+$$
+
+with respect to a stated base measure. Here $\theta$ is the **natural** or
+**canonical parameter**, $b(\theta)$ is the cumulant function, and $h(y)$ does
+not depend on $\theta$. A more general exponential-dispersion form is
+
+$$
+f(y;\theta,\phi,w)
+=\exp\left[
+\frac{w\{y\theta-b(\theta)\}}{\phi}+c(y,\phi,w)
+\right].
+$$
+
+Differentiating the normalizing identity reveals why $b$ is central. Because
+$\int f(y;\theta)\,dy=1$ (with a sum for discrete outcomes),
+
+$$
+0=\frac{d}{d\theta}\int f(y;\theta)\,dy
+=E_\theta\{Y-b'(\theta)\},
+$$
+
+so
+
+$$
+\boxed{E_\theta(Y)=b'(\theta).}
+$$
+
+Differentiating once more gives
+
+$$
+\boxed{\operatorname{Var}_\theta(Y)=b''(\theta)}
+$$
+
+in the unit-dispersion form, or
+$\operatorname{Var}(Y)=\phi b''(\theta)/w$ in the dispersion form. Convexity of
+$b$ follows from nonnegative variance. These identities connect the natural
+parameter, mean, information, and variance without separately integrating each
+moment.
+
+# Familiar Families in Natural Form
+
+Constants not involving $\theta$ are absorbed into $h$ or $c$.
+
+| Response family | Natural parameter $\theta$ | $b(\theta)$ | Mean $\mu$ | Variance function $V(\mu)$ |
+|---|---|---|---|---|
+| Bernoulli | $\log\{p/(1-p)\}$ | $\log(1+e^\theta)$ | $p$ | $\mu(1-\mu)$ |
+| Poisson | $\log\mu$ | $e^\theta$ | $\mu$ | $\mu$ |
+| Gaussian, variance $\phi$ | $\mu$ | $\theta^2/2$ | $\mu$ | $1$ |
+| Gamma, dispersion $\phi$ | $-1/\mu$ | $-\log(-\theta)$ | $\mu$ | $\mu^2$ |
+
+For a binomial total with known $m$, one can use the natural statistic $y$ and
+natural parameter $\log\{p/(1-p)\}$; then $b(\theta)=m\log(1+e^\theta)$ and the
+count mean is $mp$. Software may instead model the proportion $y/m$ with prior
+weight $m$. The two representations agree when the outcome and weights are
+specified consistently.
+
+The negative-binomial distribution is also an exponential family when its size
+or dispersion is fixed. If dispersion is estimated, it is handled as an
+additional parameter rather than as one component of the regression linear
+predictor. Mixtures and zero-inflated distributions are not reduced to a
+one-component GLM merely because each component belongs to an exponential
+family.
+
+# Canonical Links
+
+Because $\mu=b'(\theta)$, the natural parameter can be written as a function of
+the mean. A canonical link sets
+
+$$
+g(\mu)=\theta(\mu),
+$$
+
+so the natural parameter equals the linear predictor. This yields the familiar
+pairings:
+
+- Bernoulli/binomial with logit link;
+- Poisson with log link;
+- Gaussian with identity link; and
+- Gamma with reciprocal link, up to the sign convention for the natural
+  parameter.
+
+For independent observations with common dispersion, the canonical-link
+log-likelihood has score
+
+$$
+\mathbf U(\boldsymbol\beta)
+=\frac{1}{\phi}\mathbf X^\mathsf T
+\mathbf W_0(\mathbf y-\boldsymbol\mu),
+$$
+
+where $\mathbf W_0$ contains any known prior weights. The residuals are therefore
+orthogonal to columns of the design matrix at an interior maximum. Canonical
+links often simplify computation, sufficiency, and interpretation on the natural
+parameter scale.
+
+Canonical does **not** mean scientifically correct, robust, or uniquely required.
+A probit link can be more natural for a latent Gaussian threshold model; a
+complementary log--log link can represent an asymmetric event mechanism; and a
+log link for positive continuous outcomes gives ratio interpretations that an
+inverse link does not.
+
+# Common Links and Their Mean-scale Effects
+
+| Link $g(\mu)$ | Inverse link $g^{-1}(\eta)$ | Valid mean range | Typical interpretation |
+|---|---|---|---|
+| Identity $\mu$ | $\eta$ | Real, unless constrained | Additive mean difference |
+| Log $\log\mu$ | $e^\eta$ | Positive | Multiplicative mean ratio |
+| Logit $\log\{\mu/(1-\mu)\}$ | $1/(1+e^{-\eta})$ | $(0,1)$ | Odds ratio |
+| Probit $\Phi^{-1}(\mu)$ | $\Phi(\eta)$ | $(0,1)$ | Shift on latent-normal scale |
+| Complementary log--log $\log\{-\log(1-\mu)\}$ | $1-\exp(-e^\eta)$ | $(0,1)$ | Asymmetric probability or discrete-hazard effect |
+| Inverse $1/\mu$ | $1/\eta$ | Positive only where $\eta>0$ | Additive reciprocal mean |
+
+Let predictor $x_j$ increase by $d$. On the link scale the contrast is always
+$d\beta_j$. On the mean scale,
+
+$$
+\Delta\mu(\mathbf x)
+=g^{-1}(\eta+d\beta_j)-g^{-1}(\eta),
+$$
+
+which generally depends on the baseline $\eta$. The local marginal effect is
+
+$$
+\frac{\partial\mu}{\partial x_j}
+=\frac{d g^{-1}(\eta)}{d\eta}\,\beta_j.
+$$
+
+Thus two links can fit similarly yet answer questions on different scales. Link
+selection should begin with the scientific contrast and plausible data-generating
+mechanism, not only a goodness-of-fit ranking.
+
+# Worked Comparison: One Binary Coefficient
+
+Suppose a binary-condition model has intercept $-2$ and coefficient $0.7$.
+Under a logit link,
+
+$$
+p_0=\operatorname{logit}^{-1}(-2)\approx0.119,
+\qquad
+p_1=\operatorname{logit}^{-1}(-1.3)\approx0.214.
+$$
+
+The odds ratio is constant at $e^{0.7}\approx2.01$, but the risk difference for
+this covariate pattern is about $0.095$ and the risk ratio is about $1.80$.
+Neither is generally constant across other baseline risks.
+
+With a complementary log--log link and the same numerical coefficients,
+
+$$
+p_0=1-\exp\{-e^{-2}\}\approx0.127,
+\qquad
+p_1=1-\exp\{-e^{-1.3}\}\approx0.239.
+$$
+
+The coefficient still equals $0.7$ on its link scale but no longer represents a
+log odds ratio. Comparing coefficient magnitudes across different links without
+translating to common outcome-scale contrasts is therefore misleading.
+
+# Estimation, Information, and Link Misspecification
+
+For a general differentiable link, the score contribution contains both the
+variance function and the derivative of the mean:
+
+$$
+\mathbf U(\boldsymbol\beta)
+=\sum_i
+\frac{y_i-\mu_i}{\operatorname{Var}(Y_i\mid\mathbf x_i)}
+\frac{d\mu_i}{d\eta_i}\mathbf x_i.
+$$
+
+This expression explains the IRLS weight
+
+$$
+W_i=\frac{(d\mu_i/d\eta_i)^2}
+{\operatorname{Var}(Y_i\mid\mathbf x_i)}.
+$$
+
+Changing either family or link changes which observations carry information and
+can therefore change coefficient estimates, not just their standard errors.
+
+If the conditional mean is wrong because the link or linear predictor is wrong,
+maximum likelihood converges to a model-dependent approximation rather than the
+intended biological parameter. A sandwich covariance may estimate uncertainty
+around that approximation under suitable independent sampling, but it does not
+make the mean model correct. Flexible predictors can address curvature in
+$\eta$; they do not by themselves resolve the wrong response support, variance,
+dependence, or observation process.
+
+# Choosing and Checking a Family--Link Pair
+
+1. **Define the experimental unit and outcome.** Is the observation binary,
+   a count, a proportion with a known denominator, or positive continuous?
+2. **Define the estimand and contrast scale.** Is an absolute difference, ratio,
+   odds ratio, rate ratio, or another contrast scientifically meaningful?
+3. **Represent the design.** Include exposure offsets, pairing, clustering,
+   blocking, and prespecified confounders at their correct levels.
+4. **Check the conditional mean.** Plot residuals or calibrated predictive
+   summaries against fitted values and covariates; assess nonlinear alternatives.
+5. **Check the conditional distribution.** Examine dispersion, zero frequency,
+   tails, boundaries, and unit-level influence using simulations where helpful.
+6. **Perform sensitivity analysis.** Compare outcome-scale conclusions across
+   scientifically plausible links, families, and dependence structures.
+
+AIC or cross-validation can compare candidate predictive approximations when
+their observation targets are comparable. They cannot decide which effect scale
+is scientifically meaningful or repair confounding. Likewise, a residual plot
+can reveal incompatibility but cannot prove a family or link to be true.
+
+# Bioinformatics Design and Interpretation
+
+Suppose 80 independently sampled patients are assayed for whether a pathogen is
+detected. A Bernoulli GLM may relate the detection probability to treatment,
+collection time, and batch. Patients are the experimental units. Duplicate PCR
+wells are technical replicates that inform measurement error or can be combined
+by a prespecified calling rule; treating them as independent patients would
+artificially narrow uncertainty.
+
+A logit link targets conditional odds ratios. A log link would target risk
+ratios but must keep fitted probabilities below one and can encounter boundary
+or convergence problems. A complementary log--log link may be motivated if
+detection records whether at least one event occurred during an underlying
+time or exposure interval. These alternatives encode different mean structures
+and interpretations; assay science and the target contrast should guide the
+choice.
+
+Statistical evidence that a coefficient differs from zero is conditional on the
+family, link, covariates, independence level, and detection process. Biological
+importance additionally depends on baseline probability, absolute change,
+detection limits, clinical relevance, and reproducibility in independent
+specimens. Technical replication can characterize assay noise, but only
+biological replication supports population-level condition comparisons.
+
+# Connections and Take-home Messages
+
+- [Generalized linear models](generalized-linear-models.qmd) assembles the family,
+  link, linear predictor, estimation, and diagnostic workflow.
+- [Logistic regression](logistic-regression.qmd) develops the Bernoulli--logit
+  model and separation.
+- [Odds ratios, probabilities, and calibration](odds-ratios-probabilities-and-calibration.qmd)
+  translates link-scale coefficients into risk predictions and calibration.
+- [Poisson regression](poisson-regression.qmd) develops the Poisson--log model.
+- [Negative binomial regression](negative-binomial-regression.qmd) relaxes the
+  Poisson conditional variance.
+- [Exponential and geometric distributions](../probability-randomness/exponential-and-geometric-distributions.qmd)
+  connects the complementary log--log link to event waiting times.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  explains the likelihood viewpoint used for estimation.
+
+1. Exponential-family cumulants generate the conditional mean and variance, so
+   distributional choice determines more than outcome support.
+2. The link maps a constrained mean to an unconstrained linear predictor and
+   defines the scale on which coefficients are additive.
+3. Canonical links offer mathematical convenience, not automatic scientific
+   validity.
+4. Link-scale coefficients should be translated into outcome-scale contrasts at
+   relevant covariate patterns.
+5. Family and link diagnostics must respect the true experimental units; deeper
+   technical measurement does not create biological replication.
+
+# References
+
+- Nelder, J. A., and Wedderburn, R. W. M. (1972). Generalized linear models.
+  *Journal of the Royal Statistical Society: Series A*, 135(3), 370--384.
+  <https://doi.org/10.2307/2344614>
+- McCullagh, P., and Nelder, J. A. (1989). *Generalized Linear Models* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780203753736>
+- Brown, L. D. (1986). *Fundamentals of Statistical Exponential Families: With
+  Applications in Statistical Decision Theory*. Institute of Mathematical
+  Statistics. <https://doi.org/10.1214/lnms/1215466757>
+- Wedderburn, R. W. M. (1974). Quasi-likelihood functions, generalized linear
+  models, and the Gauss--Newton method. *Biometrika*, 61(3), 439--447.
+  <https://doi.org/10.1093/biomet/61.3.439>
+- Hardin, J. W., and Hilbe, J. M. (2018). *Generalized Linear Models and
+  Extensions* (4th ed.). Stata Press.
+- R Core Team. `family`: family objects for models. *R statistical software
+  documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/family.html>

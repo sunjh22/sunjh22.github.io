@@ -1,0 +1,280 @@
+---
+title: "Generalized Linear Models"
+subtitle: "One regression architecture for non-Gaussian outcomes"
+description: "Generalized linear models through their response distribution, link, linear predictor, likelihood, coefficient interpretation, diagnostics, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-10-21"
+date-modified: "2026-10-21"
+categories: [Statistics, Regression, Generalized Linear Models]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Three Components, One Model
+
+A generalized linear model (GLM) relates a conditional outcome distribution to
+predictors without requiring a normally distributed response or constant
+variance. For independent experimental units $i=1,\ldots,n$, it combines:
+
+1. a **random component**, an exponential-family distribution for
+   $Y_i\mid\mathbf x_i$ with mean $\mu_i$;
+2. a **systematic component**, the linear predictor
+   $\eta_i=\mathbf x_i^\mathsf T\boldsymbol\beta$; and
+3. a monotone, differentiable **link function** satisfying
+
+$$
+\boxed{g(\mu_i)=\eta_i=\mathbf x_i^\mathsf T\boldsymbol\beta.}
+$$
+
+The inverse link $\mu_i=g^{-1}(\eta_i)$ keeps fitted means in their valid domain.
+For example, the logistic inverse link maps every real linear predictor into
+$(0,1)$, while the log inverse link maps it into $(0,\infty)$.
+
+| Outcome | Common family | Typical link | Conditional mean interpretation |
+|---|---|---|---|
+| Continuous, roughly symmetric | Gaussian | Identity | Mean difference |
+| Binary or proportion with known trials | Bernoulli/binomial | Logit | Log odds |
+| Count or event total | Poisson | Log | Log expected count or rate |
+| Positive continuous | Gamma | Log or inverse | Log mean or reciprocal mean |
+
+This architecture generalizes linear regression; it does not make every
+nonlinear or non-Gaussian problem a GLM. Random effects, zero-inflated mixtures,
+ordinal models, survival models, and nonlinear predictors require additional
+structure.
+
+# The Data-generating Model
+
+An exponential-dispersion family can be written
+
+$$
+f(y_i;\theta_i,\phi,w_i)
+=\exp\left[
+\frac{w_i\{y_i\theta_i-b(\theta_i)\}}{\phi}
++c(y_i,\phi,w_i)
+\right],
+$$
+
+where $\theta_i$ is the natural parameter, $\phi$ is a dispersion parameter,
+and $w_i$ is a known prior weight when the design supplies one. Its first two
+conditional moments are
+
+$$
+E(Y_i\mid\mathbf x_i)=\mu_i=b'(\theta_i),
+\qquad
+\operatorname{Var}(Y_i\mid\mathbf x_i)
+=\frac{\phi}{w_i}b''(\theta_i)
+=\frac{\phi}{w_i}V(\mu_i).
+$$
+
+The variance function $V(\mu)$ is part of the family. Gaussian models have
+constant $V(\mu)$, Poisson models have $V(\mu)=\mu$, and binomial proportions
+with $m_i$ trials have variance proportional to $\mu_i(1-\mu_i)/m_i$.
+Changing the link changes how predictors act on the mean; changing the family
+changes the conditional variance and likelihood as well as the support.
+
+The conditioning statement is essential. The observed marginal variance can be
+large simply because units have different covariates and hence different means.
+Dispersion should be assessed around the fitted conditional mean, not by
+comparing the raw sample mean and variance alone.
+
+# Coefficients and Contrasts
+
+The coefficient $\beta_j$ is an additive effect on the **link scale**, holding
+the other modeled predictors fixed:
+
+$$
+g\{\mu(\mathbf x+d\mathbf e_j)\}-g\{\mu(\mathbf x)\}=d\beta_j.
+$$
+
+Its scientific meaning depends on the link.
+
+- With the identity link, $d\beta_j$ is a conditional mean difference.
+- With the log link, $\exp(d\beta_j)$ is a conditional mean ratio.
+- With the logit link, $\exp(d\beta_j)$ is a conditional odds ratio.
+
+These are generally not interchangeable. Under a nonlinear inverse link, an
+additive coefficient on the link scale produces a mean difference that depends
+on the covariate pattern. Therefore report fitted means, risks, or rates for
+scientifically relevant contrasts alongside link-scale coefficients.
+
+An interaction means that a contrast on the chosen link scale varies with
+another predictor. It does not guarantee interaction on a different scale. For
+example, the absence of a logit-scale product term does not imply a constant
+risk difference.
+
+Model coefficients are parameters, $\hat{\boldsymbol\beta}$ is an estimator,
+and the fitted numerical vector is an estimate. A causal interpretation needs
+more than a regression family: it also requires a well-defined intervention,
+exchangeability, positivity, consistency, and adequate treatment of selection,
+missingness, measurement, and interference.
+
+# Likelihood and Iteratively Reweighted Least Squares
+
+Conditional independence across experimental units makes the log-likelihood a
+sum of unit contributions. Maximum likelihood chooses
+
+$$
+\hat{\boldsymbol\beta}
+=\arg\max_{\boldsymbol\beta}
+\sum_{i=1}^n\log f\{y_i;\mu_i(\boldsymbol\beta),\phi\}.
+$$
+
+Except for special cases, the score equations are nonlinear. Fisher scoring
+leads to iteratively reweighted least squares (IRLS). At the current fit, define
+
+$$
+z_i=\eta_i+(y_i-\mu_i)\frac{d\eta_i}{d\mu_i},
+\qquad
+W_i=\frac{1}{\operatorname{Var}(Y_i\mid\mathbf x_i)}
+\left(\frac{d\mu_i}{d\eta_i}\right)^2.
+$$
+
+Each iteration performs weighted least squares of the working response
+$\mathbf z$ on $\mathbf X$, updates $\boldsymbol\beta$, and repeats. The working
+response is a computational linearization, not transformed observed data with a
+constant-variance Gaussian error.
+
+For a regular, identified maximum-likelihood fit, the inverse observed or
+expected information estimates $\operatorname{Var}(\hat{\boldsymbol\beta})$.
+Wald intervals use a local quadratic approximation. Likelihood-ratio or profile
+likelihood inference can better represent asymmetry, while bootstrap procedures
+can propagate additional fitting complexity if the resampling unit and model
+are appropriate.
+
+# Deviance, Residuals, and Model Criticism
+
+The deviance compares the fitted model with a saturated model that reproduces
+each observation:
+
+$$
+D=2\{\ell(\text{saturated})-\ell(\text{fitted})\}.
+$$
+
+It is a model-relative discrepancy, not a universal measure of prediction
+quality. A small deviance does not establish the mean structure, independence,
+absence of influential observations, or causal validity. A chi-squared reference
+for residual deviance is an approximation whose quality can be poor with sparse
+data, fitted probabilities near boundaries, small counts, or many parameters.
+
+Useful diagnostics operate at the experimental-unit level:
+
+| Question | Evidence to inspect | Possible response |
+|---|---|---|
+| Is the mean structure adequate? | Residual patterns against fitted values, predictors, time, or space | Add justified nonlinear terms or interactions; revise the scientific model |
+| Is the variance function adequate? | Pearson/deviance residual spread; replicate-level simulation | Quasi-likelihood, another family, or a mechanism-specific model |
+| Are units independent? | Study design, repeated measures, pedigrees, batches, sites | Cluster-aware covariance, GEE, mixed model, or justified aggregation |
+| Is the fit identified and stable? | Rank, condition, separation, convergence, coefficient paths | Redesign, simplify, penalize, or use bias-reduced estimation |
+| Does one unit dominate? | Leverage, standardized residuals, deletion diagnostics | Verify the record and report influence sensitivity |
+| Does the model predict the observed distribution? | Calibrated residual and predictive simulations | Revise the family, link, or observation process |
+
+Pearson residuals standardize by the model variance,
+
+$$
+r_{P,i}=\frac{y_i-\hat\mu_i}
+{\sqrt{\widehat{\operatorname{Var}}(Y_i\mid\mathbf x_i)}}.
+$$
+
+They help reveal dispersion and structure but are neither identically distributed
+nor automatically normal. Deviance residuals allocate each unit's signed
+contribution to $D$. Randomized quantile residuals and simulation envelopes can
+be more interpretable for discrete outcomes.
+
+# Assumptions and Sensitivity
+
+1. **Outcome support and observation process:** the family must respect what can
+   be observed, including censoring, truncation, detection limits, and excess
+   zeros when those mechanisms matter.
+2. **Correct conditional mean:** the link-linear predictor must represent
+   important curvature, interactions, exposure, and design variables.
+3. **Adequate variance and dependence:** model-based standard errors inherit the
+   assumed variance function and independent-unit structure.
+4. **Identification and overlap:** the design matrix must support the requested
+   contrasts without perfect prediction or extrapolation.
+5. **Representative target and measurement:** a statistically adequate GLM does
+   not remove selection bias, confounding, measurement error, or batch artifacts.
+
+A sandwich covariance can protect large-sample coefficient uncertainty against
+some variance misspecification if the conditional mean is correct and there are
+enough independent clusters. It does not repair an incorrect mean, dependence
+at an unrecognized level, separation, or poor overlap. Sensitivity should compare
+scientifically plausible links, nonlinear specifications, dependence structures,
+influential-unit exclusions, and observation models—not merely whichever family
+gives the smallest standard error.
+
+# Bioinformatics Example: Differential Expression
+
+Consider gene-level counts from 24 independently sampled donors, 12 per
+condition, with one RNA-seq library per donor. For gene $g$, a count GLM might be
+
+$$
+Y_{ig}\sim\operatorname{NB}(\mu_{ig},\alpha_g),
+\qquad
+\log(\mu_{ig})=\log(s_i)+\beta_{0g}+\beta_{1g}A_i
++\boldsymbol\gamma_g^\mathsf T\mathbf z_i,
+$$
+
+where $s_i$ is a normalization factor, $A_i$ is condition, and $\mathbf z_i$
+contains prespecified design variables such as batch. The log link ensures a
+positive mean, the offset separates library scale from biological association,
+and $\exp(\beta_{1g})$ is the modeled conditional fold change.
+
+Donors are the experimental units. Reads are technical observations and genes
+are parallel outcomes; neither increases the number of independent condition
+replicates. Multiple libraries or cells from one donor require aggregation or a
+dependence-aware model. The negative-binomial variance captures residual
+sample-to-sample variation more flexibly than a Poisson model, but it cannot
+correct confounding between condition and batch.
+
+Statistically, an interval for $\exp(\beta_{1g})$ describes uncertainty under the
+count model, design, normalization, and multiplicity procedure. Biologically, a
+credible expression change still needs assessment of abundance, cell mixture,
+technical quality, pathway context, and validation in independent specimens.
+
+# Connections and Take-home Messages
+
+- [Link functions and exponential-family distributions](link-functions-and-exponential-family-distributions.qmd)
+  develops the probability structure and link choice behind GLMs.
+- [Logistic regression](logistic-regression.qmd), [Poisson regression](poisson-regression.qmd),
+  and [negative binomial regression](negative-binomial-regression.qmd) are central
+  GLM examples.
+- [Offsets and modeling event rates](offsets-and-modeling-event-rates.qmd) explains
+  known-exposure terms in a linear predictor.
+- [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
+  develops design matrices and estimable comparisons.
+- [Robust standard errors and robust regression](robust-standard-errors-and-robust-regression.qmd)
+  distinguishes covariance robustness from model robustness.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  provides the inferential foundation.
+
+1. A GLM is a conditional probability model, a linear predictor, and a link—not
+   merely a transformation of the outcome.
+2. Coefficients are additive on the link scale; meaningful reporting often also
+   requires fitted contrasts on the outcome scale.
+3. The family determines support and mean--variance structure, while the link
+   determines how the conditional mean depends on predictors.
+4. Valid uncertainty depends on experimental units, identification, mean,
+   variance, and dependence assumptions.
+5. In bioinformatics, technical depth improves measurement but does not replace
+   independent biological replication.
+
+# References
+
+- Nelder, J. A., and Wedderburn, R. W. M. (1972). Generalized linear models.
+  *Journal of the Royal Statistical Society: Series A*, 135(3), 370--384.
+  <https://doi.org/10.2307/2344614>
+- McCullagh, P., and Nelder, J. A. (1989). *Generalized Linear Models* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780203753736>
+- Fahrmeir, L., Kneib, T., Lang, S., and Marx, B. (2021). *Regression: Models,
+  Methods and Applications* (2nd ed.). Springer.
+  <https://doi.org/10.1007/978-3-662-63882-8>
+- Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals.
+  *Journal of Computational and Graphical Statistics*, 5(3), 236--244.
+  <https://doi.org/10.1080/10618600.1996.10474708>
+- Anders, S., and Huber, W. (2010). Differential expression analysis for sequence
+  count data. *Genome Biology*, 11, R106.
+  <https://doi.org/10.1186/gb-2010-11-10-r106>
+- R Core Team. `glm`: fitting generalized linear models and `family`: family
+  objects. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/glm.html>
