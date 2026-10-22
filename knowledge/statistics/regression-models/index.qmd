@@ -23,9 +23,11 @@ categories: [Statistics, Modelling]
 - [Diagnosing and modeling overdispersion](diagnosing-and-modeling-overdispersion.qmd)
 - [Generalized linear models](generalized-linear-models.qmd)
 - [Link functions and exponential-family distributions](link-functions-and-exponential-family-distributions.qmd)
+- [Deviance, residuals, and goodness of fit](deviance-residuals-and-goodness-of-fit.qmd)
+- [Likelihood-based model comparison](likelihood-based-model-comparison.qmd)
 
-Future notes in this level will cover model comparison, nonlinear mean
-structures, validation, and model selection.
+Future notes in this level will cover nonlinear mean structures, validation,
+and model selection.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)

@@ -1,0 +1,360 @@
+---
+title: "Deviance, Residuals, and Goodness of Fit"
+subtitle: "Diagnosing where a fitted probability model disagrees with the data"
+description: "Likelihood deviance, Pearson and deviance residuals, goodness-of-fit calibration, influence, simulation diagnostics, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-10-22"
+date-modified: "2026-10-22"
+categories: [Statistics, Regression, Diagnostics, Goodness of Fit]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Fit Is More Than a Coefficient Table
+
+A regression model specifies a conditional distribution for each outcome,
+
+$$
+Y_i\mid\mathbf x_i\sim F_i\{\mu_i(\boldsymbol\beta),\phi\},
+\qquad i=1,\ldots,n,
+$$
+
+not just a line through observed points. Here $\mu_i$ is the conditional mean,
+$\boldsymbol\beta$ controls its systematic structure, and $\phi$ is a dispersion
+parameter when the family has one. Diagnostics ask whether the fitted model
+reproduces important features of the data-generating process: the mean, variance,
+support, tails, dependence, and observation mechanism.
+
+Three questions should remain separate:
+
+1. **Relative fit:** does one specified model fit better than another?
+2. **Absolute adequacy:** could the observed discrepancies plausibly arise under
+   the fitted model?
+3. **Scientific validity:** do the experimental units, measurements, covariates,
+   and target population justify the intended interpretation?
+
+Deviance and residuals address the first two questions. They cannot by themselves
+establish randomization, absence of confounding, correct sampling, or biological
+importance.
+
+# Deviance as Likelihood Discrepancy
+
+Let $\ell(\widehat{\boldsymbol\beta},\phi;\mathbf y)$ be the maximized
+log-likelihood of the fitted mean model at a common dispersion $\phi$. A
+**saturated model** uses enough mean parameters to reproduce every observed
+response. For unit-dispersion families such as Poisson and binomial, the model
+deviance is
+
+$$
+\boxed{
+D(\mathbf y;\hat{\boldsymbol\mu})
+=2\{\ell(\text{saturated};\mathbf y)-
+\ell(\widehat{\boldsymbol\beta};\mathbf y)\}.
+}
+$$
+
+For a general exponential-dispersion family, the conventional **unscaled** GLM
+deviance is $2\phi$ times this log-likelihood difference. Software conventions
+must therefore be checked when dispersion is not fixed at one.
+
+The saturated model is a benchmark, not usually a scientifically useful model.
+Because it fits at least as well as the candidate, $D\geq0$. Smaller deviance
+means less likelihood loss relative to saturation **for the same outcomes,
+weights, likelihood, and dispersion convention**. Deviances from unrelated
+families or different datasets need not be comparable.
+
+For independent exponential-family observations, deviance decomposes as
+
+$$
+D=\sum_{i=1}^n d_i,
+
+$$
+
+where $d_i\geq0$ is the unit's deviance contribution. This decomposition helps
+locate lack of fit, but a large $d_i$ may indicate an unusual valid observation,
+a recording error, an inadequate mean, the wrong response family, or unmodeled
+dependence. The number alone does not identify the cause.
+
+## Poisson and binomial forms
+
+For a Poisson response with fitted mean $\hat\mu_i$,
+
+$$
+d_i=2\left[
+y_i\log\left(\frac{y_i}{\hat\mu_i}\right)
+-(y_i-\hat\mu_i)
+\right],
+$$
+
+with $y_i\log(y_i/\hat\mu_i)=0$ when $y_i=0$. For a binomial count
+$y_i$ out of $m_i$ trials with fitted probability $\hat p_i$,
+
+$$
+d_i=2\left[
+y_i\log\left(\frac{y_i}{m_i\hat p_i}\right)
++(m_i-y_i)\log\left{
+\frac{m_i-y_i}{m_i(1-\hat p_i)}
+\right}
+\right],
+$$
+
+using the continuous limit for zero terms. These are likelihood discrepancies,
+not squared Euclidean distances.
+
+# Residuals Expose Structure Hidden by a Total
+
+A single deviance can hide compensating discrepancies. Residuals attach a sign
+and scale to unit-level disagreement.
+
+## Response and Pearson residuals
+
+The response residual is
+
+$$
+r_i^{\mathrm{response}}=y_i-\hat\mu_i.
+$$
+
+It retains the outcome's units, but its spread changes with the model variance.
+The Pearson residual adjusts for that mean--variance relationship:
+
+$$
+\boxed{
+r_i^{P}=\frac{y_i-\hat\mu_i}
+{\sqrt{\hat\phi V(\hat\mu_i)/w_i}}.
+}
+$$
+
+Here $V(\mu)$ is the family's variance function and $w_i$ is a known prior
+weight. Pearson residuals are not automatically independent or standard normal;
+fitting consumes information, leverage changes their variance, and discrete
+outcomes remain discrete.
+
+## Deviance residuals
+
+The signed square root of the deviance contribution is
+
+$$
+\boxed{
+r_i^D=\operatorname{sign}(y_i-\hat\mu_i)\sqrt{d_i},
+\qquad \sum_i(r_i^D)^2=D.
+}
+$$
+
+Deviance residuals put likelihood discrepancy on an additive scale and often
+behave more symmetrically than raw residuals. Standardization by an appropriate
+leverage factor can make observations more comparable. It does not make the
+residuals exactly Gaussian or erase estimation uncertainty.
+
+## Randomized quantile residuals
+
+For a fitted continuous conditional CDF $\hat F_i$, the probability integral
+transform suggests
+
+$$
+r_i^Q=\Phi^{-1}\{\hat F_i(y_i)\}.
+$$
+
+For a discrete response, draw
+
+$$
+U_i\sim\operatorname{Uniform}
+\left\{\hat F_i(y_i^-),\hat F_i(y_i)\right\},
+\qquad r_i^Q=\Phi^{-1}(U_i).
+$$
+
+Under a correctly specified model with known parameters, these randomized
+quantile residuals have a standard-normal reference distribution. With fitted
+parameters they are only approximately so, and different randomizations give
+slightly different plots. Repeating the randomization or using simulation
+envelopes avoids overinterpreting one realization.
+
+# Worked Contributions for Count Data
+
+Suppose four independent count units have observed counts
+$\mathbf y=(0,1,4,8)$ and fitted Poisson means
+$\hat{\boldsymbol\mu}=(1,2,3,7)$. Their Pearson contributions sum to
+
+$$
+X_P^2=\sum_i\frac{(y_i-\hat\mu_i)^2}{\hat\mu_i}
+=1+\frac12+\frac13+\frac17\approx1.98.
+$$
+
+Their deviance is
+
+$$
+\begin{aligned}
+D=2\sum_i\left[
+y_i\log(y_i/\hat\mu_i)-(y_i-\hat\mu_i)
+\right]
+\approx3.05.
+\end{aligned}
+$$
+
+The zero count contributes $2$ to the deviance but $1$ to $X_P^2$; the two
+discrepancy measures weight departures differently. These totals illustrate the
+calculation only. Without knowing how the means were estimated, the number of
+fitted parameters, and the sampling design, comparing either total with a
+reference distribution would be unjustified.
+
+# Goodness-of-fit Calibration
+
+For a regular GLM with independent units and an adequate model, residual
+deviance or Pearson's statistic is sometimes compared with a chi-squared
+distribution having approximately
+
+$$
+\operatorname{df}_{\mathrm{residual}}=n-\operatorname{rank}(\mathbf X)
+$$
+
+degrees of freedom. This approximation is most credible when unit contributions
+contain enough information and fitted values are not near boundaries. It can be
+poor for sparse binary data, many small expected counts, high leverage, estimated
+dispersion, penalized fits, random effects, selection, or a parameter dimension
+that is not small relative to $n$.
+
+Grouped binomial data illustrate a crucial distinction. If several independent
+units share a covariate pattern, their grouped counts provide replication for
+assessing the fitted probability. With one Bernoulli observation at each unique
+covariate pattern, the saturated benchmark uses one parameter per observation;
+the residual deviance does not become a reliable omnibus test merely because
+software prints residual degrees of freedom.
+
+A large goodness-of-fit statistic signals disagreement but not its mechanism. A
+small statistic does not prove the model: power may be weak, discrepancies may
+occur in features the statistic barely weights, or overdispersion may have been
+absorbed by an inflated scale estimate.
+
+# A Diagnostic Workflow
+
+Diagnostics are most informative when tied to possible failures rather than
+treated as a ritual collection of plots.
+
+| Diagnostic question | Useful evidence | What a pattern can suggest |
+|---|---|---|
+| Is the conditional mean adequate? | Residuals against fitted values and each predictor | Curvature, missing interaction, wrong link |
+| Is the variance model adequate? | Residual spread by fitted mean; Pearson statistic; simulations | Overdispersion, underdispersion, heterogeneity |
+| Are tails and zeros represented? | Quantile residuals, rootograms, replicated maxima and zero counts | Heavy tails, zero mechanism, truncation |
+| Is dependence left over? | Residuals by time, space, donor, batch, plate, or family | Clustering or autocorrelation |
+| Does one unit dominate? | Leverage, standardized residuals, case-deletion changes | Extrapolation, data error, influential valid unit |
+| Is the observation process represented? | Residuals by depth, detection limit, censoring, quality | Missing offset, selection, censoring, measurement error |
+
+Plots should retain design labels. A residual pattern by sequencing lane or
+collection site can be invisible after pooling. Conversely, searching hundreds
+of residual plots and reporting only the most striking one creates a selection
+problem of its own.
+
+# Leverage, Outliers, and Influence
+
+These terms answer different questions:
+
+- **Leverage** measures how unusual a unit's predictor pattern is in the fitted
+  geometry.
+- An **outlier** has an outcome poorly predicted by the model at its predictors.
+- **Influence** measures how much an estimate, fitted value, or scientific
+  conclusion changes when a unit is removed or downweighted.
+
+A high-leverage unit can have a modest residual because it pulls the fit toward
+itself. A large residual at low leverage may have little effect on the target
+contrast. Inspect standardized residuals together with leverage and case-deletion
+changes in the actual estimand. Deleting a valid influential observation simply
+because it changes the answer understates uncertainty; verify the record, explain
+its design role, and report a principled sensitivity analysis.
+
+# Bioinformatics Example: RNA-seq Count Models
+
+Consider 30 RNA-seq libraries from 30 independently sampled donors, balanced
+across two conditions and three processing batches. For one gene, a
+negative-binomial GLM might specify
+
+$$
+Y_i\sim\operatorname{NB}(\mu_i,\alpha),
+\qquad
+\log\mu_i=\log s_i+\beta_0+\beta_1A_i+\boldsymbol\gamma^\mathsf T\mathbf B_i,
+$$
+
+where $s_i$ is a normalization factor, $A_i$ is condition, and $\mathbf B_i$
+represents batch. Donors are the experimental units. Reads are technical
+measurements, and genes are parallel outcomes; neither creates additional
+condition replicates.
+
+Useful checks include residuals against fitted abundance and normalization
+factor, residual distributions within batches, sample-level influence on the
+treatment log fold change, and simulated zero and upper-tail counts. A pattern
+at low fitted means may reflect discreteness rather than a missing biological
+effect, so simulation under the fitted count model is more informative than a
+normal Q--Q plot of raw residuals.
+
+Statistically, a diagnostic departure says that some aspect of the fitted
+observation model does not reproduce the counts. Biologically, it does not by
+itself show differential expression or identify a pathway. Possible causes
+include cell-composition changes, batch imbalance, sample quality, mapping
+ambiguity, an incorrect dispersion model, or a true mean structure omitted from
+the design. Technical replicates can characterize assay variation, but only
+independent biological units support population-level treatment inference.
+
+# Assumptions and Sensitivity
+
+1. **Correct unit of independence:** residual calibration inherits the model's
+   factorization. Repeated cells, reads, visits, or aliquots from one specimen
+   cannot be diagnosed as if they were independent biological units.
+2. **Represented support and observation process:** censoring, truncation,
+   detection limits, excess zeros, and uncertain denominators can distort every
+   residual type.
+3. **Stable estimation:** boundary estimates, separation, weak identification,
+   and heavy penalization change familiar reference distributions.
+4. **Prespecified scientific target:** a better residual plot does not justify
+   changing the estimand after seeing the answer.
+5. **Adequate calibration:** when asymptotic references are doubtful, simulate
+   complete datasets from the fitted model, refit each dataset, and compare the
+   observed diagnostic with its refitted reference distribution.
+
+Sensitivity analysis should vary plausible mean structures, variance families,
+dependence structures, observation mechanisms, and influential units. The goal
+is not to find one specification that passes every threshold, but to learn which
+scientific conclusions depend on which assumptions.
+
+# Connections and Take-home Messages
+
+- [Generalized linear models](generalized-linear-models.qmd) defines the family,
+  link, linear predictor, likelihood, and dispersion used here.
+- [Link functions and exponential-family distributions](link-functions-and-exponential-family-distributions.qmd)
+  develops variance functions and link-scale structure.
+- [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
+  connects residual checks to Gaussian linear models.
+- [Diagnosing and modeling overdispersion](diagnosing-and-modeling-overdispersion.qmd)
+  explains why excess conditional variability needs a mechanism-specific response.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  supplies the likelihood foundation for deviance.
+- [Likelihood-based model comparison](likelihood-based-model-comparison.qmd)
+  uses differences in maximized likelihood for carefully comparable models.
+
+1. Deviance measures likelihood loss relative to a saturated benchmark; it is
+   model-relative, not a universal score of scientific validity.
+2. Residuals localize disagreement, but their scale and reference behavior
+   depend on the fitted family, leverage, discreteness, and estimation.
+3. A goodness-of-fit p-value is only as trustworthy as its independence,
+   sparsity, parameter-count, and calibration assumptions.
+4. Diagnostics should be plotted against design variables and paired with
+   leverage, influence, and simulation-based checks.
+5. In bioinformatics, diagnose at the biological experimental-unit level and
+   distinguish statistical model failure from biological explanation.
+
+# References
+
+- Nelder, J. A., and Wedderburn, R. W. M. (1972). Generalized linear models.
+  *Journal of the Royal Statistical Society: Series A*, 135(3), 370--384.
+  <https://doi.org/10.2307/2344614>
+- McCullagh, P., and Nelder, J. A. (1989). *Generalized Linear Models* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780203753736>
+- Pregibon, D. (1981). Logistic regression diagnostics. *The Annals of
+  Statistics*, 9(4), 705--724. <https://doi.org/10.1214/aos/1176345513>
+- Williams, D. A. (1987). Generalized linear model diagnostics using the
+  deviance and single case deletions. *Applied Statistics*, 36(2), 181--191.
+  <https://doi.org/10.2307/2347550>
+- Dunn, P. K., and Smyth, G. K. (1996). Randomized quantile residuals.
+  *Journal of Computational and Graphical Statistics*, 5(3), 236--244.
+  <https://doi.org/10.1080/10618600.1996.10474708>
+- R Core Team. `glm`, `residuals.glm`, and `anova.glm`: official R statistical
+  software documentation. <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/glm.html>

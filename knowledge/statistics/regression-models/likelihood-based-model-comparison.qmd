@@ -1,0 +1,345 @@
+---
+title: "Likelihood-based Model Comparison"
+subtitle: "Comparing specified data-generating models without confusing fit, selection, and adequacy"
+description: "Nested likelihood-ratio comparisons, deviance differences, regularity conditions, non-nested limits, selection uncertainty, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-10-22"
+date-modified: "2026-10-22"
+categories: [Statistics, Regression, Likelihood, Model Comparison]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Model Comparison Starts with a Scientific Contrast
+
+Suppose two models describe the same observed outcomes $\mathbf y$ from the same
+experimental units. Model $M_0$ has parameter $\boldsymbol\theta_0$ and model
+$M_1$ has parameter $\boldsymbol\theta_1$. Their fitted log-likelihoods are
+
+$$
+\ell_0=\max_{\boldsymbol\theta_0}
+\ell(M_0,\boldsymbol\theta_0;\mathbf y),
+\qquad
+\ell_1=\max_{\boldsymbol\theta_1}
+\ell(M_1,\boldsymbol\theta_1;\mathbf y).
+$$
+
+A likelihood comparison asks whether the observed data are better represented
+by one specified probability model than another. Before calculating a statistic,
+state what differs:
+
+- a predictor, interaction, nonlinear term, or link;
+- a variance, dependence, or observation model;
+- a scientifically meaningful restriction on coefficients; or
+- an entirely different non-nested family.
+
+These comparisons do not answer every modeling question. Better in-sample fit
+does not guarantee adequate absolute fit, improved out-of-sample prediction,
+causal identification, or biological importance.
+
+# Comparability Is Non-negotiable
+
+Maximized likelihood values can be compared only when they refer to compatible
+probability statements. At minimum, verify that models use:
+
+1. the same response observations and experimental units;
+2. the same outcome representation and dominating measure;
+3. compatible treatment of missingness, censoring, truncation, and selection;
+4. the same weights, offsets, and exposure definitions; and
+5. full likelihoods rather than an unsupported mixture of likelihood,
+   quasi-likelihood, restricted likelihood, or penalized objectives.
+
+For example, one model silently dropping three incomplete samples and another
+using all samples cannot be compared by subtracting their log-likelihoods. A
+Gaussian likelihood for raw concentrations and one for log concentrations also
+require the transformation Jacobian before their numerical likelihoods represent
+the same observed variable. Constants that do not involve parameters may be
+irrelevant within a single fit but can matter across differently normalized
+likelihoods.
+
+# Nested Models and the Likelihood-ratio Statistic
+
+Model $M_0$ is **nested** in $M_1$ if it is obtained by imposing $q$ independent
+restrictions on $M_1$. In a regression, the reduced model may set an interaction
+coefficient to zero while the full model estimates it. Because every reduced
+fit is available inside the full parameter space, $\ell_1\geq\ell_0$.
+
+The likelihood-ratio statistic is
+
+$$
+\boxed{
+G^2=2(\ell_1-\ell_0).
+}
+$$
+
+For unit-dispersion GLMs fitted to the same data with the same family, the
+deviance difference is the same statistic:
+
+$$
+\boxed{
+D_0-D_1
+=2\{\ell(\text{saturated})-\ell_0\}
+-2\{\ell(\text{saturated})-\ell_1\}
+=G^2.
+}
+$$
+
+Thus analysis of deviance is an analysis of **changes** in likelihood discrepancy.
+For an exponential-dispersion family reporting unscaled deviance, the
+corresponding likelihood-ratio statistic is $(D_0-D_1)/\phi$ when the same known
+dispersion $\phi$ applies to both fits. Estimating dispersion changes the
+calibration and can motivate an $F$ rather than chi-squared comparison.
+The residual deviance of either model addresses absolute adequacy only under
+additional calibration assumptions.
+
+# Why a Chi-squared Reference Can Arise
+
+Under a true reduced model and standard regularity conditions,
+
+$$
+G^2\xrightarrow{d}\chi_q^2,
+
+$$
+
+where $q$ is the number of locally independent restrictions. The result relies
+on more than a large row count:
+
+- the true parameter is an interior point of an open parameter space;
+- parameters are identifiable and information is nonsingular;
+- the likelihood is sufficiently smooth;
+- the model dimension is fixed while independent information grows; and
+- the fitted likelihood correctly represents the sampling and dependence
+  structure.
+
+The difference in printed coefficient counts equals $q$ only when both design
+matrices have the stated ranks and nuisance parameters are handled consistently.
+Aliasing, boundary constraints, random-effect variances at zero, change points,
+mixture components, separation, and weak identification can produce nonstandard
+reference laws. In those settings use theory tailored to the problem or calibrate
+the complete fitting procedure by a defensible parametric bootstrap or simulation.
+
+# Known, Estimated, and Absent Likelihood Scale
+
+For Poisson and binomial GLMs, dispersion is fixed by the probability family,
+so regular nested deviance differences are commonly compared with a chi-squared
+reference. For Gaussian models with unknown variance, the exact classical nested
+comparison can be written as an $F$ test; a likelihood-ratio approximation is
+another large-sample route.
+
+Quasi-Poisson and quasi-binomial models specify a mean--variance relationship but
+not a full probability distribution. They do not supply an ordinary maximized
+likelihood, so a nominal likelihood-ratio test or AIC obtained by pretending the
+quasi-model were a full likelihood is not valid. Comparisons instead require
+appropriate quasi-likelihood estimating-equation tests, robust covariance,
+cross-validation, or a fully specified alternative probability model, depending
+on the scientific goal.
+
+Restricted maximum likelihood (REML) creates another common trap. REML values
+from linear mixed models with different fixed-effect structures are generally
+not directly comparable because the restricted likelihood depends on the fixed-
+effect design. Compare fixed effects using maximum likelihood when the regular
+model assumptions justify it; REML can then be used for final variance-component
+estimation.
+
+# Worked Nested Comparison
+
+Suppose a logistic regression for a prespecified binary response is fit to the
+same 180 specimens in two forms. The reduced model contains treatment and batch.
+The full model additionally contains two degrees of freedom for a treatment-by-
+batch interaction. Their maximized log-likelihoods are
+
+$$
+\ell_0=-116.9,
+\qquad
+\ell_1=-112.4.
+$$
+
+Then
+
+$$
+G^2=2\{-112.4-(-116.9)\}=9.0.
+$$
+
+If the regular nested-model conditions are credible,
+$G^2$ is compared with $\chi_2^2$, giving a tail probability of about $0.011$.
+The evidence concerns the joint null that both interaction coefficients are zero
+on the log-odds scale. It does not show which batch differs, how large the
+probability-scale interaction is, whether the model is calibrated, or whether
+the interaction was prespecified rather than discovered through repeated search.
+
+Report interaction contrasts and intervals on scientifically useful scales.
+Then inspect residuals, calibration, overlap, and influential specimens. A
+likelihood-ratio result is a comparison conditional on both models, not a
+certificate that the larger model is true.
+
+# Sequential, Marginal, and Hierarchical Comparisons
+
+An analysis-of-deviance table for one formula often adds terms sequentially.
+The reported change for a term can therefore depend on its order, especially in
+unbalanced designs. A marginal deletion comparison instead asks what is lost by
+removing a term from a specified full model.
+
+Neither convention defines the scientific hypothesis automatically. Respect
+model hierarchy: when an interaction remains, deleting one of its component
+main effects changes the meaning and coding of the interaction rather than
+performing a simple “main-effect test.” Define the estimable contrast or nested
+restriction first, then fit the models that encode it.
+
+Data-driven sequences of additions and deletions reuse the same random variation.
+Nominal p-values and confidence intervals after such search ignore selection and
+are usually too optimistic. Treat exploratory selection as exploration, validate
+the whole procedure on new data or resampling units, and separate confirmatory
+hypotheses from tuning.
+
+# Non-nested Models
+
+Two models are non-nested when neither is obtained by restricting the other. An
+ordinary chi-squared likelihood-ratio reference does not apply. The raw sign of
+$\ell_1-\ell_0$ is also insufficient: flexibility, parameter count, estimation
+noise, and misspecification all affect maximized fit.
+
+Specialized non-nested procedures compare expected casewise log-likelihoods.
+Vuong's framework, for example, standardizes the mean unit-level log-likelihood
+difference under conditions including independent observations, distinguishable
+models, regular estimation, and an appropriate correction when model dimensions
+differ. It is not a universal button for arbitrary fitted objects. Overlapping
+models, clustering, weak separation between models, misspecified dependence, or
+selection on the same data require modified theory.
+
+Practical alternatives depend on the question:
+
+| Goal | More relevant approach |
+|---|---|
+| Test a prespecified nested restriction | Likelihood-ratio, score, or Wald test with valid calibration |
+| Compare non-nested explanatory models | Subject-matter restrictions, specialized tests, simulation, and sensitivity |
+| Estimate out-of-sample predictive performance | Proper scoring rules with unit-level cross-validation or external validation |
+| Balance expected fit and complexity | A prespecified information criterion with a clear target and likelihood |
+| Assess whether any candidate is adequate | Residual, calibration, and predictive checks |
+
+No relative method guarantees that either candidate is adequate. If both omit a
+batch effect or both treat repeated measurements as independent, the comparison
+may confidently choose the less inadequate model while preserving the shared
+error.
+
+# Estimands, Estimates, and Uncertainty
+
+In a nested comparison, the scientific estimand may be a coefficient contrast,
+an outcome-scale risk difference, or the improvement in expected predictive
+score for a target population. The fitted coefficients and maximized
+log-likelihoods are estimates. The likelihood-ratio statistic measures evidence
+against a restriction; it is not an effect-size estimator.
+
+After comparison, report:
+
+- the exact reduced and full models and the restrictions connecting them;
+- the experimental units and observations used in both fits;
+- $G^2$, degrees of freedom, calibration method, and p-value when testing;
+- the relevant coefficient or prediction contrasts with uncertainty;
+- absolute model diagnostics and influential-unit sensitivity; and
+- whether the comparison was prespecified or selected after inspecting data.
+
+Uncertainty in predictions and effects should come from the chosen inferential
+target, not from the model-selection result alone. If multiple models remain
+scientifically plausible, model-specific estimates and sensitivity across those
+models can be more honest than treating the selected specification as certain.
+
+# Bioinformatics Example: A Differential-expression Interaction
+
+Suppose 48 independently sampled donors are assigned to treatment or control,
+with samples collected in two tissues. One RNA-seq library is prepared from each
+donor--tissue combination. The donor is the independent experimental unit;
+tissues within a donor are repeated biological measurements, and reads within a
+library are technical observations.
+
+For one gene, a dependence-aware negative-binomial model compares:
+
+$$
+M_0:\quad
+\log\mu_{ij}=\log s_{ij}+\beta_0+\beta_A A_i+\beta_T T_j+
+\boldsymbol\gamma^\mathsf T\mathbf z_i,
+$$
+
+with
+
+$$
+M_1:\quad
+\log\mu_{ij}=\log s_{ij}+\beta_0+\beta_A A_i+\beta_T T_j+
+\beta_{AT}A_iT_j+\boldsymbol\gamma^\mathsf T\mathbf z_i.
+$$
+
+The scientific null is no treatment-by-tissue interaction on the log-mean scale,
+$H_0:\beta_{AT}=0$. Both fits must use the same donor--tissue observations,
+normalization factors $s_{ij}$, dispersion treatment, covariates, and donor
+dependence structure. Treating 96 libraries as independent would overstate the
+information even though both maximizations converge.
+
+Across thousands of genes, this comparison also creates a multiple-testing
+problem. A small likelihood-ratio p-value says that the additive model loses fit
+for that gene under the specified count model. Biological interpretation requires
+the tissue-specific fold changes, uncertainty, abundance, batch balance, cell-
+composition context, and validation. More reads reduce technical measurement
+error but do not replace additional donors.
+
+# Diagnostics and Sensitivity Before Choosing
+
+| Threat | Consequence for comparison | Check or response |
+|---|---|---|
+| Different analysis rows | Log-likelihood difference mixes model and sample changes | Construct one common analysis dataset first |
+| Boundary or weak identification | Chi-squared calibration can fail | Profile parameters; use specialized or bootstrap calibration |
+| Unmodeled clustering | Excess apparent information | Fit dependence; resample or validate by independent cluster |
+| Wrong shared observation model | Both candidates can be misleading | Examine residual and predictive diagnostics for each |
+| Many searched specifications | Selection exaggerates apparent evidence | Prespecify; validate the entire search; report search scope |
+| Influential units | One specimen may determine the preferred model | Compare case-deletion changes in statistic and estimand |
+| Sparse outcomes | Quadratic asymptotics can be inaccurate | Exact or simulation calibration when available |
+
+Sensitivity is especially important when the preferred model changes with a
+plausible link, nonlinear term, batch adjustment, dispersion structure, or
+influential experimental unit. Such instability is a result to report, not an
+inconvenience to hide.
+
+# Connections and Take-home Messages
+
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  explains what may and may not be compared with likelihood.
+- [Maximum-likelihood estimation](../statistical-inference/maximum-likelihood-estimation.qmd)
+  develops fitting, profiles, and nonregular failures.
+- [Likelihood-ratio, Wald, and score tests](../statistical-inference/likelihood-ratio-wald-and-score-tests.qmd)
+  compares three tests of a parametric restriction.
+- [Deviance, residuals, and goodness of fit](deviance-residuals-and-goodness-of-fit.qmd)
+  separates relative improvement from absolute model criticism.
+- [Generalized linear models](generalized-linear-models.qmd) provides the
+  likelihood, link, and variance framework for analysis of deviance.
+- [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
+  explains how design coding relates to estimable restrictions.
+
+1. A likelihood comparison is meaningful only for compatible likelihoods fitted
+   to the same observed data and observation process.
+2. For regular nested models, the deviance difference equals the likelihood-ratio
+   statistic and can have an asymptotic chi-squared reference.
+3. Boundaries, weak identification, sparse data, clustering, quasi-likelihood,
+   and model search invalidate routine comparisons in different ways.
+4. Non-nested comparison needs specialized theory or predictive validation; an
+   ordinary likelihood-ratio chi-squared test is not available.
+5. Relative fit, absolute adequacy, effect magnitude, predictive performance,
+   and biological validity are separate claims and should be reported separately.
+
+# References
+
+- Wilks, S. S. (1938). The large-sample distribution of the likelihood ratio for
+  testing composite hypotheses. *The Annals of Mathematical Statistics*, 9(1),
+  60--62. <https://doi.org/10.1214/aoms/1177732360>
+- Cox, D. R. (1961). Tests of separate families of hypotheses. *Proceedings of
+  the Fourth Berkeley Symposium on Mathematical Statistics and Probability*,
+  1, 105--123. <https://projecteuclid.org/euclid.bsmsp/1200512162>
+- Vuong, Q. H. (1989). Likelihood ratio tests for model selection and non-nested
+  hypotheses. *Econometrica*, 57(2), 307--333.
+  <https://doi.org/10.2307/1912557>
+- White, H. (1982). Maximum likelihood estimation of misspecified models.
+  *Econometrica*, 50(1), 1--25. <https://doi.org/10.2307/1912526>
+- McCullagh, P., and Nelder, J. A. (1989). *Generalized Linear Models* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780203753736>
+- R Core Team. `anova.glm`: analysis of deviance for generalized linear model
+  fits. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/anova.glm.html>
