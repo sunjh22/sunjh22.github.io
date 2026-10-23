@@ -1,0 +1,246 @@
+---
+title: "Polynomial Regression and Splines"
+subtitle: "Representing nonlinear mean relationships with basis functions"
+description: "Polynomial regression, regression and smoothing splines, basis construction, penalties, uncertainty, diagnostics, and responsible nonlinear interpretation."
+author: "Jiahong Sun"
+date: "2026-10-23"
+date-modified: "2026-10-23"
+categories: [Statistics, Regression, Nonlinear Modeling, Splines]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Nonlinear in a Predictor, Linear in Coefficients
+
+A linear regression model need not force a straight-line relationship. It is
+linear when the conditional mean is linear in its unknown coefficients. For one
+continuous predictor,
+
+$$
+Y_i=f(x_i)+\varepsilon_i,
+\qquad E(\varepsilon_i\mid x_i)=0,
+$$
+
+and a chosen collection of basis functions $B_1,\ldots,B_K$ gives
+
+$$
+\boxed{f(x)=\beta_0+\sum_{k=1}^{K}\beta_k B_k(x).}
+$$
+
+Once the basis is fixed, estimation is ordinary or penalized regression. The
+scientific target is usually the curve $f(x)$, a contrast such as
+$f(x_b)-f(x_a)$, or a derivative—not an isolated basis coefficient. Different
+bases can span the same function space and produce the same fitted curve while
+having entirely different coefficient values.
+
+This is a conditional-mean model. It does not by itself specify causal effects,
+the error distribution, the variance function, or dependence among repeated
+observations.
+
+# Global Polynomials
+
+A degree-$d$ polynomial uses
+
+$$
+f(x)=\beta_0+\beta_1x+\beta_2x^2+\cdots+\beta_dx^d.
+$$
+
+It is easy to fit and can represent gentle curvature. A test of
+$H_0:\beta_2=\cdots=\beta_d=0$ compares the polynomial with a straight line,
+provided the degree was not chosen after repeatedly inspecting the same test.
+Centering $x$ reduces correlation among raw powers; an orthogonal polynomial
+basis improves numerical conditioning further without changing the fitted
+degree-$d$ polynomial on the training data.
+
+Global polynomials have an important weakness: changing one coefficient changes
+the curve everywhere. High degrees can oscillate, behave erratically near the
+boundaries, and extrapolate dramatically. They also impose a shape that is often
+hard to justify scientifically. Low-degree polynomials are therefore useful for
+prespecified, smooth curvature, not as an automatic strategy of increasing the
+degree until the residual plot looks flat.
+
+# Regression Splines
+
+A spline is a piecewise polynomial joined at **knots**. A cubic spline uses
+cubic pieces and ordinarily constrains the function and its first two
+derivatives to be continuous at each knot. These constraints remove visible
+jumps and kinks while allowing local flexibility.
+
+One truncated-power representation with knots $\kappa_1,\ldots,\kappa_m$ is
+
+$$
+f(x)=\beta_0+\beta_1x+\beta_2x^2+\beta_3x^3
++\sum_{j=1}^{m}\gamma_j(x-\kappa_j)_+^3,
+$$
+
+where $(u)_+=\max(u,0)$. It makes the piecewise construction explicit, but a
+B-spline basis is usually better conditioned and locally supported. Basis
+choice changes computation and coefficient interpretation, not the function
+space when degree, knots, and boundary constraints agree.
+
+A **natural cubic spline** adds the constraint that the curve is linear beyond
+the boundary knots. This usually produces more stable boundary behavior than an
+unconstrained cubic spline, but extrapolation is still an assumption: data
+inside the observed range cannot validate the continuation outside it.
+
+## Knots and degrees of freedom
+
+More knots or a larger basis dimension permit more complicated curves. With an
+unpenalized regression spline, this complexity must be chosen directly, for
+example by prespecifying degrees of freedom or using validation. Knot locations
+are often placed at predictor quantiles so that basis flexibility follows data
+density. Sparse regions cannot support detailed shape regardless of how many
+knots are supplied.
+
+The effective sample size is determined by independent experimental units, not
+by the number of distinct technical measurements. A flexible curve fitted to
+thousands of cells from three donors still has only three independent donor
+trajectories for population inference unless the dependence is modeled.
+
+# Smoothing Splines and Penalization
+
+Instead of selecting a small knot set, a smoothing spline balances fit against
+roughness by minimizing
+
+$$
+\boxed{
+\sum_{i=1}^{n}\{y_i-f(x_i)\}^2
++\lambda\int \{f''(t)\}^2\,dt.
+}
+$$
+
+The first term rewards fidelity to the observations. The second penalizes rapid
+changes in slope, and $\lambda\geq0$ is the smoothing parameter. As
+$\lambda\rightarrow0$, the curve can approach an interpolant; as
+$\lambda\rightarrow\infty$, the second derivative is forced toward zero and
+the fit approaches a straight line. The solution is a natural cubic spline with
+knots at the distinct observed predictor values, so an infinite-dimensional
+optimization reduces to a finite basis problem.
+
+In matrix form, with design matrix $\mathbf B$ and penalty matrix $\mathbf S$,
+
+$$
+\hat{\boldsymbol\beta}_\lambda
+=(\mathbf B^\mathsf T\mathbf B+\lambda\mathbf S)^{-1}
+\mathbf B^\mathsf T\mathbf y.
+$$
+
+The fitted values are $\hat{\mathbf y}=\mathbf H_\lambda\mathbf y$. A useful
+complexity summary is the effective degrees of freedom
+$\operatorname{tr}(\mathbf H_\lambda)$, which need not be an integer. Cross-validation,
+generalized cross-validation, or likelihood-based criteria such as REML can
+select $\lambda$. That estimated choice contributes uncertainty; treating it as
+fixed can make intervals too optimistic.
+
+# Estimation, Contrasts, and Uncertainty
+
+For an unpenalized Gaussian model with design matrix $\mathbf B$,
+
+$$
+\hat{\boldsymbol\beta}
+=(\mathbf B^\mathsf T\mathbf B)^{-1}\mathbf B^\mathsf T\mathbf y.
+$$
+
+At a target $x_0$, let $\mathbf b(x_0)$ be the basis row. Then
+
+$$
+\hat f(x_0)=\mathbf b(x_0)^\mathsf T\hat{\boldsymbol\beta},
+\qquad
+\widehat{\operatorname{Var}}\{\hat f(x_0)\}
+=\mathbf b(x_0)^\mathsf T
+\widehat{\operatorname{Var}}(\hat{\boldsymbol\beta})
+\mathbf b(x_0).
+$$
+
+Pointwise intervals concern one prespecified $x_0$. A simultaneous confidence
+band is wider because it aims to cover the whole curve. A prediction interval
+for a new outcome is wider still because it also includes outcome variation.
+For penalized fits, uncertainty is conditional on a bias-inducing smoothness
+penalty and often uses approximate Bayesian or frequentist covariance formulas.
+
+Report curves on a scientifically meaningful scale, with intervals and the data
+density shown. Derivatives can summarize a local rate of change, but their
+uncertainty is often large and they are more sensitive to smoothing choices than
+the curve itself.
+
+# Worked Bioinformatics Example
+
+Suppose methylation proportion is summarized for 80 independently sampled
+people and related to age. A natural cubic spline can represent a gradual change
+that plateaus in older ages:
+
+```r
+fit <- lm(methylation ~ splines::ns(age, df = 4) + sex + batch,
+          data = donor_data)
+```
+
+This ordinary syntax-highlighted example is not executed by the site. The 80
+people are experimental units. CpG reads and repeated sequencing lanes are
+technical observations; they improve measurement but do not create additional
+independent age profiles. If multiple tissues or time points are observed per
+person, the dependence requires a subject-aware model.
+
+Statistically, the fitted curve estimates an adjusted conditional mean under
+the chosen spline space and covariates. Biologically, it does not establish that
+aging causes the methylation pattern: cohort effects, cell composition,
+selection, and unmeasured exposures remain possible explanations. The useful
+summary may be a prespecified contrast between ages 30 and 60 rather than a
+collection of basis-coefficient p-values.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Issue | Why it matters | Assessment | Sensitivity or remedy |
+|---|---|---|---|
+| Mean structure | Too little flexibility leaves pattern; too much follows noise | Residuals against predictor and fitted values; held-out error | Compare plausible degrees of freedom or smoothness penalties |
+| Independent units | Pseudoreplication makes uncertainty too small | Inspect sampling, nesting, time, and batch structure | Aggregate appropriately or use correlated/mixed models |
+| Variance and outcome family | Gaussian constant-variance errors may be inappropriate | Residual spread and distribution; measurement process | Robust covariance, transformation, or outcome-appropriate model |
+| Boundary support | Splines are least constrained near edges | Rug plots, leverage, uncertainty bands | Restrict claims, use natural constraints, vary boundary knots |
+| Extrapolation | Polynomial and spline continuations are model assumptions | Compare requested range with observed range | Avoid distant extrapolation; report range explicitly |
+| Smoothing selection | Data-driven flexibility affects bias and uncertainty | Effective degrees of freedom and criterion profile | Refit across reasonable settings; use nested validation for prediction |
+| Confounding | Flexible adjustment cannot recover missing causal design | Scientific design and causal reasoning | Better design, justified adjustment, sensitivity analysis |
+
+A diagnostic smooth can reveal curvature, but selecting a final shape and then
+reporting ordinary p-values as though it were prespecified ignores selection.
+Plot partial effects together with uncertainty and covariate density; inspect
+influential units; check whether a few sparse boundary observations create the
+apparent turn; and evaluate conclusions across reasonable bases and penalties.
+
+# Connections and Take-home Messages
+
+- [Multiple linear regression](multiple-linear-regression.qmd) supplies the
+  design-matrix and conditional-coefficient foundation.
+- [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
+  explains error, rank, influence, and replication assumptions.
+- [Generalized additive models](generalized-additive-models.qmd) combines smooth
+  terms with non-Gaussian families and links.
+- [Generalized linear models](generalized-linear-models.qmd) extends basis
+  expansions to binary, count, and other outcomes.
+
+1. Polynomial and spline regressions are linear in basis coefficients even when
+   the fitted relationship is curved.
+2. Interpret the fitted function, contrasts, and derivatives—not arbitrary
+   basis coefficients.
+3. Splines localize flexibility; penalties trade residual fit against roughness.
+4. Boundary behavior, smoothing selection, and extrapolation require explicit
+   diagnostics and sensitivity analyses.
+5. Biological specimens determine replication; dense technical measurements do
+   not justify an equally flexible population-level curve.
+
+# References
+
+- de Boor, C. (2001). *A Practical Guide to Splines* (rev. ed.). Springer.
+  <https://doi.org/10.1007/978-1-4612-6333-3>
+- Green, P. J., and Silverman, B. W. (1994). *Nonparametric Regression and
+  Generalized Linear Models: A Roughness Penalty Approach*. Chapman and Hall.
+  <https://doi.org/10.1201/b15710>
+- Wood, S. N. (2017). *Generalized Additive Models: An Introduction with R*
+  (2nd ed.). Chapman and Hall/CRC. <https://doi.org/10.1201/9781315370279>
+- R Core Team. `poly`: compute orthogonal polynomials. *R statistical software
+  documentation*. <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/poly.html>
+- R Core Team. `bs` and `ns`: regression spline bases. *R statistical software
+  documentation*. <https://stat.ethz.ch/R-manual/R-devel/library/splines/html/bs.html>
+- R Core Team. Details on `smooth.spline`. *R statistical software
+  documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/doc/smoothing-splines.pdf>

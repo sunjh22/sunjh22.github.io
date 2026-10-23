@@ -1,0 +1,262 @@
+---
+title: "Generalized Additive Models"
+subtitle: "Flexible additive effects for non-Gaussian outcomes"
+description: "Generalized additive models through smooth predictors, penalized likelihood, smoothing selection, interpretation, diagnostics, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-10-23"
+date-modified: "2026-10-23"
+categories: [Statistics, Regression, Generalized Additive Models, Smoothing]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# From a Linear Predictor to an Additive Predictor
+
+A generalized additive model (GAM) retains the response distribution and link
+of a generalized linear model (GLM) but replaces selected linear terms with
+smooth functions. For independent experimental units,
+
+$$
+Y_i\mid\mathbf x_i\sim\mathcal F(\mu_i,\phi),
+\qquad
+\boxed{g(\mu_i)=\eta_i=\beta_0+\sum_{j=1}^{p}f_j(x_{ij})
++\mathbf z_i^\mathsf T\boldsymbol\gamma.}
+$$
+
+Here $\mathcal F$ supplies the conditional distribution and variance function,
+$g$ is a link, each $f_j$ is an unknown smooth effect, and $\mathbf z_i$ holds
+terms that remain linear or categorical. The model is **additive on the link
+scale**. It is flexible but not interaction-rich unless interactions are added
+explicitly.
+
+GAMs are useful when the shape of a relationship matters but a high-degree
+global polynomial is implausible. Examples include nonlinear age effects on
+expression, seasonal incidence, spatial trends, and smooth technical effects in
+quality control.
+
+# Identifiability and Basis Representation
+
+Each smooth is represented by a finite basis,
+
+$$
+f_j(x)=\sum_{k=1}^{K_j}\beta_{jk}B_{jk}(x).
+$$
+
+Substitution converts the GAM into a regression model with an expanded design
+matrix. Smooths are usually constrained to sum to zero over the observed data,
+
+$$
+\sum_{i=1}^{n}f_j(x_{ij})=0,
+$$
+
+so that the intercept is identifiable. The basis dimension $K_j$ is an upper
+bound on representable complexity; a penalty usually determines how much of
+that flexibility is used.
+
+Common bases include cubic regression splines, thin-plate regression splines,
+P-splines, cyclic splines, and tensor products. The choice should reflect known
+structure. A cyclic basis is appropriate for day of year when the endpoints
+must join. Tensor products are useful when predictors have different units or
+scales. A univariate smooth of latitude plus a univariate smooth of longitude is
+not the same as a two-dimensional spatial surface.
+
+# Penalized Likelihood and Smoothness
+
+For coefficients $\boldsymbol\beta$ and smoothing parameters
+$\boldsymbol\lambda$, estimation commonly maximizes
+
+$$
+\boxed{
+\ell(\boldsymbol\beta;\mathbf y)
+-\frac{1}{2}\sum_{j=1}^{p}\lambda_j
+\boldsymbol\beta^\mathsf T\mathbf S_j\boldsymbol\beta.
+}
+$$
+
+The first term is the GLM log-likelihood. Each positive-semidefinite matrix
+$\mathbf S_j$ measures the wiggliness of a smooth, often corresponding to an
+integrated squared derivative. Large $\lambda_j$ suppresses wiggle; small
+$\lambda_j$ permits a more complex fit. Components in the null space of the
+penalty, such as a straight line under a second-derivative penalty, remain
+unpenalized unless an additional shrinkage penalty is used.
+
+For fixed smoothing parameters, penalized iteratively reweighted least squares
+updates the coefficients. Smoothing parameters can be estimated by restricted
+maximum likelihood (REML), marginal likelihood, generalized cross-validation,
+or related criteria. REML often provides stable estimation, but no criterion
+rescues an inadequate basis, wrong likelihood, unmodeled dependence, or poor
+experimental design.
+
+The effective degrees of freedom (EDF) of a smooth summarize its fitted
+complexity. An EDF near 1 often indicates an approximately linear contribution;
+larger EDF permits more shape. EDF is not a count of scientifically independent
+features, and it does not determine whether the effect is biologically
+important.
+
+# Interpretation and Uncertainty
+
+The function $f_j(x)$ is a partial effect on the link scale, centered relative
+to the other model terms. Its shape is conditional on included covariates. For a
+log link, a link-scale difference
+$f_j(x_b)-f_j(x_a)$ exponentiates to a conditional mean ratio. For a logit link,
+it exponentiates to a conditional odds ratio. Outcome-scale differences depend
+on all terms in the linear predictor and should be computed for explicit
+covariate distributions or profiles.
+
+There is generally no single slope coefficient for a smooth. Useful targets
+include:
+
+- predicted means at prespecified covariate values;
+- contrasts $\mu(x_b)-\mu(x_a)$ or ratios;
+- the derivative $f_j'(x)$ and regions where it is credibly positive or
+  negative; and
+- an integrated or standardized outcome-scale summary over a target population.
+
+Approximate covariance matrices for the fitted coefficients yield pointwise
+intervals for smooths and predictions. Simultaneous bands address whole-curve
+coverage and are wider. Derivative intervals and peak locations can be
+especially uncertain. Uncertainty should account for smoothing-parameter
+estimation when available; bootstrap resampling must preserve the experimental
+unit and refit the complete smoothness-selection procedure.
+
+An approximate test that a smooth is zero is model- and smoothing-dependent.
+It does not prove that the displayed shape is correct, and choosing a smooth
+because its p-value is small creates selection uncertainty. Effect magnitude,
+uncertainty, predictive value, and prespecified scientific contrasts are more
+informative than a threshold alone.
+
+# Interactions and Varying Effects
+
+An additive model cannot represent every joint relationship. If the effect of
+$x$ changes with $z$, possibilities include a smooth-by-factor interaction, a
+varying-coefficient term $z f(x)$, or a tensor-product surface $f(x,z)$.
+Identifiability constraints must separate main smooths from interaction
+components.
+
+Interactions rapidly consume information. A visually detailed surface fitted
+in sparse covariate regions is interpolation by the model, not evidence supplied
+by the data. Inspect joint data density, not only marginal rugs, and distinguish
+interpolation inside the observed support from extrapolation into unsupported
+combinations.
+
+# Worked Bioinformatics Example
+
+Consider gene-level counts from 60 independent donors, 30 per condition, with
+age suspected to have a nonlinear effect. A negative-binomial GAM might use
+
+$$
+Y_i\sim\operatorname{NB}(\mu_i,\alpha),
+\qquad
+\log\mu_i=\log(s_i)+\beta_0+\beta_1\operatorname{Condition}_i
++f(\operatorname{Age}_i)+\gamma\operatorname{Batch}_i,
+$$
+
+where $s_i$ is a library-size normalization factor. A non-executed R sketch is:
+
+```r
+fit <- mgcv::gam(
+  count ~ condition + s(age, k = 6) + batch + offset(log(size_factor)),
+  family = mgcv::nb(), method = "REML", data = donor_counts
+)
+```
+
+Donors are the experimental units. Reads are technical observations, and genes
+are parallel outcomes; neither supplies more independent donors. Cells nested
+within a donor likewise do not justify cell-level independence. If repeated
+specimens are available per donor, the model needs a donor effect or another
+dependence-aware structure.
+
+The condition coefficient estimates a conditional log fold change under the
+additive age adjustment, batch model, normalization, and negative-binomial
+likelihood. The age smooth describes residual age association, not a causal
+aging mechanism. Biological interpretation must consider cell composition,
+cohort effects, medication, tissue, effect magnitude, and multiplicity across
+genes. A smooth technical trend can improve adjustment, but it cannot separate
+condition from a completely confounded batch.
+
+# Diagnostics and Sensitivity
+
+| Question | Evidence | Response or sensitivity analysis |
+|---|---|---|
+| Is the response family adequate? | Simulated or randomized-quantile residuals; mean--variance pattern; zeros and tails | Change the observation model, not only the smooth |
+| Is the basis large enough? | Residual pattern; basis-dimension diagnostic; EDF close to its ceiling | Increase $K$ and confirm substantive stability |
+| Is the curve overfit? | Out-of-sample performance; implausible wiggles; criterion profile | Stronger smoothing, nested validation, or prespecified simpler structure |
+| Are predictors concurved? | Dependence among fitted smooth components; unstable partial effects | Reconsider terms, collect better overlap, report prediction rather than unstable decomposition |
+| Are units independent? | Sampling hierarchy, repeated measures, time, space | Random effects, correlation structure, aggregation, or cluster-aware procedure |
+| Do a few observations control the shape? | Leverage, residuals, deletion or perturbation fits | Verify records and report influence sensitivity |
+| Is support adequate? | Marginal and joint data-density displays | Restrict target range; avoid unsupported surfaces and extrapolation |
+
+**Concurvity** is the nonlinear analogue of collinearity: one smooth term can be
+approximated by one or more others. Predictions may remain stable while the
+allocation of shape among component smooths is unstable. This is especially
+important when age, time, batch, and spatial location move together.
+
+Residual checks should respect discreteness and the fitted family. Examine
+patterns against every covariate, fitted values, sampling order, space, and
+groups; check dispersion and zero structure; compare observed data with
+replicate data simulated from the fitted model; and inspect calibration on data
+not used to choose complexity. A flat residual plot cannot establish absence of
+confounding or correct causal adjustment.
+
+Sensitivity analysis should compare scientifically defensible basis types and
+dimensions, smoothing criteria, families, link functions, dependence models,
+and influential-unit perturbations. If the scientific conclusion changes across
+reasonable choices, report that instability rather than selecting the most
+favorable curve.
+
+# What a GAM Does Not Solve
+
+- **Additivity is an assumption.** Unmodeled interactions can make component
+  smooths misleading averages.
+- **Flexibility is not causal identification.** Smooth adjustment does not fix
+  unmeasured confounding, selection, measurement error, or positivity failure.
+- **A smooth is not automatically interpretable.** Basis coefficients are
+  computational parameters; the curve and explicit contrasts carry meaning.
+- **More observations are not always more replication.** Dense time points,
+  reads, or cells within a specimen preserve dependence.
+- **Extrapolation remains fragile.** Penalization controls wiggliness within the
+  fitted domain, not scientific behavior outside it.
+
+# Connections and Take-home Messages
+
+- [Polynomial regression and splines](polynomial-regression-and-splines.qmd)
+  develops basis functions, regression splines, and roughness penalties.
+- [Generalized linear models](generalized-linear-models.qmd) supplies the
+  response-family, link, likelihood, and coefficient framework.
+- [Link functions and exponential-family distributions](link-functions-and-exponential-family-distributions.qmd)
+  explains link-scale and outcome-scale interpretation.
+- [Deviance, residuals, and goodness of fit](deviance-residuals-and-goodness-of-fit.qmd)
+  develops GLM residual and simulation-based checks.
+- [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
+  clarifies scale-specific interaction claims.
+
+1. A GAM replaces selected linear predictor terms with penalized smooth
+   functions while retaining a response family and link.
+2. Basis dimension limits possible complexity; smoothing parameters determine
+   how much complexity the data-supported fit uses.
+3. Interpret curves, derivatives, predictions, and explicit contrasts rather
+   than individual basis coefficients.
+4. Diagnose family, basis adequacy, concurvity, support, influence, and
+   dependence; a smooth curve is not self-validating.
+5. In bioinformatics, flexible technical adjustment complements but never
+   replaces independent biological replication and sound experimental design.
+
+# References
+
+- Hastie, T., and Tibshirani, R. (1986). Generalized additive models.
+  *Statistical Science*, 1(3), 297--310.
+  <https://doi.org/10.1214/ss/1177013604>
+- Wood, S. N. (2003). Thin plate regression splines. *Journal of the Royal
+  Statistical Society: Series B*, 65(1), 95--114.
+  <https://doi.org/10.1111/1467-9868.00374>
+- Wood, S. N. (2017). *Generalized Additive Models: An Introduction with R*
+  (2nd ed.). Chapman and Hall/CRC. <https://doi.org/10.1201/9781315370279>
+- Marra, G., and Wood, S. N. (2012). Coverage properties of confidence intervals
+  for generalized additive model components. *Scandinavian Journal of
+  Statistics*, 39(1), 53--74.
+  <https://doi.org/10.1111/j.1467-9469.2011.00760.x>
+- Wood, S. N. `mgcv`: mixed GAM computation vehicle with automatic smoothness
+  estimation. *R package reference manual*.
+  <https://cran.r-project.org/web/packages/mgcv/mgcv.pdf>

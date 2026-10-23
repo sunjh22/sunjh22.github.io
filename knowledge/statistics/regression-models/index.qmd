@@ -25,9 +25,10 @@ categories: [Statistics, Modelling]
 - [Link functions and exponential-family distributions](link-functions-and-exponential-family-distributions.qmd)
 - [Deviance, residuals, and goodness of fit](deviance-residuals-and-goodness-of-fit.qmd)
 - [Likelihood-based model comparison](likelihood-based-model-comparison.qmd)
+- [Polynomial regression and splines](polynomial-regression-and-splines.qmd)
+- [Generalized additive models](generalized-additive-models.qmd)
 
-Future notes in this level will cover nonlinear mean structures, validation,
-and model selection.
+Future notes in this level will cover validation and model selection.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)
