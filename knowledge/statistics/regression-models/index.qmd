@@ -27,8 +27,10 @@ categories: [Statistics, Modelling]
 - [Likelihood-based model comparison](likelihood-based-model-comparison.qmd)
 - [Polynomial regression and splines](polynomial-regression-and-splines.qmd)
 - [Generalized additive models](generalized-additive-models.qmd)
+- [Variable selection and nested-model testing](variable-selection-and-nested-model-testing.qmd)
+- [AIC, BIC, and information criteria](aic-bic-and-information-criteria.qmd)
 
-Future notes in this level will cover validation and model selection.
+Future notes in this level will cover validation, identifiability, and model instability.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)

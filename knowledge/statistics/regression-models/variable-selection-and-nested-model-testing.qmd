@@ -1,0 +1,298 @@
+---
+title: "Variable Selection and Nested-model Testing"
+subtitle: "Choosing regression structure without turning exploratory search into confirmatory evidence"
+description: "Scientific specification, nested tests, variable-selection strategies, post-selection uncertainty, stability, diagnostics, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-10-24"
+date-modified: "2026-10-24"
+categories: [Statistics, Regression, Model Selection, Hypothesis Testing]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Selection Begins with the Modeling Goal
+
+Variable selection decides which candidate terms enter a fitted model. That
+description hides several different goals:
+
+- **Explanation:** estimate a prespecified scientific contrast while controlling
+  variables required by the design or causal question.
+- **Prediction:** minimize expected loss for new units from a stated target
+  population.
+- **Description:** find a compact approximation to patterns in the observed data.
+- **Discovery:** screen many associations for later confirmation.
+
+No selection rule is optimal for all four. A variable weakly associated with the
+outcome can be an essential confounder; a strong predictive marker need not be
+causal; and several correlated predictors can make almost identical predictions
+while producing very different selected formulas. Define the target before
+searching.
+
+For independent experimental units $i=1,\ldots,n$, consider a full linear model
+
+$$
+Y_i=\beta_0+\beta_1X_{i1}+\cdots+\beta_pX_{ip}+\varepsilon_i,
+\qquad
+E(\varepsilon_i\mid\mathbf X_i)=0.
+$$
+
+The estimand might be one adjusted coefficient, an outcome-scale contrast, or
+expected prediction error. A **selection procedure** is an algorithm mapping a
+random dataset to a random model $\widehat M$. The fitted coefficient after
+selection is therefore not the same estimator as the coefficient from a model
+fixed before data collection.
+
+# Terms, Variables, and Models Are Different Objects
+
+A biological variable can require several regression terms. A four-level batch
+factor uses three coefficients; a spline uses several basis coefficients; and an
+interaction is meaningful only with its component terms. Selection should act
+on scientifically coherent term blocks rather than arbitrary columns of a
+design matrix.
+
+Respect **hierarchy**. If $X_1X_2$ remains in a model, retaining $X_1$ and $X_2$
+usually preserves an interpretable parameterization even when a main-effect
+coefficient is individually imprecise. Likewise, test a categorical predictor
+jointly rather than retaining whichever indicator happens to cross a threshold.
+
+Before fitting, classify candidate terms:
+
+| Role | Typical treatment |
+|---|---|
+| Design variable, such as randomization stratum or batch | Retain regardless of its observed p-value |
+| Prespecified exposure and scientifically required interaction | Encode the target contrast explicitly |
+| Known confounder | Select from causal/design knowledge, not outcome association alone |
+| Flexible nuisance structure | Tune with validation, shrinkage, or a prespecified complexity rule |
+| Exploratory biomarker | Label as exploratory and evaluate stability and external performance |
+
+# Nested Models Encode Joint Restrictions
+
+A reduced model $M_0$ is nested in a full model $M_1$ when $M_0$ is obtained by
+imposing $q$ independent restrictions. If
+
+$$
+H_0:R\boldsymbol\beta=\mathbf r,
+$$
+
+then a likelihood-ratio, Wald, or score test can evaluate that joint restriction.
+For regular maximum-likelihood models, the likelihood-ratio statistic is
+
+$$
+G^2=2\{\ell(\widehat\theta_1)-\ell(\widehat\theta_0)\}
+\xrightarrow{d}\chi_q^2.
+$$
+
+For Gaussian linear models fitted to the same $n$ observations, let the reduced
+and full residual sums of squares be $RSS_0$ and $RSS_1$, and let their ranks be
+$p_0<p_1$. The exact classical statistic under homoskedastic independent normal
+errors is
+
+$$
+\boxed{
+F=\frac{(RSS_0-RSS_1)/(p_1-p_0)}{RSS_1/(n-p_1)}
+\sim F_{p_1-p_0,n-p_1}
+}
+$$
+
+under $H_0$. The numerator measures improvement per added degree of freedom;
+the denominator estimates residual variance from the full model. In a GLM,
+regular nested likelihood-ratio or analysis-of-deviance comparisons are more
+natural. Quasi-likelihood, boundary parameters, sparse outcomes, separation,
+penalization, and unmodeled dependence require different calibration.
+
+A prespecified nested test answers whether a defined block improves fit beyond
+the reduced model under its assumptions. It does not establish that either model
+is adequate, that the added effect is biologically important, or that the same
+p-value remains valid after trying many blocks and reporting the best one.
+
+# From One Comparison to a Search Procedure
+
+Common search strategies include:
+
+- **Best-subset search:** compare many or all allowed subsets under a criterion.
+- **Forward selection:** repeatedly add the term giving the preferred improvement.
+- **Backward elimination:** start with a full model and repeatedly remove a term.
+- **Stepwise selection:** alternate additions and deletions.
+- **Screen then fit:** retain variables passing a marginal filter and fit a
+  multivariable model to the survivors.
+- **Penalized fitting:** estimate and select jointly through a penalty; this is
+  developed in the later ridge, lasso, and elastic-net notes.
+
+Greedy searches explore only a path through the model space and may miss the
+best-scoring allowed model. Exhaustive search avoids that particular limitation
+but not overfitting, unstable selection, multiplicity, or an ill-defined target.
+Univariate screening can discard a jointly important predictor or retain a proxy
+whose marginal association is confounded.
+
+Stopping at the first nonsignificant nested test creates a sequence of adaptive
+hypotheses. The nominal level of the final printed test does not describe the
+error rate of the whole search. Similarly, changing entry and removal thresholds
+does not turn stepwise p-values into prespecified inference.
+
+# Why Ordinary Inference Fails after Search
+
+Classical standard errors and tests condition on a model treated as fixed. After
+selection, the reported model was chosen because it fit the same random outcomes
+unusually well. Consequences include:
+
+1. selected coefficients are biased away from zero in magnitude;
+2. ordinary standard errors omit model-selection variability;
+3. confidence intervals are too narrow and can undercover;
+4. p-values no longer have their advertised null calibration; and
+5. fitted performance evaluated on the selection data is optimistic.
+
+These are not repaired by calling the last fitted model “final.” Valid strategies
+depend on the goal and design: prespecify confirmatory terms, use independent data
+for confirmation, split data when information is sufficient, apply a justified
+selective-inference method, or report the analysis as exploratory. Simultaneous
+post-selection methods can protect coverage across a specified model universe,
+usually by accepting wider intervals.
+
+# Worked Example: A Prespecified Block Test
+
+Suppose 80 independently sampled donors have a continuous immune-response
+outcome. The reduced model contains treatment, age, sex, and sequencing batch.
+The full model adds a prespecified three-degree-of-freedom spline for baseline
+biomarker $B$ while retaining its linear component as part of the same block.
+Suppose
+
+$$
+RSS_0=112.0,
+\qquad
+RSS_1=96.0,
+\qquad
+p_0=5,
+\qquad
+p_1=8.
+$$
+
+Then
+
+$$
+F=\frac{(112-96)/3}{96/(80-8)}=4.00.
+$$
+
+This is compared with $F_{3,72}$ if the classical assumptions are credible. The
+test addresses the joint contribution of the prespecified nonlinear biomarker
+block beyond the reduced model. It does not justify choosing the most favorable
+spline degrees of freedom after inspecting several versions and still using the
+same reference distribution.
+
+The estimand should be reported separately—for example, adjusted mean-response
+contrasts over meaningful biomarker values—with uncertainty. A small block-test
+p-value is evidence about model restriction, not a measure of effect size.
+
+# Stability Is Part of the Result
+
+Small data perturbations can switch between correlated predictors or alter the
+chosen functional form. To assess stability, repeat the **entire** selection
+procedure in bootstrap samples or subsamples of independent experimental units.
+Summaries can include:
+
+- inclusion frequency for each term or term block;
+- frequency of each selected model;
+- joint inclusion of competing correlated variables;
+- distributions of coefficients and predictions; and
+- variation in the selected complexity.
+
+An inclusion frequency is a property of the procedure, candidate set, and
+observed population—not a posterior probability that a variable is “truly
+important.” High predictive stability can coexist with low variable stability
+when correlated predictors are interchangeable.
+
+For predictive assessment, selection, transformation, imputation, and tuning
+must be repeated inside every training fold. Selecting once on the complete data
+and cross-validating only the last fit leaks outcome information into validation.
+Resampling must preserve donors, subjects, sites, families, or time blocks rather
+than splitting dependent measurements as though they were independent.
+
+# Diagnostics and Sensitivity
+
+| Threat | What can go wrong | Assessment or response |
+|---|---|---|
+| Too many candidate degrees of freedom | Overfit and separation | Limit complexity using prior knowledge and effective sample information |
+| Correlated predictors | Arbitrary membership and unstable signs | Inspect correlations, condition, grouped terms, and bootstrap stability |
+| Missingness varies by formula | Models use different samples | Build one analysis dataset or model missingness explicitly |
+| Data-driven transformations | Search scope is hidden | Include transformation choice in validation and report all searched options |
+| Influential experimental units | One unit determines inclusion | Repeat selection after defensible unit-level perturbations |
+| Unmodeled clustering | Information and tests are overstated | Model dependence and resample independent clusters |
+| Selection followed by ordinary inference | Intervals and p-values are optimistic | Use prespecification, new data, or justified post-selection inference |
+
+Absolute diagnostics remain necessary after selection. Residual patterns,
+calibration, influence, outcome support, dependence, and extrapolation do not
+disappear because one formula scored better than another. Compare conclusions
+across scientifically plausible forced-variable sets, functional forms, and
+dependence structures.
+
+# Bioinformatics Design and Interpretation
+
+Imagine an RNA-seq study of 60 donors, with treatment, sex, age, processing batch,
+RNA integrity, and several cell-composition summaries as candidates for a gene-
+level negative-binomial model. Donors are experimental units; libraries are
+measurements on donors, and reads are technical observations. Technical depth
+does not create more independent replication.
+
+Treatment and design variables should not be stepwise-selected gene by gene.
+Doing so changes the estimand and makes genes incomparable. Batch must be retained
+when required by the design, even if its observed association is weak. Cell-
+composition variables require a scientific decision: adjusting for them may
+target a within-composition effect rather than the total tissue-level contrast.
+That choice cannot be delegated to a p-value threshold.
+
+If exploratory biomarkers are selected for prediction, perform all gene or
+feature filtering within donor-level training folds and evaluate the final
+pipeline on untouched donors or an external cohort. Statistically, report
+selection stability and out-of-sample uncertainty. Biologically, interpret the
+selected variables as candidates shaped by assay, population, correlation, and
+selection rules—not as uniquely identified mechanisms.
+
+# Connections and Take-home Messages
+
+- [Likelihood-based model comparison](likelihood-based-model-comparison.qmd)
+  develops nested and non-nested likelihood comparisons.
+- [Likelihood-ratio, Wald, and score tests](../statistical-inference/likelihood-ratio-wald-and-score-tests.qmd)
+  explains the calibration of tests for prespecified restrictions.
+- [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
+  shows why multi-coefficient terms should be tested jointly.
+- [Interaction terms and effect modification](interaction-terms-and-effect-modification.qmd)
+  explains hierarchy and scale-dependent interpretation.
+- [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
+  covers rank, influence, residuals, and dependence.
+- [AIC, BIC, and information criteria](aic-bic-and-information-criteria.qmd)
+  compares likelihood-based complexity criteria used in model search.
+
+1. Variable selection is a random procedure whose target must match explanation,
+   prediction, description, or discovery.
+2. A nested test is valid for a prespecified restriction only under its sampling
+   and model assumptions; repeated adaptive testing changes its calibration.
+3. Required design variables, confounders, and hierarchical term blocks should
+   not be selected by isolated p-values.
+4. Ordinary estimates, intervals, and p-values ignore selection uncertainty when
+   the same outcomes chose the model.
+5. Stability and predictive validation must repeat the full workflow at the
+   level of independent experimental units.
+
+# References
+
+- Miller, A. J. (2002). *Subset Selection in Regression* (2nd ed.). Chapman and
+  Hall/CRC. <https://doi.org/10.1201/9781420035933>
+- Harrell, F. E., Jr. (2015). *Regression Modeling Strategies* (2nd ed.).
+  Springer. <https://doi.org/10.1007/978-3-319-19425-7>
+- Sauerbrei, W., Royston, P., and Binder, H. (2007). Selection of important
+  variables and determination of functional form for continuous predictors in
+  multivariable model building. *Statistics in Medicine*, 26, 5512--5528.
+  <https://doi.org/10.1002/sim.3148>
+- Sauerbrei, W., and Schumacher, M. (1992). A bootstrap resampling procedure for
+  model building: application to the Cox regression model. *Statistics in
+  Medicine*, 11, 2093--2109. <https://doi.org/10.1002/sim.4780111607>
+- Heinze, G., Wallisch, C., and Dunkler, D. (2018). Variable selection---a review
+  and recommendations for the practicing statistician. *Biometrical Journal*,
+  60, 431--449. <https://doi.org/10.1002/bimj.201700067>
+- Berk, R., Brown, L., Buja, A., Zhang, K., and Zhao, L. (2013). Valid
+  post-selection inference. *The Annals of Statistics*, 41, 802--837.
+  <https://doi.org/10.1214/12-AOS1077>
+- R Core Team. `add1` and `drop1`: add or drop all possible single terms to a
+  model. *R statistical software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/add1.html>

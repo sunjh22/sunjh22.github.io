@@ -1,0 +1,325 @@
+---
+title: "AIC, BIC, and Information Criteria"
+subtitle: "Penalized likelihood criteria with different inferential targets"
+description: "Derivation, assumptions, interpretation, parameter counting, small-sample correction, diagnostics, and biological applications of AIC and BIC."
+author: "Jiahong Sun"
+date: "2026-10-24"
+date-modified: "2026-10-24"
+categories: [Statistics, Regression, Model Selection, Information Criteria]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Fit Must Be Balanced against Complexity
+
+Maximized likelihood always favors a model that contains another: extra
+parameters cannot reduce the best achievable in-sample fit. Information criteria
+add a complexity penalty,
+
+$$
+\operatorname{IC}(M)=-2\ell_M(\widehat\theta_M)+\operatorname{penalty}(M),
+$$
+
+and prefer the smallest value among a prespecified candidate set. For a regular
+maximum-likelihood model with $k$ independently estimated parameters and $n$
+independent observational units,
+
+$$
+\boxed{\operatorname{AIC}=-2\ell(\widehat\theta)+2k}
+$$
+
+and
+
+$$
+\boxed{\operatorname{BIC}=-2\ell(\widehat\theta)+k\log n.}
+$$
+
+The formulas look similar, but their targets differ. AIC estimates relative
+expected out-of-sample discrepancy under a Kullback--Leibler framework. BIC is a
+large-sample approximation connected to integrated likelihoods and model
+posterior odds under specific priors and regularity conditions. Neither is a
+universal score of truth, causality, or biological importance.
+
+# AIC as Estimated Predictive Discrepancy
+
+Let $g(y)$ be the unknown data-generating density and $f(y\mid\theta)$ a candidate
+family. The Kullback--Leibler discrepancy from $g$ to $f_\theta$ is
+
+$$
+D_{\mathrm{KL}}(g\Vert f_\theta)
+=E_g\left[\log\frac{g(Y)}{f(Y\mid\theta)}\right].
+$$
+
+Because $E_g\{\log g(Y)\}$ is common to all candidates, minimizing this
+discrepancy is equivalent to maximizing expected log predictive density. The
+training log-likelihood $\ell(\widehat\theta)$ is optimistically high because the
+same data estimate and evaluate $\theta$. Under regular, fixed-dimensional
+conditions, the leading optimism is approximately $k$ on the log-likelihood
+scale. Multiplying by $-2$ yields the $2k$ correction in AIC.
+
+Thus AIC compares estimated predictive information loss **relative to the
+candidate set**. The best candidate may still be badly misspecified. AIC is not
+a hypothesis test, and an AIC difference is not a p-value.
+
+# BIC as a Large-sample Evidence Approximation
+
+For model $M$, Bayesian model evidence integrates rather than maximizes the
+likelihood:
+
+$$
+p(\mathbf y\mid M)
+=\int p(\mathbf y\mid\theta_M,M)\,
+p(\theta_M\mid M)\,d\theta_M.
+$$
+
+Under regularity, fixed model dimension, a nonsingular interior maximum, and a
+prior density positive near the maximum-likelihood estimate, a Laplace expansion
+gives
+
+$$
+-2\log p(\mathbf y\mid M)
+=-2\ell_M(\widehat\theta_M)+k_M\log n+O(1).
+$$
+
+Dropping model-dependent constants and prior terms leads to BIC. Consequently,
+BIC differences can approximate twice negative log Bayes factors only when the
+derivation's assumptions and prior scaling are defensible. BIC values alone are
+not posterior model probabilities; posterior probabilities also require a model
+set and prior probabilities over models.
+
+In a fixed finite set containing the data-generating model, BIC often has the
+model-selection consistency property: its probability of selecting the smallest
+true model approaches one. AIC instead targets predictive efficiency and retains
+a nonvanishing chance of choosing an unnecessarily large model. Consistency and
+predictive efficiency are different objectives, not a ranking in which one
+criterion is always superior.
+
+# What Counts as $k$ and $n$?
+
+Parameter counting must match the fitted likelihood. Depending on the model,
+$k$ can include regression coefficients, intercepts, dispersion or variance
+parameters, mixture weights, smoothing degrees of freedom, and other estimated
+nuisance quantities. Software conventions differ, especially for Gaussian
+variance, penalized fits, quasi-likelihood, and conditional versus marginal
+likelihoods.
+
+The $n$ in ordinary BIC represents the information-growth rate used in its
+asymptotic derivation. It is often the number of independent observational units,
+not the number of database rows, sequencing reads, repeated visits, or cells.
+With clustering, mixed models, time series, spatial data, or different parameters
+informed at different levels, substituting an “effective sample size” is not a
+generic fix; use criterion theory appropriate to the model.
+
+# Comparability Comes before Calculation
+
+AIC or BIC differences are meaningful only when fitted values correspond to
+comparable likelihoods for the same observed outcome data. Check that candidates
+use:
+
+1. the same response observations and experimental units;
+2. the same outcome scale, support, and likelihood normalization;
+3. compatible treatment of missingness, censoring, truncation, and weights;
+4. the same exposure definition and comparable conditioning; and
+5. genuine likelihoods rather than an unsupported mixture of likelihood,
+   quasi-likelihood, REML, or penalized objectives.
+
+For example, AIC values from models fit to different complete-case samples are
+not comparable. A Gaussian likelihood for $Y$ and one for $\log Y$ concern
+different observed-variable densities unless the transformation Jacobian is
+handled. Ordinary AIC is unavailable for quasi-Poisson fits because a complete
+probability likelihood has not been specified. REML criteria generally cannot
+compare mixed models with different fixed-effect structures.
+
+# Small-sample Correction
+
+For normal linear regression and related regular settings, a common corrected
+criterion is
+
+$$
+\boxed{
+\operatorname{AICc}
+=\operatorname{AIC}
++\frac{2k(k+1)}{n-k-1}
+}
+$$
+
+when the definitions of $n$ and $k$ match that derivation. The added penalty
+grows when information is limited relative to model dimension and vanishes as
+$n/k$ grows. Exact AICc formulas are model-dependent; attaching this expression
+mechanically to every likelihood is not justified. When $n\leq k+1$, the formula
+also signals that the candidate is too complex for this approximation.
+
+# Reading Differences, Not Isolated Values
+
+For candidates $M_1,\ldots,M_R$ evaluated with the same criterion, define
+
+$$
+\Delta_r=\operatorname{IC}_r-\min_s\operatorname{IC}_s.
+$$
+
+Only differences matter because log-likelihood constants can vary across
+implementations. For AIC, relative likelihoods are often summarized as
+
+$$
+L_r=\exp(-\Delta_r/2),
+\qquad
+w_r=\frac{L_r}{\sum_{s=1}^R L_s}.
+$$
+
+These Akaike weights describe relative support under the candidate set and AIC
+framework. They change when candidates change and are not automatically
+posterior probabilities that models are true. Small differences indicate model-
+selection uncertainty; presenting only the winner hides that uncertainty.
+
+Threshold labels for $\Delta$ can be rough descriptive conventions, not universal
+decision rules. Scientific consequences, sample size, misspecification, and the
+candidate construction matter more than a memorized cutoff.
+
+# Worked Comparison
+
+Suppose three Gaussian models for the same 120 donors have maximized
+log-likelihoods and parameter counts:
+
+| Model | Scientific structure | $\ell(\widehat\theta)$ | $k$ |
+|---|---|---:|---:|
+| $M_1$ | treatment + batch | $-174.0$ | 4 |
+| $M_2$ | $M_1$ + biomarker | $-170.5$ | 5 |
+| $M_3$ | $M_2$ + four spline parameters | $-168.8$ | 9 |
+
+The criteria are
+
+$$
+\begin{aligned}
+\operatorname{AIC}_1&=356.0,
+&\operatorname{BIC}_1&=367.2,\\
+\operatorname{AIC}_2&=351.0,
+&\operatorname{BIC}_2&=364.9,\\
+\operatorname{AIC}_3&=355.6,
+&\operatorname{BIC}_3&=380.7,
+\end{aligned}
+$$
+
+using $\log(120)\approx4.787$. Both criteria prefer $M_2$ here, but for different
+large-sample reasons. AIC estimates relative predictive discrepancy; BIC applies
+a stronger per-parameter penalty for $n>e^2$ and approximates an evidence-based
+comparison under its assumptions. Agreement does not prove $M_2$ adequate.
+Residual checks, calibration, influential-unit sensitivity, and external
+prediction still matter.
+
+# Information Criteria Are Not Nested Tests
+
+For two nested regular models differing by $q$ parameters, AIC prefers the larger
+model when
+
+$$
+2(\ell_1-\ell_0)>2q,
+$$
+
+whereas BIC prefers it when
+
+$$
+2(\ell_1-\ell_0)>q\log n.
+$$
+
+This resembles comparing a likelihood-ratio statistic with a penalty-dependent
+threshold, but it does not convert either criterion into a conventional test
+with a universal Type I error. Information criteria can compare non-nested
+models when their likelihoods are comparable; the ordinary nested chi-squared
+likelihood-ratio reference cannot.
+
+Choosing a criterion after seeing which one selects the desired model adds
+another layer of selection. Specify whether the goal is prediction,
+parsimonious identification, approximate evidence, or another loss before
+computing rankings.
+
+# Selection Uncertainty, Diagnostics, and Sensitivity
+
+| Threat | Consequence | Check or response |
+|---|---|---|
+| Shared model misspecification | The least-bad candidate may still be poor | Residual, calibration, and predictive checks for every serious candidate |
+| Many opportunistic candidates | Winner exploits noise | Prespecify the model universe; validate the full search |
+| Weak identification or boundaries | Standard penalty derivations fail | Inspect profiles and use specialized criterion or simulation theory |
+| Small $n$ relative to $k$ | AIC optimism correction is inadequate | Use a justified AICc, shrinkage, and external or nested validation |
+| Dependence treated as independence | Likelihood and BIC sample size are miscalibrated | Model dependence at the experimental-unit level |
+| One influential unit | Rankings can reverse | Recompute criteria and estimands under unit-level influence analyses |
+| Close criterion values | Winner is unstable | Report $\Delta$ values, weights where appropriate, and model-sensitive estimates |
+
+Information criteria do not propagate model uncertainty into a selected model's
+ordinary coefficient interval. Options include showing estimates across credible
+models, model averaging with clearly stated weights and assumptions, bootstrap
+assessment of the entire selection procedure, and validation on new experimental
+units. Naive model averaging can still give overconfident inference if candidate
+construction and weight uncertainty are ignored.
+
+# Bioinformatics Example: Choosing a Mean Structure
+
+Suppose 72 independently sampled donors provide one RNA-seq library each. For a
+gene, candidate negative-binomial models all use the same counts, normalization
+offsets, dispersion convention, treatment indicator, and batch adjustment. They
+differ only in whether age is linear, spline-modeled, or omitted. Donors—not
+reads—are the experimental units; technical read depth informs count precision
+but does not make $n$ equal to millions.
+
+AIC can rank the age structures for relative predictive approximation if all
+likelihoods are comparable. BIC supplies a different ranking tied to its evidence
+approximation and asymptotic conditions. Neither criterion decides whether age
+is a confounder that must be retained, whether batch is removable, or whether a
+treatment effect is biologically meaningful. Those decisions require design and
+scientific knowledge.
+
+Applying gene-specific stepwise selection also makes treatment estimands vary
+across genes and adds selection variability to thousands of parallel analyses.
+A common prespecified design is usually more interpretable. Statistically, report
+effect estimates, uncertainty, diagnostics, multiplicity control, and sensitivity
+to plausible mean structures. Biologically, consider abundance, cell composition,
+assay quality, pathway context, and independent validation.
+
+# Connections and Take-home Messages
+
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  explains the fitted quantity inside an information criterion.
+- [Maximum-likelihood estimation](../statistical-inference/maximum-likelihood-estimation.qmd)
+  develops regularity, profiles, and likelihood curvature.
+- [Likelihood-based model comparison](likelihood-based-model-comparison.qmd)
+  distinguishes nested tests, non-nested comparisons, and model adequacy.
+- [Variable selection and nested-model testing](variable-selection-and-nested-model-testing.qmd)
+  covers adaptive search and post-selection uncertainty.
+- [Deviance, residuals, and goodness of fit](deviance-residuals-and-goodness-of-fit.qmd)
+  provides absolute diagnostics that criterion rankings cannot replace.
+- [Generalized additive models](generalized-additive-models.qmd) explains
+  effective degrees of freedom and smoothing-parameter selection.
+
+1. AIC and BIC combine maximized fit with different complexity penalties because
+   they target different inferential goals.
+2. AIC estimates relative predictive information loss; BIC is a regular large-
+   sample approximation to integrated model evidence under additional choices.
+3. Candidate likelihoods must describe the same observed data, and $k$ and $n$
+   must match the model's information structure.
+4. Criterion rankings are relative: they neither test absolute fit nor establish
+   causal or biological importance.
+5. Close rankings, unstable candidates, dependence, and data-driven search must
+   be reflected in diagnostics, validation, and uncertainty reporting.
+
+# References
+
+- Akaike, H. (1974). A new look at the statistical model identification. *IEEE
+  Transactions on Automatic Control*, 19, 716--723.
+  <https://doi.org/10.1109/TAC.1974.1100705>
+- Schwarz, G. (1978). Estimating the dimension of a model. *The Annals of
+  Statistics*, 6, 461--464. <https://doi.org/10.1214/aos/1176344136>
+- Sugiura, N. (1978). Further analysis of the data by Akaike's information
+  criterion and the finite corrections. *Communications in Statistics---Theory
+  and Methods*, 7, 13--26. <https://doi.org/10.1080/03610927808827599>
+- Hurvich, C. M., and Tsai, C.-L. (1989). Regression and time series model
+  selection in small samples. *Biometrika*, 76, 297--307.
+  <https://doi.org/10.1093/biomet/76.2.297>
+- Burnham, K. P., and Anderson, D. R. (2004). Multimodel inference:
+  understanding AIC and BIC in model selection. *Sociological Methods &
+  Research*, 33, 261--304. <https://doi.org/10.1177/0049124104268644>
+- Claeskens, G., and Hjort, N. L. (2008). *Model Selection and Model Averaging*.
+  Cambridge University Press. <https://doi.org/10.1017/CBO9780511790485>
+- R Core Team. `AIC`: Akaike's information criterion and `BIC`. *R statistical
+  software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/AIC.html>
