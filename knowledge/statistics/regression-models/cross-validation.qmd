@@ -1,0 +1,251 @@
+---
+title: "Cross-validation"
+subtitle: "Estimating predictive performance while preserving the data-generating structure"
+description: "Cross-validation targets, fold construction, nested tuning, uncertainty, leakage, and design-aware validation for biological data."
+author: "Jiahong Sun"
+date: "2026-10-25"
+date-modified: "2026-10-25"
+categories: [Statistics, Regression, Prediction, Validation]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Target Is Performance on New Units
+
+Cross-validation (CV) estimates how a **learning procedure** will predict outcomes
+for observations not used to fit it. The procedure includes preprocessing,
+variable selection, model fitting, and hyperparameter tuning—not merely the last
+regression command. A useful validation question therefore names four things:
+
+1. the future population or deployment setting;
+2. the independent unit that will arrive in the future;
+3. the complete algorithm trained on available data; and
+4. the loss or utility that matters scientifically.
+
+For a training sample $D$ and fitted predictor $\hat f_D$, a common target is the
+expected generalization risk
+
+$$
+R_m=\operatorname E_{D\sim P^m}\operatorname E_{(X,Y)\sim P}
+\left[L\{Y,\hat f_D(X)\}\right].
+$$
+
+Here $m$ is the training-set size, $P$ is the target data-generating distribution,
+and $L$ might be squared error, log loss, or another prespecified loss. This target
+averages over both new training samples and new test units. A different target is
+the conditional performance of the one model fitted to the observed dataset.
+Finite-sample CV does not estimate every version of prediction error equally well,
+so the target should be stated rather than hidden behind “CV accuracy.”
+
+Prediction risk is not a causal effect, a test of coefficient significance, or a
+guarantee that the model is biologically correct. Good prediction can coexist with
+confounding, reliance on batch artifacts, or poor transport to another laboratory.
+
+# K-fold Cross-validation
+
+Let the independent units be partitioned into disjoint folds
+$I_1,\ldots,I_K$. For fold $k$, fit the entire learning procedure to
+$D_{-k}$, the data outside $I_k$, and predict the held-out units. The usual estimate
+is
+
+$$
+\widehat R_{\mathrm{CV}}
+=\frac{1}{n}\sum_{k=1}^K\sum_{i\in I_k}
+L\left\{Y_i,\hat f^{(-k)}(X_i)\right\}.
+$$
+
+Every loss is therefore computed from a model that did not train on that unit.
+After validation, the selected procedure is normally refitted to all development
+data. The cross-validated predictions assess the procedure; they are not the
+predictions from this final refit.
+
+The choice of $K$ changes the training size, computation, bias, and variability.
+Leave-one-out CV trains on nearly all observations but its fitted models overlap
+strongly and the estimate can be variable. Five- or ten-fold CV is a common
+compromise, not a theorem. Repeating a randomized partition reveals sensitivity to
+the particular fold assignment, but repetition does not create new independent
+experimental units.
+
+## Loss must match the use
+
+For continuous outcomes, squared error emphasizes large errors while absolute
+error targets a different summary. For probabilistic binary prediction, log loss
+and the Brier score assess probability quality; classification accuracy discards
+probability information and depends on a threshold. Class imbalance does not by
+itself justify balancing the test folds away from the deployment prevalence.
+Calibration, discrimination, and decision utility answer different questions and
+should not be collapsed into one convenient metric.
+
+# Folds Must Represent Future Independence
+
+Ordinary random-fold CV relies on exchangeable, approximately independent units
+from the target distribution. Biological data often violate that structure.
+
+| Data structure | Unit that must stay together | Validation design |
+|---|---|---|
+| Repeated measurements | participant, animal, or specimen | grouped CV |
+| Multiple cells or technical replicates | donor or biological sample | donor-level CV |
+| Families or related individuals | family or related cluster | group-aware CV |
+| Multiple sites or laboratories | site when transport is the target | leave-site-out or external validation |
+| Temporal prediction | all observations from a future period | forward or rolling split |
+| Spatial dependence | spatial cluster or buffered region | blocked spatial CV |
+
+If cells from the same donor occur in both training and validation folds, the
+model can recognize donor-specific structure and appear to generalize to new
+donors when it has not done so. Reads, cells, wells, and repeated scans increase
+measurement resolution but do not increase the number of independent biological
+replicates. Fold construction must follow the intended deployment event, not the
+most numerous row type in the data table.
+
+Stratification can stabilize outcome proportions across folds. It does not repair
+dependence or distribution shift, and it should be performed at the experimental-
+unit level.
+
+# Preprocessing Belongs Inside the Fold
+
+Information leaks whenever a quantity influenced by held-out units changes the
+fitted procedure. Within each training fold, independently estimate every learned
+operation, including:
+
+- centering, scaling, imputation, normalization, or batch adjustment;
+- feature filtering and supervised feature selection;
+- dimension reduction and representation learning;
+- class weights, decision thresholds, and probability calibration;
+- hyperparameters and model architecture.
+
+The fitted operation is then applied unchanged to the validation fold. A global
+gene filter based only on a feature's assay properties may sometimes be defensible,
+but an outcome-informed filter is part of learning and must be folded. Even
+unsupervised preprocessing can leak information about the validation distribution
+and should be evaluated according to what would actually be available at
+deployment.
+
+# Tuning Requires a Nested Design
+
+Choosing the hyperparameter with the smallest CV loss and reporting that same
+minimum as performance reuses validation outcomes. With many candidates, the
+winner benefits from favorable noise. Nested CV separates the roles:
+
+```text
+Outer training units
+    -> inner folds select preprocessing, features, and hyperparameters
+    -> selected procedure fits all outer training units
+    -> untouched outer fold measures performance
+Pool outer-fold losses -> estimate the full selection procedure's risk
+```
+
+All adaptive choices must occur inside the inner loop. The outer loop estimates
+the performance of the selection algorithm, not the performance of an
+oracle-chosen fixed hyperparameter. If investigators inspect outer results and
+revise the pipeline, the outer folds have become development data and a genuinely
+untouched test set is needed.
+
+# Uncertainty and Model Comparison
+
+Held-out losses are paired when two algorithms predict the same units, so their
+loss differences are more informative than two unrelated averages. Yet fold
+estimates are not independent: their training sets overlap, and observations may
+remain correlated. The sample standard deviation of $K$ fold means divided by
+$\sqrt K$ is therefore not a generally valid standard error.
+
+Useful uncertainty analyses include repeating the complete split-and-tune process,
+bootstrapping independent experimental units while repeating all modeling steps,
+and evaluating a locked pipeline on an external test sample. Each targets a
+different source of uncertainty. A confidence interval should name whether it
+conditions on the observed training data, averages over hypothetical training
+samples, or describes variation among deployment units.
+
+When algorithms have similar CV loss, the difference may be smaller than split
+variability or clinically relevant tolerances. Report paired loss differences,
+the distribution across scientifically valid splits, calibration, subgroup
+performance, and sensitivity to reasonable design choices rather than declaring
+the smallest third decimal place a winner.
+
+# Worked Bioinformatics Design
+
+Suppose 120 patients each contribute a tumor RNA-seq library, and the goal is to
+predict treatment response in a new patient. Patients are the experimental units;
+genes are features and sequencing reads are technical observations.
+
+A defensible repeated nested design might use patient-level outer folds for
+performance and patient-level inner folds for selecting a gene-filter threshold
+and regularization strength. Normalization parameters, feature selection, and any
+batch correction are learned inside each inner training set. If patients were
+processed at three hospitals and future use includes a new hospital, a random
+patient split answers an easier question than leaving hospitals out. Both may be
+reported, but they estimate different generalization regimes.
+
+Statistically, the result is an estimate of predictive loss under the chosen
+splitting scheme and target population. Biologically, useful performance does not
+show that selected genes are causal treatment mechanisms. Stability across folds,
+assay robustness, batch sensitivity, subgroup calibration, and validation in an
+independent cohort remain essential.
+
+# Diagnostics, Sensitivity, and Common Failures
+
+| Threat | What goes wrong | Check or response |
+|---|---|---|
+| Unit leakage | performance reflects recognition of correlated units | rebuild folds from the experimental-unit identifier |
+| Preprocessing before splitting | held-out outcomes or distributions affect training | fit the complete pipeline within each training fold |
+| Tuning on assessment folds | reported loss is optimistically selected | use nested CV or a separate locked test set |
+| Random folds for time, site, or space | validation task is easier than deployment | use forward, grouped, or blocked splits |
+| Inappropriate metric | numerical improvement lacks decision relevance | prespecify loss, calibration, and useful thresholds |
+| Small effective sample size | rankings and intervals are unstable | show split sensitivity and seek external units |
+| Dataset shift | internal CV estimates the wrong population | validate under the intended site, period, and protocol |
+
+CV cannot diagnose unmeasured deployment shifts from internal data alone. Compare
+covariate support, missingness, prevalence, assay protocols, and performance across
+sites or periods. Treat an internal estimate as conditional on its sampling and
+measurement process.
+
+# Connections and Take-home Messages
+
+- [Train, validation, and test-set design](train-validation-and-test-set-design.qmd)
+  separates development decisions from a final assessment.
+- [Variable selection and nested-model testing](variable-selection-and-nested-model-testing.qmd)
+  explains adaptive-search bias and post-selection uncertainty.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  shows why the best observed candidate is optimistically selected.
+- [Regression uncertainty and coefficient interpretation](regression-uncertainty-and-coefficient-interpretation.qmd)
+  distinguishes coefficient uncertainty from predictive performance.
+- [Deviance, residuals, and goodness of fit](deviance-residuals-and-goodness-of-fit.qmd)
+  supplies model diagnostics that CV scores cannot replace.
+
+1. Cross-validation estimates the performance of a complete learning procedure
+   under a specified future-sampling regime.
+2. Split the independent experimental units, not their correlated technical
+   observations.
+3. Learn preprocessing, feature selection, tuning, and calibration inside the
+   training folds; nested validation is required for honest tuned performance.
+4. Fold losses are dependent, and repeated partitions do not manufacture new
+   biological replication.
+5. Predictive performance must be paired with calibration, design checks,
+   sensitivity analysis, and external validation when transport matters.
+
+# References
+
+- Stone, M. (1974). Cross-validatory choice and assessment of statistical
+  predictions. *Journal of the Royal Statistical Society: Series B*, 36,
+  111--147. <https://doi.org/10.1111/j.2517-6161.1974.tb00994.x>
+- Geisser, S. (1975). The predictive sample reuse method with applications.
+  *Journal of the American Statistical Association*, 70, 320--328.
+  <https://doi.org/10.1080/01621459.1975.10479865>
+- Kohavi, R. (1995). A study of cross-validation and bootstrap for accuracy
+  estimation and model selection. *Proceedings of the Fourteenth International
+  Joint Conference on Artificial Intelligence*, 1137--1145.
+  <https://www.ijcai.org/Proceedings/95-2/Papers/016.pdf>
+- Varma, S., and Simon, R. (2006). Bias in error estimation when using
+  cross-validation for model selection. *BMC Bioinformatics*, 7, 91.
+  <https://doi.org/10.1186/1471-2105-7-91>
+- Cawley, G. C., and Talbot, N. L. C. (2010). On over-fitting in model selection
+  and subsequent selection bias in performance evaluation. *Journal of Machine
+  Learning Research*, 11, 2079--2107.
+  <https://jmlr.org/papers/v11/cawley10a.html>
+- Varoquaux, G. (2018). Cross-validation failure: small sample sizes lead to
+  large error bars. *NeuroImage*, 180, 68--77.
+  <https://doi.org/10.1016/j.neuroimage.2017.06.061>
+- Roberts, D. R., et al. (2017). Cross-validation strategies for data with
+  temporal, spatial, hierarchical, or phylogenetic structure. *Ecography*, 40,
+  913--929. <https://doi.org/10.1111/ecog.02881>

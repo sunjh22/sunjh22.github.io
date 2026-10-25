@@ -29,8 +29,10 @@ categories: [Statistics, Modelling]
 - [Generalized additive models](generalized-additive-models.qmd)
 - [Variable selection and nested-model testing](variable-selection-and-nested-model-testing.qmd)
 - [AIC, BIC, and information criteria](aic-bic-and-information-criteria.qmd)
+- [Cross-validation](cross-validation.qmd)
+- [Train, validation, and test-set design](train-validation-and-test-set-design.qmd)
 
-Future notes in this level will cover validation, identifiability, and model instability.
+Future notes in this level will cover identifiability and model instability.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)

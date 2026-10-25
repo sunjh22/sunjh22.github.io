@@ -1,0 +1,291 @@
+---
+title: "Train, Validation, and Test-set Design"
+subtitle: "Separating model development from an honest assessment of future performance"
+description: "Principles for development and test splits, leakage prevention, grouped and temporal designs, distribution shift, and bioinformatics validation."
+author: "Jiahong Sun"
+date: "2026-10-25"
+date-modified: "2026-10-25"
+categories: [Statistics, Regression, Prediction, Study Design]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Three Roles, Not Three Arbitrary Percentages
+
+A train--validation--test design separates model construction from performance
+assessment:
+
+- the **training set** estimates parameters for a candidate procedure;
+- the **validation set** chooses features, transformations, hyperparameters,
+  thresholds, or candidate procedures; and
+- the **test set** is opened once to estimate the performance of the locked
+  procedure on new independent units.
+
+The labels describe information flow, not fixed percentages. A 60/20/20 random
+split is not automatically sound, and cross-validation can replace a single
+validation split within the development data. What matters is that the test data
+do not influence development and that the split represents the intended future
+use.
+
+```text
+Development data                         Locked test data
+  training <-> validation                    |
+  fit, tune, revise, debug                    v
+  lock the complete procedure  ------>  one final assessment
+```
+
+Once test results guide a new feature, threshold, subgroup definition, or model,
+the test set has become validation data. The revised procedure needs another
+untouched assessment.
+
+# Define the Prediction Estimand First
+
+Let $A$ denote the locked learning algorithm, $D_{\mathrm{dev}}$ the development
+sample, and
+
+$$
+\hat f=A(D_{\mathrm{dev}}).
+$$
+
+For a future population $P_\star$, the conditional test-risk target for this fitted
+model is
+
+$$
+R_\star(\hat f)=
+\operatorname E_{(X,Y)\sim P_\star}
+\left[L\{Y,\hat f(X)\}\mid D_{\mathrm{dev}}\right].
+$$
+
+If an independent test set of $n_{\mathrm{test}}$ units is sampled from
+$P_\star$, its empirical loss is
+
+$$
+\widehat R_{\mathrm{test}}
+=\frac{1}{n_{\mathrm{test}}}
+\sum_{i=1}^{n_{\mathrm{test}}}L\{Y_i,\hat f(X_i)\}.
+$$
+
+This interpretation requires independent test units, a prespecified analysis,
+and alignment between the test distribution and $P_\star$. If test cases come
+from the same laboratory and period as training cases, the estimate does not by
+itself establish performance in a new hospital, ancestry group, instrument, or
+future time period.
+
+The target also determines the metric. Probability prediction calls for proper
+scores and calibration; ranking calls for a discrimination metric; a clinical
+decision requires a loss or utility tied to consequences. Reporting only the
+best-looking metric after seeing the test data creates another selection problem.
+
+# Design the Split Around the Experimental Unit
+
+The independent unit of inference and deployment must be assigned wholly to one
+partition. The row of an analysis table is not necessarily that unit.
+
+In high-throughput biology:
+
+- reads and technical lanes belong to a library;
+- cells may belong to a donor or independently randomized specimen;
+- repeated visits and images belong to a participant;
+- aliquots and assay replicates belong to a biological sample;
+- related participants may belong to a family cluster.
+
+Putting correlated observations from one unit on both sides of a split leaks
+unit-specific information. It also makes precision appear to depend on the number
+of cells or reads rather than the number of independently sampled donors or
+specimens.
+
+## Random, grouped, temporal, and external splits
+
+| Intended claim | Appropriate assessment design | Main limitation |
+|---|---|---|
+| New exchangeable unit from the same setting | random unit-level split | does not test site or time shift |
+| New unit from a represented cluster | grouped split by unit, family, or specimen | clusters may still resemble one another |
+| Future cases | chronological split with training before testing | time and protocol changes are combined |
+| New site, laboratory, or platform | leave-site-out or external test cohort | few sites can make results unstable |
+| New spatial region | blocked or buffered spatial split | depends on deployment scale |
+
+A harder split is not inherently better. It is better only when it matches the
+scientific claim. Random and external-site assessments can both be useful when
+they are labeled as different estimands rather than treated as interchangeable
+replicates.
+
+# Keep the Test Set Outside Development
+
+Test isolation covers more than outcome labels. The test set should not determine:
+
+- inclusion and exclusion rules invented after inspection;
+- normalization, imputation, batch correction, or feature scaling parameters;
+- feature filtering, dimension reduction, or representation learning;
+- model family, hyperparameters, ensemble weights, or stopping rules;
+- decision thresholds, probability calibration, or subgroup definitions;
+- which performance metrics and comparisons are emphasized.
+
+Code debugging can also overfit the test set when repeated test evaluation reveals
+which changes help. Freeze the data-processing specification and metric definitions
+before assessment, keep a development-only debugging dataset, and log every access
+to the test outcomes. In a benchmark shared with many analysts, repeated community
+use can exhaust the effective independence of the benchmark even if each submission
+sees only a score.
+
+Training and test transformations must also reflect deployment. It can be valid
+to apply externally fixed constants or reference panels to every partition. By
+contrast, estimating a global mean, principal-component basis, gene signature,
+or calibration curve from all partitions lets test information shape the model.
+
+# Allocate Information According to the Goal
+
+There is no universally optimal split fraction. More development units improve
+fitting and tuning; more test units reduce uncertainty in performance. The useful
+sample size is the number of independent units and informative outcomes, not the
+number of measured variables or technical observations.
+
+Before splitting, plan the precision of the primary test metric. For a mean test
+loss with independent unit-level losses $\ell_i$, a basic standard error is
+
+$$
+\operatorname{SE}(\bar\ell)
+=\frac{s_\ell}{\sqrt{n_{\mathrm{test}}}},
+$$
+
+where $s_\ell$ is the sample standard deviation of the unit-level losses. Clustered
+test data require cluster-aware uncertainty. Accuracy has binomial uncertainty
+only under restrictive independent, identically distributed classification
+conditions; area under the curve, calibration measures, and threshold-selected
+metrics need their own methods.
+
+Rare outcomes, small subgroups, and site-level claims can require a test set much
+larger than a rule-of-thumb percentage suggests. When data are limited, nested
+[cross-validation](cross-validation.qmd) can use development data efficiently and
+estimate the entire tuning procedure. It does not eliminate the value of later
+external validation under the real deployment distribution.
+
+# Validation Is a Development Activity
+
+The validation set answers questions such as which penalty, feature set, or
+threshold to use. Because the chosen candidate is the winner among noisy validation
+estimates, its validation performance is optimistic. This is the same selection
+mechanism behind the winner's curse.
+
+The final test evaluates the complete rule that made those choices. If model
+selection uses five-fold CV, preprocessing and tuning occur within that CV. If
+many modeling strategies are compared, the test evaluates the winning strategy
+only after the comparison is finished. Reporting uncertainty for the fitted
+coefficients does not account for all uncertainty introduced by this adaptive
+development path.
+
+A model registry or analysis record should preserve the training-data version,
+code version, random seeds, feature definitions, hyperparameters, preprocessing
+objects, threshold, and primary metrics. Reproducibility of the locked artifact is
+part of statistical validity.
+
+# Worked Multi-site Omics Example
+
+Suppose 300 donors from four hospitals have plasma proteomics measurements and a
+binary one-year outcome. The intended tool will be deployed prospectively at
+hospitals not involved in development.
+
+A random donor-level test split estimates performance for new donors mixed across
+the four familiar hospitals. It does not estimate new-hospital performance. A
+stronger design reserves one or more hospitals as an external test and uses only
+the remaining hospitals for feature filtering, missing-value handling, tuning,
+threshold choice, and calibration. If only four hospitals exist, site-level
+uncertainty remains large; hundreds of donors cannot replace independent site
+replication.
+
+All aliquots and technical repeats from one donor remain in the same partition.
+When the locked model is evaluated, report the prespecified proper score,
+discrimination, calibration intercept and slope, clinically relevant threshold
+performance, and intervals based on donors or sites as appropriate. Examine
+performance by site and scientifically important groups without selecting only
+favorable subgroups.
+
+Statistically, the test estimates performance for the sampled sites, protocol,
+case mix, prevalence, and follow-up process. Biologically, a protein signature
+that predicts outcome may reflect disease mechanism, treatment allocation,
+comorbidity, handling time, or batch. Mechanistic interpretation requires separate
+design and evidence.
+
+# Distribution Shift and Post-deployment Monitoring
+
+An independent test set can be internally honest yet externally irrelevant.
+Transport can fail through changes in covariates, outcome prevalence, the
+conditional relationship $P(Y\mid X)$, measurement, missingness, or clinical
+actions triggered by predictions.
+
+Before deployment, compare population definitions, covariate support, assay
+protocols, site and time composition, missingness, and outcome ascertainment.
+Report where extrapolation occurs. Recalibration may repair a changed intercept or
+scale but cannot generally fix missing predictors, altered labels, or a changed
+biological mechanism.
+
+After deployment, monitor data quality, missingness, calibration, performance by
+relevant groups, and operational consequences. A performance drop is evidence to
+investigate; it does not uniquely identify whether the cause is biological drift,
+measurement change, workflow change, or sampling error. Updating the model starts
+a new development cycle and requires a new assessment plan.
+
+# A Design and Reporting Checklist
+
+1. State the future population, prediction unit, horizon, outcome, and primary
+   loss before splitting.
+2. Identify biological and technical replication; assign every correlated unit
+   to exactly one partition.
+3. Choose random, grouped, temporal, spatial, or site-based separation to match
+   the intended claim.
+4. Keep preprocessing, selection, tuning, calibration, and threshold choice
+   inside development data.
+5. Lock the pipeline, test analysis, and reporting metrics before opening test
+   outcomes.
+6. Report uncertainty at the independent-unit level and show clinically or
+   biologically relevant subgroup results without post hoc cherry-picking.
+7. Distinguish internal performance, external transport, statistical prediction,
+   and biological mechanism.
+
+# Connections and Take-home Messages
+
+- [Cross-validation](cross-validation.qmd) explains fold-based performance
+  estimation and nested tuning within development data.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  explains why reused validation results are optimistic.
+- [Variable selection and nested-model testing](variable-selection-and-nested-model-testing.qmd)
+  describes adaptive model search and its inferential cost.
+- [Odds ratios, probabilities, and calibration](odds-ratios-probabilities-and-calibration.qmd)
+  distinguishes discrimination from reliable predicted probabilities.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a framework for conclusions that depend on design choices.
+
+The test set is an independent scientific assessment, not a final source of model
+ideas. Its credibility comes from a locked pipeline, experimental-unit-aware
+separation, a prespecified estimand and metric, and correspondence to deployment.
+Technical replication improves measurement but cannot substitute for independent
+donors, specimens, sites, or future periods. When the deployment distribution
+changes, transparent external validation and monitoring matter more than a
+favorable internal split.
+
+# References
+
+- Stone, M. (1974). Cross-validatory choice and assessment of statistical
+  predictions. *Journal of the Royal Statistical Society: Series B*, 36,
+  111--147. <https://doi.org/10.1111/j.2517-6161.1974.tb00994.x>
+- Ambroise, C., and McLachlan, G. J. (2002). Selection bias in gene extraction
+  on the basis of microarray gene-expression data. *Proceedings of the National
+  Academy of Sciences*, 99, 6562--6566.
+  <https://doi.org/10.1073/pnas.102102699>
+- Varma, S., and Simon, R. (2006). Bias in error estimation when using
+  cross-validation for model selection. *BMC Bioinformatics*, 7, 91.
+  <https://doi.org/10.1186/1471-2105-7-91>
+- Cawley, G. C., and Talbot, N. L. C. (2010). On over-fitting in model selection
+  and subsequent selection bias in performance evaluation. *Journal of Machine
+  Learning Research*, 11, 2079--2107.
+  <https://jmlr.org/papers/v11/cawley10a.html>
+- Hastie, T., Tibshirani, R., and Friedman, J. (2009). *The Elements of
+  Statistical Learning: Data Mining, Inference, and Prediction*, 2nd ed.
+  Springer. <https://hastie.su.domains/ElemStatLearn/>
+- Roberts, D. R., et al. (2017). Cross-validation strategies for data with
+  temporal, spatial, hierarchical, or phylogenetic structure. *Ecography*, 40,
+  913--929. <https://doi.org/10.1111/ecog.02881>
+- Varoquaux, G. (2018). Cross-validation failure: small sample sizes lead to
+  large error bars. *NeuroImage*, 180, 68--77.
+  <https://doi.org/10.1016/j.neuroimage.2017.06.061>
