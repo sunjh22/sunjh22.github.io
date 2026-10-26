@@ -1,0 +1,261 @@
+---
+title: "Multicollinearity and Identifiability"
+subtitle: "When a regression design cannot distinguish effects, and when it can distinguish them only weakly"
+description: "Identifiability, exact and near multicollinearity, estimable functions, diagnostics, remedies, and bioinformatics design implications."
+author: "Jiahong Sun"
+date: "2026-10-26"
+date-modified: "2026-10-26"
+categories: [Statistics, Regression, Identifiability, Diagnostics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Design Determines What Can Be Learned
+
+Regression coefficients are comparisons made possible by variation in the
+design. If treatment and batch always occur together, the data cannot say how
+much of their combined difference belongs to treatment and how much belongs to
+batch. If they are merely *almost* aligned, the comparison exists but can be so
+imprecise that small data changes produce large coefficient changes.
+
+These are related but distinct cases:
+
+- **Nonidentifiability or exact multicollinearity:** different coefficient
+  vectors produce exactly the same distribution of the observed data.
+- **Near multicollinearity or weak identification:** the model is technically
+  identifiable, but the observed design contains little information for
+  separating particular coefficient combinations.
+
+Multicollinearity is therefore not primarily a correlation-table problem. It is
+a property of the fitted design matrix, parameterization, and target contrast.
+It can involve indicators, interactions, spline bases, or several variables
+even when no pairwise correlation is striking.
+
+# Data-generating Model and Target
+
+For independent experimental units, consider the linear model
+
+$$
+\mathbf Y=\mathbf X\boldsymbol\beta+\boldsymbol\varepsilon,
+\qquad
+\operatorname{E}(\boldsymbol\varepsilon\mid\mathbf X)=\mathbf 0,
+\qquad
+\operatorname{Var}(\boldsymbol\varepsilon\mid\mathbf X)=\sigma^2\mathbf I.
+$$
+
+The rows of the $n\times p$ matrix $\mathbf X$ describe units, and its columns
+encode the intercept, exposures, adjustment variables, indicators, and derived
+terms. The coefficient vector $\boldsymbol\beta$ is the parameter under this
+chosen coding. A scientific estimand is often a contrast
+$\mathbf c^\mathsf{T}\boldsymbol\beta$ or a mean prediction
+$\mathbf x_*^\mathsf{T}\boldsymbol\beta$, rather than every coordinate of
+$\boldsymbol\beta$ separately.
+
+The usual conditional-mean interpretation still requires a suitable mean
+model. Causal interpretation additionally requires design and adjustment
+assumptions; full rank does not remove confounding.
+
+# Exact Collinearity and Identifiability
+
+The least-squares criterion has a unique coefficient solution exactly when
+
+$$
+\operatorname{rank}(\mathbf X)=p.
+$$
+
+If the rank is smaller than $p$, there is a nonzero vector $\mathbf a$ such that
+$\mathbf X\mathbf a=\mathbf 0$. Consequently,
+
+$$
+\mathbf X(\boldsymbol\beta+t\mathbf a)
+=\mathbf X\boldsymbol\beta
+\quad\text{for every }t.
+$$
+
+The likelihood and fitted values cannot distinguish the entire line of
+coefficient vectors. Software may omit an aliased coefficient or choose one
+generalized-inverse solution, but that convention does not identify the omitted
+effect.
+
+Common causes include:
+
+- an intercept plus indicators for every category;
+- a variable duplicated or reconstructed exactly from other columns;
+- an interaction or nested factor unsupported by any observations;
+- treatment perfectly confounded with batch, site, family, or processing day;
+- more fitted columns than independent units can support.
+
+Some linear functions remain identifiable. A contrast
+$\mathbf c^\mathsf{T}\boldsymbol\beta$ is **estimable** when it has the same
+value for every coefficient vector producing the same fitted mean. Equivalently,
+$\mathbf c$ lies in the row space of $\mathbf X$, or
+$\mathbf c^\mathsf{T}\mathbf a=0$ for every null-space vector $\mathbf a$.
+Thus nonidentifiability of individual coding coefficients need not prevent all
+scientifically relevant comparisons.
+
+# Near Collinearity and Uncertainty
+
+With full column rank, ordinary least squares gives
+
+$$
+\widehat{\boldsymbol\beta}
+=(\mathbf X^\mathsf{T}\mathbf X)^{-1}\mathbf X^\mathsf{T}\mathbf Y,
+\qquad
+\operatorname{Var}(\widehat{\boldsymbol\beta}\mid\mathbf X)
+=\sigma^2(\mathbf X^\mathsf{T}\mathbf X)^{-1}.
+$$
+
+Write a singular-value decomposition as
+
+$$
+\mathbf X=\mathbf U\mathbf D\mathbf V^\mathsf{T}.
+$$
+
+Then
+
+$$
+\operatorname{Var}(\widehat{\boldsymbol\beta}\mid\mathbf X)
+=\sigma^2\mathbf V\mathbf D^{-2}\mathbf V^\mathsf{T}.
+$$
+
+A small singular value corresponds to a direction in coefficient space that
+changes the fitted means very little. Noise is amplified by its inverse square,
+so coefficients associated with that direction can have large standard errors,
+opposite signs, or sensitivity to a few observations. This is a precision and
+interpretation problem, not a source of conditional bias by itself under the
+stated linear model.
+
+Fitted values can remain stable because the unstable coefficient changes cancel
+within the observed predictor cloud. Predictions outside that cloud remove the
+cancellation and can be highly unstable. Stable in-sample fit is therefore not
+evidence that individual effects or extrapolations are well determined.
+
+## Variance inflation factors
+
+For a nonconstant predictor $X_j$, regress its design column on the other design
+columns and let $R_j^2$ be the resulting coefficient of determination. Under the
+classical model,
+
+$$
+\operatorname{Var}(\widehat\beta_j\mid\mathbf X)
+=\frac{\sigma^2}
+{\sum_i(x_{ij}-\bar x_j)^2(1-R_j^2)},
+\qquad
+\operatorname{VIF}_j=\frac{1}{1-R_j^2}.
+$$
+
+The VIF measures inflation relative to an imagined design with the same spread
+in $X_j$ but no linear association with the other columns. It does **not** by
+itself determine whether the actual standard error is scientifically damaging;
+sample size, outcome noise, predictor spread, and the target contrast also
+matter. Universal cutoffs such as 5 or 10 have no general decision-theoretic
+meaning. Multi-degree-of-freedom terms need a subspace diagnostic, such as a
+generalized VIF, rather than arbitrary coefficient-by-coefficient screening.
+
+# Diagnosing the Design
+
+Diagnostics should be performed on the exact model matrix after coding,
+transformations, interactions, and missing-data removal.
+
+| Question | Useful check | Interpretation |
+|---|---|---|
+| Is the model exactly identified? | matrix rank, QR decomposition, aliased columns | rank deficiency means some stated coefficients are not separately estimable |
+| Which directions are weak? | scaled singular values, condition indices, variance-decomposition proportions | small singular values locate combinations with little information |
+| Is one coefficient inflated by other terms? | VIF or generalized VIF | describes design-based variance inflation, not model validity |
+| Does the scientific contrast have support? | cross-tabulations, joint predictor plots, overlap by group | sparse or absent combinations reveal interpolation or extrapolation |
+| Is the conclusion numerically fragile? | refit after justified perturbations, inspect coefficient paths and profile likelihoods | large movement relative to scientific thresholds signals weak information |
+| Are units truly independent? | map rows to donors, organisms, sites, or experimental batches | technical rows do not create independent design information |
+
+Condition numbers depend on column scaling. Inspecting a standardized
+non-intercept design can reveal geometric dependence, but the scaling choice
+must be reported. Centering can improve computation and make main effects more
+interpretable in models with powers or interactions; it cannot create variation
+that the study never observed.
+
+# Remedies Must Follow the Scientific Target
+
+1. **Correct the design matrix.** Remove accidental duplicate columns, choose a
+   full-rank contrast coding, and simplify unsupported interactions. Do not
+   disguise genuine treatment--batch confounding as a coding error.
+2. **State what is estimable.** Report a supported joint contrast or prediction
+   when individual coefficients are not the scientific target.
+3. **Improve the design.** Randomize conditions across batches, recruit units
+   spanning the relevant combinations, and preserve overlap. New technical
+   replicates at the same design points improve measurement but not rank.
+4. **Use dimension reduction only with a changed question.** A predeclared
+   biological score or principal-component predictor may be useful, but its
+   coefficient is not an effect of each original variable.
+5. **Regularize transparently.** Ridge regression replaces singular inversion
+   by $(\mathbf X^\mathsf{T}\mathbf X+\lambda\mathbf I)^{-1}$ and stabilizes
+   prediction. The penalty introduces bias, makes results depend on scaling and
+   $\lambda$, and does not recover separately identified causal effects.
+6. **Keep necessary confounders.** Dropping an adjustment variable merely to
+   lower a VIF can exchange variance for omitted-variable bias. Compare the
+   uncertainty of the prespecified estimand and conduct a scientifically
+   motivated sensitivity analysis.
+
+# Worked Bioinformatics Example
+
+Suppose all six treated organoids were processed in batch B and all six controls
+in batch A. A gene-level model with intercept, treatment, and batch has treatment
+and batch indicator columns that are identical. The two coefficients are not
+separately identifiable, regardless of sequencing depth, number of reads, or
+number of cells measured per organoid.
+
+If one control organoid is processed in batch B and one treated organoid in batch
+A, the matrix becomes full rank, but the treatment contrast rests heavily on two
+units. Its estimate can be extremely sensitive to those organoids. The correct
+experimental unit is the independently assigned organoid or donor, not each read
+or cell. Technical replication can reduce measurement error, while biological
+replication distributed across treatment--batch combinations supplies the
+information that separates effects.
+
+Statistically, the fitted treatment coefficient is a conditional contrast under
+the model and observed support. Biologically, it can represent a treatment effect
+only if treatment assignment, batch handling, relevant confounding, and target
+population assumptions justify that interpretation.
+
+# Connections and Take-home Messages
+
+- [Multiple linear regression](multiple-linear-regression.qmd) develops partial
+  regression coefficients and the design matrix.
+- [Least squares and the geometry of regression](least-squares-and-regression-geometry.qmd)
+  explains projections, rank, and residual orthogonality.
+- [Categorical predictors and contrasts](categorical-predictors-and-contrasts.qmd)
+  treats full-rank coding and multi-parameter terms.
+- [Linear-model assumptions and diagnostics](linear-model-assumptions-and-diagnostics.qmd)
+  places rank checks alongside residual, influence, and dependence diagnostics.
+- [Ridge regression](../advanced-modeling/index.qmd) is a future knowledge-map
+  topic motivated partly by unstable inverse problems.
+- [Separation and instability in logistic regression](separation-and-instability-in-logistic-regression.qmd)
+  describes a distinct existence failure in binary-response models.
+
+1. Exact collinearity makes some coefficient combinations nonidentifiable; a
+   software convention cannot supply missing information.
+2. Near collinearity amplifies uncertainty along weak design directions and can
+   destabilize coefficients while leaving in-sample predictions apparently good.
+3. Diagnose the fitted model matrix and the scientific contrast, not just
+   pairwise predictor correlations or a universal VIF threshold.
+4. Remedy coding errors, redesign studies, and report estimable contrasts before
+   considering deletion or regularization.
+5. Biological replication across design combinations resolves confounding;
+   technical replication at the same combinations does not.
+
+# References
+
+- Belsley, D. A., Kuh, E., and Welsch, R. E. (1980). *Regression
+  Diagnostics: Identifying Influential Data and Sources of Collinearity*.
+  Wiley. <https://doi.org/10.1002/0471725153>
+- Fox, J., and Monette, G. (1992). Generalized collinearity diagnostics.
+  *Journal of the American Statistical Association*, 87, 178--183.
+  <https://doi.org/10.1080/01621459.1992.10475190>
+- O'Brien, R. M. (2007). A caution regarding rules of thumb for variance
+  inflation factors. *Quality & Quantity*, 41, 673--690.
+  <https://doi.org/10.1007/s11135-006-9018-6>
+- Searle, S. R. (1971). *Linear Models*. Wiley.
+  <https://doi.org/10.1002/9781118491782>
+- R Core Team. `alias`: find aliases in a model. *R statistical software
+  documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/alias.html>

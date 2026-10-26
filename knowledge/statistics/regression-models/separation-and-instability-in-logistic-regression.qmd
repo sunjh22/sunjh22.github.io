@@ -1,0 +1,279 @@
+---
+title: "Separation and Instability in Logistic Regression"
+subtitle: "Why binary-response maximum likelihood can diverge and how to diagnose and handle it"
+description: "Complete and quasi-complete separation, near-separation, diagnostics, bias reduction, regularization, and design implications for logistic regression."
+author: "Jiahong Sun"
+date: "2026-10-26"
+date-modified: "2026-10-26"
+categories: [Statistics, Regression, Logistic Regression, Diagnostics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Perfect Prediction Is an Estimation Warning
+
+In logistic regression, a predictor or linear combination of predictors may
+perfectly divide observed events from nonevents. The apparent classification is
+then flawless, but the ordinary maximum-likelihood estimate (MLE) is not a large
+finite coefficient. The likelihood keeps improving as at least one coefficient
+moves toward infinity.
+
+This phenomenon is **separation**. It occurs most visibly with sparse binary
+outcomes, rare factor levels, many predictors, or small samples, but it is a
+geometric property of the full model matrix rather than any single sample-size
+rule. **Near-separation** leaves a finite optimum while producing a flat,
+ill-conditioned likelihood and similarly unstable estimates.
+
+# Model, Estimand, and Likelihood
+
+For independent experimental units with binary outcomes,
+
+$$
+Y_i\mid\mathbf x_i\sim\operatorname{Bernoulli}(p_i),
+\qquad
+\operatorname{logit}(p_i)=\mathbf x_i^\mathsf{T}\boldsymbol\beta.
+$$
+
+The log-likelihood is
+
+$$
+\ell(\boldsymbol\beta)
+=\sum_{i=1}^n
+\left[y_i\mathbf x_i^\mathsf{T}\boldsymbol\beta
+-\log\{1+\exp(\mathbf x_i^\mathsf{T}\boldsymbol\beta)\}\right].
+$$
+
+For an ordinary finite MLE, $\widehat{\boldsymbol\beta}$ maximizes this function.
+A coefficient $\beta_j$ is a conditional log-odds ratio per unit change in
+$x_j$, holding other encoded predictors fixed. An odds ratio, standardized risk
+difference, or predicted probability is an estimand only after specifying the
+population and covariate distribution to which it refers.
+
+The experimental units must be independent at the modeled level. Treating cells,
+reads, images, or repeated wells from one biological specimen as independent can
+artificially enlarge $n$ without creating new outcome--predictor configurations.
+
+# Complete, Quasi-complete, and Overlapping Data
+
+Let $z_i=2y_i-1$, so $z_i$ equals $1$ for an event and $-1$ for a nonevent.
+Complete separation exists if a nonzero vector $\mathbf b$ satisfies
+
+$$
+z_i\mathbf x_i^\mathsf{T}\mathbf b>0
+\quad\text{for every }i.
+$$
+
+The hyperplane $\mathbf x^\mathsf{T}\mathbf b=0$ then places every event on one
+side and every nonevent on the other. Along
+$\boldsymbol\beta+t\mathbf b$, $t\to\infty$, each observation receives a fitted
+probability closer to its observed outcome. The log-likelihood increases toward
+its supremum without attaining it at a finite value.
+
+Under **quasi-complete separation**, the inequalities can be non-strict,
+
+$$
+z_i\mathbf x_i^\mathsf{T}\mathbf b\geq 0,
+$$
+
+with equality for some observations and a strict inequality for at least one.
+Some coefficient direction still diverges. With **overlap**, no such separating
+direction exists; subject also to a full-rank design, the ordinary logistic MLE
+is finite and unique.
+
+A simple example is a binary variant indicator for which all carriers respond
+and all noncarriers fail to respond. The likelihood favors an ever-larger variant
+coefficient. Reporting the last iterate as a large but finite odds ratio mistakes
+an algorithmic stopping point for an estimate.
+
+# What Instability Looks Like
+
+Separation and near-separation can produce:
+
+- coefficients that grow as the iteration limit or numerical tolerance changes;
+- enormous or misleading model-based standard errors;
+- fitted probabilities numerically equal or very close to 0 and 1;
+- nonconvergence warnings, fitted probabilities at boundaries, or apparent
+  convergence with a nearly singular information matrix;
+- Wald statistics that become small because both estimate and standard error
+  diverge, despite the strong observed prediction;
+- odds ratios and Wald confidence limits that overflow or depend on arbitrary
+  software limits.
+
+Failure can occur for a *linear combination* of continuous and categorical
+predictors, so one-way tables may miss it. Conversely, an empty cell in a simple
+table need not imply separation after considering all observations and the
+chosen model.
+
+## Separation is not multicollinearity
+
+[Multicollinearity](multicollinearity-and-identifiability.qmd) concerns dependence
+among columns of $\mathbf X$. Separation concerns how outcome labels align with
+the predictor geometry. A design matrix can have full rank and still separate
+the outcomes. The two problems can coexist, and both can make the observed
+information ill-conditioned, but their existence conditions and remedies differ.
+
+# Diagnosis Before Trusting a Fit
+
+| Check | Evidence | Limitation |
+|---|---|---|
+| Cross-tabulate outcome by categorical predictors | empty event or nonevent cells expose simple separation | misses multivariable separating combinations |
+| Plot continuous predictors by outcome | large gaps or extreme leverage reveal simple or near separation | projections can hide higher-dimensional geometry |
+| Solve the separation inequalities | linear programming can classify overlap, complete, or quasi-complete separation | diagnoses the specified matrix, not whether the model is scientifically appropriate |
+| Inspect the coefficient path | continued growth across iterations or tolerances indicates a nonfinite direction | a stopped algorithm may falsely look stable |
+| Inspect information and profiles | tiny eigenvalues and one-sided flat likelihood profiles reveal weak information | asymptotic Wald summaries remain unreliable near nonregular cases |
+| Refit design-respecting perturbations | instability to one unit or sparse cell shows practical fragility | perturbations must preserve clustering and the study design |
+
+Diagnostics should use the final analysis rows and full model matrix, including
+interactions and missing-value exclusions. A successful optimizer message is not
+proof that a finite MLE exists.
+
+# Remedies and Their Inferential Targets
+
+## Correct errors and reconsider unsupported complexity
+
+First verify outcome coding, factor levels, duplicated rows, data leakage, and
+whether a predictor is measured after the outcome. Simplify an interaction or
+merge categories only when the revised model matches the scientific question;
+collapsing levels merely to obtain convergence can conceal real effect
+heterogeneity. Do not delete a prespecified confounder solely because it
+participates in separation.
+
+More independent units can create overlap when separation is accidental, but it
+cannot solve structural separation caused by a deterministic definition, a
+post-outcome predictor, or a permanently confounded design. Repeated technical
+measurements of the same units are not the needed new information.
+
+## Bias-reduced likelihood
+
+Firth's adjusted-score method removes the first-order term in MLE bias. In
+logistic regression it corresponds to maximizing
+
+$$
+\ell_F(\boldsymbol\beta)
+=\ell(\boldsymbol\beta)
++\frac{1}{2}\log\left|\mathbf I(\boldsymbol\beta)\right|,
+$$
+
+where $\mathbf I(\boldsymbol\beta)$ is the expected information. This
+Jeffreys-prior penalty yields finite estimates under separation in standard
+full-rank logistic settings. Penalized likelihood-ratio tests and profile
+penalized-likelihood intervals are generally preferable to automatically using
+Wald summaries.
+
+The estimator is not the ordinary MLE. Report the method, interval construction,
+and sensitivity to influential units rather than describing the correction as
+if the data themselves contained a finite maximum.
+
+## Bayesian and predictive regularization
+
+A proper, weakly informative prior on coefficients can produce a proper finite
+posterior and express plausible effect scales. Under separation, however, the
+likelihood supplies limited information in the separating direction, so posterior
+odds ratios and tail probabilities can be materially prior-sensitive. Examine
+several scientifically defensible prior scales and use posterior predictive
+checks for calibration and influential patterns.
+
+Ridge, lasso, and elastic-net logistic regression also produce finite regularized
+solutions under common conditions and can be effective for prediction. Their
+coefficients depend on scaling and penalty selection, target a penalized rather
+than unpenalized estimate, and do not by themselves provide ordinary likelihood
+inference. Tuning must occur within resampling folds at the experimental-unit
+level.
+
+## Exact conditional methods
+
+For small contingency-type problems, exact conditional logistic procedures can
+condition away nuisance parameters and avoid a normal approximation. They answer
+a conditional inferential question, can be computationally expensive or
+conservative, and may still yield one-sided or infinite estimates when the data
+support only a bound. They are an alternative target, not a universal repair.
+
+# Bioinformatics Design and Interpretation
+
+Consider a pilot CRISPR experiment with 12 independently cultured donor-derived
+organoids. All four organoids carrying a molecular signature survive treatment,
+whereas none of the eight without the signature survive. A logistic model using
+the signature has complete separation.
+
+Thousands of cells per organoid do not convert this into thousands of independent
+binary outcomes. The donor-derived organoid is the experimental unit; cells are
+subsamples. A cell-level ordinary logistic fit would combine separation with
+pseudoreplication and could report extreme precision that the design does not
+possess.
+
+A defensible analysis would:
+
+1. verify that the signature was defined without using survival information;
+2. show the outcome table and diagnose separation explicitly;
+3. fit a prespecified bias-reduced or properly regularized model;
+4. report finite estimates with profile or posterior intervals and sensitivity
+   to prior or penalty choices;
+5. validate prediction on new donors rather than random cells from the same
+   donors; and
+6. distinguish the statistical association from a biological claim of mechanism
+   or treatment modification.
+
+Additional biological replicates should represent the target population and
+break sparse design patterns across treatment, batch, and signature status.
+Technical replication can refine each organoid's measurements but does not by
+itself establish overlap or external validity.
+
+# Reporting Checklist
+
+- Define the binary outcome, experimental unit, target population, and model
+  matrix.
+- Report event counts overall and across important categorical combinations.
+- State whether overlap, complete separation, quasi-complete separation, or
+  near-separation was diagnosed and how.
+- Name the estimator: ordinary MLE, bias-reduced likelihood, Bayesian posterior,
+  or another penalized method.
+- Give effect estimates on an interpretable scale with profile or posterior
+  uncertainty, and show sensitivity to penalty or prior choices.
+- Assess calibration and validation using independent biological units.
+- Avoid interpreting a finite penalized estimate as proof that the unpenalized
+  MLE exists.
+
+# Connections and Take-home Messages
+
+- [Logistic regression](logistic-regression.qmd) introduces the likelihood,
+  conditional odds ratios, diagnostics, and prediction.
+- [Odds ratios, probabilities, and calibration](odds-ratios-probabilities-and-calibration.qmd)
+  separates coefficient interpretation from outcome-scale performance.
+- [Maximum-likelihood estimation](../statistical-inference/maximum-likelihood-estimation.qmd)
+  discusses existence, boundary behavior, and likelihood uncertainty.
+- [Likelihood-ratio, Wald, and score tests](../statistical-inference/likelihood-ratio-wald-and-score-tests.qmd)
+  explains why regular Wald inference is fragile in nonregular settings.
+- [Train, validation, and test-set design](train-validation-and-test-set-design.qmd)
+  shows how grouped validation prevents biological leakage.
+
+1. Separation occurs when outcome classes can be divided by a hyperplane in the
+   fitted predictor space; the ordinary logistic MLE then is not finite.
+2. Iteration warnings, huge coefficients, and extreme probabilities are clues,
+   but an explicit geometric diagnosis is stronger than optimizer status.
+3. Near-separation can make finite estimates scientifically unstable even when
+   software reports convergence.
+4. Bias reduction, proper priors, and predictive penalties give finite answers
+   by changing the estimation problem; their assumptions and sensitivity must be
+   reported.
+5. Independent biological units and supported predictor combinations—not extra
+   technical observations—provide the information needed for stable inference.
+
+# References
+
+- Albert, A., and Anderson, J. A. (1984). On the existence of maximum likelihood
+  estimates in logistic regression models. *Biometrika*, 71, 1--10.
+  <https://doi.org/10.1093/biomet/71.1.1>
+- Santner, T. J., and Duffy, D. E. (1986). A note on A. Albert and J. A.
+  Anderson's conditions for the existence of maximum likelihood estimates in
+  logistic regression models. *Biometrika*, 73, 755--758.
+  <https://doi.org/10.1093/biomet/73.3.755>
+- Firth, D. (1993). Bias reduction of maximum likelihood estimates.
+  *Biometrika*, 80, 27--38. <https://doi.org/10.1093/biomet/80.1.27>
+- Heinze, G., and Schemper, M. (2002). A solution to the problem of separation
+  in logistic regression. *Statistics in Medicine*, 21, 2409--2419.
+  <https://doi.org/10.1002/sim.1047>
+- Kosmidis, I., and Firth, D. (2021). Jeffreys-prior penalty, finiteness and
+  shrinkage in binomial-response generalized linear models. *Biometrika*, 108,
+  71--82. <https://doi.org/10.1093/biomet/asaa052>

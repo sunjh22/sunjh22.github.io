@@ -31,8 +31,11 @@ categories: [Statistics, Modelling]
 - [AIC, BIC, and information criteria](aic-bic-and-information-criteria.qmd)
 - [Cross-validation](cross-validation.qmd)
 - [Train, validation, and test-set design](train-validation-and-test-set-design.qmd)
+- [Multicollinearity and identifiability](multicollinearity-and-identifiability.qmd)
+- [Separation and instability in logistic regression](separation-and-instability-in-logistic-regression.qmd)
 
-Future notes in this level will cover identifiability and model instability.
+This level now covers the core regression sequence from linear models through
+generalized models, diagnostics, model selection, validation, and instability.
 
 - [Statistical Inference](../statistical-inference/index.qmd)
 - [Advanced Modeling](../advanced-modeling/index.qmd)
