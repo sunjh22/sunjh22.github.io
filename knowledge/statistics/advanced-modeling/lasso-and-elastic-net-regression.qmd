@@ -1,0 +1,286 @@
+---
+title: "Lasso and Elastic-net Regression"
+subtitle: "Sparse and grouped shrinkage for high-dimensional prediction"
+description: "Lasso and elastic-net objectives, sparsity, tuning, selection instability, diagnostics, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-10-27"
+date-modified: "2026-10-27"
+categories: [Statistics, Regularization, Regression, Lasso, Elastic Net]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Prediction, Compression, and Discovery Are Different Goals
+
+The lasso fits a regression model while shrinking some coefficients exactly to
+zero. The resulting rule can be easier to store and inspect than an unpenalized
+high-dimensional model. The elastic net combines lasso and ridge penalties,
+often improving prediction when useful predictors occur in correlated groups.
+
+Exact zeros are an optimization property, not proof that the discarded
+variables are biologically irrelevant or that the retained variables are causal.
+Several correlated genes may carry nearly interchangeable information, so small
+changes in donors or preprocessing can change which one is selected while
+predictions remain similar. Prediction, sparse representation, and biological
+discovery therefore require different validation arguments.
+
+# Data-generating Model and Regularized Estimator
+
+For independent experimental units, begin with the linear conditional-mean model
+
+$$
+Y_i=\beta_0+\mathbf x_i^\mathsf{T}\boldsymbol\beta+\varepsilon_i,
+\qquad E(\varepsilon_i\mid\mathbf x_i)=0.
+$$
+
+After centering the outcome and design, the lasso estimator is
+
+$$
+\boxed{
+\widehat{\boldsymbol\beta}_{\lambda}^{\mathrm{lasso}}
+=\arg\min_{\boldsymbol\beta}
+\left\{\frac{1}{2n}\|\mathbf y-\mathbf X\boldsymbol\beta\|_2^2
++\lambda\|\boldsymbol\beta\|_1\right\},
+}
+$$
+
+where $\|\boldsymbol\beta\|_1=\sum_j|\beta_j|$ and $\lambda\geq0$. The
+intercept is normally unpenalized. Package conventions differ in the scaling of
+the loss and penalty, so the numerical value of $\lambda$ is software specific.
+
+The elastic net solves
+
+$$
+\boxed{
+\widehat{\boldsymbol\beta}_{\lambda,\alpha}
+=\arg\min_{\boldsymbol\beta}
+\left\{\frac{1}{2n}\|\mathbf y-\mathbf X\boldsymbol\beta\|_2^2
++\lambda\left[
+\alpha\|\boldsymbol\beta\|_1
++\frac{1-\alpha}{2}\|\boldsymbol\beta\|_2^2
+\right]\right\}.
+}
+$$
+
+Here $\alpha=1$ gives the lasso and $\alpha=0$ gives ridge under this
+parameterization; values between zero and one mix sparsity with quadratic
+stabilization. Both estimators are biased and depend on the training sample,
+preprocessing, candidate feature set, and tuning procedure.
+
+# Why the Lasso Produces Exact Zeros
+
+The absolute-value penalty has a corner at zero. For a standardized orthogonal
+design satisfying $\mathbf X^\mathsf{T}\mathbf X/n=\mathbf I$, let
+$z_j=\mathbf x_j^\mathsf{T}\mathbf y/n$ be the unpenalized coefficient. The
+lasso solution separates by coordinate:
+
+$$
+\widehat\beta_j
+=S(z_j,\lambda)
+=\operatorname{sign}(z_j)(|z_j|-\lambda)_+.
+$$
+
+This **soft-thresholding** rule sets $\widehat\beta_j=0$ when
+$|z_j|\leq\lambda$ and otherwise shrinks its magnitude by $\lambda$.
+
+For a general design, the Karush--Kuhn--Tucker conditions are
+
+$$
+\frac{1}{n}\mathbf x_j^\mathsf{T}
+(\mathbf y-\mathbf X\widehat{\boldsymbol\beta})
+=\lambda s_j,
+$$
+
+where $s_j=\operatorname{sign}(\widehat\beta_j)$ for a nonzero coefficient and
+$s_j\in[-1,1]$ at zero. Thus an excluded variable has residual correlation no
+larger than the penalty threshold. This condition is conditional on all other
+selected variables and does not mean that the variable has no population
+association.
+
+The constrained form limits $\|\boldsymbol\beta\|_1$. Its diamond-shaped
+boundary has corners on coordinate axes, making exact zeros common where loss
+contours touch the constraint. Adding the elastic-net $L_2$ term rounds and
+stabilizes the problem while retaining corners from the $L_1$ component.
+
+# Correlated Predictors and the Elastic Net
+
+When several predictors are strongly correlated, the lasso may select one and
+discard the others, with the identity of the selected feature changing across
+resamples. If $p>n$ and the design is in general position, a lasso solution has
+at most $n$ nonzero coefficients; ties and rank deficiencies can also make the
+coefficient solution nonunique even when fitted values are unique.
+
+The quadratic component of the elastic net encourages correlated predictors to
+have more similar coefficients and makes the objective strictly convex in more
+settings. This **grouping effect** is useful when a biological signal is spread
+over correlated genes, but it does not discover known pathways automatically.
+Structured penalties such as group lasso, sparse-group lasso, or graph-guided
+penalties are needed when groups or networks should enter the model explicitly.
+
+Elastic net still requires a choice of representation. One-hot indicators,
+spline bases, gene summaries, interactions, and compositional coordinates are
+different design columns. Penalizing individual columns can violate hierarchy or
+select arbitrary levels of a categorical factor. Encode scientifically coherent
+term blocks before fitting.
+
+# Tuning $\lambda$ and $\alpha$
+
+Cross-validation commonly selects the penalty parameters for prediction. A
+valid procedure must include the whole learning pipeline inside each training
+fold:
+
+1. define folds by independent experimental unit;
+2. learn imputation, normalization, transformations, feature filters, and scales
+   from the training portion only;
+3. fit every candidate $(\alpha,\lambda)$ on that processed training portion;
+4. evaluate the prespecified loss on the held-out units;
+5. use an outer resampling layer or locked test set for performance assessment
+   after tuning.
+
+For a binary or count outcome, deviance may align better with the likelihood
+than misclassification error or raw squared error. Area under the ROC curve does
+not assess probability calibration. Choose the loss from the intended use,
+including the relative costs of errors when relevant.
+
+The penalty path should include a sufficiently large $\lambda$ that makes all
+penalized coefficients zero and a sufficiently small value approaching the
+unpenalized or weakly penalized fit. Tune $\alpha$ as well as $\lambda$ when the
+ridge--lasso balance is not fixed prospectively. Because fold assignments add
+Monte Carlo variation, inspect repeated grouped cross-validation and the entire
+error surface rather than treating one minimizing pair as exact.
+
+# Coefficients, Selection, and Uncertainty
+
+Lasso and elastic-net coefficients are conditional on the penalty and have no
+ordinary least-squares sampling distribution. Naive standard errors computed as
+if the selected variables had been fixed in advance omit selection uncertainty
+and are generally too optimistic. The same data were used both to choose a
+model and to estimate its coefficients.
+
+Possible goals require different approaches:
+
+| Goal | Appropriate evidence | Important limitation |
+|---|---|---|
+| Predict new units | nested validation or a locked external test set | performance can shift across sites or populations |
+| Obtain a compact rule | report the complete preprocessing and fitted coefficients | sparsity can be unstable |
+| Describe feature stability | repeated subsampling or stability selection | frequencies depend on algorithm and tuning choices |
+| Estimate a prespecified effect | design-based model with justified adjustment and uncertainty | prediction penalties need not target causal effects |
+| Test post-selection hypotheses | valid selective, debiased, sample-splitting, or external-confirmation method | each method adds assumptions and may lose power |
+
+Refitting an unpenalized model on lasso-selected features can reduce shrinkage
+bias, but it does not erase selection bias. If selection and refitting use the
+same outcomes, ordinary p-values remain invalid. Sample splitting separates the
+two tasks at the cost of information; external confirmation is often more
+convincing for biomarker discovery.
+
+# Standardization and Penalty Design
+
+Because both penalties depend on coefficient magnitude, predictors measured on
+larger numerical scales are penalized differently unless the design is scaled.
+Unit-standard-deviation scaling is common but not automatically scientifically
+neutral. Binary indicators, rare variants, pathway scores, and continuous
+measurements can warrant different treatment.
+
+Estimate all scaling parameters within training folds and save them with the
+deployed model. Do not penalize the intercept. Required design covariates or
+known confounders can be assigned zero penalty, but doing so changes the fitted
+model and should be declared in advance. Penalty weights can incorporate prior
+information, yet outcome-guided tweaking of those weights adds another selection
+layer that validation must reproduce.
+
+The lasso also has a Bayesian mode interpretation under independent Laplace
+priors; the elastic net corresponds to a combined Laplace--Gaussian penalty.
+This analogy does not supply posterior uncertainty when tuning parameters are
+selected by cross-validation. A complete Bayesian model treats prior scales and
+posterior prediction explicitly.
+
+# Diagnostics and Sensitivity Analysis
+
+Regularization changes coefficient estimation, not the need to diagnose the
+data-generating model.
+
+| Threat | Diagnostic or sensitivity check | Consequence if ignored |
+|---|---|---|
+| Dependence or pseudoreplication | group folds by donor, organism, site, family, or batch as appropriate | validation error is optimistic |
+| Leakage | repeat every supervised and unsupervised learned transformation within folds | held-out outcomes indirectly influence training |
+| Nonlinearity or wrong likelihood | residual checks, calibration, flexible prespecified terms | penalty cannot repair a wrong mean or variance model |
+| Selection instability | selection frequencies and coefficient paths over repeated resamples | a printed sparse list overstates certainty |
+| Dataset shift | external validation and covariate-support comparisons | in-domain accuracy need not transport |
+| Class imbalance | inspect calibration and decision-relevant metrics | accuracy can hide poor minority-class performance |
+| Penalty dependence | vary $\alpha$, scaling, feature filters, and fold definitions | conclusions may be artifacts of one pipeline choice |
+
+Also inspect missingness, influential units, prediction residuals, calibration by
+relevant subgroups, and whether external observations lie inside the training
+predictor support. A sparse coefficient path is not a goodness-of-fit diagnostic.
+
+# Worked Bioinformatics Example
+
+Consider predicting treatment response from 20,000 transcript measurements in
+150 patients, with two sequencing libraries per patient. Patients, not libraries
+or reads, are the independent experimental units. Library replicates can improve
+measurement precision, but placing replicates from one patient in different
+folds leaks patient-specific signal.
+
+A defensible elastic-net pipeline keeps each patient's libraries together,
+performs normalization and any variance filter inside the training folds, tunes
+$\alpha$ and $\lambda$ in an inner grouped loop, and evaluates the frozen
+pipeline in outer held-out patients. Batch, treatment center, and prespecified
+clinical predictors are handled according to the intended deployment setting;
+they are not dropped merely because a penalized coefficient is zero.
+
+Statistically, stable external prediction supports the complete algorithm for a
+defined target population. A gene selected in 70% of resamples has algorithmic
+selection stability under that resampling scheme; it does not have a 70%
+probability of being causal. Biologically, claims about mechanism need independent
+replication, perturbation, and attention to correlated pathways and tissue
+composition.
+
+# Connections and Take-home Messages
+
+- [Ridge regression](ridge-regression.qmd) provides the quadratic component and
+  singular-value view of shrinkage.
+- [Multicollinearity and identifiability](../regression-models/multicollinearity-and-identifiability.qmd)
+  explains why correlated designs destabilize individual coefficients.
+- [Variable selection and nested-model testing](../regression-models/variable-selection-and-nested-model-testing.qmd)
+  separates adaptive search from prespecified tests.
+- [Cross-validation](../regression-models/cross-validation.qmd) and
+  [train, validation, and test-set design](../regression-models/train-validation-and-test-set-design.qmd)
+  cover honest tuning and performance evaluation.
+- [Separation and instability in logistic regression](../regression-models/separation-and-instability-in-logistic-regression.qmd)
+  describes a setting in which penalties can produce finite predictive fits.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a framework for pipeline perturbations.
+
+1. The lasso uses an $L_1$ penalty to shrink and select; the elastic net adds an
+   $L_2$ component that stabilizes correlated-feature fits.
+2. Exact zero coefficients describe a fitted optimization solution, not absence
+   of biological relevance or causality.
+3. Preprocessing, feature filtering, scaling, and tuning must occur within folds
+   defined at the independent-unit level.
+4. Sparse models can predict well while selecting unstable feature sets; report
+   both predictive uncertainty and selection stability.
+5. Post-selection inference requires methods that account for the adaptive
+   search or independent confirmation data.
+
+# References
+
+- Tibshirani, R. (1996). Regression shrinkage and selection via the lasso.
+  *Journal of the Royal Statistical Society: Series B*, 58, 267--288.
+  <https://doi.org/10.1111/j.2517-6161.1996.tb02080.x>
+- Zou, H., and Hastie, T. (2005). Regularization and variable selection via the
+  elastic net. *Journal of the Royal Statistical Society: Series B*, 67,
+  301--320. <https://doi.org/10.1111/j.1467-9868.2005.00503.x>
+- Friedman, J., Hastie, T., and Tibshirani, R. (2010). Regularization paths for
+  generalized linear models via coordinate descent. *Journal of Statistical
+  Software*, 33(1), 1--22. <https://doi.org/10.18637/jss.v033.i01>
+- Meinshausen, N., and Buehlmann, P. (2010). Stability selection. *Journal of
+  the Royal Statistical Society: Series B*, 72, 417--473.
+  <https://doi.org/10.1111/j.1467-9868.2010.00740.x>
+- Hastie, T., Tibshirani, R., and Wainwright, M. (2015). *Statistical Learning
+  with Sparsity: The Lasso and Generalizations*. CRC Press.
+  <https://hastie.su.domains/StatLearnSparsity/>
+- Taylor, J., and Tibshirani, R. J. (2015). Statistical learning and selective
+  inference. *Proceedings of the National Academy of Sciences*, 112,
+  7629--7634. <https://doi.org/10.1073/pnas.1507583112>

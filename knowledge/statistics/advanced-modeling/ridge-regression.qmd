@@ -1,0 +1,306 @@
+---
+title: "Ridge Regression"
+subtitle: "Stabilizing correlated, high-dimensional regression through quadratic shrinkage"
+description: "The ridge objective, coefficient geometry, tuning, diagnostics, uncertainty, and bioinformatics study-design implications."
+author: "Jiahong Sun"
+date: "2026-10-27"
+date-modified: "2026-10-27"
+categories: [Statistics, Regularization, Regression, Ridge Regression]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Shrinkage Trades Variance for Bias
+
+Ordinary least squares can be unstable when predictors are numerous or strongly
+correlated. A small change in the outcomes may then produce a large change in
+individual coefficients even when fitted values barely move. Ridge regression
+stabilizes the fit by preferring coefficient vectors with small squared norm.
+
+This preference deliberately introduces bias. The gain is often lower sampling
+variance and better prediction for new experimental units. Ridge regression does
+not make a confounded effect identifiable, prove causality, or reveal a unique
+biological mechanism among correlated features. Its target is a regularized
+prediction rule under an explicitly chosen loss and penalty.
+
+# Data-generating Model and Prediction Target
+
+For independent units $i=1,\ldots,n$, consider
+
+$$
+Y_i=\beta_0+\mathbf x_i^\mathsf{T}\boldsymbol\beta+\varepsilon_i,
+\qquad
+E(\varepsilon_i\mid\mathbf x_i)=0,
+\qquad
+\operatorname{Var}(\varepsilon_i\mid\mathbf x_i)=\sigma^2.
+$$
+
+The rows of the $n\times p$ matrix $\mathbf X$ contain predictors. The
+conditional mean is $\beta_0+\mathbf x^\mathsf{T}\boldsymbol\beta$ under the
+linear model. For prediction, a natural estimand is the rule minimizing expected
+loss in a specified target population. The ridge **estimator** is a random
+function of the training sample; its fitted coefficients are the observed
+**estimates**. They generally do not estimate the original coefficients without
+bias.
+
+Center $Y$ and every predictor so that the intercept can be omitted below. In
+practice the intercept is estimated separately and is normally not penalized.
+Predictors must also be put on meaningful, documented scales because the penalty
+acts directly on coefficient magnitude.
+
+# The Ridge Objective
+
+For a tuning parameter $\lambda\geq0$, ridge solves
+
+$$
+\boxed{
+\widehat{\boldsymbol\beta}_{\lambda}
+=\arg\min_{\boldsymbol\beta}
+\left\{\|\mathbf y-\mathbf X\boldsymbol\beta\|_2^2
++\lambda\|\boldsymbol\beta\|_2^2\right\}.
+}
+$$
+
+Some software divides the residual term by $n$, $2n$, or an estimate of
+$\sigma^2$. Those conventions change the numerical value of $\lambda$, so tuning
+parameters are not directly comparable across packages unless the objectives are
+matched.
+
+Differentiating the objective gives
+
+$$
+-2\mathbf X^\mathsf{T}(\mathbf y-\mathbf X\boldsymbol\beta)
++2\lambda\boldsymbol\beta=\mathbf0,
+$$
+
+and therefore
+
+$$
+\boxed{
+\widehat{\boldsymbol\beta}_{\lambda}
+=(\mathbf X^\mathsf{T}\mathbf X+\lambda\mathbf I)^{-1}
+\mathbf X^\mathsf{T}\mathbf y.
+}
+$$
+
+When $\lambda>0$, adding $\lambda\mathbf I$ makes the matrix invertible even if
+$p>n$ or $\mathbf X$ is rank deficient. At $\lambda=0$ the ordinary
+least-squares solution is recovered when it is unique. As $\lambda$ increases,
+slopes move continuously toward zero, but they are not normally set exactly to
+zero.
+
+An equivalent constrained form minimizes residual sum of squares subject to
+$\|\boldsymbol\beta\|_2^2\leq t$. Each nontrivial constraint corresponds to a
+penalty value under suitable conditions. The spherical constraint explains why
+ridge shares weight across correlated predictors rather than selecting a corner
+of the parameter space.
+
+# Singular-value Geometry
+
+Let the centered design have singular-value decomposition
+
+$$
+\mathbf X=\mathbf U\mathbf D\mathbf V^\mathsf{T},
+$$
+
+with positive singular values $d_1,\ldots,d_r$. Then
+
+$$
+\widehat{\boldsymbol\beta}_{\lambda}
+=\sum_{j=1}^{r}
+\frac{d_j}{d_j^2+\lambda}
+\mathbf v_j\mathbf u_j^\mathsf{T}\mathbf y.
+$$
+
+Ordinary least squares uses $1/d_j$ and can greatly amplify noise in directions
+with small $d_j$. Ridge replaces that multiplier with
+$d_j/(d_j^2+\lambda)$. Weakly supported directions are shrunk most strongly;
+well-supported directions change less.
+
+The fitted values are $\widehat{\mathbf y}=\mathbf H_\lambda\mathbf y$, where
+
+$$
+\mathbf H_\lambda
+=\mathbf X(\mathbf X^\mathsf{T}\mathbf X+\lambda\mathbf I)^{-1}
+\mathbf X^\mathsf{T}.
+$$
+
+A useful measure of model flexibility is
+
+$$
+\operatorname{df}_{\mathrm{eff}}(\lambda)
+=\operatorname{tr}(\mathbf H_\lambda)
+=\sum_{j=1}^{r}\frac{d_j^2}{d_j^2+\lambda}.
+$$
+
+It falls smoothly from the design rank toward zero as the penalty increases.
+This is an effective degrees of freedom, not a count of nonzero coefficients.
+
+# Bias, Variance, and Prediction Error
+
+Conditioning on $\mathbf X$ under the linear model,
+
+$$
+E(\widehat{\boldsymbol\beta}_\lambda\mid\mathbf X)
+=(\mathbf X^\mathsf{T}\mathbf X+\lambda\mathbf I)^{-1}
+\mathbf X^\mathsf{T}\mathbf X\boldsymbol\beta,
+$$
+
+so the estimator is biased toward zero when $\lambda>0$. Its covariance is
+
+$$
+\operatorname{Var}(\widehat{\boldsymbol\beta}_\lambda\mid\mathbf X)
+=\sigma^2(\mathbf X^\mathsf{T}\mathbf X+\lambda\mathbf I)^{-1}
+\mathbf X^\mathsf{T}\mathbf X
+(\mathbf X^\mathsf{T}\mathbf X+\lambda\mathbf I)^{-1}.
+$$
+
+In the last display, the two inverse factors multiply the middle matrix; it is
+not the inverse of their sum. Along singular direction $j$, the squared-bias and
+variance contributions are controlled by $\lambda/(d_j^2+\lambda)$ and
+$\sigma^2d_j^2/(d_j^2+\lambda)^2$, respectively. A positive penalty can reduce
+mean squared error when the variance reduction exceeds the added squared bias.
+
+Prediction risk also depends on where future predictor vectors lie. Good
+in-sample stabilization does not guarantee reliable extrapolation beyond the
+training distribution.
+
+# Bayesian Interpretation
+
+With Gaussian errors and independent priors
+
+$$
+\beta_j\mid\sigma^2,\lambda
+\sim N\!\left(0,\frac{\sigma^2}{\lambda}\right),
+$$
+
+the ridge solution is the posterior mode and, conditional on fixed
+$\sigma^2$ and $\lambda$, also the posterior mean. This equivalence clarifies
+that shrinkage encodes information: large coefficients are considered less
+plausible a priori. It does not make a data-tuned penalty a fully specified
+Bayesian analysis. A Bayesian workflow must account for uncertainty in prior
+scales and examine posterior predictive adequacy.
+
+# Choosing the Penalty
+
+The penalty is part of the fitting algorithm and must be selected without using
+the final test outcomes.
+
+- **Cross-validation** estimates predictive loss for a stated resampling unit.
+  Every preprocessing step, including normalization, imputation, feature
+  filtering, and standardization, must be learned inside each training fold.
+- **Generalized cross-validation** approximates leave-one-out error for linear
+  smoothers using residual error and $\operatorname{tr}(\mathbf H_\lambda)$.
+- **Information criteria or empirical Bayes** can be useful when their likelihood
+  and prior assumptions match the scientific problem.
+- **Nested resampling** is required when an outer estimate of generalization
+  error is wanted after tuning $\lambda$.
+
+Choose folds at the independent-unit level. If several cells, aliquots, images,
+or repeated measurements belong to one donor, they must remain together. For
+site or time generalization, grouped or forward-chaining splits should mimic the
+actual deployment task.
+
+The minimum-error penalty and a more regularized penalty within one estimated
+standard error of that minimum are common summaries. The latter is a heuristic,
+not a universal inferential rule. Report the candidate grid, loss, fold
+construction, and uncertainty across repeated splits.
+
+# Scaling, Penalty Structure, and Coefficient Meaning
+
+Standardizing each feature to unit sample standard deviation makes the default
+penalty invariant to measurement units, but it changes the parameterization.
+For skewed molecular features, robust or scientifically defined scales may be
+more appropriate. Scales must be estimated from training data within resampling.
+
+Not every coefficient should receive the same penalty. Intercepts, required
+design variables, or prespecified confounders may be left unpenalized. Grouped
+features, spline bases, and multi-level factors may need structured penalties to
+avoid arbitrary treatment of their coding columns. Penalty factors should be
+specified from the modeling goal, not adjusted until a favored result appears.
+
+A ridge coefficient is conditional on all included variables, their scaling,
+the penalty, and the training distribution. Its magnitude is not a direct rank
+of biological importance. Correlated features can substitute for one another,
+and shrinkage can distribute their shared signal across many coefficients.
+
+# Diagnostics and Sensitivity Analysis
+
+| Question | Check | Why it matters |
+|---|---|---|
+| Is the linear mean structure adequate? | residual-versus-fitted plots, nonlinear terms, held-out calibration | regularization does not repair misspecification |
+| Is the penalty stable? | repeated grouped cross-validation and the full error curve | a flat curve implies that one selected $\lambda$ is not uniquely supported |
+| Are predictions driven by a few units? | influence checks and leave-group-out refits | shrinkage reduces but does not eliminate leverage |
+| Does preprocessing leak information? | audit every fold-specific transformation | leakage makes validation error optimistic |
+| Are coefficients sensitive to scaling? | compare scientifically defensible scaling rules | the $L_2$ penalty is scale dependent |
+| Is the target population represented? | compare predictor support across training and target units | ridge does not solve dataset shift or extrapolation |
+
+Sensitivity analyses can compare penalty grids, scaling choices, inclusion of
+required covariates, plausible feature filters, and grouped split definitions.
+Assess predictions and scientifically relevant contrasts, not only the visual
+smoothness of coefficient paths.
+
+# Worked Bioinformatics Example
+
+Suppose gene expression from $p=5{,}000$ prespecified genes is used to predict a
+continuous drug-response phenotype in 120 patient-derived organoids. Multiple
+organoids may come from the same donor, and each organoid may have technical
+sequencing replicates.
+
+The donor is the experimental unit for a new-donor prediction claim. Technical
+libraries from the same organoid can improve measurement, but they do not create
+independent donors. A defensible workflow groups all observations from one donor
+within the same fold, learns normalization and gene scaling from each training
+fold, tunes $\lambda$ internally, and evaluates the locked pipeline on held-out
+donors or an external cohort.
+
+Statistically, a reduction in held-out squared error supports the predictive
+value of the complete regularized rule for the sampled target population.
+Biologically, nonzero ridge coefficients do not establish that all represented
+genes regulate drug response. Perturbation experiments, transportability across
+laboratories, and pathway-level evidence are separate requirements.
+
+# Connections and Take-home Messages
+
+- [Multicollinearity and identifiability](../regression-models/multicollinearity-and-identifiability.qmd)
+  explains the weak directions that motivate ridge stabilization.
+- [Least squares and the geometry of regression](../regression-models/least-squares-and-regression-geometry.qmd)
+  develops the unpenalized projection geometry.
+- [Cross-validation](../regression-models/cross-validation.qmd) and
+  [train, validation, and test-set design](../regression-models/train-validation-and-test-set-design.qmd)
+  describe tuning and honest performance assessment.
+- [Variable selection and nested-model testing](../regression-models/variable-selection-and-nested-model-testing.qmd)
+  distinguishes exploratory search from confirmatory inference.
+- [Lasso and elastic-net regression](lasso-and-elastic-net-regression.qmd)
+  add a sparsity-inducing $L_1$ component.
+- [Maximum a posteriori estimation](../statistical-inference/maximum-a-posteriori-estimation.qmd)
+  provides the general prior-penalty connection.
+
+1. Ridge adds a quadratic penalty that stabilizes weak design directions and
+   remains computable when $p>n$.
+2. The estimator is biased; improved prediction is possible when variance falls
+   more than squared bias rises.
+3. Scaling, penalty factors, preprocessing, and the choice of $\lambda$ are part
+   of the model and must be reproduced inside validation.
+4. Ridge usually retains every feature and cannot identify a unique mechanism
+   among correlated predictors.
+5. Biological replication at the target prediction unit determines effective
+   sample size; technical replication does not replace it.
+
+# References
+
+- Hoerl, A. E., and Kennard, R. W. (1970). Ridge regression: biased estimation
+  for nonorthogonal problems. *Technometrics*, 12, 55--67.
+  <https://doi.org/10.1080/00401706.1970.10488634>
+- Tikhonov, A. N. (1963). Solution of incorrectly formulated problems and the
+  regularization method. *Soviet Mathematics Doklady*, 4, 1035--1038.
+- Hastie, T., Tibshirani, R., and Friedman, J. (2009). *The Elements of
+  Statistical Learning*, 2nd ed., Chapters 3 and 7. Springer.
+  <https://hastie.su.domains/ElemStatLearn/>
+- Harrell, F. E. (2015). *Regression Modeling Strategies*, 2nd ed. Springer.
+  <https://doi.org/10.1007/978-3-319-19425-7>
+- Golub, G. H., Heath, M., and Wahba, G. (1979). Generalized cross-validation
+  as a method for choosing a good ridge parameter. *Technometrics*, 21,
+  215--223. <https://doi.org/10.1080/00401706.1979.10489751>

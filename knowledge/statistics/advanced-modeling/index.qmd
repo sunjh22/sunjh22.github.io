@@ -4,9 +4,13 @@ description: "Regularization, hierarchical models, mixtures, survival analysis, 
 categories: [Statistics, Advanced Modeling]
 ---
 
+- [Ridge regression](ridge-regression.qmd)
+- [Lasso and elastic-net regression](lasso-and-elastic-net-regression.qmd)
 - [Mixture models overview](mixture-models.qmd)
 
-Future notes in this level will cover regularization, empirical Bayes, mixed effects, hierarchical Bayes, mixture estimation, survival analysis, and multivariate models.
+Future notes in this level will cover shrinkage estimation, empirical Bayes,
+mixed effects, hierarchical Bayes, mixture estimation, survival analysis, and
+multivariate models.
 
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Real Bioinformatics Problems](../bioinformatics-problems/index.qmd)
