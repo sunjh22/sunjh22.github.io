@@ -1,0 +1,278 @@
+---
+title: "Empirical Bayes"
+subtitle: "Learning a prior distribution from an ensemble of related problems"
+description: "Parametric and nonparametric empirical Bayes, marginal likelihood, uncertainty, diagnostics, and high-throughput biological applications."
+author: "Jiahong Sun"
+date: "2026-10-28"
+date-modified: "2026-10-28"
+categories: [Statistics, Empirical Bayes, Hierarchical Models, Bioinformatics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Compound Estimation Problem
+
+Empirical Bayes methods address many parallel estimation problems by learning
+their common distribution from the ensemble. For units $j=1,\ldots,p$, write
+
+$$
+\theta_j\sim G_\eta,
+\qquad
+Y_j\mid\theta_j\sim f_j(y_j\mid\theta_j),
+$$
+
+where $G_\eta$ is a mixing or prior distribution indexed by hyperparameters
+$\eta$, and the units are conditionally independent under this basic model. If
+$G_\eta$ were known, Bayes' theorem would give
+
+$$
+p(\theta_j\mid y_j,\eta)
+=\frac{f_j(y_j\mid\theta_j)g_\eta(\theta_j)}
+{m_j(y_j\mid\eta)},
+\qquad
+m_j(y_j\mid\eta)=\int f_j(y_j\mid\theta)g_\eta(\theta)\,d\theta.
+$$
+
+Empirical Bayes first estimates $\eta$ or the whole distribution $G$ from the
+marginal ensemble $Y_1,\ldots,Y_p$, then plugs that estimate into the posterior:
+
+$$
+\boxed{
+\widehat p_{\mathrm{EB}}(\theta_j\mid y_j)
+=p(\theta_j\mid y_j,\widehat\eta).
+}
+$$
+
+The approach is Bayesian at the unit level but uses repeated-sampling or
+ensemble information to estimate the prior. It is not the same as choosing a
+prior by personal belief, and the plug-in posterior is not automatically a full
+Bayesian posterior because uncertainty in $\widehat\eta$ is often omitted.
+
+# Parametric Empirical Bayes
+
+In the normal--normal model,
+
+$$
+Y_j\mid\theta_j\sim N(\theta_j,s_j^2),
+\qquad
+\theta_j\mid m,\tau^2\sim N(m,\tau^2),
+$$
+
+the marginal distribution is
+
+$$
+Y_j\mid m,\tau^2\sim N(m,\tau^2+s_j^2).
+$$
+
+Hyperparameters can be estimated by maximizing the marginal likelihood
+
+$$
+L(m,\tau^2)=
+\prod_{j=1}^{p}
+\frac{1}{\sqrt{2\pi(\tau^2+s_j^2)}}
+\exp\!\left[-\frac{(y_j-m)^2}{2(\tau^2+s_j^2)}\right],
+$$
+
+or by moment equations. Substitution gives the empirical-Bayes posterior mean
+
+$$
+\widehat\theta_j^{\mathrm{EB}}
+=\widehat m+
+\frac{\widehat\tau^2}{\widehat\tau^2+s_j^2}
+(y_j-\widehat m).
+$$
+
+This is an adaptive [shrinkage estimator](shrinkage-estimation.qmd). A noisy
+unit is pulled strongly toward the fitted ensemble center, whereas a precise
+unit remains close to its direct estimate. The **estimand** $\theta_j$, the
+empirical-Bayes **estimator** as a function of the full ensemble, and its observed
+**estimate** must remain distinct.
+
+When all $s_j^2=s^2$, moment estimation might use
+$\widehat m=\bar Y$ and
+$\widehat\tau^2=\max\{0,S_Y^2-s^2\}$. The truncation exposes a boundary: if the
+observed between-unit variation does not exceed measurement variation, the fitted
+prior collapses to a point. Boundary uncertainty can be substantial even when
+the plug-in output looks decisive.
+
+# Nonparametric Empirical Bayes and Tweedie's Formula
+
+Parametric empirical Bayes assumes a family such as normal, gamma, or a finite
+mixture. Nonparametric empirical Bayes instead estimates the mixing distribution
+$G$ more flexibly, commonly by maximizing
+
+$$
+\prod_{j=1}^{p}\int f_j(y_j\mid\theta)\,dG(\theta)
+$$
+
+over a broad class of distributions. Flexibility can represent a sharp null,
+heavy tails, skewness, or multiple effect groups, but the inverse problem may be
+weakly identified and requires regularization or shape constraints.
+
+For $Y\mid\theta\sim N(\theta,\sigma^2)$ with marginal density $m(y)$,
+Tweedie's formula gives
+
+$$
+\boxed{
+E(\theta\mid Y=y)
+=y+\sigma^2\frac{d}{dy}\log m(y).
+}
+$$
+
+Thus the marginal density of the observations determines the Bayes shrinkage
+correction. Estimating a derivative of a density is harder than estimating the
+density itself, especially in sparse tails where scientifically interesting
+effects often lie. Tail estimates therefore need explicit stability checks.
+
+# Estimation, Testing, and Prediction Are Different Uses
+
+Empirical Bayes can support several goals, each with its own target.
+
+- **Effect estimation:** posterior means minimize ensemble posterior squared
+  error; medians minimize absolute error.
+- **Interval summaries:** plug-in credible intervals describe the fitted
+  hierarchical model, but may understate uncertainty in the learned prior.
+- **Multiple testing:** a two-group mixture can estimate local false-discovery
+  probabilities, but calibration depends on the null, alternative, dependence,
+  and selection mechanism.
+- **Prediction:** the posterior predictive distribution integrates a unit's
+  latent parameter under the fitted prior and observation model.
+
+A good estimator of small effects need not identify nonzero effects well, and a
+well-calibrated discovery rule need not give optimal effect estimates. Loss,
+estimand, and evaluation metric should be stated before fitting the ensemble.
+
+# Uncertainty in the Learned Prior
+
+The naive plug-in variance
+$\operatorname{Var}(\theta_j\mid y_j,\widehat\eta)$ treats
+$\widehat\eta$ as known. It can be adequate when the ensemble is large and the
+hyperparameters are well identified, but it is generally smaller than uncertainty
+that also propagates estimation of $\eta$.
+
+Options include:
+
+1. a hierarchical Bayesian model with a hyperprior and integration over $\eta$;
+2. bootstrap resampling of independent units, refitting the entire empirical-Bayes
+   procedure each time;
+3. asymptotic corrections based on the marginal-likelihood information;
+4. leave-one-unit-out or cross-fitted estimation of the prior when self-influence
+   is consequential.
+
+These methods target different notions of uncertainty. A bootstrap over genes
+does not repair having too few biological samples for a treatment contrast, and
+resampling technical reads does not create biological replication.
+
+# Model Checking and Sensitivity
+
+Empirical Bayes is a hierarchical model and should be checked as one. Generate
+replicated parameters from the fitted $G$ and replicated observations from the
+sampling model, then compare distributions of means, variances, zeros, tails,
+and covariate-stratified summaries with the data.
+
+| Assumption or issue | Diagnostic | Sensitivity or remedy |
+|---|---|---|
+| Exchangeable units after conditioning | compare effect and noise distributions across known strata | model covariate-dependent priors or fit justified strata |
+| Correct sampling distribution | standardized residuals, mean--variance checks, replicated extremes | revise likelihood, dependence, or standard errors |
+| Adequate prior family | marginal quantiles, tail counts, multimodality, posterior predictive checks | use robust, mixture, or nonparametric $G$ |
+| Enough units to learn $G$ | profile marginal likelihood; bootstrap hyperparameters | simplify the prior or use external information |
+| Limited influence of one unit | leave-one-out refits and influence measures | cross-fit or robustify hyperparameter estimation |
+| Dependence among units | inspect pathway, genomic, spatial, or batch correlation | model dependence or calibrate by cluster-aware simulation |
+| Selection handled explicitly | reproduce filtering and ranking in validation simulations | fit before selection when valid, or condition on the selection process |
+
+Sensitivity should vary the prior family, center, scale, null model, and treatment
+of outliers. If a top-ranked feature changes materially, that instability is part
+of the scientific result rather than a reason to choose the most favorable fit.
+
+# Bioinformatics Applications
+
+High-throughput assays naturally create compound problems: thousands of features
+are measured on the same biological samples, each with limited information.
+
+In microarray analysis, limma fits a linear model for each gene and uses an
+empirical-Bayes model to moderate gene-wise residual variances toward a common
+distribution. The resulting moderated $t$ statistic gains stable denominator
+estimation when biological replication is limited. In RNA-seq, DESeq2 borrows
+information across genes to estimate a mean--dispersion trend and shrinks noisy
+dispersion and log fold-change estimates under explicit modeling choices.
+
+The experimental unit remains the independently randomized or sampled organism,
+patient, culture, or other biological unit. Probes, reads, technical lanes, cells
+from one donor, and genes are not independent treatment replicates. They can
+improve measurement or help learn nuisance distributions, but the condition
+effect is replicated only across biological units. Design matrices must encode
+condition, pairing, batch, blocking, and other prespecified structure before
+borrowing information across features.
+
+Statistically, moderation can improve ensemble error, stabilize variances, and
+produce better calibrated rankings under the fitted model. Biologically, a
+posterior mean, moderated statistic, or local false-discovery probability does
+not establish mechanism, causality, or practical importance. Interpretation
+also requires effect magnitude, uncertainty, abundance and detectability,
+replicate consistency, annotation quality, composition, and independent evidence.
+
+# Empirical Bayes, Full Bayes, and Penalized Estimation
+
+| Approach | How population-level information is set | Hyperparameter uncertainty | Typical output |
+|---|---|---|---|
+| Fixed penalty or prior | selected externally or by tuning | usually conditioned upon | penalized point estimate or conditional posterior |
+| Empirical Bayes | estimated from the observed ensemble | often omitted unless corrected | plug-in posterior summaries |
+| Hierarchical Bayes | assigned hyperpriors and jointly inferred | integrated under the model | joint and posterior predictive distributions |
+
+These are not ordered from wrong to right. Empirical Bayes can be accurate and
+computationally efficient for large ensembles; full Bayes can propagate more
+uncertainty but remains sensitive to model and hyperprior choices. Penalized
+estimation may directly optimize prediction without claiming a population prior.
+The appropriate comparison depends on the target and loss.
+
+# Connections and Take-home Messages
+
+- [Shrinkage estimation](shrinkage-estimation.qmd) develops the bias--variance
+  and decision-theoretic basis of borrowing strength.
+- [Bayesian priors, likelihoods, and posteriors](../statistical-inference/bayesian-priors-likelihoods-and-posteriors.qmd)
+  gives the probability rules behind the plug-in posterior.
+- [Maximum a posteriori estimation](../statistical-inference/maximum-a-posteriori-estimation.qmd)
+  connects prior information with penalized optimization.
+- [Negative binomial regression](../regression-models/negative-binomial-regression.qmd)
+  describes gene-wise count likelihoods and dispersion shrinkage in RNA-seq.
+- [False discovery rate](../statistical-inference/false-discovery-rate.qmd) and
+  [Benjamini--Hochberg and Storey q-values](../statistical-inference/benjamini-hochberg-and-storey-q-values.qmd)
+  provide complementary frequentist multiplicity frameworks.
+
+1. Empirical Bayes estimates a prior or mixing distribution from a collection of
+   related problems and plugs it into unit-level posterior calculations.
+2. Borrowing strength can sharply improve noisy estimates, but it relies on a
+   defensible sampling model and exchangeability structure.
+3. Plug-in posterior intervals may omit important uncertainty in the learned
+   hyperparameters, especially for small or weakly identified ensembles.
+4. Posterior predictive checks, stratified diagnostics, tail sensitivity, and
+   full-pipeline simulations are central rather than optional.
+5. Omics features help estimate ensemble structure; they do not replace
+   independent biological replication of the scientific contrast.
+
+# References
+
+- Robbins, H. (1956). An empirical Bayes approach to statistics. In
+  *Proceedings of the Third Berkeley Symposium on Mathematical Statistics and
+  Probability*, volume 1, 157--164.
+  <https://doi.org/10.1525/9780520313880-015>
+- Efron, B., and Morris, C. (1973). Stein's estimation rule and its competitors:
+  an empirical Bayes approach. *Journal of the American Statistical Association*,
+  68(341), 117--130. <https://doi.org/10.1080/01621459.1973.10481350>
+- Morris, C. N. (1983). Parametric empirical Bayes inference: theory and
+  applications. *Journal of the American Statistical Association*, 78(381),
+  47--55. <https://doi.org/10.1080/01621459.1983.10477920>
+- Efron, B. (2011). Tweedie's formula and selection bias. *Journal of the
+  American Statistical Association*, 106(496), 1602--1614.
+  <https://doi.org/10.1198/jasa.2011.tm11181>
+- Smyth, G. K. (2004). Linear models and empirical Bayes methods for assessing
+  differential expression in microarray experiments. *Statistical Applications
+  in Genetics and Molecular Biology*, 3, Article 3.
+  <https://doi.org/10.2202/1544-6115.1027>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>
+- Stephens, M. (2017). False discovery rates: a new deal. *Biostatistics*, 18(2),
+  275--294. <https://doi.org/10.1093/biostatistics/kxw041>

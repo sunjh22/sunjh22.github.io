@@ -1,0 +1,262 @@
+---
+title: "Shrinkage Estimation"
+subtitle: "Trading a controlled amount of bias for lower estimation error"
+description: "Shrinkage estimators, James--Stein risk, partial pooling, uncertainty, diagnostics, and applications to high-dimensional biology."
+author: "Jiahong Sun"
+date: "2026-10-28"
+date-modified: "2026-10-28"
+categories: [Statistics, Shrinkage, Decision Theory, Advanced Modeling]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Why Deliberately Bias an Estimator?
+
+An unbiased estimate can be extremely noisy. When many related quantities are
+estimated at once, moving their separate estimates toward a common target can
+reduce variance enough to lower total mean squared error. This is **shrinkage**:
+a controlled bias--variance trade-off, not an arbitrary deletion of large
+effects.
+
+Suppose the scientific targets are gene-specific log fold changes
+$\boldsymbol\theta=(\theta_1,\ldots,\theta_p)$. The observed estimates
+$\mathbf Y$ are random, while the fitted numbers are estimates produced by a
+chosen estimator $\boldsymbol\delta(\mathbf Y)$. A common decision criterion is
+
+$$
+R(\boldsymbol\theta,\boldsymbol\delta)
+=E_{\boldsymbol\theta}
+\left[\|\boldsymbol\delta(\mathbf Y)-\boldsymbol\theta\|_2^2\right].
+$$
+
+This risk averages squared error over repeated datasets and sums it across the
+$p$ targets. A method with lower aggregate risk need not estimate every
+coordinate better in the observed dataset, and it need not preserve unbiasedness.
+
+# A Simple Bias--Variance Calculation
+
+Consider the Gaussian sequence model
+
+$$
+Y_j\mid\theta_j\sim N(\theta_j,\sigma^2),
+\qquad j=1,\ldots,p,
+$$
+
+with independent coordinates and known $\sigma^2$. The unshrunk estimator
+$\widehat{\boldsymbol\theta}=\mathbf Y$ has risk $p\sigma^2$. For the constant
+shrinkage rule $\boldsymbol\delta_a(\mathbf Y)=a\mathbf Y$,
+
+$$
+\begin{aligned}
+R(\boldsymbol\theta,\boldsymbol\delta_a)
+&=E\|a\mathbf Y-\boldsymbol\theta\|^2\\
+&=a^2p\sigma^2+(1-a)^2\|\boldsymbol\theta\|^2.
+\end{aligned}
+$$
+
+The first term is variance and the second is squared bias. If
+$\boldsymbol\theta$ were known, the risk-minimizing multiplier would be
+
+$$
+a^*=\frac{\|\boldsymbol\theta\|^2}
+{\|\boldsymbol\theta\|^2+p\sigma^2}.
+$$
+
+This unusable oracle still reveals the principle: shrink strongly when signal is
+small relative to noise and weakly when signal is large.
+
+# The James--Stein Result
+
+For $p\geq3$, James and Stein showed that the apparently natural estimator
+$\mathbf Y$ is inadmissible under total squared-error loss. One estimator that
+dominates it is
+
+$$
+\boxed{
+\boldsymbol\delta_{\mathrm{JS}}(\mathbf Y)
+=\left(1-\frac{(p-2)\sigma^2}{\|\mathbf Y\|^2}\right)\mathbf Y.
+}
+$$
+
+Its risk is no larger for every fixed $\boldsymbol\theta$ and is smaller for
+some values. The improvement comes from estimating all coordinates jointly:
+the ensemble norm supplies information about how aggressively to shrink.
+
+The multiplier can be negative when $\|\mathbf Y\|^2<(p-2)\sigma^2$. The
+positive-part rule
+
+$$
+\boldsymbol\delta_{\mathrm{JS}+}(\mathbf Y)
+=\max\!\left\{0,
+1-\frac{(p-2)\sigma^2}{\|\mathbf Y\|^2}\right\}\mathbf Y
+$$
+
+improves on the ordinary James--Stein rule, although it is not smooth. A target
+$\mathbf m$ can replace zero by shrinking $\mathbf Y-\mathbf m$ and adding
+$\mathbf m$ back. If the target is estimated from the same data, its degrees of
+freedom and uncertainty matter; substituting a fitted grand mean into the
+fixed-target formula without adjustment is not the original theorem.
+
+The theorem is specific to its sampling model, known variance, loss, and joint
+target. It does not say that every penalized estimator improves every parameter,
+confidence interval, ranking, or prediction problem.
+
+# Normal--Normal Partial Pooling
+
+A hierarchical model gives a transparent coordinate-specific shrinkage rule:
+
+$$
+\theta_j\mid m,\tau^2\sim N(m,\tau^2),
+\qquad
+Y_j\mid\theta_j\sim N(\theta_j,s_j^2).
+$$
+
+For known $m$ and $\tau^2$, conjugacy gives
+
+$$
+\theta_j\mid Y_j
+\sim N\!\left(
+m+B_j(Y_j-m),
+\frac{\tau^2s_j^2}{\tau^2+s_j^2}
+\right),
+\qquad
+B_j=\frac{\tau^2}{\tau^2+s_j^2}.
+$$
+
+Thus the posterior mean is a weighted average of the common center and the
+unit-specific estimate. Precise estimates with small $s_j^2$ have $B_j$ near
+one; noisy estimates have $B_j$ near zero. This is **partial pooling**. Complete
+pooling forces all $\theta_j$ to be equal, whereas no pooling estimates each
+coordinate separately.
+
+The posterior mean minimizes posterior squared-error loss. If $m$ and $\tau$
+are learned from the same ensemble, the procedure becomes
+[empirical Bayes](empirical-bayes.qmd); if they receive hyperpriors and are
+integrated out, it is a fully hierarchical Bayesian analysis.
+
+# Shrinkage Targets, Penalties, and Estimands
+
+Different shrinkage procedures encode different structural claims.
+
+| Procedure | What is shrunk | Information encoded | Important limitation |
+|---|---|---|---|
+| James--Stein | a vector toward a common target | many normal means are evaluated jointly | tied to aggregate quadratic loss and its model |
+| [Ridge regression](ridge-regression.qmd) | regression slopes toward zero | large coefficients are less plausible | scaling and penalty structure determine meaning |
+| [Lasso or elastic net](lasso-and-elastic-net-regression.qmd) | slopes, sometimes exactly to zero | sparsity or grouped regularity | adaptive selection complicates inference |
+| Hierarchical partial pooling | group-specific parameters toward a learned distribution | units are exchangeable conditional on modeled covariates | misspecified pooling groups can erase real structure |
+
+The estimand must be fixed before choosing the loss. Estimating a vector of
+sample-specific effects, predicting future effects, recovering a sparse support,
+and ranking the largest effects are different tasks. An estimator optimized for
+total squared error may distort tail rankings or threshold decisions. Conversely,
+an unbiased estimator may be inferior for prediction.
+
+# Uncertainty Is Not the Same as Point Stabilization
+
+Shrinkage point estimates are often more stable, but intervals require more than
+attaching an unshrunk standard error. The estimator is nonlinear or data-adaptive,
+and its target and tuning parameters may also have been estimated.
+
+- A Bayesian credible interval conditions on the hierarchical model and must
+  account for uncertain hyperparameters if that uncertainty is part of the model.
+- A frequentist interval needs a stated coverage target. Pointwise coverage for
+  each fixed $\theta_j$, average coverage across an ensemble, and post-selection
+  coverage are not equivalent.
+- Selecting the largest observed effects and then shrinking them does not by
+  itself correct all selection bias. The selection rule belongs in the analysis.
+
+Simulation under plausible data-generating mechanisms can assess bias, root mean
+squared error, interval coverage, rank recovery, and calibration separately.
+
+# Worked Omics Example
+
+Suppose a gene has an unshrunk log fold-change estimate $Y_j=1.20$ with standard
+error $s_j=0.80$. An ensemble model estimates $m=0$ and $\tau=0.40$. Then
+
+$$
+B_j=\frac{0.40^2}{0.40^2+0.80^2}=0.20,
+\qquad
+E(\theta_j\mid Y_j)=0.20(1.20)=0.24.
+$$
+
+The strong movement toward zero reflects weak information for this gene relative
+to the fitted across-gene spread. It does not mean that the observed fold change
+was measured incorrectly or that the biological effect is certainly small. A
+gene with the same estimate and $s_j=0.10$ would have $B_j\approx0.94$ and remain
+near 1.13.
+
+In a bulk RNA-seq experiment, independently sampled organisms, patients, or
+cultures are the experimental units. Reads are technical observations nested
+within samples, and genes are parallel outcomes. Information may be borrowed
+across genes to stabilize dispersions or effects, but neither reads nor genes
+increase the number of independent biological replicates for a treatment
+contrast.
+
+Statistically, shrinkage can improve ensemble estimation or prediction under an
+explicit loss. Biologically, a shrunken effect still needs assessment of effect
+size, uncertainty, expression level, replicate consistency, batch and composition,
+annotation, and external validation.
+
+# Diagnostics and Sensitivity
+
+| Question | Diagnostic or sensitivity analysis | Why it matters |
+|---|---|---|
+| Are units plausibly exchangeable? | stratify by mean abundance, cell type, batch, or known biology | pooling unlike units creates systematic bias |
+| Is the center appropriate? | compare zero, robust, covariate-dependent, and data-estimated targets | conclusions can be target-driven |
+| Is one shrinkage scale adequate? | inspect effect distribution and residual calibration; fit heavy-tailed or mixture alternatives | a normal prior can overshrink true extremes |
+| Are standard errors calibrated? | replicate data, negative controls, residual checks, or parametric simulation | underestimated $s_j$ prevents adequate shrinkage and yields overconfidence |
+| Is tuning stable? | bootstrap experimental units or repeat grouped cross-validation | a flat objective may not identify one penalty |
+| Does selection change the target? | repeat the entire filtering and ranking pipeline in simulation | winner's curse is created by the full workflow |
+
+Sensitivity should be reported for scientifically consequential conclusions, not
+only for the global average error. Robust centers and heavy-tailed priors can
+protect large signals, but they introduce additional choices that also require
+checking.
+
+# Connections and Take-home Messages
+
+- [Point estimators: bias, variance, and mean squared error](../statistical-inference/point-estimators-bias-variance-and-mean-squared-error.qmd)
+  defines the risk criteria that motivate shrinkage.
+- [Empirical Bayes](empirical-bayes.qmd) learns a prior or shrinkage distribution
+  from a collection of related units.
+- [Bayesian priors, likelihoods, and posteriors](../statistical-inference/bayesian-priors-likelihoods-and-posteriors.qmd)
+  explains posterior uncertainty and predictive checking.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  explains why extreme selected estimates are systematically exaggerated.
+- [Cross-validation](../regression-models/cross-validation.qmd) provides one way
+  to tune prediction-oriented penalties without reusing test outcomes.
+
+1. Shrinkage accepts bias to reduce variance and can lower aggregate mean squared
+   error across many related targets.
+2. The James--Stein result is a precise dominance theorem, not a universal claim
+   that shrinkage improves every coordinate or scientific decision.
+3. Partial pooling shrinks noisy units more than precise ones and depends on a
+   defensible exchangeability structure.
+4. Stabilized point estimates do not automatically provide calibrated uncertainty,
+   especially after tuning or selection.
+5. Omics features can share information, but only biological experimental units
+   support replication of the biological contrast.
+
+# References
+
+- James, W., and Stein, C. (1961). Estimation with quadratic loss. In
+  *Proceedings of the Fourth Berkeley Symposium on Mathematical Statistics and
+  Probability*, volume 1, 361--379.
+  <https://www.stat.yale.edu/~hz68/619/Stein-1961.pdf>
+- Efron, B., and Morris, C. (1973). Stein's estimation rule and its competitors:
+  an empirical Bayes approach. *Journal of the American Statistical Association*,
+  68(341), 117--130. <https://doi.org/10.1080/01621459.1973.10481350>
+- Lehmann, E. L., and Casella, G. (1998). *Theory of Point Estimation* (2nd ed.).
+  Springer. <https://doi.org/10.1007/b98854>
+- Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and
+  Rubin, D. B. (2013). *Bayesian Data Analysis* (3rd ed.). CRC Press.
+  <https://sites.stat.columbia.edu/gelman/book/>
+- Smyth, G. K. (2004). Linear models and empirical Bayes methods for assessing
+  differential expression in microarray experiments. *Statistical Applications
+  in Genetics and Molecular Biology*, 3, Article 3.
+  <https://doi.org/10.2202/1544-6115.1027>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>
