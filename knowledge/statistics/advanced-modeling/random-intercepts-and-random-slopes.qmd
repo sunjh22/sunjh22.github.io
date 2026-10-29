@@ -1,0 +1,312 @@
+---
+title: "Random Intercepts and Random Slopes"
+subtitle: "Representing baseline heterogeneity and unit-specific change"
+description: "Random-intercept and random-slope models, covariance, partial pooling, design, diagnostics, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-10-29"
+date-modified: "2026-10-29"
+categories: [Statistics, Mixed Models, Multilevel Models, Longitudinal Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Repeated Measurements Need a Model for Dependence
+
+Measurements from the same donor, animal, batch, family, site, or experimental
+unit tend to resemble one another. Treating them as independent can make standard
+errors too small and can assign the wrong sample size to a scientific claim.
+Random intercepts and random slopes describe two common sources of structured
+heterogeneity:
+
+- a **random intercept** lets units have different baseline levels; and
+- a **random slope** lets units respond differently to time, dose, treatment, or
+  another within-unit predictor.
+
+The word *random* refers to a probability model for variation across a target
+population of groups. It does not imply that group labels were randomized, and
+it does not turn an observational association into a causal effect.
+
+# From a Population Line to Unit-specific Lines
+
+Let $Y_{ij}$ be measurement $j$ from unit $i$, and let $x_{ij}$ be a predictor
+that can vary within a unit. A random-intercept and random-slope model is
+
+$$
+\boxed{
+Y_{ij}=\beta_0+\beta_1x_{ij}+b_{0i}+b_{1i}x_{ij}+\varepsilon_{ij}.
+}
+$$
+
+The population-average conditional line is
+$\beta_0+\beta_1x$. Unit $i$ has line
+
+$$
+(\beta_0+b_{0i})+(\beta_1+b_{1i})x.
+$$
+
+Here $\beta_0$ and $\beta_1$ are **fixed-effect parameters**: shared
+population-level coefficients to be estimated. The latent deviations $b_{0i}$
+and $b_{1i}$ are **random effects**. A standard Gaussian specification is
+
+$$
+\begin{pmatrix}b_{0i}\\b_{1i}\end{pmatrix}
+\overset{\mathrm{iid}}{\sim}
+N\!\left[
+\begin{pmatrix}0\\0\end{pmatrix},
+\begin{pmatrix}
+\tau_0^2 & \tau_{01}\\
+\tau_{01} & \tau_1^2
+\end{pmatrix}
+\right],
+\qquad
+\varepsilon_{ij}\overset{\mathrm{iid}}{\sim}N(0,\sigma^2),
+$$
+
+with random effects independent of residual errors under the model. The
+parameters have distinct meanings:
+
+| Quantity | Interpretation |
+|---|---|
+| $\beta_0$ | mean outcome at $x=0$ in the target population |
+| $\beta_1$ | mean change in outcome per unit change in $x$ |
+| $\tau_0^2$ | between-unit variance in intercepts |
+| $\tau_1^2$ | between-unit variance in slopes |
+| $\tau_{01}$ | intercept--slope covariance |
+| $\sigma^2$ | within-unit residual variance after modeled effects |
+
+An estimand might be the population mean slope $\beta_1$, the between-donor
+slope variance $\tau_1^2$, or a prediction for a future donor. The fitting
+procedure defines an **estimator** of that target; a fitted numerical value is
+the **estimate**. These goals require different uncertainty summaries.
+
+# Random Intercepts Induce Within-unit Correlation
+
+Set $b_{1i}=0$ temporarily. Conditional on $b_{0i}$, repeated outcomes are
+independent with mean $\beta_0+\beta_1x_{ij}+b_{0i}$. After integrating over the
+unobserved intercept,
+
+$$
+\operatorname{Var}(Y_{ij}\mid\mathbf x_i)=\tau_0^2+\sigma^2
+$$
+
+and, for $j\ne k$,
+
+$$
+\operatorname{Cov}(Y_{ij},Y_{ik}\mid\mathbf x_i)=\tau_0^2.
+$$
+
+The resulting intraclass correlation coefficient is
+
+$$
+\boxed{
+\operatorname{ICC}=\frac{\tau_0^2}{\tau_0^2+\sigma^2}.
+}
+$$
+
+It is the model-implied correlation of two residualized measurements from the
+same unit. It is not the fraction of observations that are duplicates, nor does
+it have a single context-free value when slopes, heteroskedasticity, or further
+levels are present.
+
+# Random Slopes Make Covariance Depend on the Predictor
+
+With both random effects, the covariance of two measurements from unit $i$ is
+
+$$
+\boxed{
+\operatorname{Cov}(Y_{ij},Y_{ik}\mid\mathbf x_i)
+=\tau_0^2+(x_{ij}+x_{ik})\tau_{01}
++x_{ij}x_{ik}\tau_1^2+\mathbb{1}(j=k)\sigma^2.
+}
+$$
+
+Thus a random-slope model is not merely a device for drawing different lines.
+It specifies a covariance pattern that changes with the measurement locations.
+Two late time points can be more strongly correlated than an early and a late
+time point because both depend heavily on $b_{1i}$.
+
+The correlation
+
+$$
+\rho_{01}=\frac{\tau_{01}}{\tau_0\tau_1}
+$$
+
+describes whether units above the mean at $x=0$ tend to change faster or more
+slowly. Its interpretation depends on where zero is placed. Replacing $x$ by
+$x-c$ changes the intercept and its covariance with the slope even though the
+fitted trajectories are unchanged. Center time or dose at a scientifically
+meaningful reference and state that reference explicitly.
+
+# Within-unit and Between-unit Effects Can Differ
+
+If $x_{ij}$ varies within units, one coefficient for $x_{ij}$ can conflate two
+questions. Write
+
+$$
+x_{ij}=\bar x_i+(x_{ij}-\bar x_i)
+$$
+
+and model
+
+$$
+Y_{ij}=\beta_0
++\beta_{\mathrm{between}}\bar x_i
++\beta_{\mathrm{within}}(x_{ij}-\bar x_i)
++b_{0i}+b_{1i}(x_{ij}-\bar x_i)+\varepsilon_{ij}.
+$$
+
+$\beta_{\mathrm{within}}$ compares two measurements from the same unit at
+different predictor values; $\beta_{\mathrm{between}}$ compares units with
+different average predictor values. They need not be equal. Group-mean
+centering makes this distinction explicit, but it does not remove time-varying
+confounding or measurement error.
+
+# Partial Pooling and Unit-specific Prediction
+
+Estimating every unit separately is noisy when each unit has few measurements.
+Forcing every unit to share one line ignores heterogeneity. Mixed models
+partially pool: unit-specific effects are pulled toward the population line by an
+amount determined by their precision and the estimated variance components.
+
+In matrix form for one unit,
+
+$$
+\mathbf y_i=\mathbf X_i\boldsymbol\beta
++\mathbf Z_i\mathbf b_i+\boldsymbol\varepsilon_i,
+$$
+
+the empirical best linear unbiased predictor is
+
+$$
+\widehat{\mathbf b}_i
+=\widehat{\mathbf G}\mathbf Z_i^\mathsf{T}
+\widehat{\mathbf V}_i^{-1}
+(\mathbf y_i-\mathbf X_i\widehat{\boldsymbol\beta}),
+\qquad
+\widehat{\mathbf V}_i
+=\mathbf Z_i\widehat{\mathbf G}\mathbf Z_i^\mathsf{T}
++\widehat{\mathbf R}_i.
+$$
+
+Units with sparse or noisy observations receive stronger shrinkage. These
+predictions are often called BLUPs or conditional modes. They are not raw group
+means and should not be treated as error-free observed covariates in a second
+analysis. Ranking units without prediction intervals can badly overstate
+differences, especially for small groups.
+
+# Choosing a Random-effects Structure from the Design
+
+The random-effects structure should represent how the experiment generated
+replicated comparisons.
+
+- Include a random intercept when repeated observations share a unit-level
+  baseline source of variation.
+- Consider a random slope when a predictor varies within units and the target
+  population plausibly contains heterogeneous responses.
+- A random slope is weakly identified when most units have only one predictor
+  value, too few occasions, or nearly identical occasions.
+- Crossed factors require separate terms when, for example, every specimen is
+  measured by several operators and every operator measures several specimens.
+- Nested terms are appropriate when lower-level labels occur within exactly one
+  higher-level unit, such as wells within plates.
+
+Adding every conceivable covariance parameter can exceed the information in the
+design. Conversely, omitting design-supported slope variation can make
+fixed-effect tests anticonservative. A defensible structure is prespecified from
+the sampling and randomization scheme, checked for estimability, and subjected
+to sensitivity analysis rather than chosen solely by the smallest p-value.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Assumption or issue | Diagnostic question | Response |
+|---|---|---|
+| Correct mean structure | Do conditional residuals show curvature, time trends, or interactions? | revise the mean model using scientifically justified terms |
+| Adequate random-effects structure | Does heterogeneity remain by unit, time, or treatment? | compare design-supported intercept/slope structures |
+| Gaussian random effects | Are conclusions driven by a few extreme unit predictions? | inspect prediction distributions and refit with robust or alternative models |
+| Residual variance model | Does spread change with time, group, or fitted value? | model heterogeneous variance or use an appropriate outcome model |
+| Independence across units | Are units related by batch, family, site, or donor? | represent the additional level or dependence source |
+| Random effects independent of modeled predictors | Could latent baseline differences also determine exposure? | add measured unit-level causes or use a design/causal model that addresses endogeneity |
+| Sufficient support | Are variance estimates near zero or correlations near $\pm1$? | simplify only with design and sensitivity evidence; report boundary behavior |
+
+A **singular fit** places the estimated covariance matrix on or near its
+boundary, for example with $\widehat\tau_1^2=0$ or
+$|\widehat\rho_{01}|=1$. It may indicate that the data cannot support the
+specified structure, but it is not automatically proof that the true variance
+is zero. Check coding, scaling, group counts, predictor spread within groups,
+optimizer diagnostics, and whether the design identifies the component.
+
+Variance-component tests are nonregular because zero lies on the boundary of
+the parameter space. Routine chi-squared reference distributions can be wrong.
+Use a method justified for the boundary problem, such as a carefully specified
+parametric bootstrap, and emphasize interval estimates and scientific
+sensitivity rather than a binary keep/drop decision.
+
+# Worked Bioinformatics Example
+
+Suppose gene expression is measured at baseline, 6 hours, and 24 hours for cells
+derived from 40 donors under control and stimulation. Several wells and
+sequencing libraries are prepared per donor--condition combination.
+
+For a claim about human response heterogeneity, the donor is the experimental
+unit. Wells, libraries, and reads are technical levels unless the target
+population explicitly concerns those processes. A model might include a donor
+random intercept, a donor random slope for stimulation or time, fixed effects
+for condition, time, and their interaction, and batch terms supported by the
+design. The condition-by-time coefficient estimates the mean response pattern;
+the random-slope variance estimates heterogeneity around that mean.
+
+Statistically, evidence of nonzero slope variation means that donor trajectories
+are more dispersed than a common-slope model allows under the specified
+distribution. Biologically, it does not by itself reveal the molecular cause of
+heterogeneity. Donor covariates, cell composition, measurement error, and batch
+structure remain competing explanations. Forty donors—not the number of cells,
+wells, libraries, or reads—primarily determine information about population
+heterogeneity.
+
+# Connections and Take-home Messages
+
+- [Multiple linear regression](../regression-models/multiple-linear-regression.qmd)
+  supplies the fixed conditional-mean component.
+- [Linear-model assumptions and diagnostics](../regression-models/linear-model-assumptions-and-diagnostics.qmd)
+  explains residual, leverage, and mean-structure checks.
+- [Shrinkage estimation](shrinkage-estimation.qmd) develops partial pooling as a
+  bias--variance trade-off.
+- [Empirical Bayes](empirical-bayes.qmd) explains plug-in hyperparameter
+  estimation and conditional prediction.
+- [Linear mixed-effects models](linear-mixed-effects-models.qmd) develops the
+  general matrix model, estimation, fixed-effect inference, and prediction.
+- [Confidence intervals](../statistical-inference/confidence-intervals.qmd) and
+  [parametric bootstrap](../statistical-inference/parametric-bootstrap.qmd)
+  provide uncertainty tools used with mixed models.
+
+1. Random intercepts model baseline heterogeneity and induce within-unit
+   correlation; random slopes model heterogeneous change and predictor-dependent
+   covariance.
+2. Centering controls the meaning of the intercept and intercept--slope
+   covariance; separating within- and between-unit predictors prevents an
+   important interpretive conflation.
+3. Unit-specific effects are shrunken predictions with uncertainty, not directly
+   observed attributes.
+4. The sampling, nesting, and randomization design should determine the candidate
+   random-effects structure.
+5. Technical replication can improve measurement but does not replace biological
+   replication for estimating population heterogeneity.
+
+# References
+
+- Laird, N. M., and Ware, J. H. (1982). Random-effects models for longitudinal
+  data. *Biometrics*, 38(4), 963--974.
+  <https://doi.org/10.2307/2529876>
+- Pinheiro, J. C., and Bates, D. M. (2000). *Mixed-Effects Models in S and
+  S-PLUS*. Springer. <https://doi.org/10.1007/b98882>
+- Gelman, A., and Hill, J. (2007). *Data Analysis Using Regression and
+  Multilevel/Hierarchical Models*. Cambridge University Press.
+  <https://doi.org/10.1017/CBO9780511790942>
+- Barr, D. J., Levy, R., Scheepers, C., and Tily, H. J. (2013). Random effects
+  structure for confirmatory hypothesis testing: Keep it maximal. *Journal of
+  Memory and Language*, 68(3), 255--278.
+  <https://doi.org/10.1016/j.jml.2012.11.001>
+- Bates, D., Kliegl, R., Vasishth, S., and Baayen, H. (2018). Parsimonious mixed
+  models. arXiv:1506.04967. <https://doi.org/10.48550/arXiv.1506.04967>

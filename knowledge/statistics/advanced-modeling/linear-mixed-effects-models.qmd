@@ -1,0 +1,344 @@
+---
+title: "Linear Mixed-effects Models"
+subtitle: "Population effects, clustered dependence, and partial pooling in Gaussian outcomes"
+description: "Linear mixed-model specification, marginal covariance, ML and REML estimation, inference, diagnostics, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-10-29"
+date-modified: "2026-10-29"
+categories: [Statistics, Mixed Models, Multilevel Models, Longitudinal Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# A Regression Model for Clustered Gaussian Data
+
+Linear mixed-effects models extend linear regression by adding latent effects
+shared by observations in the same group. They are useful for repeated measures,
+longitudinal data, multi-site experiments, blocked designs, pedigrees, and nested
+sampling structures. Their central task is not merely to “correct” standard
+errors. They jointly describe the conditional mean and the covariance created by
+the sampling hierarchy.
+
+For all observations stacked into a vector,
+
+$$
+\boxed{
+\mathbf y=\mathbf X\boldsymbol\beta
++\mathbf Z\mathbf b+\boldsymbol\varepsilon,
+\qquad
+\mathbf b\sim N(\mathbf0,\mathbf G),
+\qquad
+\boldsymbol\varepsilon\sim N(\mathbf0,\mathbf R).
+}
+$$
+
+$\mathbf X\boldsymbol\beta$ is the fixed-effect mean structure,
+$\mathbf Z\mathbf b$ contains random effects, and $\mathbf R$ describes residual
+variation. The usual model assumes $\mathbf b$ and
+$\boldsymbol\varepsilon$ are independent. Integrating out $\mathbf b$ gives the
+marginal model
+
+$$
+\boxed{
+\mathbf y\sim N(\mathbf X\boldsymbol\beta,\mathbf V),
+\qquad
+\mathbf V=\mathbf Z\mathbf G\mathbf Z^\mathsf{T}+\mathbf R.
+}
+$$
+
+This identity connects hierarchical interpretation to generalized least
+squares. Random effects are one structured way to build $\mathbf V$; they are
+not the only possible covariance model.
+
+# Start with the Scientific Target and Experimental Unit
+
+Before writing a formula, define the target population, independent sampling
+unit, outcome, predictor levels, and desired generalization.
+
+| Goal | Example estimand | Relevant level |
+|---|---|---|
+| Population mean comparison | mean treatment contrast $\mathbf c^\mathsf{T}\boldsymbol\beta$ | target population of biological units |
+| Heterogeneity | donor-level variance component in $\mathbf G$ | variation among donors |
+| Existing-unit prediction | conditional mean given estimated $\mathbf b_i$ | a sampled donor or site |
+| New-unit prediction | outcome integrated over a new $\mathbf b_{\mathrm{new}}$ | a future donor or site |
+
+The **estimand** is the population quantity in the scientific question. ML or
+REML fitting supplies an **estimator**, a random function of the data. Its
+observed coefficient or variance component is an **estimate**. A conditional
+prediction for a sampled donor is not the same target as a population-average
+fixed effect or a prediction for a new donor.
+
+Fixed and random are properties of the model and inferential target, not innate
+properties of variables. A treatment is often represented by fixed coefficients
+because its specific contrast is the target. A donor effect may be random when
+donors are viewed as sampled from a population and their distribution is used
+for pooling. The number of levels alone does not decide the choice.
+
+# Conditional and Marginal Interpretation
+
+Conditional on $\mathbf b$, the mean is
+
+$$
+E(\mathbf y\mid\mathbf b)=\mathbf X\boldsymbol\beta+
+\mathbf Z\mathbf b.
+$$
+
+Marginal over the random effects,
+
+$$
+E(\mathbf y)=\mathbf X\boldsymbol\beta.
+$$
+
+For an identity-link Gaussian model, the fixed-effect coefficient has the same
+linear scale in both expressions, although predictions differ according to
+whether random effects are included. This convenient equality generally fails
+after a nonlinear link, which is one reason generalized linear mixed-model
+coefficients require special care.
+
+Consider a donor random-intercept model,
+
+$$
+Y_{ij}=\beta_0+\beta_1T_{ij}+b_i+\varepsilon_{ij},
+\qquad b_i\sim N(0,\tau^2).
+$$
+
+$\beta_1$ is a conditional mean contrast at the modeled covariate values. A
+causal interpretation additionally needs treatment assignment, consistency,
+positivity, and control of confounding. The random effect accounts for modeled
+dependence; it does not by itself control unmeasured time-varying confounding.
+
+# Likelihood and Generalized Least Squares
+
+For known covariance parameters in $\mathbf V$, maximizing the Gaussian
+likelihood over $\boldsymbol\beta$ gives
+
+$$
+\widehat{\boldsymbol\beta}_{\mathrm{GLS}}
+=(\mathbf X^\mathsf{T}\mathbf V^{-1}\mathbf X)^{-1}
+\mathbf X^\mathsf{T}\mathbf V^{-1}\mathbf y,
+$$
+
+with model-based covariance
+
+$$
+\operatorname{Var}(\widehat{\boldsymbol\beta}\mid\mathbf X)
+=(\mathbf X^\mathsf{T}\mathbf V^{-1}\mathbf X)^{-1}.
+$$
+
+In practice, covariance parameters
+$\boldsymbol\theta$ inside $\mathbf G$ and $\mathbf R$ are unknown. The
+log-likelihood, apart from a constant, is
+
+$$
+\ell(\boldsymbol\beta,\boldsymbol\theta)
+=-\frac12\left[
+\log|\mathbf V_{\boldsymbol\theta}|
++(\mathbf y-\mathbf X\boldsymbol\beta)^\mathsf{T}
+\mathbf V_{\boldsymbol\theta}^{-1}
+(\mathbf y-\mathbf X\boldsymbol\beta)
+\right].
+$$
+
+Maximum likelihood estimates fixed effects and covariance parameters jointly.
+Restricted maximum likelihood (REML) instead maximizes a likelihood for error
+contrasts that remove the fixed-effect degrees of freedom. One form of the REML
+criterion adds
+
+$$
+\log|\mathbf X^\mathsf{T}\mathbf V^{-1}\mathbf X|
+$$
+
+to the bracketed ML expression. REML often reduces small-sample bias in variance
+components, but it is not universally unbiased and does not rescue a
+misspecified covariance or mean model.
+
+# ML, REML, and Model Comparison
+
+The estimation method must match the comparison.
+
+- Use ML, not REML, to compare nested models with different fixed-effect columns
+  by a likelihood-ratio statistic, because REML criteria are based on different
+  error-contrast spaces.
+- REML criteria can compare covariance structures when the fixed-effect design
+  is identical and regularity conditions are appropriate.
+- Refit the selected fixed-effect structure with REML when REML variance estimates
+  and associated summaries are the reporting target.
+- Information criteria are comparable only when based on the same response data,
+  likelihood convention, and compatible estimation target.
+
+Likelihood-ratio reference distributions can fail for testing a variance
+component equal to zero because the null lies on a boundary. Small numbers of
+groups also make large-sample chi-squared and normal approximations unreliable.
+Parametric bootstrap, restricted-likelihood methods with justified reference
+distributions, or carefully calibrated small-sample procedures may be preferable.
+
+# Fixed-effect Inference
+
+For a prespecified contrast $\psi=\mathbf c^\mathsf{T}\boldsymbol\beta$, the
+estimate is $\widehat\psi=\mathbf c^\mathsf{T}\widehat{\boldsymbol\beta}$ with
+plug-in standard error
+
+$$
+\widehat{\operatorname{SE}}(\widehat\psi)
+=\sqrt{
+\mathbf c^\mathsf{T}
+\widehat{\operatorname{Var}}(\widehat{\boldsymbol\beta})
+\mathbf c}.
+$$
+
+Wald intervals and tests often use a normal or approximate $t$ reference
+distribution. The denominator degrees of freedom are not uniquely defined after
+estimating variance components in an unbalanced design. Satterthwaite and
+Kenward--Roger methods approximate finite-sample uncertainty in different ways;
+software defaults should therefore be reported rather than hidden.
+
+Profile-likelihood intervals can better represent asymmetric uncertainty.
+Parametric bootstrap can propagate covariance estimation and nonlinearity if the
+fitted data-generating model is credible and the complete fitting procedure is
+repeated. None of these methods corrects pseudoreplication, informative missing
+data, model selection, or an unsupported causal interpretation.
+
+# Random Effects and Prediction
+
+Given covariance parameters, the conditional mean of the random effects is
+
+$$
+E(\mathbf b\mid\mathbf y)
+=\mathbf G\mathbf Z^\mathsf{T}\mathbf V^{-1}
+(\mathbf y-\mathbf X\boldsymbol\beta).
+$$
+
+Plugging in estimated parameters produces empirical BLUPs. Their shrinkage is a
+strength for prediction but changes their sampling behavior. A conditional
+prediction interval for another observation from an existing unit differs from
+a marginal interval for a new unit: the latter must include new random-effect
+variation. State which population and level the prediction concerns.
+
+Random-effect estimates can be useful for checking the model or predicting
+sampled units, but naive histograms and normal Q--Q plots of heavily shrunken
+BLUPs do not display the latent distribution without distortion. Likewise,
+regressing an outcome on estimated BLUPs in a second stage ignores their
+uncertainty and can induce bias.
+
+# Missing and Unbalanced Data
+
+Mixed models naturally accommodate unequal observation counts and irregular
+measurement times when the likelihood and covariance model are correctly
+specified. This is not the same as being immune to missingness.
+
+Likelihood-based inference is generally justified when missingness is ignorable
+under the stated model—for example, missing at random given observed outcomes
+and covariates, together with distinct missingness parameters. Dropout depending
+on an unobserved current outcome or latent trajectory can make standard mixed
+model estimates biased. Record reasons for missingness, include relevant
+observed predictors, and use sensitivity models for plausible missing-not-at-
+random mechanisms.
+
+# Model Specification and Diagnostics
+
+A useful workflow separates design, fitting, and criticism:
+
+1. Identify biological units, repeated measurements, crossed or nested factors,
+   and the target generalization.
+2. Specify a scientifically interpretable fixed-effect mean, including required
+   interactions and nonlinear time terms.
+3. Encode design-supported random effects and any residual correlation or
+   heterogeneous variance.
+4. Check rank, group counts, within-group predictor variation, scaling, and
+   optimizer convergence.
+5. Examine marginal and conditional residuals, unit trajectories, fitted versus
+   observed patterns, influence, and predictive performance at the correct unit.
+6. Repeat key conclusions across plausible mean, covariance, and missingness
+   specifications.
+
+| Warning | Possible mechanism | Useful response |
+|---|---|---|
+| Nonconvergence or large gradients | poor scaling, weak identification, unsuitable optimizer, overcomplex model | rescale, inspect design support, try validated optimizers, simplify transparently |
+| Singular covariance estimate | zero or weakly identified component, too few informative groups | inspect within-group variation and report sensitivity |
+| Residual trend or curvature | wrong mean trajectory or interaction | revise fixed effects before interpreting covariance |
+| Residual spread varies | heteroskedasticity or wrong transformation | model variance by group/time or choose an outcome-appropriate model |
+| Remaining serial pattern | random effects do not capture short-range residual dependence | add justified residual correlation and compare predictions |
+| One group dominates | leverage, sparse treatment-by-group support, data error | verify data and perform leave-group-out influence analysis |
+
+Gaussian random effects and residuals are distributional assumptions. Fixed-
+effect estimates can sometimes be fairly robust to moderate shape deviations,
+but tail probabilities, variance components, BLUPs, and predictions may not be.
+Simulation from the fitted model and cluster-level resampling can reveal whether
+the intended inferential procedure is calibrated for the actual group count and
+imbalance.
+
+# Worked Bioinformatics Example
+
+Suppose 60 patients contribute tumor biopsies before treatment and at two
+follow-up times. RNA abundance for a prespecified pathway score is measured from
+each biopsy, sometimes in duplicate libraries. Patients are recruited at four
+sites and processing batches overlap imperfectly with time.
+
+A defensible model could include fixed effects for treatment, time, their
+interaction, baseline clinical covariates, and processing batch; patient random
+intercepts and time slopes; and a site effect if the sampling target and number
+of sites support it. Duplicate libraries are technical measurements. They may be
+summarized using measurement precision or represented by an explicit technical
+level, but they do not double the patient sample size.
+
+The treatment-by-time contrast estimates a mean difference in pathway-score
+change for the modeled patient population. The patient slope variance describes
+unexplained trajectory heterogeneity. A conditional fitted curve describes a
+sampled patient; a prediction for a new patient includes between-patient
+variation. If dropout is related to unobserved disease progression, a standard
+MAR likelihood analysis needs an MNAR sensitivity analysis.
+
+Statistically significant mean change is not necessarily biologically large or
+mechanistically attributable to treatment. Report the score scale, uncertainty,
+patient-level trajectories, heterogeneity, missingness, and whether the site and
+batch design supports transport beyond the observed centers.
+
+# Connections and Take-home Messages
+
+- [Random intercepts and random slopes](random-intercepts-and-random-slopes.qmd)
+  explains the most common covariance-building components.
+- [Multiple linear regression](../regression-models/multiple-linear-regression.qmd)
+  provides the fixed-effect regression foundation.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  and [maximum-likelihood estimation](../statistical-inference/maximum-likelihood-estimation.qmd)
+  develop the estimation principle.
+- [Likelihood-based model comparison](../regression-models/likelihood-based-model-comparison.qmd)
+  gives the general comparison framework and its nonregular limits.
+- [Regression uncertainty and coefficient interpretation](../regression-models/regression-uncertainty-and-coefficient-interpretation.qmd)
+  separates contrasts, mean responses, and prediction intervals.
+- [Empirical Bayes](empirical-bayes.qmd) explains the plug-in logic behind
+  empirical BLUPs.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  organizes conclusions across credible alternatives.
+
+1. A linear mixed model combines a fixed-effect mean with covariance induced by
+   random effects and residual structure.
+2. Population contrasts, variance components, existing-unit predictions, and
+   new-unit predictions are different estimands.
+3. ML and REML serve different comparison and estimation roles; boundary and
+   small-group problems invalidate automatic asymptotic tests.
+4. Convergence is computational evidence, not proof that the mean, covariance,
+   missingness, or causal model is adequate.
+5. Biological experimental units determine independent information; technical
+   measurements must remain nested in that design.
+
+# References
+
+- Laird, N. M., and Ware, J. H. (1982). Random-effects models for longitudinal
+  data. *Biometrics*, 38(4), 963--974.
+  <https://doi.org/10.2307/2529876>
+- Patterson, H. D., and Thompson, R. (1971). Recovery of inter-block information
+  when block sizes are unequal. *Biometrika*, 58(3), 545--554.
+  <https://doi.org/10.1093/biomet/58.3.545>
+- Pinheiro, J. C., and Bates, D. M. (2000). *Mixed-Effects Models in S and
+  S-PLUS*. Springer. <https://doi.org/10.1007/b98882>
+- Verbeke, G., and Molenberghs, G. (2000). *Linear Mixed Models for Longitudinal
+  Data*. Springer. <https://doi.org/10.1007/978-1-4419-0300-6>
+- Bates, D., Mächler, M., Bolker, B. M., and Walker, S. C. (2015). Fitting
+  linear mixed-effects models using lme4. *Journal of Statistical Software*,
+  67(1), 1--48. <https://doi.org/10.18637/jss.v067.i01>
+- Kenward, M. G., and Roger, J. H. (1997). Small sample inference for fixed
+  effects from restricted maximum likelihood. *Biometrics*, 53(3), 983--997.
+  <https://doi.org/10.2307/2533558>
