@@ -1,0 +1,321 @@
+---
+title: "Repeated Measures and Longitudinal Data"
+subtitle: "Designing and analyzing correlated outcomes observed over time"
+description: "Longitudinal estimands, time and covariance models, mixed models, GEE, dropout, diagnostics, and bioinformatics replication."
+author: "Jiahong Sun"
+date: "2026-10-30"
+date-modified: "2026-10-30"
+categories: [Statistics, Longitudinal Data, Repeated Measures, Correlated Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Repeated Rows Are Not Independent Replicates
+
+Repeated-measures data contain several outcomes from the same experimental unit.
+Longitudinal data are the important special case in which those measurements are
+ordered in time and change is scientifically meaningful. Correlation within a
+unit is not a nuisance that can be ignored: it determines which comparisons are
+supported, how much information the study contains, and what uncertainty is
+valid.
+
+Let $Y_{ij}$ denote outcome $j$ from unit $i$ at time $t_{ij}$. A useful analysis
+separates three components:
+
+$$
+\boxed{
+\text{mean trajectory}
++\text{within-unit dependence}
++\text{observation and dropout process}.
+}
+$$
+
+The first component answers the scientific question, the second represents the
+sampling structure, and the third determines which outcomes become observed.
+Good fit for one component does not validate the others.
+
+# Define the Design before the Model
+
+Record the experimental unit, measurement occasions, randomization level,
+baseline, treatment timing, batching, and reasons for missing visits. A long
+table with one row per visit does not make visits independent.
+
+| Design question | Why it matters |
+|---|---|
+| What unit was sampled or randomized? | defines independent replication and the level of treatment inference |
+| Are times common or irregular? | determines which covariance and trajectory models are identifiable |
+| Is treatment time-varying? | separates baseline group comparisons from within-unit exposure changes |
+| Were measurements taken before treatment? | clarifies baseline adjustment and temporal ordering |
+| Why are visits missing? | determines whether likelihood, weighting, or sensitivity assumptions are plausible |
+| Are technical replicates nested within visits? | prevents wells, cells, or reads from inflating biological sample size |
+
+Balance is helpful but not required for many longitudinal models. Irregular
+times, unequal numbers of visits, and dropout can be handled only under explicit
+assumptions; software cannot reconstruct unsupported time regions or treatment
+contrasts.
+
+# Choose the Estimand before Choosing a Framework
+
+Common longitudinal estimands include:
+
+- the mean outcome at a prespecified time;
+- mean change from baseline;
+- a treatment difference in change;
+- an area under the mean trajectory;
+- a population-average rate or risk contrast;
+- heterogeneity in individual trajectories; and
+- prediction of a future outcome for an existing or new unit.
+
+For a continuous outcome, a basic mean model is
+
+$$
+E(Y_{ij}\mid A_i,t_{ij},\mathbf c_i)
+=\beta_0+\beta_AA_i+\beta_tt_{ij}
++\beta_{At}A_it_{ij}+\boldsymbol\gamma^{\mathsf T}\mathbf c_i.
+$$
+
+$\beta_{At}$ is a constant difference in linear slopes only if linear time is an
+adequate representation. If the actual target is the mean difference at week
+12, fit time flexibly enough and estimate that contrast directly. A global
+interaction test and a contrast at one time answer different questions.
+
+The **estimand** is the target contrast in the defined population. The model and
+fitting rule define an **estimator**; its observed value is the **estimate**.
+Standard error, confidence interval, or posterior interval describes uncertainty
+under the design, dependence, and missingness assumptions.
+
+# Model Time as a Scientific Variable
+
+Treating visit number as a linear numeric predictor asserts constant change per
+visit and equal spacing on the relevant scale. Alternatives include:
+
+- categorical time for a small set of scheduled visits, which avoids a shape
+  assumption but uses more parameters;
+- polynomials or splines for smooth nonlinear trajectories;
+- piecewise linear terms around a biologically meaningful change point; and
+- mechanistic nonlinear models when growth, decay, or saturation has a justified
+  form.
+
+Time zero should have a useful meaning because it controls the intercept and,
+in random-slope models, the intercept--slope covariance. Extrapolation beyond
+observed follow-up is model-driven and should be clearly separated from
+interpolation.
+
+A time-varying covariate may contain both within-unit and between-unit
+information. Decompose $X_{ij}$ as
+
+$$
+X_{ij}=\bar X_i+(X_{ij}-\bar X_i)
+$$
+
+when those effects may differ. The coefficient of $X_{ij}-\bar X_i$ compares
+times within a unit; the coefficient of $\bar X_i$ compares units. Neither is
+automatically causal because time-varying confounding, feedback, and measurement
+error can remain.
+
+# Three Modeling Strategies
+
+## Mixed-effects models
+
+A linear mixed model writes
+
+$$
+Y_{ij}=\mathbf x_{ij}^{\mathsf T}\boldsymbol\beta
++\mathbf z_{ij}^{\mathsf T}\mathbf b_i+\varepsilon_{ij}.
+$$
+
+Random intercepts and slopes represent latent trajectory heterogeneity and
+induce within-unit covariance. The model estimates population fixed effects,
+variance components, and shrunken unit-specific predictions. For binary or
+count outcomes, a GLMM uses a link and conditional outcome distribution. With a
+nonlinear link, its coefficients are conditional on the latent effects and need
+not equal population-average effects.
+
+## Marginal models and generalized estimating equations
+
+Generalized estimating equations (GEE) specify a marginal mean
+
+$$
+g(\boldsymbol\mu_i)=\mathbf X_i\boldsymbol\beta
+$$
+
+and a working covariance
+
+$$
+\mathbf V_i=\mathbf A_i^{1/2}
+\mathbf R_i(\boldsymbol\alpha)
+\mathbf A_i^{1/2}.
+$$
+
+The estimating equation is
+
+$$
+\boxed{
+\sum_{i=1}^{m}
+\mathbf D_i^{\mathsf T}\mathbf V_i^{-1}
+(\mathbf y_i-\boldsymbol\mu_i)=\mathbf0,
+\qquad
+\mathbf D_i=\frac{\partial\boldsymbol\mu_i}
+{\partial\boldsymbol\beta^{\mathsf T}}.
+}
+$$
+
+With a correct marginal mean and independent clusters, the sandwich covariance
+can provide asymptotically valid uncertainty even if the working correlation is
+misspecified. This protection requires enough independent clusters; small-sample
+corrections may be important. GEE targets population-average coefficients and
+does not by itself provide a probability model for individual trajectories.
+
+## Direct covariance models
+
+For approximately Gaussian outcomes, generalized least squares can model the
+within-unit covariance directly without interpreting it through random effects.
+Common working structures include:
+
+| Structure | Implied pattern | Main caution |
+|---|---|---|
+| Independence | zero residual association | rarely plausible for repeated outcomes without another dependence term |
+| Compound symmetry | one correlation for every pair | restrictive when association decays with time gap |
+| AR(1) | correlation $\rho^{|j-k|}$ on equally spaced occasions | visit order is not elapsed time when schedules are irregular |
+| Continuous-time exponential | correlation decays with $|t_{ij}-t_{ik}|$ | assumes a particular stationary decay form |
+| Unstructured | every variance and covariance is free | parameter-hungry and unstable with many visits |
+
+A random intercept happens to induce compound symmetry under a homoskedastic
+Gaussian model, but random slopes create a different, time-dependent covariance.
+The covariance choice should reflect the design and be checked by sensitivity,
+not selected only by the smallest information criterion.
+
+# Baseline and Change Scores
+
+In a randomized study with a continuous baseline outcome, an analysis that
+models follow-up and adjusts for baseline is often more precise than comparing
+change scores, provided the mean model is appropriate. A change-score analysis
+answers a valid question but inherits noise from both measurements and does not
+automatically remove baseline imbalance or regression to the mean.
+
+When several post-baseline visits matter, a repeated-measures mean model can
+include visit, treatment, visit-by-treatment interactions, and baseline terms,
+then estimate prespecified visit-specific or averaged contrasts. Baseline may be
+modeled as an outcome or as a covariate; these parameterizations impose different
+constraints and must match randomization and the target estimand.
+
+For observational exposure changes, conditioning on baseline or time-varying
+post-exposure variables can introduce bias. Longitudinal outcome modeling does
+not by itself solve time-varying confounding.
+
+# Missing Outcomes and Dropout
+
+Let $R_{ij}=1$ indicate that $Y_{ij}$ is observed. Missingness terminology is
+conditional on variables included in the analysis:
+
+- **MCAR:** $R$ is independent of observed and unobserved outcomes;
+- **MAR:** after conditioning on observed history and covariates, $R$ does not
+  additionally depend on the missing outcome; and
+- **MNAR:** missingness still depends on unobserved outcomes after that
+  conditioning.
+
+Likelihood-based mixed models can use incomplete outcome vectors under a
+correct model and an ignorable MAR mechanism with distinct parameters. Standard
+GEE applied only to observed visits is generally not protected against
+outcome-dependent dropout; inverse-probability-weighted GEE or imputation can be
+used under appropriately modeled MAR assumptions.
+
+MAR cannot usually be verified from observed data. Record reasons for missing
+visits, include relevant observed predictors, and perform MNAR sensitivity
+analysis when plausible. Pattern-mixture models can shift missing outcomes by a
+specified amount; selection models can link dropout probability to latent or
+unobserved outcomes. The useful question is how large and in what direction an
+unobserved departure must be to change the scientific conclusion.
+
+# Diagnostics and Sensitivity
+
+| Component | Diagnostic question | Sensitivity analysis |
+|---|---|---|
+| Mean trajectory | Are there systematic residual patterns over time or treatment? | categorical time, splines, or justified nonlinear forms |
+| Covariance | Does residual association depend on lag or elapsed time? | alternative random-effects and residual structures |
+| Variance | Does within-unit spread change by time or group? | heterogeneous variance models or robust covariance |
+| Influence | Does one unit determine a trajectory or contrast? | leave-one-unit-out refits |
+| Missingness | Do observed histories predict dropout? | weighting, imputation, and MNAR tipping-point analyses |
+| Support | Are some groups absent at late visits or time ranges? | restrict the estimand or report extrapolation explicitly |
+| Timing | Were windows, treatment times, and batches comparable? | window-adjusted models and design-stratified summaries |
+
+Residuals should be inspected at both observation and unit levels. A good
+average trajectory can coexist with poor subject-level prediction, and a good
+conditional fit can coexist with biased population inference from informative
+dropout or selective sampling.
+
+# Bioinformatics Example: Longitudinal Multi-omics
+
+Suppose blood is collected from 36 people at baseline and days 1, 7, and 28
+after vaccination. RNA-seq and proteomics assays are run from each specimen,
+with occasional repeated libraries and plates.
+
+The person is the biological experimental unit; time points are repeated
+measurements, while repeated libraries, lanes, wells, and peptide readings are
+technical levels. A treatment or subgroup-by-time contrast is supported by the
+number and allocation of people, not by the number of genes, proteins, reads,
+or technical replicates. Batch should be balanced across person, group, and time
+where possible; complete confounding cannot be repaired by a richer covariance
+model.
+
+For each feature, a mixed model might estimate a nonlinear mean trajectory with
+a person random intercept and, if supported, a random time slope. A marginal
+model might instead estimate population-average visit contrasts with a
+person-clustered sandwich covariance. High-dimensional feature-wise inference
+also requires multiplicity control, but multiplicity adjustment cannot correct
+pseudoreplication or misspecified dropout.
+
+Statistically, a day-7 contrast describes the modeled average abundance
+difference at that visit under the stated missingness and normalization
+assumptions. Biologically, it does not prove a coordinated mechanism: cell
+composition, assay drift, medication, infection, and selective return for
+follow-up may explain part of the pattern. Replication in new people and
+orthogonal validation remain distinct from repeated technical measurement.
+
+# Connections and Take-home Messages
+
+- [Random intercepts and random slopes](random-intercepts-and-random-slopes.qmd)
+  develops trajectory heterogeneity and predictor-dependent covariance.
+- [Linear mixed-effects models](linear-mixed-effects-models.qmd) explains
+  Gaussian likelihood, ML versus REML, and fixed- and random-effect prediction.
+- [Generalized linear mixed models](generalized-linear-mixed-models.qmd) handles
+  conditional binary, count, and other non-Gaussian outcomes.
+- [Interaction terms and effect modification](../regression-models/interaction-terms-and-effect-modification.qmd)
+  clarifies time-by-treatment contrasts and their scale.
+- [Robust standard errors and robust regression](../regression-models/robust-standard-errors-and-robust-regression.qmd)
+  explains cluster-robust sandwich uncertainty.
+- [Nonparametric bootstrap](../statistical-inference/nonparametric-bootstrap.qmd)
+  discusses cluster-level resampling.
+
+1. Repeated measurements increase within-unit information but do not create new
+   independent biological units.
+2. Define the time-specific or trajectory estimand before choosing a mixed,
+   marginal, or covariance model.
+3. Mean, covariance, and missingness models are separate assumptions and each
+   needs criticism.
+4. Conditional and population-average effects differ for nonlinear outcome
+   models; report the scale and averaging population.
+5. Technical longitudinal depth cannot compensate for confounded timing,
+   informative dropout, or too few independent specimens.
+
+# References
+
+- Laird, N. M., and Ware, J. H. (1982). Random-effects models for longitudinal
+  data. *Biometrics*, 38(4), 963--974.
+  <https://doi.org/10.2307/2529876>
+- Liang, K.-Y., and Zeger, S. L. (1986). Longitudinal data analysis using
+  generalized linear models. *Biometrika*, 73(1), 13--22.
+  <https://doi.org/10.1093/biomet/73.1.13>
+- Diggle, P. J., Heagerty, P., Liang, K.-Y., and Zeger, S. L. (2002).
+  *Analysis of Longitudinal Data* (2nd ed.). Oxford University Press.
+  <https://doi.org/10.1093/oso/9780198524847.001.0001>
+- Fitzmaurice, G. M., Laird, N. M., and Ware, J. H. (2011). *Applied
+  Longitudinal Analysis* (2nd ed.). Wiley.
+  <https://doi.org/10.1002/9781119513469>
+- Molenberghs, G., and Kenward, M. G. (2007). *Missing Data in Clinical
+  Studies*. Wiley. <https://doi.org/10.1002/9780470510445>
+- National Research Council. (2010). *The Prevention and Treatment of Missing
+  Data in Clinical Trials*. National Academies Press.
+  <https://doi.org/10.17226/12955>

@@ -1,0 +1,296 @@
+---
+title: "Generalized Linear Mixed Models"
+subtitle: "Non-Gaussian outcomes, clustered dependence, and latent heterogeneity"
+description: "GLMM specification, conditional and marginal interpretation, likelihood computation, inference, diagnostics, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-10-30"
+date-modified: "2026-10-30"
+categories: [Statistics, Generalized Linear Mixed Models, Multilevel Models, Clustered Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# A GLM Conditional on Latent Group Effects
+
+Generalized linear mixed models (GLMMs) combine two ideas: a generalized linear
+model for a non-Gaussian outcome and random effects for dependence or
+heterogeneity among clusters. They are useful for binary, count, proportion, and
+other outcomes measured repeatedly within donors, animals, sites, families, or
+experimental blocks.
+
+For observation $j$ in cluster $i$, a GLMM specifies
+
+$$
+\boxed{
+Y_{ij}\mid\mathbf b_i\sim\mathcal F(\mu_{ij},\phi),
+\qquad
+g(\mu_{ij})=\mathbf x_{ij}^{\mathsf T}\boldsymbol\beta
++\mathbf z_{ij}^{\mathsf T}\mathbf b_i,
+\qquad
+\mathbf b_i\sim N(\mathbf0,\mathbf G).
+}
+$$
+
+Here $\mathcal F$ supplies the conditional outcome distribution, $g$ is a link,
+$\boldsymbol\beta$ contains population coefficients, and $\mathbf b_i$ contains
+latent cluster-specific deviations. Outcomes are commonly assumed independent
+**conditional on** $\mathbf b_i$. They are dependent marginally because they
+share the same latent effects.
+
+A GLMM is therefore a full data-generating model, not simply a GLM with a
+cluster indicator or a device for changing standard errors. The outcome family,
+link, fixed effects, random-effects distribution, and sampling hierarchy all
+contribute to its meaning.
+
+# Start with the Target and the Experimental Unit
+
+Suppose cells are sampled from donors and a binary outcome records whether each
+cell expresses a marker. Cells are observational units, but donors are the
+independently sampled biological units for a population claim about people. A
+donor random intercept can describe residual donor heterogeneity and the
+dependence among cells from the same donor. Thousands of cells do not turn ten
+donors into thousands of biological replicates.
+
+Different targets require different summaries:
+
+| Scientific target | GLMM quantity | Interpretation |
+|---|---|---|
+| Association within a latent cluster state | fixed coefficient $\beta_k$ | conditional link-scale contrast |
+| Mean response in the population | $E_{\mathbf b}\{g^{-1}(\mathbf x^T\boldsymbol\beta+\mathbf z^T\mathbf b)\}$ | random-effect-averaged mean |
+| Heterogeneity among clusters | component of $\mathbf G$ | latent between-cluster variation |
+| Prediction for a sampled cluster | conditional prediction using $\widehat{\mathbf b}_i$ | cluster-specific fitted response |
+| Prediction for a new cluster | predictive distribution integrating over a new $\mathbf b$ | new-cluster uncertainty |
+
+The **estimand** is one of these population quantities. Maximum likelihood or a
+Bayesian procedure supplies an **estimator**; the fitted number is an
+**estimate**. These targets are not interchangeable.
+
+# Conditional and Marginal Effects Differ
+
+Consider a logistic random-intercept model,
+
+$$
+\operatorname{logit}\{P(Y_{ij}=1\mid b_i,x_{ij})\}
+=\beta_0+\beta_1x_{ij}+b_i,
+\qquad b_i\sim N(0,\tau^2).
+$$
+
+$\exp(\beta_1)$ is a conditional odds ratio comparing predictor values at the
+same value of the latent intercept. The population-average probability is
+
+$$
+P(Y_{ij}=1\mid x_{ij})=
+\int \operatorname{logit}^{-1}
+(\beta_0+\beta_1x_{ij}+b)\,\varphi(b;0,\tau^2)\,db.
+$$
+
+The inverse link is nonlinear, so this integral is not generally
+$\operatorname{logit}^{-1}(\beta_0+\beta_1x)$. Consequently, the marginal odds
+ratio is not simply $\exp(\beta_1)$ and usually moves toward one relative to its
+conditional counterpart. This is a scale and averaging issue, not evidence that
+one fit is wrong. Report the estimand and compute fitted probabilities or
+standardized contrasts on the scale relevant to the scientific question.
+
+With a log link and a normally distributed random intercept,
+
+$$
+E(Y_{ij}\mid x_{ij})
+=\exp(\beta_0+\beta_1x_{ij})E\{\exp(b_i)\}
+=\exp(\beta_0+\beta_1x_{ij}+\tau^2/2).
+$$
+
+In this special case, integrating over the intercept changes the mean level but
+preserves the multiplicative contrast $\exp(\beta_1)$. Random slopes or more
+complex covariance structures can remove that simplification.
+
+# Dependence, Overdispersion, and Random Slopes
+
+A random intercept induces association among outcomes in the same cluster. A
+random slope additionally lets the cluster response to time, treatment, or dose
+vary. For example,
+
+$$
+g(\mu_{ij})=\beta_0+\beta_1t_{ij}+b_{0i}+b_{1i}t_{ij},
+\qquad
+\begin{pmatrix}b_{0i}\\b_{1i}\end{pmatrix}
+\sim N\!\left(\mathbf0,
+\begin{pmatrix}\tau_0^2&\tau_{01}\\\tau_{01}&\tau_1^2\end{pmatrix}\right).
+$$
+
+This model produces both heterogeneous trajectories and a time-dependent
+within-cluster association. Centering time changes the meaning of the intercept
+and intercept--slope covariance. The design must include enough clusters and
+enough within-cluster time variation to identify the random slope.
+
+Random effects can also create extra-Poisson or extra-binomial variation, but
+not every form of overdispersion is cluster heterogeneity. Zero inflation,
+unmodeled exposure, serial dependence, omitted predictors, and a wrong
+mean--variance relationship are different mechanisms. A cluster random effect
+should represent a plausible sampling level rather than serve as an automatic
+repair for a large residual statistic.
+
+# Marginal Likelihood and Its Approximations
+
+Conditional on $\mathbf b_i$, cluster $i$ contributes
+
+$$
+L_i(\boldsymbol\beta,\mathbf G,\phi\mid\mathbf b_i)
+=\prod_{j=1}^{n_i}f(y_{ij}\mid\mathbf b_i).
+$$
+
+The observed-data likelihood integrates out the latent effect:
+
+$$
+\boxed{
+L(\boldsymbol\beta,\mathbf G,\phi)
+=\prod_{i=1}^{m}
+\int
+\left\{\prod_{j=1}^{n_i}f(y_{ij}\mid\mathbf b_i)\right\}
+\varphi(\mathbf b_i;\mathbf0,\mathbf G)\,d\mathbf b_i.
+}
+$$
+
+Unlike the Gaussian linear mixed model, this integral rarely has a closed form.
+Common computational strategies include:
+
+- a Laplace approximation, often accurate when clusters are informative and
+  the latent dimension is modest;
+- adaptive Gaussian quadrature, which can improve accuracy for low-dimensional
+  random effects at greater computational cost;
+- penalized quasi-likelihood, historically important but potentially biased for
+  binary data with small clusters or extreme probabilities; and
+- Bayesian sampling or approximation, which replaces optimization of the
+  marginal likelihood with posterior computation and makes prior sensitivity
+  part of the analysis.
+
+Agreement across optimizers does not establish that an approximation is
+accurate. When the scientific conclusion is delicate, compare integration
+settings or computational methods, inspect convergence diagnostics, and report
+the software, parameterization, and approximation used.
+
+# Estimation, Uncertainty, and Prediction
+
+Maximum likelihood estimates $\boldsymbol\beta$ and the parameters of
+$\mathbf G$ and $\phi$. Wald standard errors use local curvature of the
+approximated log-likelihood. Profile likelihood or a cluster-level parametric
+bootstrap can better represent skewness and boundary behavior, provided the
+simulation reproduces the fitted hierarchy and the resampling target.
+
+Testing a variance component against zero is nonregular because zero lies on
+the boundary and some nuisance parameters may be unidentified under the null.
+A routine chi-squared likelihood-ratio reference can therefore be wrong.
+Prespecified bootstrap calibration, appropriate mixture references in simple
+cases, or Bayesian posterior summaries are more defensible than an automatic
+one-degree-of-freedom test.
+
+The fitted $\widehat{\mathbf b}_i$ are shrunken conditional predictions, not
+observed cluster traits. Their shrinkage depends on cluster size, information,
+and $\widehat{\mathbf G}$. Treating them as error-free outcomes in a second
+analysis discards prediction uncertainty. Prediction for a new cluster must
+also integrate over a new random effect rather than set it equal to a fitted
+effect from an existing cluster.
+
+# Diagnostics and Sensitivity
+
+Classical raw residual plots are difficult for discrete GLMMs because residuals
+are nonnormal and their distribution changes with the fitted mean. Model
+criticism should combine design checks, simulation, and targeted refits.
+
+| Question | Evidence | Sensitivity or response |
+|---|---|---|
+| Is the mean structure adequate? | residual or predictive patterns by predictor, time, and cluster | add justified nonlinearities or interactions |
+| Is the outcome distribution adequate? | zero frequencies, tails, dispersion, simulated envelopes | compare mechanism-specific families or observation models |
+| Is dependence represented? | residual association within donor, time, batch, family, or site | revise random effects or serial correlation structure |
+| Are random effects supported? | near-zero variances, correlations near $\pm1$, flat profiles | check design and scaling; report simpler-model sensitivity |
+| Is integration accurate? | changes across quadrature points, approximation, optimizer, or starts | increase accuracy and compare computational methods |
+| Are clusters influential? | leave-one-cluster-out changes and extreme conditional predictions | verify records and report influence sensitivity |
+| Does the assumed random-effects distribution matter? | predictive mismatch or conclusion driven by few clusters | compare plausible distributions or robust formulations |
+
+Simulation-based randomized quantile residuals can reveal distributional
+misfit, but they cannot diagnose confounding, an incorrectly defined
+experimental unit, informative cluster size, or missing-not-at-random outcomes.
+Those problems require design knowledge and explicit sensitivity models.
+
+# Bioinformatics Example: Cell-level Marker Detection
+
+Suppose 30 donors are randomized to two ex vivo stimulation conditions, and
+hundreds of cells are profiled from each donor. Let $Y_{ij}$ indicate marker
+detection in cell $j$ from donor $i$. One possible model is
+
+$$
+Y_{ij}\mid b_i\sim\operatorname{Bernoulli}(p_{ij}),
+\qquad
+\operatorname{logit}(p_{ij})
+=\beta_0+\beta_1A_i+\boldsymbol\gamma^{\mathsf T}\mathbf q_{ij}+b_i,
+\qquad
+b_i\sim N(0,\tau^2),
+$$
+
+where $A_i$ is condition and $\mathbf q_{ij}$ contains prespecified cell-level
+quality variables. The donor is the experimental unit for the treatment
+contrast; cells and sequencing reads are technical or subsampling levels.
+Information about $\beta_1$ depends strongly on the 30 donors and allocation,
+not merely the total cell count.
+
+Statistically, $\exp(\beta_1)$ is a donor-conditional odds ratio under the
+specified model. A population-average risk difference requires integration over
+the random effects and standardization over a stated covariate distribution.
+Biologically, either contrast describes marker detection, not necessarily true
+expression or a molecular mechanism. Detection limits, cell-type composition,
+doublets, donor selection, and batch--condition balance remain important.
+
+A cell-level GLMM is also not automatically preferable to donor-level
+aggregation. Pseudobulk or donor-level summaries can align the analysis more
+directly with randomization and may be more robust when the cell-level
+observation model is doubtful. Compare conclusions at the biological-unit level
+and make the estimand explicit.
+
+# Connections and Take-home Messages
+
+- [Generalized linear models](../regression-models/generalized-linear-models.qmd)
+  supplies the outcome family, link, and conditional mean.
+- [Link functions and exponential-family distributions](../regression-models/link-functions-and-exponential-family-distributions.qmd)
+  explains the link and variance function.
+- [Random intercepts and random slopes](random-intercepts-and-random-slopes.qmd)
+  develops latent heterogeneity and design-supported covariance structures.
+- [Linear mixed-effects models](linear-mixed-effects-models.qmd) gives the
+  Gaussian special case, where marginal likelihood is more tractable.
+- [Repeated measures and longitudinal data](repeated-measures-and-longitudinal-data.qmd)
+  compares mixed models with marginal approaches for time-indexed data.
+- [Parametric bootstrap](../statistical-inference/parametric-bootstrap.qmd) and
+  [when asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd)
+  explain calibration and nonregular inference.
+
+1. A GLMM is a conditional outcome model plus a probability model for latent
+   group effects.
+2. With nonlinear links, conditional coefficients and population-average
+   effects are different estimands.
+3. Likelihood evaluation requires integration, so approximation and computation
+   are part of the inferential method.
+4. Random effects must follow the design; they do not automatically cure
+   overdispersion, confounding, or pseudoreplication.
+5. Bioinformatics inference is primarily limited by independent biological
+   units, even when each unit yields many cells or reads.
+
+# References
+
+- Breslow, N. E., and Clayton, D. G. (1993). Approximate inference in
+  generalized linear mixed models. *Journal of the American Statistical
+  Association*, 88(421), 9--25.
+  <https://doi.org/10.1080/01621459.1993.10594284>
+- McCulloch, C. E., Searle, S. R., and Neuhaus, J. M. (2008). *Generalized,
+  Linear, and Mixed Models* (2nd ed.). Wiley.
+  <https://www.wiley.com/en-us/generalized-linear-and-mixed-models-2nd-edition-p-9780470073711>
+- Bolker, B. M., Brooks, M. E., Clark, C. J., Geange, S. W., Poulsen, J. R.,
+  Stevens, M. H. H., and White, J.-S. S. (2009). Generalized linear mixed
+  models: a practical guide for ecology and evolution. *Trends in Ecology &
+  Evolution*, 24(3), 127--135.
+  <https://doi.org/10.1016/j.tree.2008.10.008>
+- Tuerlinckx, F., Rijmen, F., Verbeke, G., and De Boeck, P. (2006). Statistical
+  inference in generalized linear mixed models: a review. *British Journal of
+  Mathematical and Statistical Psychology*, 59(2), 225--255.
+  <https://doi.org/10.1348/000711005X79857>
+- Jiang, J. (2007). *Linear and Generalized Linear Mixed Models and Their
+  Applications*. Springer. <https://doi.org/10.1007/978-0-387-47946-0>
