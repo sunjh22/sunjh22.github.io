@@ -12,10 +12,12 @@ categories: [Statistics, Advanced Modeling]
 - [Linear mixed-effects models](linear-mixed-effects-models.qmd)
 - [Generalized linear mixed models](generalized-linear-mixed-models.qmd)
 - [Repeated measures and longitudinal data](repeated-measures-and-longitudinal-data.qmd)
+- [Hierarchical Bayesian models](hierarchical-bayesian-models.qmd)
+- [Partial pooling and exchangeability](partial-pooling-and-exchangeability.qmd)
 - [Mixture models overview](mixture-models.qmd)
 
-Future notes in this level will cover hierarchical Bayes, mixture estimation,
-survival analysis, and multivariate models.
+Future notes in this level will cover mixture estimation, survival analysis, and
+multivariate models.
 
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Real Bioinformatics Problems](../bioinformatics-problems/index.qmd)

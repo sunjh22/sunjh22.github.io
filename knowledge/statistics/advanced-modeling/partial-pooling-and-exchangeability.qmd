@@ -1,0 +1,292 @@
+---
+title: "Partial Pooling and Exchangeability"
+subtitle: "When related units may borrow information"
+description: "Exchangeability as a modeling assumption, partial-pooling derivations, conditional exchangeability, diagnostics, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-10-31"
+date-modified: "2026-10-31"
+categories: [Statistics, Bayesian, Partial Pooling]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Three Ways to Learn about Groups
+
+Suppose $J$ laboratories, donors, tissues, or batches each have an unknown effect
+$\theta_j$. Three strategies define different statistical problems:
+
+| Strategy | Model | Consequence |
+|---|---|---|
+| Complete pooling | $\theta_1=\cdots=\theta_J=\theta$ | one common effect; heterogeneity is ignored |
+| No pooling | unrelated $\theta_j$ | each group uses only its own data |
+| Partial pooling | $\theta_j\mid\eta\sim p(\theta\mid\eta)$ | group evidence is combined with learned population structure |
+
+Partial pooling is not a fixed compromise halfway between the extremes. The
+amount of pooling depends on within-group information, between-group variation,
+the population model, and uncertainty in its parameters.
+
+# Exchangeability Is the Permission to Pool
+
+A finite collection $(\theta_1,\ldots,\theta_J)$ is exchangeable if its joint
+distribution is unchanged by relabeling:
+
+$$
+\boxed{
+p(\theta_1,\ldots,\theta_J)
+=p(\theta_{\pi(1)},\ldots,\theta_{\pi(J)})
+}
+$$
+
+for every permutation $\pi$. Exchangeability does not say the realized values
+are equal or independent. It says the labels carry no unmodeled information that
+changes the joint probability assignment.
+
+Independent and identically distributed variables are exchangeable, but an
+exchangeable collection is generally dependent after a shared latent parameter
+is integrated out. For an infinite exchangeable sequence, de Finetti's
+representation theorem gives a mixture of conditionally independent and
+identically distributed sequences:
+
+$$
+p(\theta_{1:J})
+=\int\prod_{j=1}^J p(\theta_j\mid\eta)\,dP(\eta).
+$$
+
+This theorem motivates hierarchical representations. It does not prove that a
+particular set of donors or sites is scientifically exchangeable; that judgment
+comes from the sampling design, subject-matter knowledge, and modeled covariates.
+
+# Conditional Exchangeability
+
+Raw group effects are often not exchangeable because group labels encode known
+structure. If tissue type, ancestry, dose, laboratory, or environment predicts
+systematic differences, include it:
+
+$$
+\theta_j=x_j^\top\beta+u_j,
+\qquad
+u_j\mid\tau\sim\operatorname{Normal}(0,\tau^2).
+$$
+
+The claim is now that residual effects $u_j$ are exchangeable conditional on
+$x_j$, not that the original $\theta_j$ are interchangeable. Exchangeability can
+also be nested: donors may be exchangeable within sites and sites exchangeable
+within a defined network. Partial or separate exchangeability may be needed for
+crossed structures.
+
+Adding arbitrary indicators for every observed difference is not a solution.
+Covariates should correspond to prespecified structure that matters for the
+target population and has adequate support.
+
+# Deriving the Pooling Weight
+
+Let $y_j$ be an unbiased noisy estimate of $\theta_j$ with known standard error
+$s_j$:
+
+$$
+y_j\mid\theta_j\sim\operatorname{Normal}(\theta_j,s_j^2),
+\qquad
+\theta_j\mid\mu,\tau\sim\operatorname{Normal}(\mu,\tau^2).
+$$
+
+Conditional on $\mu$ and $\tau$, multiplying the two normal kernels gives
+
+$$
+p(\theta_j\mid y_j,\mu,\tau)
+\propto
+\exp\left[-\frac{(y_j-\theta_j)^2}{2s_j^2}
+-\frac{(\theta_j-\mu)^2}{2\tau^2}\right].
+$$
+
+Completing the square yields posterior variance
+
+$$
+V_j=\frac{s_j^2\tau^2}{s_j^2+\tau^2}
+$$
+
+and posterior mean
+
+$$
+\boxed{
+m_j=E(\theta_j\mid y_j,\mu,\tau)
+=B_jy_j+(1-B_j)\mu,
+\qquad
+B_j=\frac{\tau^2}{\tau^2+s_j^2}.
+}
+$$
+
+The displacement from the direct estimate is
+
+$$
+m_j-y_j=-(1-B_j)(y_j-\mu).
+$$
+
+Thus groups far from $\mu$ move farther in absolute terms, but the *fraction*
+pooled depends on precision. When $s_j^2$ is large, $B_j$ is small and pooling is
+strong. When $\tau^2$ is large, groups are genuinely heterogeneous and pooling is
+weak.
+
+In a full Bayesian analysis, $\mu$ and $\tau$ are uncertain. The marginal
+posterior mean integrates $m_j(\mu,\tau)$ over their posterior, so the displayed
+formula explains the geometry but is not a license to plug in an unstable point
+estimate of $\tau$.
+
+# What Shrinkage Does and Does Not Do
+
+Under squared-error loss and an adequate population model, partial pooling can
+reduce average estimation error by trading a small amount of bias for a larger
+variance reduction. This is closely related to James--Stein shrinkage. It can
+stabilize noisy estimates and reduce exaggerated extremes selected from many
+groups.
+
+Several cautions matter:
+
+- group estimates are not all pulled by the same amount when their standard
+  errors differ;
+- rank order can change, and posterior uncertainty in ranks can remain large;
+- a shrunken estimate is not evidence that the unshrunken observation was an
+  error;
+- shrinkage toward an inappropriate center creates bias rather than useful
+  regularization; and
+- uncertainty intervals should come from the joint model, not from shrinking
+  point estimates while retaining no-pooling standard errors.
+
+Complete pooling emerges as $\tau\rightarrow0$. No pooling is approached as
+$\tau\rightarrow\infty$ relative to the $s_j$. With few groups, the data may not
+distinguish these regimes well, making the hyperprior and sensitivity analysis
+important.
+
+# Exchangeability Is Relative to a Target Population
+
+Groups are not exchangeable in the abstract. A model might regard hospitals as
+exchangeable draws from hospitals using a particular protocol, yet not from all
+hospitals worldwide. A time series of evolving viral lineages is not generally
+exchangeable over calendar time. Technical batches may be convenience levels,
+not a random sample from a stable batch population.
+
+The question “may these units pool?” should therefore be expanded:
+
+1. What population generated the units?
+2. Which labels or covariates were known before observing outcomes?
+3. Does the target concern these observed units or new units from that population?
+4. Could selection, temporal drift, spatial structure, or treatment assignment
+   make residual effects systematically different?
+5. Would a robust, mixture, nested, or structured prior better represent the
+   remaining variation?
+
+# Prediction Clarifies the Assumption
+
+For an observed group $j$, prediction uses its own data and the population:
+
+$$
+p(\tilde y_j\mid y)
+=\int p(\tilde y_j\mid\theta_j)
+p(\theta_j\mid y)\,d\theta_j.
+$$
+
+For a new exchangeable group,
+
+$$
+p(\tilde y_{J+1}\mid y)
+=\iint p(\tilde y_{J+1}\mid\tilde\theta)
+p(\tilde\theta\mid\eta)p(\eta\mid y)
+\,d\tilde\theta\,d\eta.
+$$
+
+The second calculation exposes the population claim. If a future group would not
+plausibly arise from $p(\theta\mid\eta)$, the fitted model should not be used for
+that prediction merely because its arithmetic is available.
+
+# Bioinformatics Example: Site-specific Treatment Effects
+
+Imagine an expression study with donors recruited at $J$ sites. The experimental
+unit is the donor; sequencing libraries and reads are technical levels. Let
+$y_j$ be the estimated treatment log fold change at site $j$ and $s_j$ its
+donor-based standard error.
+
+A normal hierarchy can pool site effects, but raw exchangeability may be
+implausible if sites use different tissues or protocols. A conditional model
+might be
+
+$$
+\theta_j=\beta_0+\beta_1\operatorname{Protocol}_j+u_j,
+\qquad
+u_j\sim\operatorname{Normal}(0,\tau^2).
+$$
+
+The model borrows information among sites after accounting for protocol. It does
+not make donors within a site interchangeable with reads, nor does it establish a
+causal treatment effect if treatment assignment is confounded.
+
+The statistical interpretation is a posterior distribution for site-specific
+effects, population regression coefficients, heterogeneity, and possibly a new
+site under the stated hierarchy. The biological interpretation additionally
+asks whether effect sizes are meaningful, whether tissues and protocols define a
+coherent population, and whether apparent heterogeneity reflects biology rather
+than measurement or batch artifacts.
+
+# Diagnostics and Sensitivity
+
+Exchangeability is not directly testable from one finite dataset, but its
+implications can be challenged.
+
+| Threat | Observable clue | Useful response |
+|---|---|---|
+| omitted group structure | residual effects align with site, time, protocol, or ancestry | add justified covariates; stratify; revise the target population |
+| overly light-tailed population model | repeated extreme-group predictive failures | compare Student-$t$, mixture, or robust hierarchies |
+| weak information about $\tau$ | posterior changes strongly with scale prior | prior predictive calibration; report sensitivity; collect more groups |
+| unequal precision | small groups appear excessively extreme before pooling | retain group-specific $s_j$ or model raw data and sampling variation |
+| influential groups | population parameters change when one group is omitted | leave-one-group-out checks; robust alternatives; investigate data quality |
+| pseudoreplication | posterior precision tracks cells or reads rather than donors | model nesting or aggregate at the experimental-unit level |
+| nonrepresentative group sampling | prediction fails for omitted regions or times | restrict generalization; model selection or transport explicitly |
+
+Useful sensitivity analyses vary the group-level distribution, hyperprior scale,
+covariate structure, and inclusion of influential groups. Compare posterior
+predictions and scientific decisions, not only the estimated grand mean.
+
+# Partial Pooling versus Nearby Ideas
+
+| Method | What is learned | Uncertainty treatment |
+|---|---|---|
+| Hierarchical Bayes | group parameters and hyperparameters jointly | integrates over the hyperposterior |
+| Empirical Bayes | group parameters using estimated hyperparameters | plug-in analysis needs correction or resampling for hyperparameter uncertainty |
+| Fixed-effect indicators | separate coefficients for observed groups | no population distribution for new groups |
+| Penalized regression | coefficients under an explicit penalty | often equivalent to a prior at the estimation level, but uncertainty may be omitted |
+| Meta-analysis | study effects and a population summary | fixed- or random-effects assumptions determine pooling and target |
+
+The same shrinkage-looking estimate can arise from different inferential
+frameworks. The estimand, sampling model, and uncertainty calculation determine
+its meaning.
+
+# Connections and Take-home Messages
+
+- [Hierarchical Bayesian models](hierarchical-bayesian-models.qmd) develops the
+  full prior, likelihood, posterior, computation, and predictive workflow.
+- [Shrinkage estimation](shrinkage-estimation.qmd) gives the decision-theoretic
+  bias--variance perspective and James--Stein connection.
+- [Empirical Bayes](empirical-bayes.qmd) explains plug-in estimation of a shared
+  population distribution.
+- [Random intercepts and random slopes](random-intercepts-and-random-slopes.qmd)
+  implements conditional pooling in regression.
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd)
+  distinguishes dependence concepts from exchangeability.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  explains why noisy extremes are exaggerated and why shrinkage can help.
+
+Exchangeability is a probability judgment that labels contain no unmodeled
+information; it is weaker than equality and different from independence. Partial
+pooling follows from placing related group parameters in a shared population
+model. Its strength adapts to within-group precision and between-group
+heterogeneity. Its benefits disappear when the pooling population, experimental
+unit, or uncertainty model is wrong, so conditional structure, predictive checks,
+and sensitivity analysis are integral to interpretation.
+
+# References
+
+- de Finetti, B. *Theory of Probability*, Vol. 1. Wiley, 1974.
+- Bernardo, J. M. and Smith, A. F. M. *Bayesian Theory*. Wiley, 1994. [Publisher page](https://doi.org/10.1002/9780470316870).
+- Efron, B. and Morris, C. “Data Analysis Using Stein's Estimator and Its Generalizations.” *Journal of the American Statistical Association* 70 (1975): 311--319. [Article](https://doi.org/10.1080/01621459.1975.10479864).
+- Gelman, A. and Pardoe, I. “Bayesian Measures of Explained Variance and Pooling in Multilevel (Hierarchical) Models.” *Technometrics* 48 (2006): 241--251. [Article](https://doi.org/10.1198/004017005000000517).
+- Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and Rubin, D. B. *Bayesian Data Analysis*, 3rd ed. Chapman & Hall/CRC, 2013. [Book resources](https://sites.stat.columbia.edu/gelman/book/).
+- Stan Development Team. “Hierarchical Regression.” *Stan User's Guide*. [Official documentation](https://mc-stan.org/docs/stan-users-guide/).

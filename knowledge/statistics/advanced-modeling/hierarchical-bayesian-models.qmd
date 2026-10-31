@@ -1,0 +1,317 @@
+---
+title: "Hierarchical Bayesian Models"
+subtitle: "Learning population structure while retaining unit-level uncertainty"
+description: "Hierarchical Bayesian data-generating models, priors, posterior computation, predictive checking, sensitivity, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-10-31"
+date-modified: "2026-10-31"
+categories: [Statistics, Bayesian, Hierarchical Models]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Probability Model at More Than One Level
+
+Hierarchical Bayesian models describe variation at each scientifically meaningful
+level of a data-generating process. Observations may be nested within libraries,
+libraries within donors, and donors within populations. Parameters at one level
+are assigned a probability model whose parameters are themselves unknown. This
+structure connects related units without pretending they are identical.
+
+For groups $j=1,\ldots,J$, a generic hierarchy is
+
+$$
+\begin{aligned}
+y_j\mid\theta_j &\sim p(y_j\mid\theta_j),\\
+\theta_j\mid\eta &\sim p(\theta_j\mid\eta),\\
+\eta &\sim p(\eta),
+\end{aligned}
+$$
+
+where $y_j$ is the observed group data, $\theta_j$ is a group-specific
+parameter, and $\eta$ contains population-level parameters. The joint posterior
+is
+
+$$
+\boxed{
+p(\theta_{1:J},\eta\mid y)
+\propto
+\left\{\prod_{j=1}^J p(y_j\mid\theta_j)
+p(\theta_j\mid\eta)\right\}p(\eta).
+}
+$$
+
+This equation is not merely a computational device. Each factor makes a claim
+about sampling, measurement, between-unit variation, and the population to which
+the units belong.
+
+# Start with the Estimand and Experimental Unit
+
+A hierarchy should follow the scientific design rather than the physical number
+of rows in a data table. Before fitting one, identify:
+
+- the target population and the unit sampled from it;
+- the group-specific and population-level estimands;
+- which measurements are biological replicates and which are technical repeats;
+- the treatment, batch, spatial, or longitudinal structure; and
+- the prediction target: an observed group, a new group, or a new observation in
+  an existing group.
+
+For a multi-donor RNA-seq study, donors may be independent experimental units,
+libraries may be repeated preparations, and reads are technical measurements.
+A donor-level treatment effect and a read-level event probability answer
+different questions. A Bayesian hierarchy can propagate measurement uncertainty,
+but it cannot create donor replication from millions of reads.
+
+# A Normal--Normal Hierarchy
+
+Suppose a group-specific estimate $\bar y_j$ has known sampling variance $s_j^2$:
+
+$$
+\bar y_j\mid\theta_j\sim
+\operatorname{Normal}(\theta_j,s_j^2).
+$$
+
+Model the group effects as
+
+$$
+\theta_j\mid\mu,\tau
+\sim\operatorname{Normal}(\mu,\tau^2),
+$$
+
+with hyperpriors such as
+
+$$
+\mu\sim\operatorname{Normal}(m_0,v_0),
+\qquad
+\tau\sim\operatorname{half\text{-}t}(\nu,0,A).
+$$
+
+Here $\mu$ is the population center and $\tau$ is the between-group standard
+deviation. Conditional on $\mu$ and $\tau$, conjugacy gives
+
+$$
+\theta_j\mid \bar y_j,\mu,\tau
+\sim
+\operatorname{Normal}(m_j,V_j),
+$$
+
+where
+
+$$
+V_j=\left(\frac{1}{s_j^2}+\frac{1}{\tau^2}\right)^{-1},
+\qquad
+m_j=B_j\bar y_j+(1-B_j)\mu,
+\qquad
+B_j=\frac{\tau^2}{\tau^2+s_j^2}.
+$$
+
+The posterior mean balances direct group evidence with the population model.
+Precise groups have $B_j$ near one and move little; imprecise groups move more
+toward $\mu$. Because $\mu$ and $\tau$ are uncertain, a full posterior averages
+over their uncertainty rather than plugging in single values.
+
+# Prior, Likelihood, and Posterior Roles
+
+## Likelihood
+
+The likelihood should represent the outcome and measurement process at the
+correct level. Normal, binomial, Poisson, and negative-binomial likelihoods are
+common, but dependence, censoring, zero inflation, and measurement error may
+require additional levels. Conditional independence in a model does not imply
+that observations were independently sampled.
+
+## Group-level distribution
+
+The group-level model describes which units are similar enough to exchange
+information. Covariates can make this assumption conditional:
+
+$$
+\theta_j = x_j^\top\beta + u_j,
+\qquad
+u_j\sim\operatorname{Normal}(0,\tau^2).
+$$
+
+Then residual effects, not raw group effects, are modeled as exchangeable.
+Heavy-tailed or mixture distributions may be preferable when genuine outlying
+groups are plausible.
+
+## Hyperpriors
+
+Hyperpriors regularize weakly identified population parameters. A prior on
+$\tau$ deserves particular attention: with few groups, the likelihood may say
+little about between-group variation, so apparently vague choices can produce
+materially different pooling. Priors should be calibrated by simulating effects
+and outcomes on scientifically interpretable scales.
+
+Correlation matrices for multivariate varying effects also need regularization.
+With sparse groups, a flexible covariance matrix can be weakly identified even
+when every marginal coefficient appears estimable.
+
+# Posterior Targets and Predictions
+
+Hierarchical models produce several distinct posterior targets:
+
+- $p(\theta_j\mid y)$ describes an observed group's latent parameter;
+- $p(\mu,\tau\mid y)$ describes population-level location and heterogeneity;
+- $p(\tilde\theta\mid y)$ predicts the parameter of a new group; and
+- $p(\tilde y\mid y)$ predicts a new observation, including observation noise.
+
+For a new exchangeable group,
+
+$$
+p(\tilde\theta\mid y)
+=\int p(\tilde\theta\mid\eta)p(\eta\mid y)\,d\eta,
+$$
+
+whereas prediction within an existing group conditions on that group's posterior.
+These distributions usually differ substantially. Reporting a credible interval
+for $\mu$ as though it predicted every future group understates heterogeneity.
+
+# Computation and Parameterization
+
+Except in simple conjugate cases, the posterior requires numerical computation.
+Hamiltonian Monte Carlo can explore high-dimensional continuous hierarchies, but
+posterior geometry matters.
+
+In a centered parameterization,
+
+$$
+\theta_j\sim\operatorname{Normal}(\mu,\tau^2).
+$$
+
+In a non-centered parameterization,
+
+$$
+z_j\sim\operatorname{Normal}(0,1),
+\qquad
+\theta_j=\mu+\tau z_j.
+$$
+
+The non-centered form often behaves better when group data are weak or $\tau$ is
+near zero; the centered form can be more efficient when each group is strongly
+informed. Neither is universally superior. Divergent transitions, low effective
+sample sizes, poor chain mixing, and sensitivity to initialization can expose
+weak identification or an unsuitable parameterization.
+
+Reliable computation requires multiple chains, rank-normalized split
+$\widehat R$, bulk and tail effective sample sizes, inspection of sampler
+warnings, and stability of important posterior summaries. Numerical convergence
+does not establish that the scientific model is adequate.
+
+# Posterior Predictive Checking
+
+Generate replicated parameters and observations from the fitted hierarchy:
+
+$$
+\eta^{\mathrm{rep}}\sim p(\eta\mid y),\quad
+\theta_j^{\mathrm{rep}}\sim p(\theta_j\mid\eta^{\mathrm{rep}}),\quad
+y_j^{\mathrm{rep}}\sim p(y_j\mid\theta_j^{\mathrm{rep}}).
+$$
+
+Checks should target features important to the analysis, such as:
+
+- within- and between-group variance;
+- the number and magnitude of extreme groups;
+- zero frequencies and upper tails;
+- mean--variance relationships;
+- longitudinal or spatial dependence; and
+- batch contrasts or group-size-dependent residual patterns.
+
+Population-level checks can look acceptable while particular groups fit poorly,
+so inspect both aggregate and group-resolved discrepancies. Prior predictive
+checks should precede fitting to detect implausible scales and interactions among
+hyperpriors.
+
+# Bioinformatics Example: Differential Expression across Donors
+
+Suppose $J$ donors each contribute cells under two conditions. Let $y_{ij}$ be a
+pseudobulk gene count for donor $j$ and condition $i$. One hierarchy might use a
+negative-binomial likelihood with donor-specific treatment effects:
+
+$$
+y_{ij}\sim\operatorname{NB}(\mu_{ij},\phi),
+\qquad
+\log\mu_{ij}=\log L_{ij}+\alpha_j+x_{ij}\beta_j,
+$$
+
+$$
+\begin{pmatrix}\alpha_j\\\beta_j\end{pmatrix}
+\sim
+\operatorname{MVN}
+\left(
+\begin{pmatrix}\alpha\\\beta\end{pmatrix},
+\Sigma
+\right).
+$$
+
+$L_{ij}$ is a library-size offset, $\alpha_j$ is a donor baseline, and $\beta_j$
+is a donor-specific treatment effect. The population mean $\beta$ may be the
+primary estimand, while the distribution of $\beta_j$ describes biological
+heterogeneity. Cells and reads inform donor-level summaries and measurement
+precision; donors determine replication for population inference.
+
+Statistically, a posterior probability such as $P(\beta>\delta\mid y)$ is
+conditional on the likelihood, hierarchy, priors, and design. Biologically,
+$\delta$ must represent a meaningful effect, and generalization is limited to
+donors, conditions, tissues, and protocols represented by the population model.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Assumption or risk | Why it matters | Diagnostic or sensitivity analysis |
+|---|---|---|
+| Units are conditionally exchangeable | Invalid pooling can erase systematic subgroups | add prespecified group covariates; stratify; compare robust group distributions |
+| Likelihood captures observation variation | Misspecified tails or dispersion distort both pooling and uncertainty | group-level residual and posterior predictive checks; alternative likelihoods |
+| Hyperpriors are plausible | Few groups leave scale and correlation parameters prior-sensitive | prior predictive simulation; refit with defensible alternatives |
+| Hierarchy matches the sampling design | Pseudoreplication creates spurious precision | identify experimental units; aggregate or model nested dependence |
+| Parameters are identified | A proper posterior can still be broad or strongly correlated | inspect joint posteriors; simplify the hierarchy; improve design |
+| Missingness is ignorable under the model | Informative dropout or failed assays can bias population estimates | model missingness; conduct pattern-mixture or selection-model sensitivity analyses |
+
+Sensitivity should report changes in population effects, heterogeneity,
+group-specific estimates, predictions, and scientific decisions. Comparing only
+posterior means can conceal important changes in tails or correlations.
+
+# Common Interpretation Errors
+
+- **Treating shrinkage as proof that groups are similar.** Shrinkage follows from
+  the model and estimated heterogeneity; it does not validate exchangeability.
+- **Using the posterior of $\mu$ to describe a new group.** New-group prediction
+  also includes between-group variation $\tau$.
+- **Calling every nested data structure hierarchical Bayes.** A model is Bayesian
+  only when uncertainty in unknown quantities is represented by a joint posterior.
+- **Reading a random-effect distribution as the empirical histogram of groups.**
+  It is a population model whose interpretation depends on sampling and covariates.
+- **Assuming more lower-level observations solve a small-$J$ problem.** Many cells
+  per donor can improve donor estimates without precisely learning population
+  heterogeneity across donors.
+
+# Connections and Take-home Messages
+
+- [Bayesian priors, likelihoods, and posteriors](../statistical-inference/bayesian-priors-likelihoods-and-posteriors.qmd)
+  develops the core Bayesian update and workflow.
+- [Partial pooling and exchangeability](partial-pooling-and-exchangeability.qmd)
+  explains why and how information is shared across groups.
+- [Random intercepts and random slopes](random-intercepts-and-random-slopes.qmd)
+  gives regression structures commonly embedded in Bayesian hierarchies.
+- [Generalized linear mixed models](generalized-linear-mixed-models.qmd) develops
+  conditional non-Gaussian models and marginal interpretation.
+- [Empirical Bayes](empirical-bayes.qmd) estimates population-distribution
+  parameters without fully propagating a hyperposterior.
+- [Posterior credible intervals](../statistical-inference/bayesian-credible-intervals.qmd)
+  distinguishes parameter uncertainty from predictive uncertainty.
+
+A hierarchical Bayesian model is a joint model for observations, unit-specific
+parameters, and population structure. It supports partial pooling and coherent
+prediction, but its conclusions depend on experimental units, conditional
+exchangeability, likelihood choice, hyperpriors, computation, and predictive
+adequacy. Lower-level sample size cannot substitute for independent replication
+at the level of the scientific estimand.
+
+# References
+
+- Gelman, A., Carlin, J. B., Stern, H. S., Dunson, D. B., Vehtari, A., and Rubin, D. B. *Bayesian Data Analysis*, 3rd ed. Chapman & Hall/CRC, 2013. [Book resources](https://sites.stat.columbia.edu/gelman/book/).
+- Gelman, A. “Prior Distributions for Variance Parameters in Hierarchical Models.” *Bayesian Analysis* 1 (2006): 515--533. [Article](https://doi.org/10.1214/06-BA117A).
+- Betancourt, M. and Girolami, M. “Hamiltonian Monte Carlo for Hierarchical Models.” In *Current Trends in Bayesian Methodology with Applications*, 2015. [Preprint](https://arxiv.org/abs/1312.0906).
+- Vehtari, A., Gelman, A., Simpson, D., Carpenter, B., and Bürkner, P.-C. “Rank-Normalization, Folding, and Localization: An Improved $\widehat R$ for Assessing Convergence of MCMC.” *Bayesian Analysis* 16 (2021): 667--718. [Article](https://doi.org/10.1214/20-BA1221).
+- Stan Development Team. “Hierarchical Regression” and “Posterior and Prior Predictive Checks.” *Stan User's Guide*. [Official documentation](https://mc-stan.org/docs/stan-users-guide/).
