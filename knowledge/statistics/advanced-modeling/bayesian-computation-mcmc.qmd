@@ -1,0 +1,308 @@
+---
+title: "Bayesian Computation: MCMC"
+subtitle: "Approximating posterior expectations with dependent simulation"
+description: "Markov chain Monte Carlo targets, algorithms, diagnostics, computational uncertainty, and responsible Bayesian workflow."
+author: "Jiahong Sun"
+date: "2026-11-01"
+date-modified: "2026-11-01"
+categories: [Statistics, Bayesian, MCMC]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Why Posterior Computation Is Needed
+
+Bayesian inference begins with a prior $p(\theta)$ and likelihood $p(y\mid\theta)$:
+
+$$
+p(\theta\mid y)
+=\frac{p(y\mid\theta)p(\theta)}
+{\int p(y\mid\vartheta)p(\vartheta)\,d\vartheta}.
+$$
+
+The denominator is often a high-dimensional integral, and posterior summaries
+require further integrals. For example, the posterior mean of a function
+$g(\theta)$ is
+
+$$
+E\{g(\theta)\mid y\}
+=\int g(\theta)p(\theta\mid y)\,d\theta.
+$$
+
+Markov chain Monte Carlo (MCMC) constructs dependent draws
+$\theta^{(1)},\ldots,\theta^{(S)}$ whose stationary distribution is the posterior.
+After convergence, the ergodic average
+
+$$
+\boxed{
+\widehat{E\{g(\theta)\mid y\}}
+=\frac{1}{S}\sum_{s=1}^S g\!\left(\theta^{(s)}\right)
+}
+$$
+
+approximates the posterior expectation. MCMC does not make the observations
+independent, repair a misspecified model, or turn technical replicates into
+biological replication. It addresses a numerical integration problem conditional
+on the chosen data-generating model, prior, and observed data.
+
+# A Markov Chain with the Posterior as Its Target
+
+A Markov chain has transition kernel $K(\theta'\mid\theta)$: the next state
+depends on the present state, not the full path. A distribution $\pi$ is
+stationary when
+
+$$
+\pi(\theta')
+=\int \pi(\theta)K(\theta'\mid\theta)\,d\theta.
+$$
+
+MCMC designs $K$ so that $\pi(\theta)=p(\theta\mid y)$. Invariance alone is not
+enough. The chain also needs conditions such as irreducibility, aperiodicity, and
+positive recurrence so that it can reach and revisit all posterior regions in
+the relevant support. The precise regularity conditions depend on the state
+space and algorithm.
+
+Detailed balance,
+
+$$
+\pi(\theta)K(\theta'\mid\theta)
+=\pi(\theta')K(\theta\mid\theta'),
+$$
+
+is a convenient sufficient condition for stationarity, not a requirement for
+every valid MCMC method.
+
+# Metropolis--Hastings
+
+From the current state $\theta$, propose $\theta'\sim q(\theta'\mid\theta)$ and
+accept it with probability
+
+$$
+\boxed{
+\alpha(\theta,\theta')
+=\min\left\{1,
+\frac{p(y\mid\theta')p(\theta')q(\theta\mid\theta')}
+{p(y\mid\theta)p(\theta)q(\theta'\mid\theta)}
+\right\}.
+}
+$$
+
+Otherwise retain $\theta$. The unknown normalizing constant cancels. For a
+symmetric random-walk proposal, the proposal ratio also cancels.
+
+The acceptance correction establishes detailed balance. Efficiency remains a
+separate issue: proposals that are too small accept often but explore slowly;
+proposals that are too large are often rejected. Strong posterior correlation,
+different parameter scales, heavy tails, separated modes, or narrow curved
+regions can make a valid chain practically unusable.
+
+# Gibbs Sampling
+
+Gibbs sampling updates blocks from full conditional distributions:
+
+$$
+\begin{aligned}
+\theta_1^{(s+1)}&\sim
+p(\theta_1\mid\theta_2^{(s)},\ldots,\theta_d^{(s)},y),\\
+\theta_2^{(s+1)}&\sim
+p(\theta_2\mid\theta_1^{(s+1)},\theta_3^{(s)},\ldots,y),
+\end{aligned}
+$$
+
+continuing through the parameter blocks. Each update is accepted because it is
+drawn from the exact conditional. Conjugacy can make these draws simple, and
+Metropolis steps can be embedded for nonconjugate blocks.
+
+Easy conditional sampling does not guarantee efficient joint exploration. If
+two parameters are strongly correlated, one-at-a-time updates may crawl along a
+narrow ridge. Blocking, marginalization, reparameterization, or a different
+sampler can matter more than running a much longer chain.
+
+# Hamiltonian Monte Carlo
+
+Hamiltonian Monte Carlo (HMC) augments $\theta$ with momentum $r$ and defines
+
+$$
+H(\theta,r)=U(\theta)+K(r),
+\qquad
+U(\theta)=-\log p(\theta\mid y)+C.
+$$
+
+Numerically simulated Hamiltonian dynamics use gradients of the log posterior
+to propose distant states while approximately preserving $H$. A Metropolis
+correction removes discretization bias. The No-U-Turn Sampler (NUTS) adaptively
+chooses trajectory length and is widely used for continuous differentiable
+models.
+
+HMC can explore correlated posteriors much more efficiently than a random walk,
+but it is not automatic proof of correctness. Step size, mass matrix, and
+parameterization affect performance. Discrete unknowns generally must be
+marginalized or sampled by another method. Divergent transitions often indicate
+that the numerical trajectory could not faithfully traverse a region of severe
+posterior curvature.
+
+# Posterior Geometry and Parameterization
+
+Consider a hierarchical effect
+
+$$
+\theta_j\sim\operatorname{Normal}(\mu,\tau^2).
+$$
+
+The centered form samples $\theta_j$ directly. The non-centered form writes
+
+$$
+z_j\sim\operatorname{Normal}(0,1),
+\qquad
+\theta_j=\mu+\tau z_j.
+$$
+
+When group data are weak and $\tau$ may approach zero, the centered posterior
+can form a funnel: its width changes sharply with $\tau$. The non-centered form
+often improves geometry. With highly informative group data, centering may be
+more efficient. Standardizing predictors, using identifiable coordinates, and
+regularizing weakly identified parameters can likewise transform computation.
+
+A reparameterization that improves exploration leaves the probability model
+unchanged when the transformation and Jacobian are handled correctly. By
+contrast, tightening a prior changes the model and should be justified and
+reported as such.
+
+# Monte Carlo Error Is Not Posterior Uncertainty
+
+Let $h_s=g(\theta^{(s)})$ and let $\rho_k$ be its lag-$k$ autocorrelation. Under
+a Markov chain central limit theorem,
+
+$$
+\sqrt{S}(\bar h-E_\pi h)
+\xrightarrow{d}
+\operatorname{Normal}(0,\sigma_h^2\tau_h),
+$$
+
+where $\sigma_h^2=\operatorname{Var}_\pi(h)$ and
+
+$$
+\tau_h=1+2\sum_{k=1}^{\infty}\rho_k.
+$$
+
+This motivates the effective sample size
+
+$$
+S_{\mathrm{eff}}=\frac{S}{\tau_h}
+$$
+
+and Monte Carlo standard error (MCSE)
+
+$$
+\operatorname{MCSE}(\bar h)
+\approx\frac{\widehat\sigma_h}{\sqrt{S_{\mathrm{eff}}}}.
+$$
+
+Posterior standard deviation describes uncertainty about a parameter under the
+model. MCSE describes numerical uncertainty in an estimated posterior summary.
+More iterations reduce MCSE but do not narrow the posterior itself. Effective
+sample size is quantity-specific; good estimation of a mean does not guarantee
+good estimation of a tail probability or extreme quantile.
+
+# Diagnosing the Computation
+
+Run multiple chains from dispersed initial states and examine the quantities
+that drive the scientific conclusion. Current best practice includes:
+
+| Check | What it asks | Warning sign | Response |
+|---|---|---|---|
+| Rank-normalized split $\widehat R$ | do between- and within-chain variation agree? | values materially above 1.01 | reparameterize, improve identification, and run longer only after fixing geometry |
+| Bulk effective sample size | are central posterior summaries precise? | small ESS relative to needed MCSE | improve sampling efficiency or increase iterations |
+| Tail effective sample size | are interval endpoints and tail probabilities stable? | unstable quantiles or small tail ESS | improve exploration and obtain more effective draws |
+| Trace and rank plots | do chains occupy the same regions without drift? | sticking, trends, or chain-specific ranks | investigate modes, initialization, and parameterization |
+| HMC diagnostics | are numerical trajectories reliable? | divergences, maximum tree depth, low energy mixing | reparameterize, rescale, strengthen defensible priors, or revise the model |
+
+No single threshold proves convergence. A chain trapped in the same local mode
+across all initializations may have an excellent $\widehat R$. Diagnostics should
+be checked for transformed quantities and predictions, not only raw parameters.
+Thinning usually discards information and is not a remedy for autocorrelation;
+retain draws unless storage or a downstream algorithm requires thinning.
+
+# A Responsible Bayesian Workflow
+
+1. **Define the estimand and experimental unit.** State whether inference concerns
+   donors, samples, cells, molecules, or future populations.
+2. **Specify likelihood and priors.** Use the sampling and measurement process;
+   check prior implications on observable scales.
+3. **Fit with multiple chains.** Preserve seeds, software versions, warmup, and
+   sampler settings.
+4. **Validate computation.** Resolve sampler warnings and require MCSE small
+   enough for the intended decision.
+5. **Check predictive adequacy.** Use [posterior predictive checks](posterior-predictive-checks.qmd)
+   aimed at scientifically relevant features.
+6. **Assess sensitivity.** Vary defensible priors, likelihoods, and structural
+   assumptions; compare the resulting decisions and predictions.
+7. **Report posterior distributions.** Give intervals, probabilities, and
+   predictions rather than only a posterior mean or a chain trace.
+
+# Bioinformatics Example: Donor-level Treatment Effects
+
+Suppose RNA-seq counts are aggregated to donor-by-condition pseudobulk samples.
+A hierarchical negative-binomial model may include donor intercepts, treatment
+effects, library-size offsets, and gene-specific dispersion. The posterior may
+contain thousands of correlated continuous parameters, motivating HMC or a
+carefully designed Gibbs/Metropolis scheme.
+
+The donor is the experimental unit for a donor-level treatment estimand. Cells,
+reads, or repeated library preparations are technical or lower-level
+measurements. Treating them as independent donors would make the likelihood
+overconfident; no MCMC diagnostic can reveal or repair that design error by
+itself.
+
+Computationally, report chain count, warmup and retained iterations, sampler,
+$\widehat R$, bulk and tail ESS, MCSE for key effects, and all warnings.
+Statistically, interpret posterior probabilities conditional on the model and
+prior. Biologically, compare effects with a prespecified meaningful threshold
+and restrict generalization to the sampled population, tissue, treatment, and
+protocol.
+
+# Failure Modes and Remedies
+
+- **Improper posterior.** A chain may produce numbers even when the posterior is
+  not normalizable. Establish posterior propriety or use proper, defensible priors.
+- **Weak identification.** Long ridges and funnels reflect limited information,
+  not merely a software problem. Simplify the model, improve design, or regularize.
+- **Multimodality.** Chains may fail to move between modes. Use informed
+  initialization, symmetry-breaking constraints when scientifically valid, or
+  algorithms designed for separated modes; report remaining uncertainty.
+- **Adaptive tuning mistaken for inference.** Warmup draws come from changing
+  kernels and are normally excluded from posterior summaries.
+- **Stopping when a desired answer appears.** Plan precision using MCSE and
+  diagnostics, not the sign or significance of an evolving estimate.
+- **Good computation, bad model.** MCMC can accurately approximate a posterior
+  from an implausible likelihood, prior, or replication structure. Predictive
+  checks and sensitivity analysis remain essential.
+
+# Connections and Take-home Messages
+
+- [Bayesian priors, likelihoods, and posteriors](../statistical-inference/bayesian-priors-likelihoods-and-posteriors.qmd)
+  defines the distribution MCMC targets.
+- [Monte Carlo estimation and uncertainty](../statistical-inference/monte-carlo-estimation-and-uncertainty.qmd)
+  separates simulation error from scientific uncertainty.
+- [Hierarchical Bayesian models](hierarchical-bayesian-models.qmd) create the
+  posterior geometries for which parameterization is crucial.
+- [Partial pooling and exchangeability](partial-pooling-and-exchangeability.qmd)
+  explains the population assumptions behind hierarchical computation.
+- [Posterior predictive checks](posterior-predictive-checks.qmd) assess what the
+  fitted model can reproduce after computation has been validated.
+
+MCMC converts otherwise intractable posterior integrals into averages of
+dependent draws. Correctness requires a valid target and ergodic transition;
+usefulness requires efficient exploration, stable summaries, and MCSE suited to
+the decision. Computational convergence is necessary but never sufficient for
+scientific validity.
+
+# References
+
+- Metropolis, N., Rosenbluth, A. W., Rosenbluth, M. N., Teller, A. H., and Teller, E. “Equation of State Calculations by Fast Computing Machines.” *Journal of Chemical Physics* 21 (1953): 1087--1092. [Article](https://doi.org/10.1063/1.1699114).
+- Hastings, W. K. “Monte Carlo Sampling Methods Using Markov Chains and Their Applications.” *Biometrika* 57 (1970): 97--109. [Article](https://doi.org/10.1093/biomet/57.1.97).
+- Geman, S. and Geman, D. “Stochastic Relaxation, Gibbs Distributions, and the Bayesian Restoration of Images.” *IEEE Transactions on Pattern Analysis and Machine Intelligence* 6 (1984): 721--741. [Article](https://doi.org/10.1109/TPAMI.1984.4767596).
+- Hoffman, M. D. and Gelman, A. “The No-U-Turn Sampler: Adaptively Setting Path Lengths in Hamiltonian Monte Carlo.” *Journal of Machine Learning Research* 15 (2014): 1593--1623. [Article](https://jmlr.org/papers/v15/hoffman14a.html).
+- Vehtari, A., Gelman, A., Simpson, D., Carpenter, B., and Bürkner, P.-C. “Rank-Normalization, Folding, and Localization: An Improved $\widehat R$ for Assessing Convergence of MCMC.” *Bayesian Analysis* 16 (2021): 667--718. [Article](https://doi.org/10.1214/20-BA1221).
+- Stan Development Team. “MCMC Sampling,” “Effective Sample Size,” and “Problematic Posteriors.” *Stan Reference Manual* and *Stan User's Guide*. [Official documentation](https://mc-stan.org/docs/).

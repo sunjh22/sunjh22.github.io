@@ -1,0 +1,301 @@
+---
+title: "Posterior Predictive Checks"
+subtitle: "Testing whether a fitted Bayesian model can reproduce important data features"
+description: "Posterior predictive simulation, graphical and numerical checks, calibration, limitations, and model revision."
+author: "Jiahong Sun"
+date: "2026-11-01"
+date-modified: "2026-11-01"
+categories: [Statistics, Bayesian, Model Checking]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Ask What the Fitted Model Would Generate
+
+A posterior distribution can be computed accurately even when the model fails
+to represent important features of the data. Posterior predictive checking asks
+whether replicated data generated from the fitted model resemble the observed
+data in ways that matter for the scientific analysis.
+
+For observed data $y$, parameters $\theta$, and a replicate $y^{\mathrm{rep}}$
+generated under the same observation process, the posterior predictive
+distribution is
+
+$$
+\boxed{
+p(y^{\mathrm{rep}}\mid y)
+=\int p(y^{\mathrm{rep}}\mid\theta)
+p(\theta\mid y)\,d\theta.
+}
+$$
+
+Simulation follows the factorization:
+
+$$
+\theta^{(s)}\sim p(\theta\mid y),
+\qquad
+y^{\mathrm{rep},(s)}\sim p(y^{\mathrm{rep}}\mid\theta^{(s)}).
+$$
+
+The replicate must preserve the design being checked: sample sizes, covariates,
+exposures, missingness assumptions, clustering, and measurement process. A
+check is a comparison, not a binary proof that a model is true or false.
+
+# Prediction Target Determines the Replicate
+
+“New data” can mean different things in a hierarchical study:
+
+| Predictive target | What is held fixed? | What is regenerated? | Example |
+|---|---|---|---|
+| New measurement in an observed unit | unit effect and design | observation noise | another assay of the same donor sample |
+| New observation for an observed group | group parameter | outcome conditional on that group | another time point for an enrolled donor |
+| New group from the population | population parameters | group effect and outcomes | a new donor from the target population |
+| Replication of the full study | design mechanism or design variables | groups, latent effects, and outcomes | a new multi-donor experiment |
+
+These distributions answer different questions. A conditional check may fit
+within-group noise while missing excessive between-group heterogeneity. A
+new-group check may expose that failure. State the replication thought experiment
+before interpreting the comparison.
+
+# Choose Discrepancies That Can Reveal Consequential Failures
+
+A test quantity $T(y)$ reduces the data to a feature worth checking. Useful
+choices follow from the estimand, likelihood, scientific mechanism, and known
+failure modes rather than from whatever plot is easiest to produce.
+
+Examples include:
+
+- location, spread, skewness, tails, and extreme values;
+- the number of zeros, detection frequency, and saturation;
+- a mean--variance or abundance--dispersion relationship;
+- residual association with fitted values, time, batch, or sequencing depth;
+- within- and between-unit variability;
+- autocorrelation, spatial clustering, or run lengths;
+- group contrasts, rank patterns, or the statistic driving a decision; and
+- the fraction of observations outside a scientifically meaningful range.
+
+No single discrepancy is omnibus. A model may reproduce the mean while missing
+tails, or match marginal counts while missing donor-level dependence. Inspect
+several prespecified, interpretable features, including the quantity most closely
+connected to the substantive conclusion.
+
+# Graphical Checks
+
+Graphical posterior predictive checks retain more structure than one-number
+summaries. Common comparisons are:
+
+- observed histograms, empirical distribution functions, or density estimates
+  overlaid on a manageable set of predictive draws;
+- observed statistics against predictive intervals for each group;
+- binned residual or calibration plots against important predictors;
+- predictive distributions of maxima, zero counts, slopes, or variance ratios;
+  and
+- small multiples stratified by treatment, batch, site, sex, ancestry, or time.
+
+Plotting hundreds of opaque replicated curves can conceal rather than reveal
+misfit. Show predictive intervals or a limited set of draws, mark the observed
+quantity clearly, and preserve units. Group-specific plots are important because
+aggregation can make poor subgroup fit disappear.
+
+# Numerical Discrepancies and Posterior Predictive P-values
+
+A posterior predictive tail-area probability can be written
+
+$$
+p_B
+=P\!\left[T(y^{\mathrm{rep}})\ge T(y)\mid y\right]
+\approx
+\frac{1}{S}\sum_{s=1}^S
+I\!\left\{T(y^{\mathrm{rep},(s)})\ge T(y)\right\}.
+$$
+
+Values near 0 or 1 can flag systematic discrepancy in the chosen direction.
+This quantity is not an ordinary frequentist $p$-value. The observed data are
+used both to form the posterior and to evaluate the discrepancy, so posterior
+predictive $p$-values are generally not uniform under the model and often
+concentrate toward $0.5$. A threshold such as 0.05 therefore should not be used
+as a universal accept/reject rule.
+
+When a discrepancy depends on the parameter, use
+$T(y,\theta^{(s)})$ and compare it with
+$T(y^{\mathrm{rep},(s)},\theta^{(s)})$ within each draw. Report the discrepancy,
+direction, simulation precision, and practical importance of the mismatch.
+
+# A Worked Beta--Binomial Check
+
+Suppose donor $j$ has $n_j$ reads informative for an allele and $y_j$ alternate
+reads. A simple binomial model is
+
+$$
+y_j\mid p\sim\operatorname{Binomial}(n_j,p),
+\qquad
+p\sim\operatorname{Beta}(a,b).
+$$
+
+After drawing $p^{(s)}$ from the posterior, simulate
+
+$$
+y_j^{\mathrm{rep},(s)}\sim
+\operatorname{Binomial}(n_j,p^{(s)}).
+$$
+
+A discrepancy sensitive to extra donor heterogeneity is the sample variance of
+the observed allele fractions:
+
+$$
+T(y)=\operatorname{Var}_j\left(\frac{y_j}{n_j}\right).
+$$
+
+If $T(y)$ is repeatedly larger than its posterior predictive replicates, a
+shared $p$ plus binomial sampling does not generate enough between-donor
+variation. A beta--binomial or hierarchical model may be appropriate, but the
+revision should follow the scientific source of heterogeneity. Unmodeled ancestry,
+batch, copy-number state, or contamination should not be hidden automatically
+inside an overdispersion parameter.
+
+The donor remains the biological unit. Reads measure each donor's fraction and
+do not supply independent evidence about variation among donors.
+
+# Prior and Posterior Predictive Checks Have Different Jobs
+
+The prior predictive distribution is
+
+$$
+p(y)=\int p(y\mid\theta)p(\theta)\,d\theta.
+$$
+
+It checks whether the model and prior generate scientifically plausible data
+before the observed outcomes influence inference. It can reveal impossible
+scales, excessive concentration, or interactions among weakly specified priors.
+
+The posterior predictive distribution conditions on $y$ and asks whether the
+fitted model can reproduce relevant features. Passing a posterior check does not
+validate the prior: a strong likelihood can overwhelm implausible prior regions.
+Conversely, prior predictive breadth is not model flexibility after fitting.
+Both checks belong in a Bayesian workflow.
+
+# Predictive Residuals and Calibration
+
+Raw residuals $y_i-E(y_i\mid y)$ may be difficult to compare when variance and
+support change with predictors. Alternatives include standardized residuals,
+randomized quantile residuals for discrete outcomes, and predictive probability
+integral transform values. Their reference behavior depends on whether the
+prediction reuses the observation being assessed.
+
+In-sample posterior prediction is optimistic for detecting overfitting because
+each observation helps fit its own predictive distribution. Leave-one-out or
+held-out predictive checks instead compare $y_i$ with
+
+$$
+p(y_i\mid y_{-i})
+=\int p(y_i\mid\theta)p(\theta\mid y_{-i})\,d\theta.
+$$
+
+These checks are valuable for predictive calibration and influential
+observations. They answer a different question from ordinary posterior checks,
+which are often better at diagnosing whether a particular generative assumption
+can reproduce a chosen data feature. Cross-validation compares out-of-sample
+prediction; it does not replace scientific model criticism.
+
+# Computation Must Be Valid Before Model Checking
+
+Posterior predictive simulation inherits errors from posterior computation.
+Before interpreting a check:
+
+- resolve divergent transitions and other sampler warnings;
+- inspect rank-normalized split $\widehat R$ and bulk/tail effective sample sizes;
+- ensure enough effective draws for the tail area or predictive quantile;
+- quantify Monte Carlo error when it could change the conclusion; and
+- verify that the replication code implements the same likelihood, offsets,
+  censoring, and missing-data rules as the fitted model.
+
+Duplicating posterior draws does not add information. For rare predictive events,
+simulate additional independent outcomes conditional on well-explored posterior
+draws or improve posterior sampling, and report the remaining numerical
+uncertainty.
+
+# From Discrepancy to Model Revision
+
+A useful check suggests where the generative story fails. Revisions may include:
+
+| Observed discrepancy | Possible mechanism | Targeted revision or sensitivity analysis |
+|---|---|---|
+| more zeros than predicted | structural absence, censoring, or low exposure | model detection/absence separately; check exposure and threshold assumptions |
+| heavier tails | outliers, latent mixtures, or underestimated measurement error | robust likelihood, mixture, or explicit error model |
+| variance rises too quickly with the mean | overdispersion or omitted heterogeneity | dispersion model, group effects, or relevant covariates |
+| residual batch pattern | unmodeled technical process or confounding | add batch structure; examine overlap and design limitations |
+| serial or spatial residual dependence | missing correlation or dynamic process | correlation, state-space, or spatial model |
+| poor new-group prediction | wrong population distribution or exchangeability claim | covariates, robust hierarchy, stratification, or narrower target population |
+
+Model revision should be scientifically interpretable. Repeatedly adding
+parameters until familiar plots look acceptable can overfit the observed data.
+Recheck revised models, evaluate sensitivity, and use held-out prediction when
+prediction is the goal. Preserve a record of the iterative workflow.
+
+# What Posterior Predictive Checks Cannot Establish
+
+- **They do not prove a model is true.** Many incompatible models reproduce the
+  same selected summaries.
+- **They do not identify causality.** Confounding, selection, and measurement
+  assumptions can remain invisible in the observed distribution.
+- **They do not validate priors by themselves.** Posterior conditioning may hide
+  implausible prior implications.
+- **They do not choose the estimand.** A well-fitting read-level model may still
+  answer the wrong donor-level question.
+- **They do not repair pseudoreplication.** An observation model cannot create
+  independent biological units.
+- **They do not rank models on one universal scale.** Predictive accuracy,
+  calibration, interpretability, and scientific adequacy are distinct criteria.
+
+# Bioinformatics Workflow
+
+For a multi-donor single-cell or bulk RNA-seq analysis:
+
+1. Identify donors or independently assigned samples as experimental units;
+   classify cells, reads, and repeated assays as lower-level or technical units.
+2. Define the biological estimand, such as a donor-population log fold change,
+   and the conditions to which it generalizes.
+3. Check priors by simulating library sizes, zero frequencies, dispersions, and
+   plausible fold changes before fitting.
+4. Validate [MCMC computation](bayesian-computation-mcmc.qmd).
+5. Simulate replicated counts with the observed design matrix and offsets.
+6. Compare abundance--variance trends, zero counts, tails, treatment contrasts,
+   donor heterogeneity, and batch-resolved summaries.
+7. Refit defensible alternatives and report whether the statistical conclusion
+   and biological interpretation change.
+
+A statistical statement might be that the fitted negative-binomial hierarchy
+underpredicts donor-to-donor variability. The biological interpretation requires
+investigating whether that variation reflects genuine heterogeneity, batch,
+composition, or measurement. These are not interchangeable explanations.
+
+# Connections and Take-home Messages
+
+- [Bayesian priors, likelihoods, and posteriors](../statistical-inference/bayesian-priors-likelihoods-and-posteriors.qmd)
+  provides the update underlying posterior prediction.
+- [Bayesian computation: MCMC](bayesian-computation-mcmc.qmd) supplies posterior
+  draws and computational diagnostics.
+- [Hierarchical Bayesian models](hierarchical-bayesian-models.qmd) distinguishes
+  within-unit, observed-group, and new-group predictions.
+- [Partial pooling and exchangeability](partial-pooling-and-exchangeability.qmd)
+  clarifies what population a replicated group represents.
+- [Cross-validation](../regression-models/cross-validation.qmd) evaluates
+  out-of-sample predictive performance with the appropriate resampling unit.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  asks whether conclusions survive plausible model changes.
+
+Posterior predictive checking compares observed features with data generated by
+the fitted model. Its value comes from a clearly defined replication target,
+discrepancies connected to scientific consequences, valid computation, and
+transparent model revision. A check can reveal a failure the analyst thought to
+look for; it cannot certify every unexamined assumption.
+
+# References
+
+- Rubin, D. B. “Bayesianly Justifiable and Relevant Frequency Calculations for the Applied Statistician.” *Annals of Statistics* 12 (1984): 1151--1172. [Article](https://doi.org/10.1214/aos/1176346785).
+- Gelman, A., Meng, X.-L., and Stern, H. “Posterior Predictive Assessment of Model Fitness via Realized Discrepancies.” *Statistica Sinica* 6 (1996): 733--760. [Article](https://www3.stat.sinica.edu.tw/statistica/j6n4/j6n41/j6n41.htm).
+- Bayarri, M. J. and Berger, J. O. “P Values for Composite Null Models.” *Journal of the American Statistical Association* 95 (2000): 1127--1142. [Article](https://doi.org/10.1080/01621459.2000.10474309).
+- Gelman, A. et al. *Bayesian Data Analysis*, 3rd ed. Chapman & Hall/CRC, 2013, Chapter 6. [Book resources](https://sites.stat.columbia.edu/gelman/book/).
+- Gabry, J., Simpson, D., Vehtari, A., Betancourt, M., and Gelman, A. “Visualization in Bayesian Workflow.” *Journal of the Royal Statistical Society: Series A* 182 (2019): 389--402. [Article](https://doi.org/10.1111/rssa.12378).
+- Stan Development Team. “Posterior and Prior Predictive Checks.” *Stan User's Guide*. [Official documentation](https://mc-stan.org/docs/stan-users-guide/posterior-predictive-checks.html).
