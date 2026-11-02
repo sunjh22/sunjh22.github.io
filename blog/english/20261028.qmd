@@ -1,0 +1,27 @@
+---
+title: "Daily Translation: A Computer Crash during Report Writing"
+author: "Ryan Sun"
+date: "2026-10-28"
+categories: [English Learning, Daily Translation]
+---
+
+## 中文原文
+下午你在电脑上赶一份工作报告。写了大半的时候，电脑突然蓝屏，屏幕卡住不动。你有点慌，因为还没保存文件。等电脑自动重启之后，幸运的是文档有自动备份，大部分内容都还在。
+
+## My translation
+This afternoon, I was writing a progress report on my computer.
+I've just finished almost half of it when the computer suddenly broke down and the screen was stuck there.
+I was a bit panic, because I hadn't saved the document.
+Luckily, when the computer was restarted, the document was backed up automatically, so most of the contents were still there.
+
+## Revised version
+This afternoon, I was working on a progress report on my laptop.
+I'd gotten through almost half of it when the computer suddenly crashed and the screen froze.
+I panicked a little because I hadn't saved the file.
+Thankfully, after it restarted, the document had auto-saved, so most of my content was still there.
+
+## Key phrases
+- crashed，蓝屏; break down通常指坏掉
+- froze，屏幕卡住
+- panicked，动词慌张
+- it restarted，电脑重启，没有必要用被动

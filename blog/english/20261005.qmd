@@ -1,0 +1,32 @@
+---
+title: "Daily Translation: A Power Cut during Movie Night"
+author: "Ryan Sun"
+date: "2026-10-05"
+categories: [English Learning, Daily Translation]
+---
+
+## 中文原文
+昨晚下班后，我打算在家安静看一部收藏很久的电影。我提前准备好零食和饮料，关掉房间的灯，打开电脑。电影才播放二十分钟，突然停电了，屏幕一下子变黑。房间里一片漆黑，我打开手机手电筒去检查电闸。反复试了好几次都没有恢复供电，我只好放弃看电影的计划。
+
+## My translation
+Yesterday after work, I planned to watch a movie that had been stored for a long time.
+I prepared snacks and drinks in advance, turned off the light and opened my laptop.
+When the movie was played for only twenty minutes, the electricity was suddenly out, and the screen turned black.
+My room was full of darkness, so I opened my phone's flashlight to check the circut gate.
+I had tried for a couple of times and the electricity didn't recover, so I had to give up the plan of watching the movie.
+
+## Revised version
+Yesterday after work, I planned to watch a movie that I had saved for a long time.
+I prepared snacks and drinks in advance, turned off the lights and opened my laptop.
+The movie had been only playing for twenty minutes when the power suddenly went out, and the screen went black.
+The room was completely dark, so I turned on my phone's flashlight to check the circuit breaker.
+I tried a couple of times, but the power still didn't come back.
+I had to give up the plan to watch the movie.
+
+## Key phrases
+- moive用save不用store
+- movie had been playing for ..., 电影播放了20min，不是被动播放
+- power went out，停电专用搭配
+- completely dark，比full of darkness好，这个短语好像是某首歌里面的
+- circuit breaker，电闸，上次学过，又忘了
+- power come back, 电不用electricity用power

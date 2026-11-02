@@ -1,0 +1,27 @@
+---
+title: "Daily Translation: Correcting Data in a Project Report"
+author: "Ryan Sun"
+date: "2026-10-15"
+categories: [English Learning, Daily Translation]
+---
+
+## 中文原文
+今天早上开会，同事分享一份项目报告。报告里有几处数据有问题。会后你私下提醒这位同事，他感谢了你，并且说会马上修改这些数据。
+
+## My translation
+In today's morning meeting, one of my colleagues shared a project report.
+But some of the data in the report had problems.
+I reminded the colleague of the problems in private after meeting.
+He thanked me for the reminder and said he would revise the data right away.
+
+## Revised version
+At this morning's meeting, one of my colleagues presented a project report.
+However, some of the data in the report is incorrect.
+I pointed out these issues to him privately after the meeting.
+He thanked me for letting him know and said he'd fix the data immediately.
+
+## Key phrases
+- at this morning's meeting
+- present a report
+- point out issues
+- fix the data

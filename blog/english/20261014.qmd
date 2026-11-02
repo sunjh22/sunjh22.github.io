@@ -1,0 +1,28 @@
+---
+title: "Daily Translation: Fixing a Vacuum Cleaner"
+author: "Ryan Sun"
+date: "2026-10-14"
+categories: [English Learning, Daily Translation]
+---
+
+## 中文原文
+周末早上，你打算在家打扫客厅。先拿起吸尘器准备吸地板，结果吸尘器启动不了。你检查了插头，发现电源线松了，插紧之后机器就能正常工作了。
+
+## My translation
+On the weekend morning, I decided to clean the dinning room.
+I was about to use the vacuum to clean the floor, but it didn't work.
+Then I checked the plug and found the cable was not at the right place.
+So I plugged in again, then the machine worked properly.
+
+## Revised version
+One weekend morning, I decided to clean the dining room.
+I was about to vacuum the floor, the the vacuum wouldn't turn on.
+I checked the plug and saw the power cord was loose.
+Once I pluged it back in, the machine worked fine.
+
+## Key phrases
+- one weekend morning，某一个周末早上。或者 on Saturday/Sunday morning
+- vacuum the floor，固定搭配，吸尘器吸地板
+- turn on，电器
+- power cord was loose，电源线松了
+- pluged it back in，动词短语要加宾语

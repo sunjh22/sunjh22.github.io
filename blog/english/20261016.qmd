@@ -1,0 +1,28 @@
+---
+title: "Daily Translation: Troubleshooting a Refrigerator"
+author: "Ryan Sun"
+date: "2026-10-16"
+categories: [English Learning, Daily Translation]
+---
+
+## 中文原文
+你下班回家，发现家里的冰箱制冷效果变差了。里面放的牛奶已经有点不新鲜。你上网查了简单排查办法，打算今晚清理冰箱背后的灰尘看看能不能修好。
+
+## My translation
+After I got home from work, I found the cooling effect of the refridge got worse.
+The milk in it was becoming a bit unfresh.
+I searched online tutorials for simple fixing ways.
+I planned to clean the dust at the back of the refridge to see whether it could go back to work.
+
+## Revised version
+When I got home from work, I noticed the fridge wasn't cooling properly.
+The milk inside had gone a bit off.
+I looked up some simple fixes online.
+I planned to clean the dust off the back of the fridge to see if it would work again.
+
+## Key phrases
+- noticed
+- wasn't cooling properly，制冷效果变差=不能很好制冷
+- had gone a bit off，形容牛奶有点变质
+- simple fixes，名词短语，比simple fixing ways更简洁，表同样的意思
+- clean the dust off

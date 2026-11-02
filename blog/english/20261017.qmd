@@ -1,0 +1,28 @@
+---
+title: "Daily Translation: A Parcel Locker That Would Not Open"
+author: "Ryan Sun"
+date: "2026-10-17"
+categories: [English Learning, Daily Translation]
+---
+
+## 中文原文
+今天下午你收到快递短信，去小区快递柜取包裹。输入取件码之后柜子打不开。你联系快递客服，客服帮你远程解锁，最后成功拿到包裹。
+
+## My translation
+In today's afternoon, I received delivery messages and went to pick up my packages at the delivery cabinet.
+I couldn't open the cabinet even I entered the pick-up code.
+So I contacted the delivery receptionists, then they helped me unlock the cabinet remotely.
+Finally, I got my package.
+
+## Revised version
+This afternoon, I received a delivery notification and went to collect my package at the parcel locker.
+I couldn't open the locker even though I entered the pickup code.
+I contacted the delivery customer service, and they unlocked the locker for me remotely.
+I finally got my package.
+
+## Key phrases
+- delivery notification
+- collect my package
+- parcel locker，快递柜
+- pickup code，取件码
+- delivery customer service，快递客服

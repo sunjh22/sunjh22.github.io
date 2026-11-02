@@ -1,0 +1,25 @@
+---
+title: "Daily Translation: Shopping at a Self-checkout"
+author: "Ryan Sun"
+date: "2026-10-19"
+categories: [English Learning, Daily Translation]
+---
+
+## 中文原文
+傍晚下班路上，你打算顺路去超市买点水果。到超市后，你发现想买的草莓卖完了，于是你换了一盒蓝莓。结账的时候，自助收银机识别不了塑料袋，你只好叫店员过来帮忙。
+
+## My translation
+On my way back home from work, I decided to pick up some fruits at the supermarket.
+When I was there, I found strawberry had been sold out, so I got one box of blueberry.
+During checking out, the automatic machine couldn't recognize the plastic bag, so I had to call the staff for the help.
+
+## Revised version
+On my way home from work, I decided to grab some fruit at the supermarket.
+When I got there, I found strawberries were sold out, so I picked up a box of blueberries.
+At checkout, the self-checkout machine couldn't scan the plastic bag, so I had to call a staff memeber for help.
+
+## Key phrases
+- grab，高频动词
+- at checkout，结账的时候
+- self-checkout machine，自主收银机
+- scan > recognize
