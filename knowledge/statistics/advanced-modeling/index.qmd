@@ -16,10 +16,12 @@ categories: [Statistics, Advanced Modeling]
 - [Partial pooling and exchangeability](partial-pooling-and-exchangeability.qmd)
 - [Bayesian computation: MCMC](bayesian-computation-mcmc.qmd)
 - [Posterior predictive checks](posterior-predictive-checks.qmd)
+- [Finite mixture models](finite-mixture-models.qmd)
+- [Identifiability and label switching](identifiability-and-label-switching.qmd)
 - [Mixture models overview](mixture-models.qmd)
 
 Future notes in this level will cover mixture estimation, latent-variable models,
-survival analysis, and multivariate models.
+survival analysis, and multivariate methods.
 
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Real Bioinformatics Problems](../bioinformatics-problems/index.qmd)

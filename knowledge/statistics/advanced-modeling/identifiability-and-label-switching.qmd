@@ -1,0 +1,305 @@
+---
+title: "Identifiability and Label Switching"
+subtitle: "Separating genuine ambiguity from arbitrary component names"
+description: "Identifiability, permutation symmetry, label switching, invariant targets, relabeling, diagnostics, and scientific interpretation in mixture models."
+author: "Jiahong Sun"
+date: "2026-11-02"
+date-modified: "2026-11-02"
+categories: [Statistics, Mixture Models, Identifiability, Bayesian]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Two Different Sources of Ambiguity
+
+A model is identifiable when distinct parameter values imply distinct
+distributions for the observable data. Formally, for a parameter $\theta$ and
+observed-data law $P_\theta$,
+
+$$
+P_\theta=P_{\theta'}
+\quad\Longrightarrow\quad
+\theta=\theta'.
+$$
+
+For a finite mixture,
+
+$$
+p(y\mid\Theta)=\sum_{k=1}^K\pi_k f(y\mid\theta_k),
+$$
+
+permuting component indices leaves the density unchanged. For every permutation
+$\sigma$ of $1,\ldots,K$,
+
+$$
+\sum_{k=1}^K\pi_k f(y\mid\theta_k)
+=
+\sum_{k=1}^K\pi_{\sigma(k)}f(y\mid\theta_{\sigma(k)}).
+$$
+
+This **label nonidentifiability** is unavoidable: “component 1” is only a name.
+It should be distinguished from deeper nonidentifiability, in which genuinely
+different unordered mixtures produce the same observed distribution. Many
+classical finite mixtures, including finite normal mixtures under appropriate
+minimal representations, are identifiable *up to permutation*. That is enough
+to identify the mixing distribution, but not the arbitrary numbering of its
+atoms.
+
+# Structural, Practical, and Label Identifiability
+
+Three issues are often conflated:
+
+| Issue | Meaning | More data under the same design? |
+|---|---|---|
+| Structural nonidentifiability | different scientifically distinct parameter values imply exactly the same observed law | no |
+| Weak or practical identification | distributions differ, but only slightly over the observed range | sometimes |
+| Label nonidentifiability | a permutation changes names but not the unordered mixture | no, because names are arbitrary |
+
+Weak identification can occur when component means are close, a mixing weight is
+near zero, or covariates provide little overlap. The likelihood then has broad
+ridges or nearly equivalent modes. This is not repaired by relabeling; the data
+contain little information about the separation itself.
+
+When two components coincide, a nominal $K$-component model has a nonminimal
+representation. For example,
+
+$$
+\pi f(y\mid\theta)+(1-\pi)f(y\mid\theta)=f(y\mid\theta),
+$$
+
+so $\pi$ is not identified. Likewise, a zero-weight component has parameters
+that do not affect the observed distribution. These singular points are why
+ordinary information-matrix and chi-squared approximations can fail in mixtures.
+
+# Label Switching in Bayesian Computation
+
+Suppose component priors are exchangeable. The prior and likelihood are then
+invariant to every label permutation, so the posterior has $K!$ symmetric modes:
+
+$$
+p(\Theta\mid y)=p(\sigma\Theta\mid y).
+$$
+
+An MCMC chain may remain in one labeling or move among several. If it explores
+the symmetric posterior correctly, the marginal posterior distribution of
+$\mu_1$ is the same as that of $\mu_2$ in a two-component mixture. The raw
+posterior mean
+
+$$
+E(\mu_1\mid y)=E(\mu_2\mid y)
+$$
+
+can lie between the two fitted component locations and describe neither
+component. This is the **label-switching problem**: component-specific summaries
+are meaningless until the target and labeling convention are defined.
+
+A chain that never switches is not necessarily correct or incorrect. It may be
+trapped in one symmetric mode, or it may deliberately use an asymmetric
+parameterization. Standard trace plots and $\widehat R$ can therefore mislead:
+chains in different permutations can look inconsistent even when their implied
+mixture densities agree, while chains trapped in the same mode can hide other
+non-permutation modes.
+
+# Decide Which Quantities Need Labels
+
+Many useful targets are invariant to permutation and require no relabeling:
+
+- the mixture density and predictive distribution;
+- the unordered set of component parameters and weights;
+- the number of occupied components, when that target is well defined;
+- co-clustering probabilities
+  $P(Z_i=Z_j\mid y)$;
+- posterior similarity matrices; and
+- losses minimized over all permutations.
+
+For clustering, the posterior similarity matrix
+
+$$
+S_{ij}=P(Z_i=Z_j\mid y)
+$$
+
+is label invariant because whether two observations share a component does not
+depend on the component's name. A partition can be selected to approximate
+$S$, while uncertainty remains visible in its off-diagonal probabilities.
+
+Component-specific claims do require an explicit definition. “The component
+with the lower mean” is a mathematical convention. “The activated T-cell state”
+is a scientific definition that should use prespecified markers or external
+information and be checked across samples.
+
+# Ordering Constraints: Useful but Not Neutral
+
+A common device imposes
+
+$$
+\mu_1<\mu_2<\cdots<\mu_K.
+$$
+
+For a univariate mixture with well-separated locations, this selects one of the
+$K!$ equivalent labelings and can make summaries convenient. It does not create
+information, resolve overlapping components, or prove that the ordered groups
+have scientific meaning.
+
+Ordering can be fragile when:
+
+- components differ mainly in variance, shape, or a multivariate direction;
+- component locations cross as a covariate changes;
+- posterior mass includes nearly tied means;
+- the chosen ordering variable is scientifically arbitrary; or
+- different samples require incompatible orders.
+
+An asymmetric prior or anchor observations can also assign labels, but then the
+asymmetry is substantive model information. Sensitivity to the anchor or prior
+must be reported rather than described as identification supplied by the data.
+
+# Relabeling Posterior Draws
+
+When component-specific summaries are genuinely needed, post-processing can
+choose a permutation $\sigma_s$ for each posterior draw $s$. A generic rule
+solves
+
+$$
+\sigma_s
+=\arg\min_{\sigma\in\mathcal S_K}
+L(\sigma\Theta^{(s)},\Theta^*),
+$$
+
+where $L$ is a declared loss and $\Theta^*$ is a reference or iteratively updated
+template. Alternatives align allocation probabilities, minimize posterior
+expected loss, or match components to scientifically anchored profiles.
+
+Relabeling changes summaries, not the likelihood or information in the data. A
+good procedure should:
+
+1. state the target and loss;
+2. give the same invariant predictions before and after relabeling;
+3. remain stable across reasonable references and initializations;
+4. expose rather than conceal overlapping or split components; and
+5. propagate assignment uncertainty into downstream analyses.
+
+Sorting every draw is one relabeling method, but it is appropriate only when the
+sort variable defines the intended target throughout the posterior.
+
+# Frequentist Fitting Has the Same Symmetry
+
+Label switching is not uniquely Bayesian. A likelihood optimizer can return any
+permutation of the same solution, and separate starts may number components
+differently. Before comparing fits, align components or compare label-invariant
+quantities such as log-likelihood, fitted density, and optimal matched parameter
+sets.
+
+Uncertainty is nonregular near coincident components or zero weights. The
+observed information may be nearly singular, Wald intervals may be misleading,
+and a usual parametric bootstrap may return permuted or split solutions. Bootstrap
+replicates should be matched under a prespecified loss, and failure to obtain a
+stable match is itself evidence of weak component-specific identification.
+
+# Worked Example
+
+Consider a two-component normal mixture with exchangeable priors:
+
+$$
+Y_i\sim
+0.4\,\operatorname{Normal}(-2,1)
++0.6\,\operatorname{Normal}(2,1).
+$$
+
+One posterior mode places $(\mu_1,\mu_2)$ near $(-2,2)$; the symmetric mode
+places it near $(2,-2)$. Averaging raw labeled draws can give both posterior means
+near zero. Yet every draw may imply nearly the same bimodal predictive density.
+
+If the scientific target is the lower-expression state, define
+
+$$
+\mu_{\mathrm{low}}=\min(\mu_1,\mu_2),
+\qquad
+\mu_{\mathrm{high}}=\max(\mu_1,\mu_2).
+$$
+
+These derived quantities are label invariant. If instead activation is defined
+by several markers, ordering one marker is insufficient: components should be
+matched to an externally defined marker profile, and ambiguous matches should
+remain uncertain.
+
+# Bioinformatics Design and Interpretation
+
+Suppose a mixture is used to identify cell states across control and treated
+specimens. Fitting each specimen separately can make numerical labels change
+across specimens. A component called “2” in one donor has no inherent relation
+to component “2” in another. Joint modeling, shared marker definitions, or
+post-hoc matching may align states, but each imposes assumptions about which
+features are conserved.
+
+The treatment estimand might be a donor-level change in the proportion of an
+anchored state. Donors are the experimental units; cell assignments are latent
+measurements nested within donors. A downstream test that treats assigned cells
+as error-free independent replicates ignores both assignment uncertainty and
+within-donor dependence.
+
+Statistically, identification means that the observed-data distribution can
+distinguish the target under the model. Biologically, a reproducible component
+still requires a defensible phenotype, design-aware replication, and external
+validation. Neither a tight posterior conditional on an identifying constraint
+nor a stable optimizer supplies biological identity by itself.
+
+# Diagnostic and Sensitivity Workflow
+
+| Question | Evidence | Action |
+|---|---|---|
+| Is the fitted density stable? | predictive distributions across chains, starts, and permutations | compare invariant quantities first |
+| Are components separated? | responsibility entropy, parameter contrasts, likelihood profiles | report overlap; simplify or redesign if weak |
+| Is uncertainty only a permutation? | match modes and compare after optimal permutation | retain all substantively different modes |
+| Does the labeling convention matter? | ordered, anchored, and loss-based summaries | report sensitivity and define labels explicitly |
+| Are tiny or duplicate components present? | near-zero weights, coincident parameters, singular curvature | reconsider $K$; regularize; avoid Wald inference |
+| Are states reproducible across units? | donor- and batch-stratified fits; external markers | use hierarchical alignment and independent validation |
+| Is downstream inference design-aware? | experimental-unit map and uncertainty propagation | aggregate or model at the independent-unit level |
+
+Also inspect whether posterior computation moves among substantively distinct
+solutions, not merely permutations. Relabeling all modes into one template can
+incorrectly merge different explanations of the data.
+
+# Common Misinterpretations
+
+- **“An ordering constraint solves identifiability.”** It chooses names; it does
+  not separate overlapping components or validate their interpretation.
+- **“Label switching means MCMC failed.”** Switching can be correct exploration
+  of a symmetric posterior. Failure is diagnosed on the target distribution,
+  not raw component names alone.
+- **“No switching means identification.”** A chain may simply be trapped in one
+  of several modes.
+- **“A component is a discovered class.”** Components may be devices for density
+  approximation and can change with $K$ or the component family.
+- **“Hard labels remove uncertainty.”** They hide it. Membership probabilities
+  and donor-level replication remain relevant downstream.
+
+# Connections and Take-home Messages
+
+- [Finite mixture models](finite-mixture-models.qmd) defines the likelihood,
+  responsibilities, estimation goals, and diagnostics.
+- [Multicollinearity and identifiability](../regression-models/multicollinearity-and-identifiability.qmd)
+  gives the broader distinction between estimable and nonestimable targets.
+- [Bayesian computation: MCMC](bayesian-computation-mcmc.qmd) explains posterior
+  simulation and convergence diagnostics.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd)
+  describes nonregular likelihoods, boundaries, and singular information.
+- [Partial pooling and exchangeability](partial-pooling-and-exchangeability.qmd)
+  distinguishes exchangeability of scientific units from exchangeability of
+  arbitrary component labels.
+- Hidden Markov models, developed later in this level, carry related state-label
+  issues into dependent latent sequences.
+
+Mixture parameters should be interpreted as an unordered collection unless a
+scientific or mathematical convention defines their labels. Label switching is
+permutation symmetry, not automatically computational failure. Work with
+invariant targets whenever possible; when labels matter, declare and test the
+relabeling rule. No labeling method repairs weak separation, singular components,
+incorrect experimental units, or an unsupported biological interpretation.
+
+# References
+
+- Teicher, H. “Identifiability of Finite Mixtures.” *The Annals of Mathematical Statistics* 34 (1963): 1265--1269. [Article](https://doi.org/10.1214/aoms/1177703862).
+- Redner, R. A. and Walker, H. F. “Mixture Densities, Maximum Likelihood and the EM Algorithm.” *SIAM Review* 26 (1984): 195--239. [Article](https://doi.org/10.1137/1026034).
+- Stephens, M. “Dealing with Label Switching in Mixture Models.” *Journal of the Royal Statistical Society: Series B* 62 (2000): 795--809. [Article](https://doi.org/10.1111/1467-9868.00265).
+- Jasra, A., Holmes, C. C., and Stephens, D. A. “Markov Chain Monte Carlo Methods and the Label Switching Problem in Bayesian Mixture Modeling.” *Statistical Science* 20 (2005): 50--67. [Article](https://doi.org/10.1214/088342305000000016).
+- McLachlan, G. and Peel, D. *Finite Mixture Models*. Wiley, 2000. [Publisher page](https://doi.org/10.1002/0471721182).

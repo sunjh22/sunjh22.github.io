@@ -1,0 +1,295 @@
+---
+title: "Finite Mixture Models"
+subtitle: "Representing heterogeneous populations with latent components"
+description: "Finite mixture data-generating models, likelihoods, estimation, uncertainty, diagnostics, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-11-02"
+date-modified: "2026-11-02"
+categories: [Statistics, Mixture Models, Latent Variables]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Distribution Built from Latent Subpopulations
+
+A finite mixture model represents an observed distribution as a weighted sum of
+$K$ component distributions. It is useful when unobserved states, subpopulations,
+or regimes create heterogeneity that one component cannot describe.
+
+Let the latent component label $Z_i$ satisfy
+
+$$
+P(Z_i=k)=\pi_k,
+\qquad
+\pi_k\geq 0,
+\qquad
+\sum_{k=1}^K\pi_k=1.
+$$
+
+Conditional on $Z_i=k$, draw
+
+$$
+Y_i\mid Z_i=k\sim f_k(y\mid\theta_k).
+$$
+
+Marginalizing over the unobserved label gives
+
+$$
+\boxed{
+p(y_i\mid\Theta)=
+\sum_{k=1}^K\pi_k f_k(y_i\mid\theta_k),
+}
+$$
+
+where $\Theta=(\boldsymbol\pi,\theta_1,\ldots,\theta_K)$. The mixture is the
+probability model for observed data; the labels are a latent representation of
+that model. A good density fit does not by itself prove that the components are
+real biological types.
+
+# Start with the Scientific Target and Experimental Unit
+
+Before fitting a mixture, distinguish three possible targets:
+
+- **density estimation:** approximate the population distribution of $Y$;
+- **clustering or classification:** infer latent membership for observed or new
+  units; and
+- **mechanistic decomposition:** interpret components as scientifically distinct
+  data-generating states.
+
+These goals require increasingly strong assumptions. A flexible mixture may
+estimate a density well even when individual assignments are uncertain or the
+components lack a unique biological meaning.
+
+The row being classified need not be the unit that supports population
+inference. In a single-cell study, cells may receive latent state probabilities,
+but independently sampled donors or specimens are usually the experimental
+units for treatment effects. Reads and molecules are technical observations;
+cells from the same specimen are biological subsamples, not independent donor
+replicates.
+
+# Mixture Properties
+
+For any integrable function $g$,
+
+$$
+E\{g(Y)\}=\sum_{k=1}^K\pi_k E\{g(Y)\mid Z=k\}.
+$$
+
+Therefore, if component $k$ has mean $\mu_k$ and variance $\sigma_k^2$,
+
+$$
+\boxed{E(Y)=\sum_{k=1}^K\pi_k\mu_k,}
+$$
+
+and the law of total variance gives
+
+$$
+\boxed{
+\operatorname{Var}(Y)
+=\sum_{k=1}^K\pi_k\sigma_k^2
++\sum_{k=1}^K\pi_k(\mu_k-\mu)^2,
+}
+$$
+
+where $\mu=E(Y)$. The first term is within-component variation and the second is
+between-component variation. A mixture can thus be overdispersed, skewed, or
+multimodal even when every component is simple. Conversely, distinct components
+need not create distinct visible modes.
+
+For a two-component Gaussian mixture,
+
+$$
+p(y)=\pi\,\phi(y;\mu_1,\sigma_1^2)
++(1-\pi)\,\phi(y;\mu_2,\sigma_2^2).
+$$
+
+If $\mu_1$ and $\mu_2$ are close relative to the component standard deviations,
+the marginal density may be unimodal and membership probabilities diffuse.
+
+# Likelihood and Latent Responsibilities
+
+For independent observed units $y_1,\ldots,y_n$, the observed-data likelihood is
+
+$$
+L(\Theta;y)=
+\prod_{i=1}^n
+\left\{
+\sum_{k=1}^K\pi_k f_k(y_i\mid\theta_k)
+\right\}.
+$$
+
+The logarithm contains a log of a sum, which prevents the likelihood from
+separating into ordinary component-specific fits. If the labels were observed,
+the complete-data log-likelihood would be
+
+$$
+\ell_c(\Theta;y,z)
+=\sum_{i=1}^n\sum_{k=1}^K
+I(z_i=k)
+\left\{\log\pi_k+\log f_k(y_i\mid\theta_k)\right\}.
+$$
+
+Given parameters, Bayes' theorem yields the responsibility
+
+$$
+\boxed{
+\tau_{ik}
+=P(Z_i=k\mid Y_i=y_i,\Theta)
+=\frac{\pi_k f_k(y_i\mid\theta_k)}
+{\sum_{h=1}^K\pi_h f_h(y_i\mid\theta_h)}.
+}
+$$
+
+$\tau_{ik}$ is a model-based conditional probability, not an observed label.
+Hard classification by the largest responsibility discards uncertainty and can
+make overlapping components appear more distinct than they are.
+
+# Estimation and Computation
+
+Maximum likelihood commonly alternates between computing responsibilities and
+updating weighted component estimates. This is the mixture specialization of
+the expectation--maximization algorithm, developed separately later in the map.
+Each EM step does not decrease the observed-data likelihood, but convergence may
+be slow and a stationary point need not be the global maximum.
+
+Mixture likelihoods are typically multimodal. Reliable fitting uses many
+dispersed starts, records the final objective values, and checks that important
+solutions recur. For an unrestricted Gaussian mixture, the likelihood is
+unbounded: a component mean can approach one observation while its variance
+approaches zero. Variance constraints, penalties, or proper priors prevent this
+singularity; an optimizer's finite answer alone does not establish that the
+problem was well posed.
+
+A Bayesian specification adds priors, for example
+
+$$
+\boldsymbol\pi\sim\operatorname{Dirichlet}(\boldsymbol\alpha),
+\qquad
+\theta_k\sim p(\theta_k).
+$$
+
+Posterior inference can propagate uncertainty in weights, component parameters,
+and allocations. It also inherits the component-permutation symmetry explained
+in [Identifiability and label switching](identifiability-and-label-switching.qmd).
+Proper but weak priors do not automatically make components scientifically
+identifiable.
+
+# Choosing the Number of Components
+
+$K$ is part of the model, not a fact directly read from a histogram. Common
+approaches include:
+
+- likelihood criteria such as AIC or BIC;
+- held-out predictive density or cross-validation;
+- parametric-bootstrap comparisons designed for mixtures;
+- Bayesian model probabilities or trans-dimensional computation; and
+- deliberately overfitted mixtures with regularizing priors on weights.
+
+Selection depends on the goal. Predictive density may improve by splitting a
+skewed population into several convenient components even when no new biological
+class exists. Standard chi-squared likelihood-ratio theory is generally invalid
+for testing $K$ against $K+1$: under the smaller model, the added weight lies on
+a boundary and some component parameters are unidentified.
+
+Report how candidate values of $K$ affect the estimated density, scientifically
+important contrasts, assignment uncertainty, and conclusions. A single selected
+$K$ should not conceal near-equivalent alternatives.
+
+# Covariates and Mixtures of Experts
+
+Covariates may affect component membership,
+
+$$
+P(Z_i=k\mid x_i)=\pi_k(x_i),
+$$
+
+component distributions,
+
+$$
+Y_i\mid Z_i=k,x_i\sim f_k(y_i\mid x_i,\theta_k),
+$$
+
+or both. These choices answer different questions. A treatment-dependent mixing
+weight describes a change in population composition, whereas a component-specific
+treatment coefficient describes within-component change. Cross-sectional data
+may not identify these stories without design information, longitudinal tracking,
+or external markers.
+
+Adjusting for batch in the membership model is not equivalent to correcting a
+batch shift within every component. Prespecify plausible causal and measurement
+roles for covariates rather than trying every placement and keeping the most
+convenient interpretation.
+
+# Worked Bioinformatics Example
+
+Suppose normalized expression of a marker is measured in cells from several
+independent donors. A two-Gaussian mixture might model low- and high-expression
+states:
+
+$$
+Y_{ij}\mid Z_{ij}=k,b_j
+\sim
+\operatorname{Normal}(\mu_k+b_j,\sigma_k^2),
+$$
+
+where $i$ indexes cells and $j$ indexes donors. The donor term $b_j$ represents
+shared specimen variation. Ignoring it can turn between-donor shifts into
+apparently distinct cell components.
+
+For each cell, $\tau_{ijk}$ summarizes assignment uncertainty. A donor-level
+quantity such as the fraction of high-state cells can then be compared across
+treatments with a model that respects donor replication. Treating thousands of
+cells as independent treatment replicates would produce an artificially small
+standard error.
+
+Statistically, the fitted components describe a conditional distribution under
+the chosen scale, likelihood, covariates, and $K$. Biologically, calling them cell
+states requires reproducible marker profiles, stability across donors and batches,
+and ideally orthogonal validation. The mixture fit alone supplies none of those.
+
+# Diagnostics and Sensitivity
+
+| Risk | Evidence to inspect | Sensitivity or remedy |
+|---|---|---|
+| Local optima | final likelihoods and parameters across starts | increase and diversify starts; compare recurring solutions |
+| Component overlap | responsibility entropy and pairwise separation | report soft assignments; avoid forced class claims |
+| Singular or tiny components | near-zero variances or weights; components capturing one observation | constrain scales, regularize, or simplify $K$ |
+| Distributional misspecification | predictive tails, skewness, zeros, and within-component residuals | use robust, skewed, count, or transformed components |
+| Dependence and pseudoreplication | residual structure by donor, plate, time, or location | add hierarchical dependence; resample experimental units |
+| Unstable $K$ | criteria or predictions are nearly tied | report model uncertainty and conclusions across plausible $K$ |
+| Covariate confounding | component proportions and parameters vary with batch or quality | model justified covariates and conduct stratified checks |
+
+Posterior or parametric predictive checks should compare features connected to
+the use of the model: marginal shape, tails, cluster sizes, within-component
+variation, donor-to-donor heterogeneity, and classification uncertainty. A fitted
+density overlay alone can hide failure at the experimental-unit level.
+
+# Connections and Take-home Messages
+
+- [Joint, marginal, and conditional distributions](../probability-randomness/joint-marginal-and-conditional-distributions.qmd)
+  explains the marginalization that creates a mixture density.
+- [Bayes' theorem and Bayesian updating](../probability-randomness/bayes-theorem-and-bayesian-updating.qmd)
+  gives the responsibility calculation.
+- Latent-variable models generalize the use of unobserved states beyond finite
+  mixtures, while Gaussian mixture models develop the most common continuous
+  component family; both appear later in this level.
+- [Posterior predictive checks](posterior-predictive-checks.qmd) provides a
+  simulation-based workflow for detecting consequential model failure.
+- [Zero-inflated and hurdle distributions](../probability-randomness/zero-inflated-and-hurdle-distributions.qmd)
+  contrasts a special two-process mixture with a hurdle construction.
+
+A finite mixture is a marginal probability model built from latent component
+distributions and mixing weights. It separates within- and between-component
+variation, supports probabilistic classification, and can approximate complex
+densities. Its components are not automatically biological entities: results
+depend on $K$, component families, initialization, identification, covariates,
+and the sampling design. Preserve soft assignment uncertainty and base population
+inference on independent experimental units.
+
+# References
+
+- McLachlan, G. and Peel, D. *Finite Mixture Models*. Wiley, 2000. [Publisher page](https://doi.org/10.1002/0471721182).
+- Dempster, A. P., Laird, N. M., and Rubin, D. B. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” *Journal of the Royal Statistical Society: Series B* 39 (1977): 1--38. [Article](https://doi.org/10.1111/j.2517-6161.1977.tb01600.x).
+- Redner, R. A. and Walker, H. F. “Mixture Densities, Maximum Likelihood and the EM Algorithm.” *SIAM Review* 26 (1984): 195--239. [Article](https://doi.org/10.1137/1026034).
+- Teicher, H. “Identifiability of Finite Mixtures.” *The Annals of Mathematical Statistics* 34 (1963): 1265--1269. [Article](https://doi.org/10.1214/aoms/1177703862).
