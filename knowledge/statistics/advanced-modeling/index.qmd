@@ -18,10 +18,12 @@ categories: [Statistics, Advanced Modeling]
 - [Posterior predictive checks](posterior-predictive-checks.qmd)
 - [Finite mixture models](finite-mixture-models.qmd)
 - [Identifiability and label switching](identifiability-and-label-switching.qmd)
+- [Expectation--maximization](expectation-maximization.qmd)
+- [Gaussian mixture models](gaussian-mixture-models.qmd)
 - [Mixture models overview](mixture-models.qmd)
 
-Future notes in this level will cover mixture estimation, latent-variable models,
-survival analysis, and multivariate methods.
+Future notes in this level will cover latent-variable models, survival analysis,
+and multivariate methods.
 
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Real Bioinformatics Problems](../bioinformatics-problems/index.qmd)

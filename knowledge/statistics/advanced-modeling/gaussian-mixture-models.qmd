@@ -1,0 +1,294 @@
+---
+title: "Gaussian Mixture Models"
+subtitle: "Soft clustering and density modeling with latent Gaussian components"
+description: "Gaussian mixture data-generating models, estimation, covariance structure, diagnostics, model selection, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-11-03"
+date-modified: "2026-11-03"
+categories: [Statistics, Advanced Modeling, Mixture Models]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Flexible Density Built from Gaussian Components
+
+A Gaussian mixture model (GMM) represents a continuous multivariate distribution
+as a weighted sum of Gaussian densities. For observation $Y_i\in\mathbb R^d$,
+introduce a latent component $Z_i\in\{1,\ldots,K\}$:
+
+$$
+P(Z_i=k)=\pi_k,
+\qquad
+Y_i\mid Z_i=k\sim N_d(\mu_k,\Sigma_k),
+$$
+
+where $\pi_k>0$, $\sum_k\pi_k=1$, and each $\Sigma_k$ is positive definite.
+Marginalizing $Z_i$ gives
+
+$$
+\boxed{p(y_i\mid\theta)
+=\sum_{k=1}^K\pi_k\phi_d(y_i;\mu_k,\Sigma_k).}
+$$
+
+This model can approximate multimodal or asymmetric densities even though each
+component is Gaussian. A component is a term in a probability model, however,
+not automatically a real biological subtype. Density estimation, prediction,
+soft clustering, and discovery of stable biological states are distinct goals.
+
+# Start with the Target and Experimental Unit
+
+Before fitting, specify what one row represents and what the mixture is meant to
+learn. Possible targets include the marginal density of a measured profile, the
+probability that a new profile belongs to an operational component, or a
+component-level mean. These targets require different validation.
+
+In an omics study, cells, spots, peaks, or reads may be nested measurements while
+donors, organisms, or independently prepared specimens are the experimental
+units. An iid cell-level mixture describes a pooled cell distribution only under
+strong exchangeability assumptions. It does not justify donor-level treatment
+inference from thousands of cells as though they were independent biological
+replicates.
+
+# Distributional Properties
+
+The mixture mean is
+
+$$
+\mu=E(Y)=\sum_{k=1}^K\pi_k\mu_k.
+$$
+
+The law of total variance decomposes the covariance into within- and
+between-component variation:
+
+$$
+\operatorname{Var}(Y)
+=\sum_{k=1}^K\pi_k\Sigma_k
++\sum_{k=1}^K\pi_k(\mu_k-\mu)(\mu_k-\mu)^\mathsf T.
+$$
+
+Thus the covariance of the pooled data is not a typical within-component
+covariance. A multimodal mixture can have the same global mean and covariance as
+a single Gaussian distribution, so first and second moments alone cannot reveal
+the component structure.
+
+The posterior component probability, or responsibility, is
+
+$$
+\tau_{ik}=P(Z_i=k\mid Y_i=y_i)
+=\frac{\pi_k\phi_d(y_i;\mu_k,\Sigma_k)}
+{\sum_{h=1}^K\pi_h\phi_d(y_i;\mu_h,\Sigma_h)}.
+$$
+
+A maximum-posterior hard assignment chooses $\arg\max_k\tau_{ik}$, but this
+compression discards classification uncertainty. Entropy such as
+$-\sum_k\tau_{ik}\log\tau_{ik}$ makes overlap visible.
+
+# Geometry Through the Covariance Matrices
+
+Each covariance matrix controls a component's size, orientation, and shape.
+Common model families constrain these matrices:
+
+| Covariance structure | Geometric implication | Main tradeoff |
+|---|---|---|
+| $\Sigma_k=\sigma^2I$ | equal spherical components | few parameters, often unrealistic |
+| $\Sigma_k=\sigma_k^2I$ | spherical components of different sizes | cannot represent correlation |
+| $\Sigma_k=\Sigma$ | equal ellipsoidal shape and orientation | stable but restrictive |
+| diagonal $\Sigma_k$ | axis-aligned ellipsoids | assumes conditional feature independence |
+| unrestricted $\Sigma_k$ | component-specific ellipsoids | flexible; needs much more information |
+
+An unrestricted covariance has $d(d+1)/2$ parameters per component. When $d$ is
+large relative to component effective sample sizes, estimates can be singular or
+unstable. Feature selection, scientifically defensible dimension reduction,
+parsimonious covariance parameterizations, or regularization may be necessary.
+The preprocessing step becomes part of the fitted procedure and must be repeated
+inside validation or resampling.
+
+# Likelihood and EM Estimation
+
+For independent observations, the log-likelihood is
+
+$$
+\ell(\theta)
+=\sum_{i=1}^n\log
+\left\{\sum_{k=1}^K
+\pi_k\phi_d(y_i;\mu_k,\Sigma_k)\right\}.
+$$
+
+[Expectation--maximization](expectation-maximization.qmd) is commonly used to
+maximize it. Starting from current parameters, its E-step computes $\tau_{ik}$.
+With $N_k=\sum_i\tau_{ik}$, the unrestricted M-step is
+
+$$
+\hat\pi_k=\frac{N_k}{n},
+\qquad
+\hat\mu_k=\frac{\sum_i\tau_{ik}y_i}{N_k},
+$$
+
+$$
+\hat\Sigma_k
+=\frac{\sum_i\tau_{ik}\,
+(y_i-\hat\mu_k)(y_i-\hat\mu_k)^\mathsf T}{N_k}.
+$$
+
+The updates resemble weighted Gaussian estimates, but they do not make the
+observed likelihood convex. Use many dispersed starts, retain the solution with
+the best valid objective rather than the first converged fit, and compare
+label-invariant fitted densities. Initialization by hierarchical clustering or
+$K$-means can be useful, but neither guarantees the global optimum.
+
+# The Gaussian-mixture Likelihood Can Be Unbounded
+
+An unconstrained GMM with $K\geq2$ has a fundamental singularity. Center one
+component at an observation $y_j$ and let its covariance approach zero. The
+Gaussian density at $y_j$ tends to infinity, so the likelihood can diverge even
+though the resulting component is not a meaningful population.
+
+Software may stop before the mathematical singularity because of numerical
+floors, but that is an implementation guard rather than evidence that the
+unconstrained MLE exists. Defensible responses include covariance constraints,
+penalized likelihood, informative priors, or a simpler component family. The
+choice changes the estimand and should be reported. Removing the inconvenient
+observation after seeing the collapse can hide genuine tails or contamination.
+
+# Identifiability and the Meaning of Components
+
+Finite Gaussian mixtures are identifiable under standard conditions up to a
+permutation of component labels, but this population result does not guarantee
+useful finite-sample separation. Components with similar means and covariances,
+tiny weights, or strong overlap can be practically weakly identified.
+
+Because
+
+$$
+\sum_k\pi_k\phi_d(y;\mu_k,\Sigma_k)
+=\sum_k\pi_{\sigma(k)}
+\phi_d(y;\mu_{\sigma(k)},\Sigma_{\sigma(k)})
+$$
+
+for any permutation $\sigma$, raw component numbers have no inherent meaning.
+[Identifiability and label switching](identifiability-and-label-switching.qmd)
+explains invariant targets, ordering constraints, and matching across fits.
+Moreover, a non-Gaussian skewed population may be approximated by several
+Gaussian components. In that case, $K$ describes approximation complexity, not
+the number of biological populations.
+
+# Choosing the Number of Components
+
+There is no universally correct criterion because “how many components?” depends
+on the target.
+
+## Information criteria
+
+For a regular model, the Bayesian information criterion is
+
+$$
+\operatorname{BIC}=-2\ell(\hat\theta_K)+p_K\log n.
+$$
+
+Smaller BIC balances fit and parameter count and is widely used for mixtures.
+Mixtures are nonregular at zero weights and coincident components, so the usual
+Laplace derivation is not automatically valid. BIC remains a heuristic whose
+stability should be checked, not a proof of a true number of classes.
+
+The integrated completed likelihood adds a preference for confident separation
+and therefore targets clustering more directly than density fit. It can favor a
+different $K$ when overlapping components improve the density but not crisp
+classification.
+
+## Predictive validation and stability
+
+Held-out log density assesses prediction for unseen observations. Its splits must
+respect the intended generalization unit: donor-level splits are needed for
+claims about new donors. Also examine whether modes, memberships, and substantive
+summaries are stable across starts, bootstrap samples, preprocessing choices,
+and reasonable covariance families.
+
+A likelihood-ratio test comparing $K$ with $K+1$ does not generally have the
+usual chi-squared null distribution because the extra weight is on a boundary
+and component parameters are unidentified under the null. Specialized theory or
+a carefully designed parametric bootstrap is required.
+
+# Worked Example: Two Marker-defined Cell States
+
+Suppose two standardized protein markers are measured in cells from each of
+$m$ donors. A two-component GMM may represent low- and high-activation profiles.
+For donor $j$, a measurement-level summary might be
+
+$$
+\hat q_j=\frac{1}{n_j}\sum_{i=1}^{n_j}
+P(Z_{ij}=\text{high}\mid y_{ij},\hat\theta).
+$$
+
+This soft proportion retains more information than counting hard assignments.
+The treatment estimand could then be a contrast in donor-level $q_j$ values, or
+it could be defined in a joint hierarchical model. The $m$ donors—not the
+$\sum_j n_j$ cells—determine biological replication for that contrast.
+
+Uncertainty must include fitting and classification uncertainty, not only the
+binomial variation of assigned cells. A donor-level bootstrap or hierarchical
+model can preserve the sampling design. If batches are confounded with treatment,
+neither visually separated components nor a small within-model standard error
+identifies a treatment effect.
+
+# Diagnostics and Sensitivity
+
+| Model aspect | What to inspect | Consequence or sensitivity analysis |
+|---|---|---|
+| Global fit | held-out log density; predictive contours; marginal and bivariate checks | compare component families and transformations |
+| Local optima | log-likelihood and invariant predictions across starts | retain distinct high-likelihood solutions |
+| Overlap | responsibility entropy and classification error estimates | report soft membership; avoid overconfident labels |
+| Tiny components | $\hat\pi_k$, $N_k$, and stability under resampling | test whether they represent tails, artifacts, or singular fits |
+| Covariance stability | eigenvalues, condition numbers, and sensitivity to regularization | simplify or regularize the covariance structure |
+| Number of components | BIC or other criteria, predictive performance, and bootstrap stability | report a plausible range when selection is unstable |
+| Design dependence | donor- and batch-stratified fit and validation | add hierarchical structure or change the inferential unit |
+| Biological identity | reproducible markers and external assays | call components statistical clusters until validated |
+
+Checking only a projected scatterplot can miss misfit in other dimensions.
+Conversely, apparent clusters after a visualization embedding may be induced or
+exaggerated by that nonlinear preprocessing; fit and validate the probabilistic
+model in a declared feature space.
+
+# Common Misinterpretations
+
+- **“Gaussian components require Gaussian pooled data.”** The mixture is usually
+  non-Gaussian; Gaussianity is conditional on a component.
+- **“The selected $K$ is the number of cell types.”** It may instead reflect
+  skewness, tails, technical variation, or a useful density approximation.
+- **“A hard assignment is observed truth.”** It suppresses responsibility
+  uncertainty and depends on the model and loss function.
+- **“Successful EM output is a valid MLE.”** The fit may be local, singular, or
+  weakly identified.
+- **“Many cells guarantee precise treatment inference.”** Independent donors,
+  design balance, and between-donor variability determine that inference.
+
+# Connections and Take-home Messages
+
+- [Finite mixture models](finite-mixture-models.qmd) gives the general latent
+  mixture framework, moments, targets, and diagnostics.
+- [Expectation--maximization](expectation-maximization.qmd) derives the
+  lower-bound algorithm used for likelihood fitting.
+- [Identifiability and label switching](identifiability-and-label-switching.qmd)
+  explains why component labels require a convention or scientific anchor.
+- [Multivariate normal distributions](../probability-randomness/normal-and-multivariate-normal-distributions.qmd)
+  develops the component density and covariance geometry.
+- [AIC, BIC, and information criteria](../regression-models/aic-bic-and-information-criteria.qmd)
+  explains information criteria and the assumptions behind them.
+- [Train, validation, and test-set design](../regression-models/train-validation-and-test-set-design.qmd)
+  shows how validation units must match the deployment target.
+
+GMMs are flexible density models whose components can support soft clustering,
+but component count and biological class count need not agree. Covariance
+structure, likelihood singularities, local optima, overlap, selection uncertainty,
+and label symmetry all require explicit checks. In biological applications,
+validation across independent specimens and a correct experimental unit matter
+more than the number of nested measurements.
+
+# References
+
+- Kiefer, J. and Wolfowitz, J. “Consistency of the Maximum Likelihood Estimator in the Presence of Infinitely Many Incidental Parameters.” *The Annals of Mathematical Statistics* 27 (1956): 887--906. [Article](https://doi.org/10.1214/aoms/1177728066).
+- Day, N. E. “Estimating the Components of a Mixture of Normal Distributions.” *Biometrika* 56 (1969): 463--474. [Article](https://doi.org/10.1093/biomet/56.3.463).
+- Redner, R. A. and Walker, H. F. “Mixture Densities, Maximum Likelihood and the EM Algorithm.” *SIAM Review* 26 (1984): 195--239. [Article](https://doi.org/10.1137/1026034).
+- Fraley, C. and Raftery, A. E. “Model-based Clustering, Discriminant Analysis, and Density Estimation.” *Journal of the American Statistical Association* 97 (2002): 611--631. [Article](https://doi.org/10.1198/016214502760047131).
+- McLachlan, G. and Peel, D. *Finite Mixture Models*. Wiley, 2000. [Publisher page](https://doi.org/10.1002/0471721182).
+- Scrucca, L., Fop, M., Murphy, T. B., and Raftery, A. E. “mclust 5: Clustering, Classification and Density Estimation Using Gaussian Finite Mixture Models.” *The R Journal* 8 (2016): 289--317. [Article](https://doi.org/10.32614/RJ-2016-021).

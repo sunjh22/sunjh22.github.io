@@ -1,0 +1,294 @@
+---
+title: "Expectation--Maximization"
+subtitle: "Likelihood optimization with latent or incomplete data"
+description: "The EM algorithm, its lower-bound derivation, convergence behavior, uncertainty, diagnostics, and design-aware use."
+author: "Jiahong Sun"
+date: "2026-11-03"
+date-modified: "2026-11-03"
+categories: [Statistics, Advanced Modeling, Latent Variables]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Optimize by Alternating Inference and Fitting
+
+Expectation--maximization (EM) is an iterative method for maximizing an
+observed-data likelihood when optimization becomes easier after introducing
+unobserved variables. Let $Y$ be observed data, $Z$ be missing or latent data,
+and $\theta$ be the model parameter. The likelihood of interest is
+
+$$
+L(\theta;Y)=p(Y\mid\theta)
+=\sum_z p(Y,z\mid\theta)
+$$
+
+for discrete $Z$, with the sum replaced by an integral for continuous $Z$.
+Directly differentiating the logarithm of this sum can be awkward. EM instead
+repeats two operations:
+
+1. **E-step:** calculate the conditional distribution of $Z$ given $Y$ under
+   the current parameter value;
+2. **M-step:** maximize the expected complete-data log-likelihood under that
+   conditional distribution.
+
+EM is an optimization algorithm, not a probability model. The likelihood,
+latent-variable construction, constraints, and scientific target must be
+defined before the algorithm has meaning.
+
+# The EM Objective
+
+At iteration $t$, define
+
+$$
+Q(\theta\mid\theta^{(t)})
+=E_{Z\mid Y,\theta^{(t)}}
+  [\log p(Y,Z\mid\theta)].
+$$
+
+The two steps are
+
+$$
+\begin{aligned}
+\text{E-step: }&Q(\theta\mid\theta^{(t)})
+\text{ is evaluated},\\
+\text{M-step: }&\theta^{(t+1)}
+\in\operatorname*{arg\,max}_{\theta}Q(\theta\mid\theta^{(t)}).
+\end{aligned}
+$$
+
+The expectation is conditional on the observed data; it does not replace a
+latent variable by a single hard classification. In a mixture model, for
+example, it averages over every possible component assignment using its current
+posterior probability.
+
+# Why the Observed Likelihood Does Not Decrease
+
+For any distribution $q(z)$ whose support is compatible with the model,
+Jensen's inequality gives the evidence lower bound
+
+$$
+\begin{aligned}
+\ell(\theta)
+&=\log\sum_z q(z)\frac{p(Y,z\mid\theta)}{q(z)}\\
+&\geq \sum_z q(z)\log p(Y,z\mid\theta)
+-\sum_z q(z)\log q(z)
+=\mathcal F(q,\theta).
+\end{aligned}
+$$
+
+The exact gap is
+
+$$
+\ell(\theta)-\mathcal F(q,\theta)
+=\operatorname{KL}\{q(Z)\,\|\,p(Z\mid Y,\theta)\}.
+$$
+
+The E-step sets $q^{(t)}(Z)=p(Z\mid Y,\theta^{(t)})$, making the bound tight at
+$\theta^{(t)}$. The M-step raises that bound. Consequently,
+
+$$
+\ell(\theta^{(t+1)})\geq\ell(\theta^{(t)}).
+$$
+
+This monotonicity is valuable but limited: it does not imply convergence to the
+global maximum, fast convergence, parameter identifiability, or a scientifically
+adequate model.
+
+# Worked Example: A Two-component Bernoulli Mixture
+
+Suppose independent observations $Y_i\in\{0,1\}$ arise from one of two latent
+groups. Let $Z_i=1$ denote group 1, with
+
+$$
+P(Z_i=1)=\pi,
+\qquad
+Y_i\mid Z_i=k\sim\operatorname{Bernoulli}(p_k).
+$$
+
+The observed density is
+
+$$
+p(y_i\mid\theta)
+=\pi p_1^{y_i}(1-p_1)^{1-y_i}
++(1-\pi)p_2^{y_i}(1-p_2)^{1-y_i}.
+$$
+
+If the assignments were observed, the complete-data log-likelihood would be a
+sum of two weighted Bernoulli log-likelihoods. In the E-step, calculate the
+responsibility
+
+$$
+r_i^{(t)}
+=P(Z_i=1\mid y_i,\theta^{(t)})
+=\frac{\pi^{(t)}f(y_i;p_1^{(t)})}
+{\pi^{(t)}f(y_i;p_1^{(t)})
++(1-\pi^{(t)})f(y_i;p_2^{(t)})}.
+$$
+
+The M-step yields weighted proportions:
+
+$$
+\pi^{(t+1)}=\frac{1}{n}\sum_i r_i^{(t)},
+\qquad
+p_1^{(t+1)}=\frac{\sum_i r_i^{(t)}y_i}{\sum_i r_i^{(t)}},
+\qquad
+p_2^{(t+1)}=\frac{\sum_i(1-r_i^{(t)})y_i}
+{\sum_i(1-r_i^{(t)})}.
+$$
+
+This toy model also exposes an identification problem: a single binary outcome
+cannot generally identify all three mixture parameters without additional
+structure or repeated measurements. EM can still converge numerically; it
+cannot create information absent from the observed-data distribution.
+
+# EM for Gaussian Mixtures
+
+For $K$ multivariate Gaussian components, the E-step computes
+
+$$
+r_{ik}
+=\frac{\pi_k\phi_d(y_i;\mu_k,\Sigma_k)}
+{\sum_{h=1}^K\pi_h\phi_d(y_i;\mu_h,\Sigma_h)}.
+$$
+
+Writing $N_k=\sum_i r_{ik}$, the unconstrained M-step updates are
+
+$$
+\pi_k=\frac{N_k}{n},
+\qquad
+\mu_k=\frac{1}{N_k}\sum_i r_{ik}y_i,
+$$
+
+and
+
+$$
+\Sigma_k
+=\frac{1}{N_k}\sum_i r_{ik}\,
+(y_i-\mu_k)(y_i-\mu_k)^\mathsf T.
+$$
+
+These are soft-assignment analogues of component sample proportions, means, and
+covariances. Covariance constraints or penalties change the M-step. The full
+model, its singularities, and component-selection questions are developed in
+[Gaussian mixture models](gaussian-mixture-models.qmd).
+
+# Convergence and Computation
+
+The observed log-likelihood should be monitored directly. A practical stopping
+rule may compare successive values using both absolute and relative tolerances,
+but a small change in likelihood is not proof that parameters or scientific
+summaries are stable.
+
+Important computational facts include:
+
+- EM can converge to a local maximum or a saddle point, so dispersed starts are
+  necessary for multimodal likelihoods.
+- Convergence is often slow when latent assignments remain uncertain because
+  little of the complete-data information is visible in the observed data.
+- A component with tiny effective membership can produce unstable updates.
+- In an unconstrained Gaussian mixture, a covariance can collapse around an
+  observation and make the likelihood unbounded.
+- The ascent property assumes that the E- and M-steps are performed correctly;
+  numerical approximations can violate it.
+
+A **generalized EM** step need only increase $Q$ rather than maximize it exactly.
+Expectation--conditional maximization divides a difficult M-step into simpler
+conditional maximizations. Monte Carlo EM approximates an intractable E-step by
+simulation, and stochastic variants trade exact ascent for scalability. Their
+additional approximation error requires its own diagnostics.
+
+# Estimation Is Not Uncertainty Quantification
+
+EM returns a likelihood estimate $\hat\theta$, conditional on a chosen model and
+solution. It does not automatically return the sampling distribution of the
+estimator. Uncertainty may be obtained from the observed information, likelihood
+profiles, or a design-respecting parametric bootstrap. Louis' identity expresses
+the observed information through conditional complete-data derivatives:
+
+$$
+I_{\mathrm{obs}}(\theta)
+=-E[\nabla^2\ell_c(\theta;Y,Z)\mid Y]
+-\operatorname{Var}[\nabla\ell_c(\theta;Y,Z)\mid Y].
+$$
+
+The second term subtracts information lost because $Z$ is unobserved. Near
+boundaries, coincident components, weak identification, or label symmetry,
+ordinary Hessian-based standard errors and chi-squared likelihood-ratio
+approximations can fail. A bootstrap must rerun the entire fitting and
+initialization procedure, align labels when component-specific targets are used,
+and preserve the actual experimental-unit structure.
+
+# Design-aware Bioinformatics Example
+
+Suppose an EM-fitted mixture summarizes two expression states in cells collected
+from treated and control donors. Cells have uncertain latent states, but donors
+are the randomized or independently sampled experimental units. A defensible
+workflow separates three targets:
+
+1. cell-level state probabilities conditional on the fitted measurement model;
+2. donor-level state proportions, including classification uncertainty; and
+3. the treatment effect across donors.
+
+Technical replicates, repeated cells, and sequencing reads improve measurement
+of a donor but do not multiply the number of independent treatment assignments.
+Treating fitted cell labels as observed independent outcomes produces
+pseudoreplication and ignores uncertainty from the E-step. Statistically, EM
+optimizes a specified observed likelihood. Biologically, a component is a
+credible cell state only if its marker profile, reproducibility across donors
+and batches, and external validation support that interpretation.
+
+# Diagnostics and Sensitivity
+
+| Question | Diagnostic | Response |
+|---|---|---|
+| Was the same optimum found? | compare log-likelihoods and invariant predictions across dispersed starts | retain distinct solutions and report sensitivity |
+| Did the algorithm actually converge? | inspect likelihood trace, gradients, parameter changes, and iteration limit | tighten tolerances or improve parameterization |
+| Are latent assignments informative? | inspect responsibility entropy and effective component sizes | report ambiguity; avoid forced hard labels |
+| Is the solution near a singularity? | inspect tiny weights and covariance eigenvalues | constrain or regularize using scientific justification |
+| Is the model adequate? | use residual or posterior/predictive checks targeted to tails, modes, and dependence | revise the observation model rather than only the optimizer |
+| Is inference design-aware? | map every likelihood factor to an experimental unit or nested measurement | aggregate or model dependence and rerun uncertainty analysis |
+
+Likelihood monotonicity should be checked on the same observed-data objective
+across iterations. Comparing $Q$ values from different E-steps is not equivalent,
+because the conditioning distribution changes.
+
+# Common Misinterpretations
+
+- **“EM fills in the missing data.”** The E-step averages sufficient quantities
+  over a conditional distribution; it need not create one completed dataset.
+- **“Monotone ascent finds the global MLE.”** It guarantees only nondecreasing
+  likelihood under exact steps.
+- **“A converged solution identifies the parameters.”** Numerical convergence
+  and statistical identifiability are separate properties.
+- **“Responsibilities are known class labels.”** They are model-dependent
+  conditional probabilities and can remain diffuse.
+- **“More measured cells give more biological replicates.”** They improve
+  within-sample measurement, not donor-level replication.
+
+# Connections and Take-home Messages
+
+- [Finite mixture models](finite-mixture-models.qmd) defines the latent mixture
+  likelihood and the inferential targets EM often estimates.
+- [Gaussian mixture models](gaussian-mixture-models.qmd) develops the most common
+  closed-form EM example and its model-specific failure modes.
+- [Maximum-likelihood estimation](../statistical-inference/maximum-likelihood-estimation.qmd)
+  explains likelihood targets, curvature, and nonregular inference.
+- [Identifiability and label switching](identifiability-and-label-switching.qmd)
+  separates permutation symmetry from practical and structural identification.
+- [Bayesian computation: MCMC](bayesian-computation-mcmc.qmd) addresses posterior
+  integration rather than point optimization.
+
+EM alternates conditional inference about latent variables with maximization of
+an expected complete-data log-likelihood. Its lower-bound construction explains
+likelihood ascent, but not global optimality. Multiple starts, direct likelihood
+and gradient checks, model diagnostics, nonregular uncertainty methods, and the
+correct experimental unit remain essential.
+
+# References
+
+- Dempster, A. P., Laird, N. M., and Rubin, D. B. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” *Journal of the Royal Statistical Society: Series B* 39 (1977): 1--38. [Article](https://doi.org/10.1111/j.2517-6161.1977.tb01600.x).
+- Wu, C. F. J. “On the Convergence Properties of the EM Algorithm.” *The Annals of Statistics* 11 (1983): 95--103. [Article](https://doi.org/10.1214/aos/1176346060).
+- Louis, T. A. “Finding the Observed Information Matrix when Using the EM Algorithm.” *Journal of the Royal Statistical Society: Series B* 44 (1982): 226--233. [Article](https://doi.org/10.1111/j.2517-6161.1982.tb01203.x).
+- McLachlan, G. J. and Krishnan, T. *The EM Algorithm and Extensions*. 2nd ed. Wiley, 2008. [Publisher page](https://doi.org/10.1002/9780470191613).
+- Redner, R. A. and Walker, H. F. “Mixture Densities, Maximum Likelihood and the EM Algorithm.” *SIAM Review* 26 (1984): 195--239. [Article](https://doi.org/10.1137/1026034).
