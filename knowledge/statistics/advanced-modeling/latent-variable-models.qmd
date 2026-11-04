@@ -1,0 +1,313 @@
+---
+title: "Latent-variable Models"
+subtitle: "Using unobserved quantities to explain dependence, heterogeneity, and measurement"
+description: "Generative latent-variable models, marginalization, identification, estimation, diagnostics, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-11-04"
+date-modified: "2026-11-04"
+categories: [Statistics, Advanced Modeling, Latent Variables]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Observed Data, Hidden Structure
+
+A latent-variable model introduces an unobserved random quantity $Z$ to describe
+how observed variables $Y$ are generated. Its defining factorization is
+
+$$
+\boxed{p(y,z\mid\theta)=p(z\mid\theta)\,p(y\mid z,\theta),}
+$$
+
+and the probability model for the data is obtained by marginalization:
+
+$$
+\boxed{p(y\mid\theta)=\int p(y\mid z,\theta)p(z\mid\theta)\,dz.}
+$$
+
+For discrete $Z$, the integral becomes a sum. This construction can represent
+unobserved classes, continuous traits, random effects, hidden states, missing
+values, or measurement error. The same mathematics does not give these latent
+quantities the same scientific status: a convenient latent coordinate, a
+biological cell state, and a missing measurement are different claims.
+
+The purpose of $Z$ must therefore be stated before fitting:
+
+- **dimension reduction:** summarize dependence among many measurements;
+- **measurement:** relate noisy indicators to an unobserved construct;
+- **heterogeneity:** represent unobserved subpopulations or regimes;
+- **dependence:** induce correlation among repeated or grouped observations; or
+- **data augmentation:** make likelihood or posterior computation easier.
+
+A latent representation can be useful without being uniquely real. Observable
+predictions and scientifically defined contrasts are often more defensible
+targets than individual latent scores.
+
+# The Generative Structure Creates Observable Dependence
+
+Suppose measurements $Y_1,\ldots,Y_p$ are conditionally independent given $Z$:
+
+$$
+p(\mathbf y\mid z,\theta)=\prod_{j=1}^p p(y_j\mid z,\theta_j).
+$$
+
+They need not be marginally independent because they share $Z$. The law of total
+covariance makes the source of dependence explicit:
+
+$$
+\operatorname{Cov}(Y_j,Y_k)
+=E\{\operatorname{Cov}(Y_j,Y_k\mid Z)\}
++\operatorname{Cov}\{E(Y_j\mid Z),E(Y_k\mid Z)\}.
+$$
+
+Under conditional independence, the first term is zero, but the second can be
+nonzero. Thus an unobserved common cause can generate observable association.
+Conditional independence is a substantive modeling restriction, not an automatic
+property of latent-variable models.
+
+## A one-factor Gaussian model
+
+Let a scalar factor $Z_i\sim N(0,1)$ act on $p$ measurements from unit $i$:
+
+$$
+\mathbf Y_i=\boldsymbol\nu+\boldsymbol\lambda Z_i+\boldsymbol\varepsilon_i,
+\qquad
+\boldsymbol\varepsilon_i\sim N_p(\mathbf0,\boldsymbol\Psi),
+$$
+
+where $\boldsymbol\Psi$ is diagonal and $Z_i$ is independent of
+$\boldsymbol\varepsilon_i$. Marginalization gives
+
+$$
+\boxed{
+\mathbf Y_i\sim N_p\left(
+\boldsymbol\nu,
+\boldsymbol\lambda\boldsymbol\lambda^{\mathsf T}+\boldsymbol\Psi
+\right).
+}
+$$
+
+For $j\ne k$,
+
+$$
+\operatorname{Cov}(Y_{ij},Y_{ik})=\lambda_j\lambda_k.
+$$
+
+The factor explains a structured part of the covariance; $\Psi_{jj}$ is residual
+measurement-specific variance. Calling $Z_i$ a pathway activity or cell program
+requires more than this covariance decomposition: indicators, scale, direction,
+and invariance across populations must support that interpretation.
+
+# Latent Scale, Scores, and Identification
+
+Latent variables are not observed on a natural scale. In the factor model,
+replacing $Z_i$ by $cZ_i$ and $\boldsymbol\lambda$ by
+$\boldsymbol\lambda/c$ preserves the same distribution unless the scale is fixed.
+With several factors, rotations can also preserve the implied covariance:
+
+$$
+\boldsymbol\Lambda\mathbf Z_i
+=\boldsymbol\Lambda\mathbf R
+(\mathbf R^{-1}\mathbf Z_i)
+$$
+
+for any admissible invertible transformation $\mathbf R$. Constraints such as a
+unit factor variance, a fixed loading, or a prespecified loading pattern define
+the coordinate system. They do not create information in the data.
+
+Identification asks whether different parameter values imply different observed
+data distributions. Important failure modes include:
+
+- arbitrary sign, scale, rotation, or label changes;
+- too few indicators for the requested latent structure;
+- nearly collinear factors or weak loadings;
+- latent classes with coincident distributions or near-zero weights; and
+- a structural and a measurement model that trade off in observationally
+  equivalent ways.
+
+Local numerical convergence is not evidence of global identification. Inspect
+the model's invariances, rank conditions, likelihood profiles, Hessian or posterior
+geometry, and behavior across starts or priors. When only an equivalence class is
+identified, report invariant quantities rather than arbitrary coordinates.
+
+A latent score $E(Z_i\mid y_i,\hat\theta)$, posterior draw, or maximum a posteriori
+value is an estimate under the fitted model, not an observed trait. Score
+uncertainty can be large even when population parameters are estimated precisely.
+Treating estimated scores as error-free covariates in a second analysis generally
+understates uncertainty and may introduce bias.
+
+# Likelihood, Estimation, and Bayesian Inference
+
+For independent experimental units, the observed-data likelihood is
+
+$$
+L(\theta;y)=\prod_{i=1}^n
+\int p(y_i\mid z_i,\theta)p(z_i\mid\theta)\,dz_i.
+$$
+
+The integral may be analytic for Gaussian models and difficult for discrete,
+nonlinear, or high-dimensional models. Common approaches include:
+
+- direct maximum likelihood with analytic or numerical integration;
+- [expectation--maximization](expectation-maximization.qmd), which alternates a
+  conditional expectation over latent variables with parameter maximization;
+- Laplace, variational, or quadrature approximations;
+- Monte Carlo likelihood; and
+- Bayesian sampling of both parameters and latent variables.
+
+In a Bayesian model,
+
+$$
+p(\theta,z\mid y)\propto p(y\mid z,\theta)p(z\mid\theta)p(\theta).
+$$
+
+Priors can regularize weakly identified directions, but posterior concentration
+caused mainly by a constraint or prior should not be described as information
+from the observations. Compare scientifically plausible priors, check posterior
+geometry, and distinguish parameter uncertainty from uncertainty in each $z_i$.
+[MCMC diagnostics](bayesian-computation-mcmc.qmd) must be assessed on identified
+or otherwise meaningful functions of the parameters.
+
+The complete-data likelihood $p(y,z\mid\theta)$ is often computationally simple,
+whereas the observed-data likelihood is not. Inference still concerns the latter:
+augmenting the data does not make $z$ observed and does not justify complete-data
+standard errors.
+
+# Measurement and Structural Parts
+
+Many models separate two questions:
+
+1. **Measurement model:** how do observed indicators depend on latent variables?
+2. **Structural model:** how do latent variables depend on covariates or one
+   another?
+
+For example,
+
+$$
+\mathbf Y_i=\boldsymbol\nu+\boldsymbol\Lambda\boldsymbol\eta_i
++\boldsymbol\varepsilon_i,
+\qquad
+\boldsymbol\eta_i=\mathbf B\mathbf x_i+\boldsymbol\zeta_i.
+$$
+
+The coefficient matrix $\mathbf B$ describes associations on the defined latent
+scale. It does not become causal merely because measurement error is modeled.
+Causal interpretation still needs a defensible intervention, confounding control,
+selection assumptions, and correct temporal ordering.
+
+Comparisons across treatments, tissues, or batches require **measurement
+invariance**: the indicators should represent the latent quantity comparably.
+Changes in intercepts, loadings, thresholds, or residual distributions can mimic
+a latent mean difference. Partial invariance or explicitly group-specific
+measurement models may be more defensible than imposing equality everywhere.
+
+# Model Checking Targets the Observed Data
+
+Because latent variables cannot be checked directly against truth in ordinary
+observational data, diagnostics should ask whether the model reproduces relevant
+features of the observations.
+
+| Risk | Evidence to inspect | Sensitivity or remedy |
+|---|---|---|
+| Wrong latent dimension | residual covariance, held-out prediction, eigenstructure | compare prespecified dimensions; avoid selecting by one index |
+| Local dependence | residual associations after conditioning on $Z$ | add justified residual links or revise indicators |
+| Weak identification | flat profiles, large standard errors, prior sensitivity | simplify, add informative measurements, or narrow the target |
+| Distributional mismatch | tails, zeros, skewness, category frequencies | use an observation model that respects support and detection |
+| Noninvariance | group-specific residuals, loadings, or thresholds | fit and report plausible invariance structures |
+| Overconfident scores | diffuse $p(z_i\mid y_i)$ or unstable assignments | propagate score uncertainty; report probabilities or intervals |
+| Dependence between units | donor, plate, family, time, or spatial patterns | add multilevel/dynamic structure; resample independent units |
+
+[Posterior predictive checks](posterior-predictive-checks.qmd) or parametric
+simulation can compare covariance, marginal distributions, missingness patterns,
+cluster sizes, group contrasts, and unit-level residual structure. Good global
+fit can coexist with failure for the scientific contrast of interest. Conversely,
+rejecting an exact model in a huge dataset does not show that every target is
+materially biased; connect discrepancies to estimands and decisions.
+
+# Bioinformatics Example: A Latent Expression Program
+
+Suppose expression of $p$ prespecified genes is measured in cells from multiple
+donors. A factor model may define a cell-level latent program $Z_{ij}$ for cell
+$i$ in donor $j$:
+
+$$
+\mathbf Y_{ij}
+=\boldsymbol\nu+\boldsymbol\lambda Z_{ij}
++\mathbf b_j+\boldsymbol\varepsilon_{ij},
+$$
+
+where $\mathbf b_j$ represents shared donor effects. Cells have program scores,
+but donors independently sampled or assigned to conditions are the experimental
+units for a population treatment contrast. Cells are biological subsamples;
+reads, molecules, and repeated libraries are technical observations. Thousands
+of cells do not replace independent donors.
+
+A suitable design prespecifies the gene set or validates it outside the treatment
+comparison, balances condition across batch, and represents donor dependence.
+The observation model should address count scale, library size, censoring, and
+mean--variance behavior rather than automatically applying a Gaussian factor
+model to raw counts.
+
+Statistically, a condition difference in donor-level latent program means is
+conditional on the loading pattern, scale constraint, observation model, and
+sampling design. Biologically, interpreting it as pathway activation requires
+stable loadings across groups, coherent direction across informative genes,
+replication across donors, and external functional evidence. A rotated factor or
+an algorithmic component is not automatically a biological mechanism.
+
+# How Major Latent-variable Families Differ
+
+| Family | Latent quantity | Observable structure | Central caution |
+|---|---|---|---|
+| Factor or structural-equation model | continuous trait | covariance among indicators | scale, rotation, and measurement invariance |
+| [Finite mixture](finite-mixture-models.qmd) | unordered class | heterogeneous marginal distribution | label symmetry and component interpretation |
+| Random-effects model | group-specific continuous effect | within-group dependence | population distribution and experimental units |
+| Hidden Markov model | ordered state sequence | serial dependence and regimes | Markov/emission assumptions and state labels |
+| Missing-data augmentation | unobserved values | incomplete records | missingness mechanism is not learned automatically |
+
+The model should follow the data-generating question. Factors explain shared
+variation, mixtures explain heterogeneous distributions, and hidden Markov models
+add an ordering-dependent transition mechanism. They are not interchangeable
+clustering algorithms.
+
+# Connections and Take-home Messages
+
+- [Joint, marginal, and conditional distributions](../probability-randomness/joint-marginal-and-conditional-distributions.qmd)
+  supplies the marginalization and conditional-dependence language.
+- [Finite mixture models](finite-mixture-models.qmd) use discrete exchangeable
+  labels; [Gaussian mixture models](gaussian-mixture-models.qmd) provide a common
+  continuous-data example.
+- [Identifiability and label switching](identifiability-and-label-switching.qmd)
+  distinguishes structural ambiguity, weak information, and arbitrary labels.
+- [Expectation--maximization](expectation-maximization.qmd) is a general fitting
+  strategy for incomplete or latent data.
+- [Hierarchical Bayesian models](hierarchical-bayesian-models.qmd) use latent
+  group parameters to represent multilevel variation and partial pooling.
+- Hidden Markov models, developed in the companion note, add dependence between
+  successive latent states.
+
+Latent-variable models explain observable distributions through unobserved
+quantities. Their value comes from an explicit generative story and useful
+observable implications, not from treating fitted latent values as discovered
+facts. Define the latent scale, establish identification, propagate score and
+parameter uncertainty, check observed-data predictions, and ground biological
+claims in experimental units and external evidence.
+
+# References
+
+- Bartholomew, D. J., Knott, M., and Moustaki, I. *Latent Variable Models and
+  Factor Analysis: A Unified Approach*, 3rd ed. Wiley, 2011.
+  [Publisher page](https://doi.org/10.1002/9781119970583).
+- Bollen, K. A. *Structural Equations with Latent Variables*. Wiley, 1989.
+  [Publisher page](https://doi.org/10.1002/9781118619179).
+- Skrondal, A. and Rabe-Hesketh, S. *Generalized Latent Variable Modeling:
+  Multilevel, Longitudinal, and Structural Equation Models*. Chapman & Hall/CRC,
+  2004. [Publisher page](https://doi.org/10.1201/9780203489437).
+- Allman, E. S., Matias, C., and Rhodes, J. A. “Identifiability of Parameters in
+  Latent Structure Models with Many Observed Variables.” *Annals of Statistics*
+  37 (2009): 3099--3132. [Article](https://doi.org/10.1214/09-AOS689).
+- Dempster, A. P., Laird, N. M., and Rubin, D. B. “Maximum Likelihood from
+  Incomplete Data via the EM Algorithm.” *Journal of the Royal Statistical
+  Society: Series B* 39 (1977): 1--38.
+  [Article](https://doi.org/10.1111/j.2517-6161.1977.tb01600.x).

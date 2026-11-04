@@ -1,0 +1,344 @@
+---
+title: "Hidden Markov Models as Statistical Models"
+subtitle: "Latent state sequences, probabilistic emissions, and inference along ordered data"
+description: "Hidden Markov model generation, forward-backward inference, estimation, diagnostics, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-11-04"
+date-modified: "2026-11-04"
+categories: [Statistics, Advanced Modeling, Hidden Markov Models, Bioinformatics]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Sequence of Hidden States Generates a Sequence of Observations
+
+A hidden Markov model (HMM) is a latent-variable model for ordered data. At each
+position or time $t$, an unobserved state $S_t\in\{1,\ldots,K\}$ evolves as a
+first-order Markov chain, and an observation $Y_t$ is emitted from a distribution
+determined by the current state:
+
+$$
+P(S_1=k)=\pi_k,
+$$
+
+$$
+P(S_t=k\mid S_{1:t-1})=P(S_t=k\mid S_{t-1})=a_{S_{t-1},k},
+$$
+
+$$
+p(y_t\mid S_{1:t},Y_{1:t-1})=p(y_t\mid S_t)=b_{S_t}(y_t).
+$$
+
+The parameters are an initial distribution $\boldsymbol\pi$, transition matrix
+$\mathbf A=(a_{jk})$, and emission distributions $b_k$. For a state path
+$s_{1:T}$ and observations $y_{1:T}$, the joint distribution is
+
+$$
+\boxed{
+p(s_{1:T},y_{1:T})
+=\pi_{s_1}b_{s_1}(y_1)
+\prod_{t=2}^T a_{s_{t-1},s_t}b_{s_t}(y_t).
+}
+$$
+
+The observed-data likelihood sums over all $K^T$ possible paths:
+
+$$
+p(y_{1:T})=\sum_{s_{1:T}}p(s_{1:T},y_{1:T}).
+$$
+
+Dynamic programming evaluates this sum without enumerating every path. An HMM is
+therefore a probability model for a sequence, not merely a segmentation
+algorithm. State calls inherit uncertainty and assumptions from that model.
+
+# What the Assumptions Mean
+
+The standard HMM makes two conditional-independence claims:
+
+1. the next state depends on the past only through the current state; and
+2. observations are independent given their contemporaneous states.
+
+Marginally, neighboring observations are dependent because their states are
+dependent. A state can summarize relevant history, but the first-order property
+is restrictive if duration, long memory, or unmodeled covariates matter.
+
+For a homogeneous HMM, $\mathbf A$ is constant across positions. If the chain is
+ergodic, a stationary distribution $\boldsymbol\delta$ satisfies
+
+$$
+\boldsymbol\delta^{\mathsf T}
+=\boldsymbol\delta^{\mathsf T}\mathbf A,
+\qquad
+\sum_k\delta_k=1.
+$$
+
+Starting with $\boldsymbol\pi=\boldsymbol\delta$ makes the latent process
+stationary. This can be convenient, but genomic boundaries, developmental time,
+or designed interventions may make stationarity implausible.
+
+Under an ordinary HMM, the length $D_k$ of a run in state $k$ has a geometric
+distribution:
+
+$$
+P(D_k=d)=(a_{kk})^{d-1}(1-a_{kk}),
+\qquad
+E(D_k)=\frac{1}{1-a_{kk}}.
+$$
+
+If observed domains or dwell times have non-geometric tails, a hidden semi-Markov
+model or explicit duration model may be preferable. Increasing $a_{kk}$ merely
+to obtain smoother segments changes the assumed duration distribution.
+
+# Three Distinct Inferential Questions
+
+HMM analyses often blur three tasks that require different calculations.
+
+## Sequence likelihood
+
+What is $p(y_{1:T}\mid\theta)$? This is used for parameter estimation, model
+comparison, and predictive scoring. It is computed by the forward algorithm.
+
+Define
+
+$$
+\alpha_t(k)=p(y_{1:t},S_t=k).
+$$
+
+Initialization and recursion give
+
+$$
+\alpha_1(k)=\pi_k b_k(y_1),
+$$
+
+$$
+\boxed{
+\alpha_t(k)=b_k(y_t)\sum_{j=1}^K\alpha_{t-1}(j)a_{jk}.
+}
+$$
+
+Then $p(y_{1:T})=\sum_k\alpha_T(k)$. The cost is $O(TK^2)$ rather than
+$O(K^T)$. Scaling or log-space calculations are essential because products of
+many probabilities underflow numerically.
+
+## State probabilities
+
+What is $P(S_t=k\mid y_{1:T})$ or
+$P(S_{t-1}=j,S_t=k\mid y_{1:T})$? The backward quantity
+
+$$
+\beta_t(j)=p(y_{t+1:T}\mid S_t=j)
+$$
+
+satisfies
+
+$$
+\beta_T(j)=1,
+\qquad
+\beta_t(j)=\sum_{k=1}^K a_{jk}b_k(y_{t+1})\beta_{t+1}(k).
+$$
+
+Combining the passes yields the smoothed probability
+
+$$
+\boxed{
+\gamma_t(k)=P(S_t=k\mid y_{1:T})
+=\frac{\alpha_t(k)\beta_t(k)}{p(y_{1:T})}.
+}
+$$
+
+$\gamma_t(k)$ preserves local classification uncertainty. Filtering instead
+conditions only on $y_{1:t}$ and answers an online prediction question.
+
+## Most probable path
+
+What single path maximizes $P(S_{1:T}=s_{1:T}\mid y_{1:T})$? The Viterbi
+algorithm replaces the forward sum by a maximum and records back-pointers.
+The Viterbi state at a position need not equal the state with largest
+$\gamma_t(k)$, because a jointly valid path and positionwise marginal modes are
+different targets. Report which decoding rule was used; a hard path should not
+erase posterior or conditional uncertainty.
+
+# Estimating the Model
+
+With labeled states, transition and emission parameters can be estimated from
+ordinary counts or state-specific likelihoods. With hidden states, maximum
+likelihood commonly uses the Baum--Welch algorithm, the HMM specialization of
+[expectation--maximization](expectation-maximization.qmd).
+
+The E-step computes smoothed state and transition probabilities,
+
+$$
+\xi_t(j,k)=P(S_t=j,S_{t+1}=k\mid y_{1:T},\theta^{(m)}).
+$$
+
+For an unconstrained transition matrix, the M-step update is
+
+$$
+\boxed{
+a_{jk}^{(m+1)}
+=\frac{\sum_{t=1}^{T-1}\xi_t(j,k)}
+{\sum_{t=1}^{T-1}\gamma_t(j)}.
+}
+$$
+
+Emission parameters are updated using $\gamma_t(k)$ as fractional weights. Each
+iteration does not decrease the observed likelihood, but the likelihood can be
+multimodal. Fit dispersed starts, compare recurring solutions, and inspect
+scientifically important outputs rather than trusting one convergence flag.
+
+A Bayesian HMM places priors on rows of $\mathbf A$, emission parameters, and
+possibly $K$. Posterior sampling or other algorithms propagate parameter and
+state uncertainty. Symmetric state priors create label-permutation symmetry;
+summaries should be invariant to labels or use a scientifically defined labeling
+rule. Priors that favor persistence can be valuable, but they directly affect
+domain length and must be checked through prior and posterior predictive
+simulation.
+
+# Interpretation and Identification
+
+State numbers have no intrinsic meaning. Permuting every state label and the
+corresponding rows, columns, and emission parameters leaves the observed
+distribution unchanged. State-specific biological names require prespecified
+emission features, external annotations, or a transparent post-fit rule.
+
+Beyond label switching, weak identification occurs when states have similar
+emissions, transitions are rarely observed, sequences are short, or some states
+have negligible occupancy. The model may predict the observations adequately
+while individual state paths remain uncertain. Conversely, sharply separated
+emissions can produce confident calls even if the transition model is wrong.
+
+The number of states $K$ is a modeling choice. Likelihood criteria, held-out
+sequence prediction, scientific interpretability, and stability can inform it,
+but none reveals a uniquely true biological state count. Adding states may split
+one heterogeneous regime, approximate a non-geometric duration, or absorb an
+unmodeled batch effect. Compare conclusions across plausible $K$ and emission
+families.
+
+# Covariates, Multiple Sequences, and Hierarchy
+
+Transitions or emissions may depend on covariates:
+
+$$
+P(S_t=k\mid S_{t-1}=j,x_t)=a_{jk}(x_t),
+$$
+
+$$
+Y_t\mid S_t=k,x_t\sim b_k(\cdot\mid x_t).
+$$
+
+A covariate-dependent transition describes changing switching propensity; an
+emission coefficient describes a within-state observation change. These are
+different scientific mechanisms and may be difficult to distinguish without
+strong design or measurements.
+
+For multiple subjects, chromosomes, or specimens, fitting one shared HMM assumes
+exchangeability after modeled covariates. Independent sequences contribute
+replication; adjacent positions within one sequence usually do not. Hierarchical
+HMMs can allow specimen-specific transitions or emissions with partial pooling.
+Naively concatenating sequences creates artificial transitions across boundaries,
+while fitting each short sequence independently may estimate transitions poorly.
+
+# Diagnostics and Sensitivity
+
+| Assumption or risk | Evidence to inspect | Sensitivity or remedy |
+|---|---|---|
+| Emission family is adequate | within-state residuals, tails, zeros, cross-feature dependence | revise distribution or add justified emission dependence |
+| First-order state memory is adequate | residual dependence, run-length distribution, transition patterns by lag | higher-order or semi-Markov model |
+| Homogeneous transitions are adequate | changes by position, time, batch, or covariate | model transition covariates or stratification |
+| State count is stable | predictive scores, occupancy, split/merged solutions | report results across plausible $K$ |
+| Parameters are identified | emission overlap, rare states, profile/posterior geometry | simplify, regularize, or collect informative measurements |
+| Optimization is reliable | likelihood and parameters across starts | increase and diversify starts |
+| State calls are certain | $\gamma_t(k)$, entropy, boundary uncertainty | report probabilities and uncertain regions |
+| Replication is valid | sequence, donor, chromosome, and batch structure | validate or resample independent experimental units |
+
+Predictive checks should simulate complete sequences, not independent positions.
+Compare marginal emission distributions, transition counts, run lengths, boundary
+density, autocorrelation, state occupancy, and specimen-to-specimen variation.
+Cross-validation should hold out the unit to which prediction will generalize:
+positions for interpolation, whole sequence segments for local forecasting, or
+entire specimens for population generalization.
+
+Information criteria based on a nominal parameter count can be unreliable near
+singularities or with poorly occupied states. Standard errors that condition on
+one decoded path ignore state uncertainty. Parametric bootstrap, profile methods,
+or a full posterior can better expose nonregular uncertainty, provided the
+simulation reproduces the sequence and sampling design.
+
+# Bioinformatics Example: Chromatin-state Annotation
+
+Suppose several histone marks are binarized in consecutive genomic bins. A
+multivariate HMM can use a latent chromatin state $S_t$ and conditionally
+independent Bernoulli emissions:
+
+$$
+P(\mathbf Y_t=\mathbf y_t\mid S_t=k)
+=\prod_{m=1}^M q_{km}^{y_{tm}}(1-q_{km})^{1-y_{tm}},
+$$
+
+where $q_{km}$ is the state-specific probability of observing mark $m$. The
+transition matrix encourages spatial persistence, while the emission vector
+describes combinations of marks. This is the structure used by ChromHMM.
+
+Genomic bins are ordered observational units, not independent biological
+replicates. For a treatment or population contrast, independently sampled
+donors, organisms, or specimens are usually the experimental units. Technical
+replicates, sequencing reads, and adjacent bins improve measurement or spatial
+resolution but do not create independent treatment replication. Batch and
+treatment must be separated by design whenever possible.
+
+Statistically, a decoded state is the model-supported label for a bin under the
+chosen marks, bin size, $K$, transition assumptions, and training data.
+Biologically, names such as “active enhancer” require enrichment in external
+annotations, reproducibility across specimens, and functional validation. A
+state can absorb assay quality or batch instead of chromatin biology. Compare
+emissions, occupancies, and downstream conclusions across initializations,
+state counts, bin sizes, and replicate handling.
+
+Profile HMMs answer a different sequence question: match, insertion, and deletion
+states encode variation around a protein or nucleic-acid family alignment. Their
+state topology is designed rather than interpreted as a generic segmentation.
+The shared HMM framework does not make chromatin annotation and homology search
+scientifically equivalent.
+
+# Connections and Take-home Messages
+
+- [Latent-variable models](latent-variable-models.qmd) provides the general
+  joint-model and marginalization framework.
+- [Finite mixture models](finite-mixture-models.qmd) use independent latent
+  labels; an HMM connects labels through a Markov transition law.
+- [Identifiability and label switching](identifiability-and-label-switching.qmd)
+  explains permutation symmetry and invariant targets.
+- [Expectation--maximization](expectation-maximization.qmd) derives the fitting
+  principle behind Baum--Welch.
+- [Posterior predictive checks](posterior-predictive-checks.qmd) develops
+  generative criticism, here applied to whole sequences.
+- [Cross-validation](../regression-models/cross-validation.qmd) clarifies why the
+  held-out unit must match the prediction target.
+
+An HMM combines a Markov model for latent states with an observation model for
+emissions. Forward--backward probabilities, Viterbi paths, and sequence
+likelihoods answer different questions. Sound use requires explicit transition
+and emission assumptions, uncertainty-aware decoding, checks of duration and
+dependence, sensitivity to state count and initialization, and replication at
+the biological level relevant to the scientific claim.
+
+# References
+
+- Baum, L. E. and Petrie, T. “Statistical Inference for Probabilistic Functions
+  of Finite State Markov Chains.” *Annals of Mathematical Statistics* 37 (1966):
+  1554--1563. [Article](https://doi.org/10.1214/aoms/1177699147).
+- Rabiner, L. R. “A Tutorial on Hidden Markov Models and Selected Applications
+  in Speech Recognition.” *Proceedings of the IEEE* 77 (1989): 257--286.
+  [Article](https://doi.org/10.1109/5.18626).
+- Zucchini, W., MacDonald, I. L., and Langrock, R. *Hidden Markov Models for
+  Time Series: An Introduction Using R*, 2nd ed. Chapman & Hall/CRC, 2016.
+  [Publisher page](https://doi.org/10.1201/b20790).
+- Durbin, R., Eddy, S. R., Krogh, A., and Mitchison, G. *Biological Sequence
+  Analysis: Probabilistic Models of Proteins and Nucleic Acids*. Cambridge
+  University Press, 1998. [Publisher page](https://doi.org/10.1017/CBO9780511790492).
+- Eddy, S. R. “Profile Hidden Markov Models.” *Bioinformatics* 14 (1998):
+  755--763. [Article](https://doi.org/10.1093/bioinformatics/14.9.755).
+- Ernst, J. and Kellis, M. “ChromHMM: Automating Chromatin-state Discovery and
+  Characterization.” *Nature Methods* 9 (2012): 215--216.
+  [Article](https://doi.org/10.1038/nmeth.1906).

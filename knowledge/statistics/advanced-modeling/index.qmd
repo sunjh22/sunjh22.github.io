@@ -20,10 +20,11 @@ categories: [Statistics, Advanced Modeling]
 - [Identifiability and label switching](identifiability-and-label-switching.qmd)
 - [Expectation--maximization](expectation-maximization.qmd)
 - [Gaussian mixture models](gaussian-mixture-models.qmd)
+- [Latent-variable models](latent-variable-models.qmd)
+- [Hidden Markov models as statistical models](hidden-markov-models-as-statistical-models.qmd)
 - [Mixture models overview](mixture-models.qmd)
 
-Future notes in this level will cover latent-variable models, survival analysis,
-and multivariate methods.
+Future notes in this level will cover survival analysis and multivariate methods.
 
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Real Bioinformatics Problems](../bioinformatics-problems/index.qmd)
