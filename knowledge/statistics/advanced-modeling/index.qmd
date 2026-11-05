@@ -22,9 +22,11 @@ categories: [Statistics, Advanced Modeling]
 - [Gaussian mixture models](gaussian-mixture-models.qmd)
 - [Latent-variable models](latent-variable-models.qmd)
 - [Hidden Markov models as statistical models](hidden-markov-models-as-statistical-models.qmd)
+- [Censoring and survival functions](censoring-and-survival-functions.qmd)
+- [Kaplan--Meier estimation and log-rank tests](kaplan-meier-estimation-and-log-rank-tests.qmd)
 - [Mixture models overview](mixture-models.qmd)
 
-Future notes in this level will cover survival analysis and multivariate methods.
+Future notes in this level will cover survival regression, competing risks, and multivariate methods.
 
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Real Bioinformatics Problems](../bioinformatics-problems/index.qmd)

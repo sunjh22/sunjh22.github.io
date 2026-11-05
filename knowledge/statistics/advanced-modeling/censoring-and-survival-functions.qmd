@@ -1,0 +1,262 @@
+---
+title: "Censoring and Survival Functions"
+subtitle: "Time-to-event targets, incomplete observation, and the risk process"
+description: "Survival and hazard functions, censoring and truncation mechanisms, likelihood contributions, assumptions, diagnostics, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-11-05"
+date-modified: "2026-11-05"
+categories: [Statistics, Survival Analysis, Censoring, Time-to-Event Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Event Time and Observation Time Are Different Variables
+
+Survival analysis studies the time $T\geq 0$ from a defined origin to a defined
+event. The event may be death, relapse, device failure, cell differentiation, or
+another first occurrence. Its name does not have to imply mortality. What makes
+the analysis distinctive is that follow-up may end before the event is observed.
+
+Under ordinary right censoring, let $C$ be the censoring time and record
+
+$$
+\boxed{X=\min(T,C),\qquad \Delta=I(T\leq C).}
+$$
+
+$X$ is the observed follow-up time and $\Delta$ says whether that time is an
+event. A censored record with $(X,\Delta)=(12,0)$ means $T>12$; it does **not**
+mean that the event occurred at 12, nor that the event time is missing without
+information.
+
+The time origin, event definition, and observation process are therefore part
+of the estimand. Overall survival from diagnosis, progression-free survival
+from randomization, and time to recurrence after surgery are different
+variables even when measured on the same people.
+
+# Survival, Distribution, Density, and Hazard
+
+For a continuous event time with distribution function $F$ and density $f$,
+the survival function is
+
+$$
+S(t)=P(T>t)=1-F(t).
+$$
+
+$S(t)$ is a population probability: the probability that a randomly selected
+unit from the target population remains event-free beyond $t$. It is
+nonincreasing, right-continuous, and lies between zero and one. The $p$th
+survival quantile is the time at which survival falls to $1-p$; the median is
+not estimable within the observed range if the estimated curve never reaches
+$0.5$.
+
+The hazard describes instantaneous event intensity among units still at risk:
+
+$$
+h(t)=\lim_{\Delta t\downarrow 0}
+\frac{P(t\leq T<t+\Delta t\mid T\geq t)}{\Delta t}
+=\frac{f(t)}{S(t)}.
+$$
+
+It is a rate, not a probability. It may exceed one and depends on the time
+unit. The cumulative hazard and survival function satisfy
+
+$$
+H(t)=\int_0^t h(u)\,du,
+\qquad
+\boxed{S(t)=\exp\{-H(t)\}}.
+$$
+
+This identity follows from $h(t)=-d\log S(t)/dt$. It connects models for
+instantaneous risk with probabilities over a time interval, but it does not
+make a hazard ratio a survival-probability ratio.
+
+When the mean exists, restricted follow-up has a particularly interpretable
+summary:
+
+$$
+\operatorname{RMST}(\tau)=E\{\min(T,\tau)\}
+=\int_0^\tau S(t)\,dt.
+$$
+
+This is the expected event-free time accumulated through a prespecified
+horizon $\tau$. Unlike an unrestricted mean, it can be estimated without
+extrapolating beyond that horizon when follow-up supports it.
+
+# How Observation Can Be Incomplete
+
+| Mechanism | What is learned about $T$ | Example |
+|---|---|---|
+| Right censoring | $T>C$ | study closes before relapse |
+| Left censoring | $T\leq C$ | infection occurred before first positive visit |
+| Interval censoring | $L<T\leq R$ | conversion occurred between scheduled assays |
+| Left truncation (delayed entry) | unit is observed only if $T>E$ | registry enrollment after diagnosis |
+| Competing event | another event prevents the event of interest | death before relapse |
+
+Censoring limits what is observed after inclusion. Truncation determines who
+enters the observed sample. A person entering at time $E$ must join the risk set
+at $E$, not at the original time zero. Treating delayed entry as ordinary
+right censoring creates immortal-time bias because the person had to remain
+event-free long enough to be observed.
+
+Administrative censoring at a common study-closing date is often plausibly
+unrelated to prognosis, although staggered enrollment makes censoring times
+vary. Loss to follow-up is more concerning: illness, toxicity, treatment
+response, socioeconomic conditions, or sequencing failure may influence both
+dropout and the event time.
+
+A competing event is not simply benign censoring when the target is the
+real-world probability of the event of interest. For example, censoring death
+while estimating relapse incidence imagines a world in which those who died
+could remain at risk for relapse. Cause-specific hazards and cumulative
+incidence answer different questions and require a competing-risks framework.
+
+# Likelihood Contributions Explain the Information
+
+Suppose right censoring is independent of the event process under the model.
+Ignoring factors that contain only parameters of the censoring distribution,
+unit $i$ contributes
+
+$$
+L_i(\theta)
+=f_\theta(x_i)^{\delta_i}S_\theta(x_i)^{1-\delta_i}
+=\{h_\theta(x_i)\}^{\delta_i}S_\theta(x_i).
+$$
+
+An event contributes density, or equivalently hazard times survival to the
+event time. A censored observation contributes the probability of surviving
+beyond its last observed time. Replacing censored times by endpoints or deleting
+them changes this likelihood and usually biases the observed distribution
+toward short times.
+
+The common phrase **non-informative censoring** is shorthand for a conditional
+assumption, not a property that a censoring mark reveals. A useful version is
+
+$$
+T\perp C\mid Z,
+$$
+
+where $Z$ contains the design variables and prognostic information used to make
+the assumption credible. Marginal independence may fail even when conditional
+independence is plausible. Conversely, conditioning on variables affected by
+treatment or impending failure can create a different problem.
+
+The assumption cannot be proved from the observed $(X,\Delta)$ alone because
+the post-censoring event times are precisely what are unavailable. Design
+knowledge, reasons for censoring, follow-up procedures, auxiliary data, and
+sensitivity analysis are essential.
+
+# Estimands, Estimators, and Estimates
+
+Survival data support several distinct targets:
+
+| Scientific question | Possible estimand | Typical method |
+|---|---|---|
+| What fraction remains event-free at $t$? | $S(t)$ | Kaplan--Meier under independent right censoring |
+| How much event-free time accumulates through $\tau$? | $\int_0^\tau S(t)dt$ | restricted mean survival time |
+| What is the instantaneous event intensity? | $h(t)$ or a hazard contrast | hazard estimator or regression model |
+| What is the real-world probability of a particular event by $t$? | cumulative incidence | competing-risks estimator |
+| How does a covariate alter the event-time distribution? | prespecified survival, hazard, or time contrast | Cox or parametric survival model |
+
+The estimand is the population quantity. A product-limit curve, regression
+procedure, or parametric fit is an estimator. Its realized curve or coefficient
+is an estimate. A p-value from a group comparison is neither an effect estimate
+nor a description of survival at a clinically relevant time.
+
+# Design and Bioinformatics Interpretation
+
+Consider a cancer-genomics cohort evaluating time from surgery to recurrence.
+The patient is the biological and inferential unit. Multiple tumor regions,
+aliquots, libraries, reads, or cells improve measurement of a patient's
+molecular state but do not create additional independent survival times.
+
+Before modeling, specify:
+
+1. the target population and eligibility criteria;
+2. the time origin and whether entry is delayed;
+3. the event definition and adjudication rule;
+4. the analysis horizon and competing events;
+5. the censoring reasons and last-contact rule;
+6. whether a biomarker was prespecified or selected using the same outcomes;
+7. biological units, technical replicates, batches, and missing assays.
+
+Statistically, an estimated survival difference describes the chosen endpoint
+under the sampling and censoring assumptions. Biologically, it does not by
+itself show that a molecular signature causes recurrence. Stage, treatment,
+ascertainment, cohort selection, batch effects, and data-dependent signature
+construction may explain an association. Technical replication can reduce
+measurement error; only independent patients support population-level
+replication.
+
+# Diagnostics and Sensitivity
+
+| Question | Evidence to inspect | Sensitivity or remedy |
+|---|---|---|
+| Are time zero and eligibility aligned? | enrollment and origin dates; impossible negative or zero intervals | rebuild start--stop records; use delayed entry |
+| Could censoring depend on prognosis? | reasons and timing by treatment, biomarker, site, and health status | adjust for predictors; inverse-censoring weights; pattern or tipping-point analyses |
+| Is the tail supported? | numbers at risk and censoring marks | restrict the horizon; avoid unsupported medians or extrapolation |
+| Are event definitions consistent? | adjudication and coding by site or batch | harmonize endpoints; analyze alternative defensible definitions |
+| Are there competing events? | event-type counts over time | report cumulative incidence alongside cause-specific analyses |
+| Is dependence represented? | repeated events, paired organs, families, sites | cluster-aware variance or multilevel/event-process model |
+
+Comparing the measured baseline characteristics of censored and uncensored units
+can reveal warning signs but cannot validate independent censoring. A useful
+sensitivity analysis states how departures from the assumption would alter the
+conclusion rather than declaring censoring harmless because one diagnostic test
+was nonsignificant.
+
+# Common Pitfalls
+
+- **Calling censoring missing data with no information:** right censoring gives
+  a lower bound on $T$ and must enter the risk process.
+- **Treating a hazard as a probability:** a hazard is an instantaneous rate
+  conditional on remaining at risk.
+- **Ignoring delayed entry:** including a late entrant in earlier risk sets
+  credits the group with survival time during which that unit could not fail in
+  the observed sample.
+- **Reporting a median that was not reached:** the curve must cross $0.5$ within
+  adequately observed follow-up.
+- **Censoring competing events without naming the hypothetical target:** this
+  does not estimate the ordinary cumulative probability of the event.
+- **Counting technical measurements as survival replicates:** the independent
+  biological unit, not the number of reads or cells, determines replication.
+
+# Connections and Take-home Messages
+
+- [Random variables and probability distributions](../probability-randomness/random-variables-and-probability-distributions.qmd)
+  defines distribution and survival functions.
+- [Exponential and geometric distributions](../probability-randomness/exponential-and-geometric-distributions.qmd)
+  develops constant hazards and memorylessness.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  explains why an observation mechanism changes likelihood contributions.
+- [Repeated measures and longitudinal data](repeated-measures-and-longitudinal-data.qmd)
+  separates correlated trajectories from time-to-first-event outcomes.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a framework for claims under unverifiable assumptions.
+
+1. Survival analysis models an event time and the process that makes it
+   observable.
+2. $S(t)$, $h(t)$, and $H(t)$ are linked but answer different questions.
+3. Independent censoring is conditional and assumption-dependent; it is not
+   certified by a censoring indicator.
+4. Censoring, truncation, and competing events require different risk sets and
+   target definitions.
+5. Bioinformatics survival claims are replicated by independent biological
+   units, not by technical subsamples.
+
+# References
+
+- Kalbfleisch, J. D., and Prentice, R. L. (2002). *The Statistical Analysis of
+  Failure Time Data* (2nd ed.). Wiley.
+  <https://www.wiley.com/en-ca/the-statistical-analysis-of-failure-time-data-2nd-edition-p-9781118032985>
+- Andersen, P. K., Borgan, O., Gill, R. D., and Keiding, N. (1993).
+  *Statistical Models Based on Counting Processes*. Springer.
+  <https://doi.org/10.1007/978-1-4612-4348-9>
+- Kaplan, E. L., and Meier, P. (1958). Nonparametric estimation from
+  incomplete observations. *Journal of the American Statistical Association*,
+  53(282), 457--481. <https://doi.org/10.1080/01621459.1958.10501452>
+- Aalen, O. O., and Johansen, S. (1978). An empirical transition matrix for
+  non-homogeneous Markov chains based on censored observations. *Scandinavian
+  Journal of Statistics*, 5(3), 141--150.
+  <https://www.jstor.org/stable/4615704>

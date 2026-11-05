@@ -1,0 +1,297 @@
+---
+title: "Kaplan--Meier Estimation and Log-rank Tests"
+subtitle: "Risk-set estimation, uncertainty, and unadjusted survival comparisons"
+description: "Derivation and interpretation of Kaplan--Meier curves, Greenwood uncertainty, and log-rank tests with assumptions, diagnostics, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-11-05"
+date-modified: "2026-11-05"
+categories: [Statistics, Survival Analysis, Kaplan-Meier, Log-rank Test]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Two Tasks: Estimate a Curve and Compare Groups
+
+The Kaplan--Meier estimator describes a survival function from right-censored
+data. The log-rank test compares survival experience between groups. They are
+often displayed together, but they answer different questions:
+
+$$
+\boxed{
+\text{Kaplan--Meier: estimate }S_g(t)
+\qquad
+\text{Log-rank: test equality of group event processes.}
+}
+$$
+
+Neither method automatically adjusts for prognostic covariates, dependent
+censoring, delayed entry recorded incorrectly, competing risks, repeated
+events, or biomarker selection. A significant log-rank result is not an effect
+size, and visibly separated curves do not identify a causal treatment effect
+without an appropriate design.
+
+# Risk Sets Contain the Information
+
+Let $t_1<\cdots<t_K$ be the distinct event times. Immediately before $t_j$,
+define
+
+- $n_j$: number at risk;
+- $d_j$: number experiencing the event at $t_j$; and
+- $c_j$: number censored after the risk set is formed at that time.
+
+Under independent right censoring, the conditional probability of surviving
+past $t_j$ given survival to just before it is estimated by
+
+$$
+1-\frac{d_j}{n_j}=\frac{n_j-d_j}{n_j}.
+$$
+
+The chain rule multiplies these conditional probabilities:
+
+$$
+\boxed{
+\widehat S(t)=\prod_{t_j\leq t}
+\left(1-\frac{d_j}{n_j}\right).
+}
+$$
+
+This product-limit estimator is a right-continuous step function. It drops only
+at event times. Censoring does not cause a drop because it is not an event, but
+it removes a unit from later risk sets. With delayed entry, a unit joins the
+risk set only when it becomes observable.
+
+The derivation reveals the assumptions. At each event time, those still under
+observation must represent those who would have remained at risk in the target
+population, conditional on variables used to justify censoring independence.
+Late follow-up with few at-risk units therefore produces an unstable tail even
+when the plotted line looks precise.
+
+# Worked Product-limit Calculation
+
+Suppose six independent experimental units have these observations:
+
+| Unit | Observed time | Status |
+|---|---:|---|
+| A | 2 | event |
+| B | 3 | censored |
+| C | 5 | event |
+| D | 5 | event |
+| E | 6 | censored |
+| F | 8 | event |
+
+The event-time calculation is
+
+| Event time $t_j$ | At risk $n_j$ | Events $d_j$ | Conditional survival | $\widehat S(t_j)$ |
+|---:|---:|---:|---:|---:|
+| 2 | 6 | 1 | $5/6$ | $5/6$ |
+| 5 | 4 | 2 | $2/4$ | $5/12$ |
+| 8 | 1 | 1 | $0/1$ | $0$ |
+
+The censoring at time 3 reduces the time-5 risk set but does not change the
+curve at time 3. Because $\widehat S(t)$ first falls to or below $0.5$ at time
+5, the estimated median is 5. The last drop to zero rests on one remaining unit
+and should not be read as strong evidence that all population event times are at
+most 8. A number-at-risk table makes that limitation visible.
+
+# Uncertainty and the Tail
+
+Greenwood's approximation gives
+
+$$
+\widehat{\operatorname{Var}}\{\widehat S(t)\}
+\approx
+\widehat S(t)^2
+\sum_{t_j\leq t}
+\frac{d_j}{n_j(n_j-d_j)}.
+$$
+
+The variance accumulates across event times and increases rapidly when risk
+sets are small. A plain symmetric interval can cross zero or one. Transformed
+intervals are commonly used; a log--log interval, in particular, remains on the
+probability scale after back-transformation. Pointwise coverage at one
+chosen time is not simultaneous coverage for the entire curve, and visually
+checking whether two pointwise bands overlap is not a calibrated group test.
+
+Useful reporting includes censoring marks, numbers at risk at meaningful times,
+pointwise estimates and intervals at prespecified horizons, median survival only
+when reached, and restricted mean survival through a supported horizon. The
+largest observed time is rarely a scientifically defensible horizon chosen
+after seeing the data.
+
+# The Log-rank Test as Observed Minus Expected Events
+
+For two groups at event time $t_j$, let $n_{1j}$ and $n_{0j}$ be the numbers at
+risk, with $n_j=n_{1j}+n_{0j}$ and $d_j$ total events. Under the null that group
+does not alter event risk at that time, the expected number of group-1 events is
+
+$$
+E_{1j}=d_j\frac{n_{1j}}{n_j}.
+$$
+
+If $O_{1j}$ events are observed in group 1, the log-rank score sums
+
+$$
+U=\sum_j(O_{1j}-E_{1j}).
+$$
+
+With the usual hypergeometric treatment of tied events,
+
+$$
+V=\sum_j
+\frac{n_{1j}n_{0j}d_j(n_j-d_j)}
+{n_j^2(n_j-1)},
+$$
+
+omitting terms whose denominator is undefined. Under regularity conditions and
+the null, $Z=U/\sqrt V$ is approximately standard normal and $U^2/V$ is
+approximately $\chi^2_1$. For more than two groups, the vector of observed
+minus expected counts yields a chi-squared statistic with rank-determined
+degrees of freedom.
+
+Each event receives equal score on the log-rank scale, while its contribution
+still depends on the current risk-set composition. The test is closely related
+to the score test for a group coefficient in a Cox proportional-hazards model
+and has good power against proportional-hazards alternatives.
+
+# What the Null and Alternative Mean
+
+The ordinary two-sample log-rank test is commonly described as testing equality
+of survival curves. Its calibration requires independent units, comparable and
+appropriately independent censoring within groups, correct risk sets, and a
+prespecified grouping. Its familiar power properties are strongest when a
+roughly constant hazard ratio is a reasonable alternative.
+
+The test does **not** estimate a hazard ratio, survival difference, median
+difference, or restricted-mean difference. A small p-value says the observed
+risk-set imbalance is inconsistent with the null calibration; it does not say
+how large or scientifically important the difference is.
+
+When curves cross, positive and negative observed-minus-expected contributions
+can cancel. A nonsignificant ordinary log-rank test may then coexist with large
+time-specific differences. Choosing a weighted log-rank test after inspecting
+the curves invalidates its nominal p-value. If delayed benefit, waning effect,
+or crossing hazards is scientifically anticipated, prespecify a weighting
+scheme or target a survival difference or restricted-mean contrast at a
+clinically meaningful horizon.
+
+# Stratification, Covariates, and Multiplicity
+
+A stratified log-rank test computes observed-minus-expected contributions
+within levels such as study center or randomization stratum and then combines
+them. It can respect a stratified design without assuming identical baseline
+hazards across strata. It does not estimate a stratum-specific or adjusted
+effect and may be inefficient with many sparse strata.
+
+Regression is needed when the target requires covariate adjustment, continuous
+predictors, interactions, or adjusted survival curves. Even then, model choice
+must follow the estimand. A Cox coefficient is a conditional hazard contrast;
+it is not automatically the marginal survival effect a trial report may seek.
+
+Testing many molecular signatures, cut points, endpoints, time horizons, or
+weighting schemes and reporting the smallest p-value is multiple testing. A
+cut point selected from the same survival outcomes also changes the null
+distribution. Use external thresholds, nested validation, or resampling that
+repeats the complete selection process, and address multiplicity explicitly.
+
+# Bioinformatics Example: A Prognostic Expression Signature
+
+Suppose 180 patients contribute resected tumors and are followed for recurrence.
+The patient is the experimental unit. Tumor regions, cells, libraries, and reads
+are nested measurements used to construct a patient-level signature. A
+Kaplan--Meier curve may describe recurrence-free survival in prespecified
+signature groups, and a log-rank test may make an unadjusted comparison.
+
+Credible design requires a fixed time origin, harmonized recurrence definition,
+complete accounting of deaths, delayed entry if enrollment occurs after
+surgery, and censoring information by center and signature group. If death
+precludes recurrence, ordinary Kaplan--Meier estimation that censors death does
+not estimate the observed-world recurrence probability; a cumulative-incidence
+analysis is needed for that target.
+
+Statistically, the group curves estimate distributions under the observation
+assumptions. Biologically, separation does not prove that the expression
+program drives recurrence. Stage, treatment, tumor composition, batch, and
+selection of the signature may explain the association. Technical replicates
+can stabilize the signature measurement but cannot increase the number of
+independent patients from 180.
+
+# Diagnostics and Sensitivity
+
+| Issue | What to inspect | Response |
+|---|---|---|
+| Sparse tail | risk table, censoring marks, last event per group | restrict reporting to supported horizons |
+| Unequal or informative censoring | censoring reasons and timing by group and prognosis | inverse-censoring methods and sensitivity analyses |
+| Delayed entry | eligibility, enrollment, and origin dates | use start--stop risk sets |
+| Crossing curves | time-specific estimates and event patterns | prespecify appropriate contrasts or RMST |
+| Competing events | counts and cumulative incidence by event type | use competing-risks estimands |
+| Clustered units | families, centers, paired organs, repeated events | cluster-aware methods or event-process models |
+| Adaptive groups or cut points | analysis history and validation split | repeat selection in validation/resampling; report multiplicity |
+
+Simulation can verify a software implementation and finite-sample calibration
+under a proposed data-generating process. It cannot establish that censoring is
+independent or that the endpoint and experimental unit match the scientific
+question.
+
+# Common Pitfalls
+
+- **Dropping censored observations:** they contribute survival through their
+  last observed times and determine later risk sets.
+- **Letting the curve imply precision:** every plot should expose the shrinking
+  risk set, especially in the tail.
+- **Interpreting the log-rank p-value as effect size:** report survival or
+  restricted-mean contrasts with uncertainty.
+- **Calling noncrossing curves proportional hazards:** visual appearance alone
+  neither proves proportionality nor estimates a constant hazard ratio.
+- **Using Kaplan--Meier for cumulative incidence with competing risks:** the
+  complement $1-\widehat S(t)$ overstates real-world cause-specific incidence
+  when competing events occur.
+- **Ignoring the biological unit:** cells and reads within a patient are not
+  independent survival observations.
+
+# Connections and Take-home Messages
+
+- [Censoring and survival functions](censoring-and-survival-functions.qmd)
+  defines event-time targets, observation mechanisms, and risk sets.
+- [Hypothesis tests and test statistics](../statistical-inference/hypothesis-tests-and-test-statistics.qmd)
+  separates a null, statistic, calibration, and decision rule.
+- [Effect sizes](../statistical-inference/effect-sizes.qmd) explains why a test
+  result must be accompanied by a scientifically meaningful contrast.
+- [When asymptotic approximations fail](../asymptotic-thinking/when-asymptotic-approximations-fail.qmd)
+  motivates caution with small event counts and adaptive analyses.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  applies to outcome-selected signatures and cut points.
+
+1. Kaplan--Meier estimation multiplies conditional survival proportions over
+   correctly constructed risk sets.
+2. Greenwood uncertainty grows as event counts accumulate and risk sets shrink;
+   the tail is usually least stable.
+3. The log-rank statistic aggregates observed-minus-expected events and tests a
+   null; it does not quantify the effect.
+4. Crossing hazards, competing events, dependent censoring, delayed entry, and
+   adaptive grouping require more than a routine curve and p-value.
+5. Independent biological units determine survival replication in omics
+   studies, regardless of technical measurement depth.
+
+# References
+
+- Kaplan, E. L., and Meier, P. (1958). Nonparametric estimation from
+  incomplete observations. *Journal of the American Statistical Association*,
+  53(282), 457--481. <https://doi.org/10.1080/01621459.1958.10501452>
+- Greenwood, M. (1926). *A Report on the Natural Duration of Cancer*. Ministry
+  of Health, Reports on Public Health and Medical Subjects No. 33.
+  <https://wellcomecollection.org/works/dyw3nj4k>
+- Mantel, N. (1966). Evaluation of survival data and two new rank order
+  statistics arising in its consideration. *Cancer Chemotherapy Reports*, 50,
+  163--170.
+  <https://www.medicine.mcgill.ca/epidemiology/hanley/bios601/SurvivalAnalysis/Mantel1966CancerChemotherapyReportsLogrankTest.pdf>
+- Peto, R., and Peto, J. (1972). Asymptotically efficient rank invariant test
+  procedures. *Journal of the Royal Statistical Society: Series A*, 135(2),
+  185--198. <https://doi.org/10.2307/2344317>
+- Kalbfleisch, J. D., and Prentice, R. L. (2002). *The Statistical Analysis of
+  Failure Time Data* (2nd ed.). Wiley.
+  <https://www.wiley.com/en-ca/the-statistical-analysis-of-failure-time-data-2nd-edition-p-9781118032985>
+- Therneau, T. M. `survival` package documentation: confidence intervals for
+  fitted survival curves. R Project documentation.
+  <https://stat.ethz.ch/R-manual/R-devel/library/survival/html/survfit_confint.html>
