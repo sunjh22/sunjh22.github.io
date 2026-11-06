@@ -1,0 +1,300 @@
+---
+title: "Proportional-hazards Diagnostics"
+subtitle: "Checking time-constant effects, model form, influence, and predictive adequacy"
+description: "A diagnostic workflow for Cox regression using Schoenfeld and martingale residuals, time-varying effects, influence checks, and sensitivity analyses."
+author: "Jiahong Sun"
+date: "2026-11-06"
+date-modified: "2026-11-06"
+categories: [Statistics, Advanced Modeling, Survival Analysis, Diagnostics]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Diagnostics Ask Several Different Questions
+
+For the Cox model
+
+$$
+h(t\mid x)=h_0(t)\exp(x^\mathsf{T}\beta),
+$$
+
+the proportional-hazards (PH) assumption says each modeled coefficient is
+constant over follow-up. That is only one part of model adequacy. A responsible
+diagnostic analysis separately asks whether:
+
+1. covariate effects change with time;
+2. continuous covariates have appropriate functional forms;
+3. individual subjects or risk sets dominate the fit;
+4. censoring, entry, dependence, and competing-event handling match the design;
+5. predictions are calibrated and useful for the intended population.
+
+No single residual plot or global $p$-value answers all five questions. A model
+can satisfy PH yet have severe nonlinearity or informative censoring, and it can
+fail PH while still yielding useful time-specific predictions after revision.
+
+# Schoenfeld Residuals Target Proportionality
+
+At an event time $t_d$, let subject $i(d)$ experience the event and define the
+risk-score-weighted covariate mean
+
+$$
+\bar x(\hat\beta,t_d)=
+\frac{\sum_{j\in R(t_d)}x_j\exp(x_j^\mathsf{T}\hat\beta)}
+{\sum_{j\in R(t_d)}\exp(x_j^\mathsf{T}\hat\beta)}.
+$$
+
+The Schoenfeld residual vector is
+
+$$
+\boxed{r_d=x_{i(d)}-\bar x(\hat\beta,t_d).}
+$$
+
+It compares the covariates of the subject who failed with the weighted average
+among subjects who could have failed then. There is one residual vector per
+event time, not one ordinary residual per censored subject. Its components are
+also contributions to the partial-likelihood score.
+
+Under a correctly specified PH effect, appropriately scaled Schoenfeld residuals
+should fluctuate around a horizontal pattern when plotted against a chosen
+function of time. A smooth trend estimates how the coefficient may depart from
+its fitted constant. Grambsch and Therneau's test formalizes this as a score test
+for association between scaled residuals and transformed event time.
+
+## Read the plot and the test together
+
+A practical display includes the scaled residuals, a smooth estimate of
+$\beta_j(t)$, and an uncertainty band. The key questions are:
+
+- Is the smooth approximately horizontal?
+- Is the departure large enough to change scientific interpretation?
+- Is the pattern localized to a sparse tail with few subjects at risk?
+- Does it persist under plausible time transformations and influential-unit
+  checks?
+
+Software may test transformed time such as Kaplan--Meier, rank, or identity
+time. Different transformations emphasize different alternatives. A small
+$p$-value says the chosen constant-effect model is inconsistent with the tested
+time pattern; it does not specify the best replacement. A large $p$-value may
+reflect low power, few events, or cancellation of nonmonotone departures.
+
+# What Nonproportional Hazards Mean
+
+Suppose the more general data-generating model is
+
+$$
+h(t\mid x)=h_0(t)\exp\{x^\mathsf{T}\beta(t)\}.
+$$
+
+For covariate $x_j$, $\exp\{\beta_j(t)\}$ is a time-specific hazard ratio. A
+constant Cox fit compresses that curve into a weighted average whose weights
+depend on event times, risk sets, censoring, and other covariates. The estimate
+is therefore not a universal average biological effect.
+
+Nonproportionality can arise from several mechanisms:
+
+- a treatment benefit wanes or is delayed;
+- a continuous covariate was modeled linearly when its effect is nonlinear;
+- an omitted interaction changes the effect across subgroups whose risk-set
+  composition changes over time;
+- unmodeled frailty selectively removes high-risk subjects from the risk set;
+- the endpoint combines event types with different covariate relationships; or
+- measurement or treatment status changes during follow-up.
+
+Diagnostics reveal tension with the working model, but scientific context is
+needed to distinguish these mechanisms.
+
+# Remedies Must Match the Scientific Target
+
+| Pattern or goal | Possible model revision | Interpretation |
+|---|---|---|
+| Nuisance categorical variable violates PH | Stratify on that variable | Separate baseline hazards; no coefficient for the stratifier |
+| Effect changes smoothly over time | Include $x_jg(t)$ or estimate $\beta_j(t)$ | Report hazard ratios at prespecified times or as a curve |
+| Effect differs before and after a meaningful time | Piecewise coefficient with a prespecified cut point | Separate interval-specific hazard ratios |
+| Continuous covariate is nonlinear | Restricted cubic spline or justified transformation | Effect depends on covariate value, not necessarily time |
+| Absolute prognosis is the target | Estimate and validate survival or cumulative incidence at relevant times | Emphasize calibrated risks, not only relative hazards |
+| PH is scientifically implausible | Consider an accelerated failure-time, additive-hazards, or flexible parametric model | The estimand and coefficient scale change |
+
+Choosing a cut point after inspecting the same residual plot understates
+uncertainty. Prefer prespecified structure or flexible functions with honest
+uncertainty and validation. If the scientific question concerns a marginal
+survival contrast, restricted mean survival time can sometimes communicate the
+effect more directly than a changing hazard ratio.
+
+# Other Residuals Answer Other Questions
+
+## Martingale residuals and functional form
+
+Let $N_i(t)$ count observed events and let
+
+$$
+\widehat M_i(\tau)
+=N_i(\tau)-\int_0^\tau Y_i(u)
+\exp(x_i^\mathsf{T}\hat\beta)\,d\widehat H_0(u).
+$$
+
+This martingale residual is observed minus expected cumulative events. For a
+single-event outcome it is bounded above by 1 and is generally skewed. Plotting
+it against a continuous predictor omitted from a base model can reveal nonlinear
+functional form, but smooth patterns are exploratory and correlated with the
+fit. Deviance residuals symmetrize martingale residuals for visual detection of
+poorly fit subjects; they do not test PH.
+
+## Score and influence diagnostics
+
+Subject-level score residuals quantify contributions to the coefficient score.
+Approximate deletion diagnostics such as dfbeta or dfbetas estimate how much
+each coefficient would change if a subject were removed. Large values may signal
+data errors, sparse covariate patterns, or legitimate influential biology.
+Investigate and report sensitivity; do not delete a subject solely to improve a
+plot.
+
+## Cox--Snell residuals and global fit
+
+For an estimated conditional survival distribution, the Cox--Snell residual is
+
+$$
+e_i=\widehat H(T_i\mid x_i).
+$$
+
+Under a correctly specified continuous-time model, uncensored $e_i$ values have
+an exponential reference distribution, with censoring carried through. Comparing
+their estimated cumulative hazard with the 45-degree line gives a broad check of
+fit. It can miss compensating errors and is not a substitute for covariate-specific
+checks.
+
+# A Structured Diagnostic Workflow
+
+1. **Audit design before residuals.** Verify time zero, delayed entry, event
+   coding, censoring reasons, competing events, repeated intervals, clusters,
+   and information timing for time-dependent covariates.
+2. **Inspect support and events.** Tabulate events and subjects at risk over time
+   by important covariate patterns. Flag sparse tails and poor overlap.
+3. **Check functional forms.** Use subject-matter transformations, martingale
+   residual plots, and spline comparisons for continuous predictors.
+4. **Assess PH per term.** Plot scaled Schoenfeld residuals with smooths and run
+   term-specific and global score tests.
+5. **Assess influence.** Examine score residuals, dfbeta summaries, and refits
+   excluding or perturbing influential units for transparent sensitivity only.
+6. **Check predictions.** Evaluate time-specific calibration, discrimination,
+   and optimism with resampling that repeats the complete modeling pipeline.
+7. **Fit scientifically plausible alternatives.** Compare conclusions under
+   time-varying effects, stratification, alternative endpoint definitions, and
+   censoring assumptions.
+8. **Report the diagnostic consequences.** State what changed in the estimand,
+   coefficients, uncertainty, and biological conclusion.
+
+Running many isolated tests and selecting the model for which all $p$-values
+exceed 0.05 is not this workflow. It turns diagnostics into an unreported model
+search and gives no guarantee of scientific adequacy.
+
+# Illustrative R Workflow
+
+This non-executed example uses official `survival` package interfaces. Setting
+`x = TRUE` retains the design matrix needed efficiently by `cox.zph()`.
+
+```r
+library(survival)
+library(splines)
+
+fit <- coxph(
+  Surv(entry, exit, event) ~ treatment + biomarker + ns(age, 3) + strata(center),
+  data = patients,
+  ties = "efron",
+  x = TRUE
+)
+
+ph <- cox.zph(fit, transform = "km", global = TRUE)
+print(ph)
+plot(ph)
+
+martingale <- residuals(fit, type = "martingale")
+deviance   <- residuals(fit, type = "deviance")
+influence  <- residuals(fit, type = "dfbeta")
+```
+
+The `cox.zph()` table contains a score test for each term and, optionally, a
+global test. Its plot estimates a time-varying coefficient; under PH the target
+curve is horizontal. A global result cannot identify which term or time region
+needs revision, so inspect term-level plots even when the global test is not
+significant.
+
+# Bioinformatics Example: A Molecular Subtype Effect
+
+Consider recurrence times for 240 tumor samples classified into molecular
+subtypes. The Cox model adjusts for stage, age, and center. The subtype's scaled
+Schoenfeld residual curve is near zero early but rises after 18 months.
+
+Before declaring a late biological effect, examine:
+
+- how many independent patients and recurrences remain after 18 months;
+- whether follow-up schedules or loss to follow-up differ by subtype;
+- whether subtype was measured once at baseline or inferred using outcome-aware
+  feature selection;
+- whether treatment changes after baseline differ by subtype; and
+- whether recurrence and death were combined or treated as competing events.
+
+The patient is the experimental unit. Multiple sections, cells, technical assay
+replicates, or sequencing reads from one tumor refine its measurements but do
+not create independent event histories. Center-specific assay effects may need
+design adjustment; repeated samples may require subject-level clustering and
+careful time-dependent coding.
+
+Statistically, a rising residual smooth suggests that a single subtype hazard
+ratio is inadequate. Biologically, it may reflect changing disease mechanisms,
+treatment selection, depletion of susceptible patients, endpoint heterogeneity,
+or technical drift. A time-varying association alone does not identify which
+explanation is causal.
+
+# Failure Modes and Sensitivity Analyses
+
+| Diagnostic finding | What it does not prove | Useful next step |
+|---|---|---|
+| Small PH-test $p$-value | That the covariate has no effect or the whole model is useless | Plot magnitude and shape; fit a plausible time interaction |
+| Large PH-test $p$-value | That hazards are proportional | Inspect power, event count, smooths, and alternative transformations |
+| Tail departure | A global time-varying biological effect | Show risk-set sizes; truncate only as a prespecified sensitivity analysis |
+| Influential subject | A data error | Verify records and support; report deletion sensitivity without automatic exclusion |
+| Better residual plot after transformation | A uniquely correct model | Compare scientific interpretability, calibration, and external performance |
+| Robust standard errors | Correct PH or functional form | Revise the mean structure; robust covariance addresses uncertainty, not fit |
+
+Important assumptions are partly untestable. Observed data cannot prove that
+censoring is conditionally independent, all confounders were measured, the time
+origin is biologically comparable, or the study population transports to the
+target population. Sensitivity analysis must supplement residual diagnostics.
+
+# Connections and Take-home Messages
+
+- [Cox proportional-hazards regression](cox-proportional-hazards-regression.qmd)
+  derives the model, partial likelihood, coefficients, and survival predictions.
+- [Censoring and survival functions](censoring-and-survival-functions.qmd) explains
+  why the event and observation processes must be separated.
+- [Kaplan--Meier estimation and log-rank tests](kaplan-meier-estimation-and-log-rank-tests.qmd)
+  provides nonparametric curve estimation and an unadjusted risk-set comparison.
+- [Linear-model assumptions and diagnostics](../regression-models/linear-model-assumptions-and-diagnostics.qmd)
+  offers a parallel distinction among mean structure, dependence, influence,
+  and predictive validation.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  organizes conclusions across plausible assumptions and analytic choices.
+
+Schoenfeld residuals are event-time contrasts designed to assess whether Cox
+coefficients are constant over time. Their plots and score tests should be read
+together and in light of risk-set sizes. Functional form, influence, censoring,
+dependence, and calibration require separate checks. When PH fails, the remedy
+should follow the scientific estimand—not the desire to make a diagnostic test
+nonsignificant.
+
+# References
+
+- Schoenfeld, D. (1982). Partial residuals for the proportional hazards
+  regression model. *Biometrika*, 69(1), 239--241.
+  <https://doi.org/10.1093/biomet/69.1.239>
+- Grambsch, P. M. and Therneau, T. M. (1994). Proportional hazards tests and
+  diagnostics based on weighted residuals. *Biometrika*, 81(3), 515--526.
+  <https://doi.org/10.1093/biomet/81.3.515>
+- Therneau, T. M., Grambsch, P. M., and Fleming, T. R. (1990). Martingale-based
+  residuals for survival models. *Biometrika*, 77(1), 147--160.
+  <https://doi.org/10.1093/biomet/77.1.147>
+- Therneau, T. M. and Grambsch, P. M. (2000). *Modeling Survival Data: Extending
+  the Cox Model*. Springer. <https://doi.org/10.1007/978-1-4757-3294-8>
+- R `survival` package. `cox.zph`: test the proportional-hazards assumption.
+  <https://stat.ethz.ch/R-manual/R-devel/library/survival/html/cox.zph.html>

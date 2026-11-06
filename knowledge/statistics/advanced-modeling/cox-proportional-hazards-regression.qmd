@@ -1,0 +1,304 @@
+---
+title: "Cox Proportional-hazards Regression"
+subtitle: "Covariate effects on event rates without specifying the baseline hazard"
+description: "The Cox model, partial likelihood, hazard-ratio interpretation, uncertainty, assumptions, diagnostics, and design-aware bioinformatics use."
+author: "Jiahong Sun"
+date: "2026-11-06"
+date-modified: "2026-11-06"
+categories: [Statistics, Advanced Modeling, Survival Analysis, Regression]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Regression Model for Event Rates
+
+For subject $i$, let $T_i$ be an event time, $C_i$ a censoring time,
+$Y_i=\min(T_i,C_i)$ the observed time, and $\Delta_i=I(T_i\le C_i)$ the
+event indicator. Given a covariate vector $x_i$, the Cox proportional-hazards
+model is
+
+$$
+\boxed{h(t\mid x_i)=h_0(t)\exp(x_i^\mathsf{T}\beta).}
+$$
+
+The unspecified **baseline hazard** $h_0(t)$ may change freely over time. The
+regression coefficients $\beta$ multiply that common time pattern on the hazard
+scale. This makes the model semiparametric: the covariate effects are finite
+dimensional, but the baseline hazard is not assigned a parametric shape.
+
+The observation process matters as much as the event process. Standard
+independent-censoring arguments require, at least conditionally on modeled
+covariates, that being censored at time $t$ does not reveal the subject's future
+event risk. Administrative study closure can plausibly satisfy this condition;
+dropout caused by worsening health often cannot.
+
+# What the Coefficients Mean
+
+For two subjects whose covariates differ by $d=x_a-x_b$,
+
+$$
+\frac{h(t\mid x_a)}{h(t\mid x_b)}
+=\exp(d^\mathsf{T}\beta).
+$$
+
+The baseline hazard cancels, and the ratio does not depend on $t$. For a
+one-unit difference in predictor $x_j$, holding the other modeled predictors
+fixed, the hazard ratio is $\exp(\beta_j)$. A hazard ratio of 2 means twice the
+instantaneous event rate among subjects still event-free at that time. It does
+**not** mean twice the event probability, half the median survival time, or a
+constant difference between survival curves.
+
+Because
+
+$$
+H(t\mid x)=H_0(t)\exp(x^\mathsf{T}\beta),
+\qquad
+S(t\mid x)=S_0(t)^{\exp(x^\mathsf{T}\beta)},
+$$
+
+the same hazard ratio can correspond to very different absolute risks as
+$H_0(t)$ changes. Report adjusted survival probabilities or risk differences at
+scientifically meaningful times when absolute prognosis matters.
+
+Interpretation also depends on coding:
+
+- a coefficient for a continuous predictor is linear on the log-hazard scale
+  unless splines or transformations are included;
+- a factor coefficient compares its level with the chosen reference level;
+- an interaction makes a main-effect hazard ratio conditional on the other
+  interacting variable; and
+- a baseline-adjusted association is not automatically a causal effect.
+
+# Partial Likelihood
+
+Suppose distinct event times are $t_{(1)}<\cdots<t_{(D)}$, subject $i(d)$ has
+the event at $t_{(d)}$, and $R(t_{(d)})$ is the risk set immediately before that
+time. Conditional on one member of the risk set failing then, the model assigns
+probability
+
+$$
+\Pr\{i(d)\text{ fails}\mid R(t_{(d)}),\text{ one failure}\}
+=
+\frac{\exp(x_{i(d)}^\mathsf{T}\beta)}
+{\sum_{j\in R(t_{(d)})}\exp(x_j^\mathsf{T}\beta)}.
+$$
+
+Multiplying these conditional contributions gives Cox's partial likelihood,
+
+$$
+\boxed{
+L_p(\beta)=\prod_{d=1}^{D}
+\frac{\exp(x_{i(d)}^\mathsf{T}\beta)}
+{\sum_{j\in R(t_{(d)})}\exp(x_j^\mathsf{T}\beta)}.}
+$$
+
+The nuisance baseline hazard cancels from each comparison. Maximizing
+$L_p(\beta)$ yields the maximum partial-likelihood estimator $\hat\beta$.
+Although the formula resembles a likelihood, its information comes from
+covariate contrasts within risk sets, not from treating observed event times as
+independent responses.
+
+## Score and information
+
+Write
+
+$$
+\bar x(\beta,t)=
+\frac{\sum_{j\in R(t)}x_j\exp(x_j^\mathsf{T}\beta)}
+{\sum_{j\in R(t)}\exp(x_j^\mathsf{T}\beta)}.
+$$
+
+The score is
+
+$$
+U(\beta)=\sum_{d=1}^{D}
+\{x_{i(d)}-\bar x(\beta,t_{(d)})\}.
+$$
+
+Thus estimation balances the covariates of subjects who experienced events
+against risk-score-weighted covariates of everyone who could have experienced
+those events. With little overlap inside risk sets, coefficients can be unstable
+even when the original sample is large.
+
+# Ties, Baseline Survival, and Prediction
+
+When several events share the same recorded time, the simple partial likelihood
+does not specify their internal ordering. Common implementations use the Efron
+or Breslow approximation; an exact partial likelihood is available for genuinely
+discrete event times. The choice can matter when ties are frequent, so the method
+and time resolution should be reported. R's `survival::coxph()` uses Efron's
+method by default.
+
+After estimating $\beta$, a Breslow-type estimator of cumulative baseline hazard
+is
+
+$$
+\widehat H_0(t)=
+\sum_{t_{(d)}\le t}
+\frac{d_d}{\sum_{j\in R(t_{(d)})}\exp(x_j^\mathsf{T}\hat\beta)},
+$$
+
+where $d_d$ is the number of events at $t_{(d)}$ under the corresponding tie
+convention. Predicted survival follows from
+
+$$
+\widehat S(t\mid x)=
+\exp\{-\widehat H_0(t)\exp(x^\mathsf{T}\hat\beta)\}.
+$$
+
+Prediction therefore requires both the relative-risk model and an estimated
+baseline hazard. Calibration must be checked at relevant times and in the target
+population; a good ranking statistic alone is insufficient.
+
+# Estimand, Estimate, and Uncertainty
+
+The scientific estimand should be stated before the model is fit. It may be a
+conditional hazard ratio, an adjusted survival probability at 24 months, or a
+contrast standardized over a target covariate distribution. These are not the
+same target.
+
+Under correct model specification, independent censoring, identifiable
+coefficients, and regularity conditions, $\hat\beta$ is approximately normal.
+Model-based standard errors come from the inverse observed partial-likelihood
+information. Wald, score, and partial-likelihood-ratio procedures then give
+large-sample tests or intervals. Their effective information is driven more by
+the number and distribution of events than by the number enrolled.
+
+A sandwich covariance can account for clustered score contributions or certain
+forms of model misspecification. It does not repair a wrong mean structure,
+informative censoring, unmeasured confounding, or nonproportionality; it changes
+uncertainty for the coefficient target to which the working fit converges.
+
+# Model Structure and Assumptions
+
+| Assumption or choice | Why it matters | Assessment or sensitivity analysis |
+|---|---|---|
+| Proportional hazards | A coefficient represents one time-constant log hazard ratio | Scaled Schoenfeld residuals; time interactions; interval-specific effects |
+| Correct covariate form | Linearity on the log-hazard scale can distort effects | Martingale residual plots; splines; prespecified transformations |
+| Independent censoring conditional on covariates | Biased risk sets bias coefficient and survival estimates | Compare dropout patterns; inverse-probability-of-censoring sensitivity analyses |
+| Independent units or modeled clustering | Repeated events and related subjects invalidate naive uncertainty | Identify subjects/families; cluster-robust variance or multilevel event model |
+| Correct time origin and risk sets | Delayed entry and immortal time change who is at risk | Encode start--stop intervals; audit eligibility at each time |
+| Adequate overlap and events | Sparse risk-set contrasts cause instability | Inspect events by covariate pattern; profile estimates; penalized sensitivity analysis |
+| Competing-event handling matches the estimand | Censoring a competing event changes interpretation | State cause-specific versus cumulative-incidence target |
+
+See [Proportional-hazards diagnostics](proportional-hazards-diagnostics.qmd) for
+the residual definitions and a structured diagnostic workflow.
+
+# Extensions Change the Question
+
+- **Stratified Cox model:** each stratum has its own baseline hazard but shares
+  selected coefficients. It handles a categorical variable whose baseline
+  hazards need not be proportional, but it does not estimate that variable's
+  hazard ratio.
+- **Time-varying coefficient:** $\beta_j(t)$ directly models a changing effect,
+  such as $x_jg(t)$. The resulting effect must be reported over time rather than
+  collapsed into one number.
+- **Time-dependent covariate:** $x_i(t)$ changes during follow-up. It must use
+  information available just before time $t$; coding a future response into the
+  past creates immortal-time or reverse-causation bias.
+- **Clustered or recurrent events:** a counting-process representation and
+  cluster-aware variance can describe repeated at-risk intervals, but the
+  scientific estimand and dependence assumptions must remain explicit.
+- **Penalized Cox model:** ridge or lasso penalties can stabilize high-dimensional
+  prediction, but tuning, selection, validation, and post-selection inference
+  become part of the analysis.
+
+# Bioinformatics Example: Prognostic Gene Expression
+
+Suppose pretreatment expression of a prespecified gene signature is measured in
+180 patients, and the endpoint is progression-free survival. A defensible model
+might adjust for clinical stage and study center, use a spline for age, and
+estimate the signature hazard ratio per prespecified standard-deviation increase.
+
+- **Experimental unit:** the patient, not a sequencing read, gene, aliquot, or
+  repeated scan.
+- **Biological replication:** independent patients sampled from the target
+  clinical population.
+- **Technical replication:** lanes or aliquots improve measurement precision but
+  do not increase the number of independent survival outcomes.
+- **Design:** define time zero, event, censoring, delayed entry, covariates, and
+  analysis plan before inspecting outcome associations.
+- **Statistical interpretation:** the fitted coefficient is an adjusted
+  conditional hazard ratio under the model.
+- **Biological interpretation:** association does not show that the signature is
+  causal, druggable, or transportable to another assay or population.
+
+If thousands of genes were screened to select the signature in these same 180
+patients, the final Cox standard error ignores that search. Feature selection and
+all preprocessing must be repeated inside resampling, followed by external
+validation when the aim is prediction.
+
+The following syntax is illustrative and deliberately non-executable in this
+site, whose publication workflow installs Quarto but not R packages:
+
+```r
+library(survival)
+library(splines)
+
+fit <- coxph(
+  Surv(entry_month, exit_month, progressed) ~
+    signature_z + ns(age, df = 3) + stage + strata(center),
+  data = patients,
+  ties = "efron",
+  x = TRUE
+)
+
+summary(fit)
+cox.zph(fit)
+```
+
+# Common Misinterpretations
+
+1. **“Semiparametric” does not mean assumption-free.** The baseline shape is
+   unrestricted, but proportional hazards, covariate form, censoring, and design
+   assumptions remain.
+2. **A hazard ratio is conditional on survival to time $t$.** The composition of
+   the risk set changes over time, so causal interpretations require additional
+   assumptions and careful estimand definition.
+3. **Adjustment is not automatic control of confounding.** It depends on measured
+   covariates, their timing, their functional form, and whether adjustment opens
+   biasing pathways.
+4. **A nonsignificant coefficient is not evidence of no relevant effect.** Check
+   its interval, time pattern, event count, and the scale on which scientific
+   importance is judged.
+5. **One fitted hazard ratio does not validate a prediction model.** Absolute-risk
+   calibration, discrimination, optimism, and transportability need separate
+   evaluation.
+
+# Connections and Take-home Messages
+
+- [Censoring and survival functions](censoring-and-survival-functions.qmd) defines
+  the event and observation processes, hazard, survival, and risk sets.
+- [Kaplan--Meier estimation and log-rank tests](kaplan-meier-estimation-and-log-rank-tests.qmd)
+  develops unadjusted survival curves and risk-set comparisons.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  explains score, curvature, and likelihood-based evidence.
+- [Generalized linear models](../regression-models/generalized-linear-models.qmd)
+  provides a contrasting regression framework with a fully specified response
+  distribution.
+- [Proportional-hazards diagnostics](proportional-hazards-diagnostics.qmd) develops
+  checks for time-varying effects, functional form, influence, and calibration.
+
+The Cox model estimates relative event rates by comparing subjects within risk
+sets while leaving the baseline hazard unspecified. Its usefulness depends on a
+clear estimand, valid time origin and risk sets, conditionally independent
+censoring, adequate covariate form, proportional effects, and correct biological
+replication. Hazard ratios should be accompanied by uncertainty and, where
+scientifically relevant, absolute-risk summaries.
+
+# References
+
+- Cox, D. R. (1972). Regression models and life-tables. *Journal of the Royal
+  Statistical Society: Series B*, 34(2), 187--220.
+  <https://doi.org/10.1111/j.2517-6161.1972.tb00899.x>
+- Andersen, P. K. and Gill, R. D. (1982). Cox's regression model for counting
+  processes: a large sample study. *The Annals of Statistics*, 10(4),
+  1100--1120. <https://doi.org/10.1214/aos/1176345976>
+- Therneau, T. M. and Grambsch, P. M. (2000). *Modeling Survival Data: Extending
+  the Cox Model*. Springer. <https://doi.org/10.1007/978-1-4757-3294-8>
+- Lin, D. Y. and Wei, L. J. (1989). The robust inference for the Cox proportional
+  hazards model. *Journal of the American Statistical Association*, 84(408),
+  1074--1078. <https://doi.org/10.1080/01621459.1989.10478874>
+- R `survival` package. `coxph`: fit proportional-hazards regression models.
+  <https://stat.ethz.ch/R-manual/R-devel/library/survival/html/coxph.html>
