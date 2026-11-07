@@ -1,0 +1,299 @@
+---
+title: "Competing Risks"
+subtitle: "Event probabilities when one event type prevents another"
+description: "Cause-specific hazards, cumulative incidence, competing-event estimands, regression, diagnostics, and design-aware bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-11-07"
+date-modified: "2026-11-07"
+categories: [Statistics, Advanced Modeling, Survival Analysis]
+toc: true
+number-sections: true
+draft: false
+---
+
+# More Than One Mutually Exclusive Event
+
+A competing-risks process has a first-event time $T$ and event type
+$J\in\{1,\ldots,K\}$. Occurrence of one type prevents observation of the others
+as first events. For example, death without molecular relapse prevents a later
+relapse from being observed as the first endpoint.
+
+The central scientific targets differ:
+
+- **Etiologic or rate question:** how does a covariate relate to the instantaneous
+  rate of cause $k$ among subjects currently event-free?
+- **Prognostic probability question:** what proportion of a population will
+  experience cause $k$ by time $t$ in the presence of all other causes?
+- **Decision question:** how would a treatment change the whole multistate event
+  process and its absolute consequences?
+
+These questions use different estimands. Treating competing events as if they
+were ordinary loss to follow-up generally does not estimate the observed-world
+event probability.
+
+# Cause-specific Hazards and Cumulative Incidence
+
+The cause-specific hazard for event type $k$ is
+
+$$
+\lambda_k(t\mid x)
+=\lim_{\Delta t\downarrow0}
+\frac{P(t\le T<t+\Delta t,J=k\mid T\ge t,x)}{\Delta t}.
+$$
+
+The overall hazard is the sum
+
+$$
+\lambda(t\mid x)=\sum_{k=1}^K\lambda_k(t\mid x),
+$$
+
+so event-free survival is
+
+$$
+S(t\mid x)=
+\exp\left\{-\sum_{k=1}^K\Lambda_k(t\mid x)\right\},
+\qquad
+\Lambda_k(t)=\int_0^t\lambda_k(u)\,du.
+$$
+
+The cumulative incidence function (CIF) for cause $k$ is
+
+$$
+\boxed{F_k(t\mid x)=P(T\le t,J=k\mid x)
+=\int_0^t S(u-\mid x)\lambda_k(u\mid x)\,du.}
+$$
+
+This equation is the key to competing risks: cause-$k$ incidence depends on both
+its own hazard and every competing hazard through $S(u-)$. A treatment can lower
+the hazard of relapse yet increase the observed relapse probability if it lowers
+the competing mortality hazard even more. Hazard effects and probability effects
+therefore need not have the same direction.
+
+# Why One Minus Kaplan--Meier Is Wrong Here
+
+If competing events are censored and a Kaplan--Meier curve is calculated for
+cause $k$, $1-\widehat S_{KM}(t)$ estimates a hypothetical probability under an
+operation that removes competing causes while preserving the cause-$k$ hazard.
+It does not estimate the crude probability of cause $k$ in the observed process.
+It typically overestimates that probability because subjects who already had a
+competing event remain represented through a censoring assumption they cannot
+satisfy.
+
+The nonparametric estimator of $F_k$ instead sums cause-specific event increments
+weighted by the probability of remaining event-free:
+
+$$
+\widehat F_k(t)
+=\sum_{t_j\le t}\widehat S(t_j-)
+\frac{d_{kj}}{Y_j},
+$$
+
+where $Y_j$ is the risk-set size and $d_{kj}$ is the number of type-$k$ events at
+time $t_j$. With all transition types assembled, this is a special case of the
+Aalen--Johansen estimator.
+
+# Regression Targets
+
+## Cause-specific hazard regression
+
+A Cox model for cause $k$ specifies
+
+$$
+\lambda_k(t\mid x)=\lambda_{k0}(t)\exp(x^\mathsf{T}\beta_k).
+$$
+
+Other event types are removed from that cause-specific risk set when they occur.
+This is valid risk-set construction for estimating the cause-specific hazard; it
+does not make competing events ordinary independent censoring for estimating a
+CIF. To predict absolute incidence, models for all relevant cause-specific
+hazards must be combined through the CIF equation.
+
+$e^{\beta_{kj}}$ is a cause-specific hazard ratio among subjects who remain free
+of every event. Because membership in that risk set evolves after baseline, it
+is not generally a marginal risk ratio or a causal treatment effect.
+
+## Fine--Gray subdistribution hazard regression
+
+Fine and Gray model the subdistribution hazard associated with the CIF:
+
+$$
+\widetilde\lambda_k(t\mid x)
+=\widetilde\lambda_{k0}(t)\exp(x^\mathsf{T}\gamma_k).
+$$
+
+Its constructed risk set retains, with appropriate weighting, subjects who had
+a competing event. This permits direct regression on the CIF. The
+subdistribution hazard ratio $e^{\gamma_{kj}}$ is a model parameter describing
+relative subdistribution rates; it is not an instantaneous rate among currently
+event-free subjects and is not itself an event-probability ratio.
+
+Use cause-specific models when transition rates, mechanisms, or multistate
+prediction are central. A Fine--Gray model can be useful when a direct covariate
+model for one cause's cumulative incidence is the prespecified target. For
+communication, show standardized CIFs or risk differences at meaningful times
+alongside either regression coefficient.
+
+# Estimands, Estimators, and Observed Estimates
+
+For a target population and time $t^*$, an estimand might be
+
+$$
+\Delta_k(t^*)
+=F_k(t^*\mid A=1)-F_k(t^*\mid A=0),
+$$
+
+possibly standardized over baseline covariates. The Aalen--Johansen estimator,
+a collection of fitted cause-specific models, or a Fine--Gray model supplies an
+estimator under its assumptions. The number printed after fitting the observed
+data is an estimate.
+
+Uncertainty should match the complete estimator. Analytic influence-function
+standard errors or a bootstrap can be used, but resampling must preserve the
+independent experimental unit, clustering, and all model-selection steps.
+Confidence bands for entire CIF curves are different from pointwise intervals.
+
+Gray's test compares CIFs between groups under the null of equal cause-specific
+cumulative incidence functions, using weighted differences over time. It does
+not estimate an effect size, adjust automatically for confounding, prove equality
+at every time when nonsignificant, or reveal which competing hazard produced a
+difference.
+
+# Censoring, Truncation, and Identification
+
+Competing events are observed outcomes, whereas censoring means the relevant
+future event process becomes unobserved. Standard CIF estimation assumes censoring
+is independent of the future competing-risks process, unconditionally or after
+adequate conditioning. Delayed entry additionally requires correct risk sets and
+an assumption connecting entry to future outcomes.
+
+The observed data identify cause-specific hazards and CIFs under these observation
+assumptions. They do not nonparametrically identify the latent time to each cause
+that would have occurred if all other causes were disabled. Dependence among
+those latent failure times cannot be learned from ordinary competing-risks data
+alone. Statements about "net risk if death were impossible" therefore require a
+different estimand and untestable assumptions.
+
+For causal treatment effects, additional requirements include consistency,
+exchangeability, positivity, correct time ordering, and an explicit strategy for
+post-treatment competing events. Eliminating, holding fixed, or allowing a
+competing event corresponds to different hypothetical questions; no regression
+coefficient chooses among them automatically.
+
+# Multistate View
+
+Competing risks are the simplest multistate model: one initial state and several
+absorbing destination states.
+
+```text
+Event-free ──→ event of interest
+     │
+     ├──────→ competing event 1
+     │
+     └──────→ competing event 2
+```
+
+If later transitions matter—for example, remission to relapse to death—then a
+larger multistate model preserves that sequence instead of collapsing it into a
+single first event. Transition hazards describe local movement; transition
+probabilities combine all routes through the system. The Markov assumption says
+future transition rates depend on the current state and covariates but not the
+earlier path; semi-Markov or history-dependent models relax it.
+
+# Diagnostics and Sensitivity
+
+1. **Define the event system.** Predefine event types, time zero, simultaneous
+   event rules, delayed entry, recurrent events, and whether states are absorbing.
+2. **Audit ascertainment.** Compare follow-up schedules, loss to follow-up,
+   adjudication, and cause classification across centers and covariate groups.
+3. **Plot every important CIF.** A cause cannot be interpreted without its
+   competing causes, event counts, and risk-set support.
+4. **Check regression structure.** Assess nonlinear covariate functions,
+   proportionality for each cause-specific or subdistribution model, influence,
+   and calibration of predicted CIFs.
+5. **Inspect sparsity.** Few cause-specific events cannot be rescued by many
+   competing events or molecular features. Use shrinkage or simpler prespecified
+   models when appropriate.
+6. **Vary defensible definitions.** Examine ambiguous causes, composite endpoints,
+   time horizons, censoring weights, and model families.
+7. **Validate the full prediction pipeline.** Repeat feature processing and model
+   fitting within resampling; assess cause-specific calibration at relevant times.
+
+Cause adjudication error can move observations directly between CIFs. Sensitivity
+analyses that reclassify uncertain events or use probabilistic classification may
+be more informative than extra decimal places in a model coefficient.
+
+# Bioinformatics Example: Relapse and Non-relapse Mortality
+
+Consider 500 transplant recipients followed from transplantation to relapse,
+non-relapse death, or censoring. The target is two-year relapse incidence by a
+prespecified genomic-risk group. Death without relapse is competing because it
+prevents later relapse as a first event.
+
+The recipient is the experimental unit. Longitudinal blood draws, cell types,
+technical libraries, and reads are nested observations, not independent event
+histories. Donor may be an additional clustering level if donors contribute to
+multiple recipients. Batch, center, treatment, graft source, and surveillance
+frequency can affect measured genomic covariates, event rates, or observation.
+
+A defensible analysis reports relapse and non-relapse-mortality CIFs, standardized
+two-year risk differences with uncertainty, and cause-specific models if mechanism
+is of interest. If the genomic score was selected from the same outcomes, the
+complete selection procedure belongs inside validation.
+
+Statistically, a higher relapse CIF means more observed first relapses by two
+years in the target population. Biologically, that difference can arise through
+the relapse process, survival long enough to relapse, treatment allocation,
+measurement error, or population composition. It does not by itself show that
+the score causes relapse.
+
+# Common Misinterpretations
+
+| Claim | Why it fails | Better statement |
+|---|---|---|
+| "Death was censored, so Kaplan--Meier estimates relapse risk" | Death makes later first relapse impossible | Estimate the relapse CIF with death as a competing event |
+| "The cause-specific hazard ratio is the risk ratio" | A hazard is conditional on remaining event-free | Report the coefficient's scale and absolute CIF contrasts |
+| "Fine--Gray adjusts for competing risks" | It models a different hazard on a constructed risk set | Choose it because the CIF is the target, not as an automatic correction |
+| "Lower relapse incidence proves relapse biology improved" | More early competing deaths can lower relapse incidence | Examine every cause and clinically relevant composite outcomes |
+| "Each cell is a replicate" | Cells share a recipient and event history | Base inference and resampling on independent recipients |
+| "The data reveal what would happen without death" | Latent event times under elimination are not identified | State the hypothetical intervention and added assumptions |
+
+# Connections and Take-home Messages
+
+- [Censoring and survival functions](censoring-and-survival-functions.qmd) separates
+  observed censoring from events that alter the outcome process.
+- [Kaplan--Meier estimation and log-rank tests](kaplan-meier-estimation-and-log-rank-tests.qmd)
+  explains ordinary risk sets and why their interpretation changes here.
+- [Cox proportional-hazards regression](cox-proportional-hazards-regression.qmd)
+  supplies the cause-specific regression building block.
+- [Proportional-hazards diagnostics](proportional-hazards-diagnostics.qmd) applies
+  separately to each fitted cause-specific Cox model.
+- [Parametric survival models](parametric-survival-models.qmd) can jointly model
+  cause-specific hazards and produce smooth cumulative-incidence predictions.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  organizes conclusions across event definitions and observation assumptions.
+
+The CIF is the actual probability of a particular first event in a world where
+all competing events operate. It combines every cause-specific hazard, so a
+covariate can affect it through several pathways. Cause-specific and Fine--Gray
+models answer different questions; neither coefficient is an absolute risk.
+Valid interpretation begins with event definitions, experimental units, and the
+scientific estimand, then reports all consequential causes together.
+
+# References
+
+- Aalen, O. O. and Johansen, S. (1978). An empirical transition matrix for
+  non-homogeneous Markov chains based on censored observations. *Scandinavian
+  Journal of Statistics*, 5, 141--150. <https://www.jstor.org/stable/4615704>
+- Gray, R. J. (1988). A class of K-sample tests for comparing the cumulative
+  incidence of a competing risk. *The Annals of Statistics*, 16, 1141--1154.
+  <https://doi.org/10.1214/aos/1176350951>
+- Fine, J. P. and Gray, R. J. (1999). A proportional hazards model for the
+  subdistribution of a competing risk. *Journal of the American Statistical
+  Association*, 94, 496--509. <https://doi.org/10.1080/01621459.1999.10474144>
+- Andersen, P. K., Geskus, R. B., de Witte, T., and Putter, H. (2012). Competing
+  risks in epidemiology: possibilities and pitfalls. *International Journal of
+  Epidemiology*, 41, 861--870. <https://doi.org/10.1093/ije/dyr213>
+- Kalbfleisch, J. D. and Prentice, R. L. (2002). *The Statistical Analysis of
+  Failure Time Data*, 2nd ed. Wiley.
+  <https://doi.org/10.1002/9781118032985>
+- R `cmprsk` package documentation. <https://cran.r-project.org/package=cmprsk>

@@ -1,0 +1,256 @@
+---
+title: "Parametric Survival Models"
+subtitle: "Modeling event times with an explicit distribution"
+description: "Parametric survival distributions, proportional-hazards and accelerated-failure-time interpretations, estimation, diagnostics, and design-aware bioinformatics use."
+author: "Jiahong Sun"
+date: "2026-11-07"
+date-modified: "2026-11-07"
+categories: [Statistics, Advanced Modeling, Survival Analysis]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Put a Distribution on Event Time
+
+A parametric survival model specifies the entire conditional distribution of an
+event time $T$ rather than leaving the baseline hazard unspecified. For
+covariates $x$, the model determines mutually linked quantities
+
+$$
+S(t\mid x)=P(T>t\mid x),\qquad
+f(t\mid x)=-\frac{d}{dt}S(t\mid x),
+$$
+
+$$
+h(t\mid x)=\frac{f(t\mid x)}{S(t\mid x)},\qquad
+H(t\mid x)=-\log S(t\mid x).
+$$
+
+This extra structure can estimate absolute risks, survival quantiles, restricted
+mean survival times, and extrapolated survival beyond the observed follow-up.
+It also creates extra ways to be wrong. A smooth fitted curve is evidence that a
+distribution was fitted, not that its tail or extrapolation is credible.
+
+The experimental unit is the independently sampled subject or biological unit
+whose event history is modeled. Repeated assays, tissue sections, cells, or
+sequencing reads from one subject can improve covariate measurement but do not
+create additional independent survival times.
+
+# Common Baseline Distributions
+
+Suppress covariates temporarily. A useful distribution is characterized not
+only by its density but by the hazard shapes it permits.
+
+| Distribution | Survival or hazard | Hazard shape | Important implication |
+|---|---|---|---|
+| Exponential, rate $\lambda>0$ | $S(t)=e^{-\lambda t}$; $h(t)=\lambda$ | Constant | Memoryless; often too restrictive |
+| Weibull, scale $a>0$, shape $p>0$ | $S(t)=\exp\{-(t/a)^p\}$ | Decreasing if $p<1$, constant if $p=1$, increasing if $p>1$ | Supports both PH and AFT forms |
+| Gompertz, parameters $b>0$, $c\ge 0$ | $h(t)=b e^{ct}$ | Constant or exponentially increasing | Useful for approximately exponential age effects on mortality |
+| Log-normal, $\log T\sim N(\mu,\sigma^2)$ | $S(t)=1-\Phi\{(\log t-\mu)/\sigma\}$ | Rises then falls | Natural AFT model; not PH |
+| Log-logistic, $S(t)=\{1+(t/a)^p\}^{-1}$ | Closed-form survival | Decreasing or rises then falls | AFT and proportional-odds interpretations |
+
+Here $t>0$. Software uses incompatible names for scale, rate, and shape, so the
+implemented density or survival function must be checked rather than inferred
+from parameter labels.
+
+The exponential distribution is nested in the Weibull family at $p=1$. It is
+therefore a scientific hypothesis about a constant event rate, not merely a
+convenient default. Log-normal and log-logistic models allow a nonmonotone
+hazard, but neither can represent every biologically plausible shape.
+
+# Two Regression Interpretations
+
+The same event-time distribution can be parameterized around different
+scientific comparisons. Coefficients must be interpreted from the chosen model,
+not from the word "survival."
+
+## Proportional hazards
+
+A proportional-hazards (PH) model has
+
+$$
+h(t\mid x)=h_0(t)\exp(x^\mathsf{T}\beta).
+$$
+
+Holding other covariates fixed, a one-unit increase in $x_j$ multiplies the
+instantaneous hazard by $e^{\beta_j}$ at every time. A Weibull PH model supplies
+an explicit Weibull $h_0(t)$; the [Cox model](cox-proportional-hazards-regression.qmd)
+leaves $h_0$ unspecified. PH does not imply a constant hazard, only a constant
+hazard ratio.
+
+## Accelerated failure time
+
+An accelerated-failure-time (AFT) model writes
+
+$$
+\log T=x^\mathsf{T}\gamma+\sigma\varepsilon,
+$$
+
+where the distribution of $\varepsilon$ determines the survival family. Its
+conditional quantiles obey
+
+$$
+\log Q_T(q\mid x+e_j)-\log Q_T(q\mid x)=\gamma_j,
+$$
+
+or, equivalently, every modeled time quantile is multiplied by
+$e^{\gamma_j}$ for a one-unit increase in $x_j$. This **time ratio** is not a
+hazard ratio. A value $e^{\gamma_j}=1.3$ means the modeled event-time scale is
+30% longer, conditional on covariates.
+
+Weibull models admit both PH and AFT parameterizations, with a sign and scale
+conversion between coefficients. Log-normal models are AFT but not PH. Software
+output should therefore state the parameterization and report the effect on the
+scale that answers the scientific question.
+
+# Likelihood with Incomplete Observation
+
+Let $Y_i=\min(T_i,C_i)$ and $\delta_i=I(T_i\le C_i)$ for right censoring. Under
+conditionally independent censoring, subject $i$ contributes
+
+$$
+L_i(\theta)
+=f(Y_i\mid x_i;\theta)^{\delta_i}
+ S(Y_i\mid x_i;\theta)^{1-\delta_i}.
+$$
+
+Thus an event contributes a density and a censored observation contributes the
+probability of surviving past its censoring time. With delayed entry at $L_i$,
+the contribution is divided by $S(L_i\mid x_i;\theta)$ because the observed
+sample is conditional on survival to entry. Interval censoring over $(a_i,b_i]$
+contributes $S(a_i)-S(b_i)$.
+
+The maximum-likelihood estimator is the rule that maximizes the product of these
+contributions. Its observed value is an estimate of the selected distribution's
+parameters, not a nonparametric fact about the population. Standard errors from
+the likelihood curvature require identification and regularity; sparse events,
+heavy censoring, boundary estimates, and flexible shapes can make Wald intervals
+unreliable. Profile likelihood or a design-respecting parametric bootstrap can
+better expose asymmetry, while still inheriting the fitted model.
+
+# Absolute Risk, Quantiles, and Extrapolation
+
+Once $S(t\mid x)$ is fitted, useful estimands include:
+
+- survival probability $S(t^*\mid x)$ at a prespecified time $t^*$;
+- event risk $1-S(t^*\mid x)$;
+- median or another survival quantile $Q_T(q\mid x)$; and
+- restricted mean survival time through $\tau$,
+  $\operatorname{RMST}(\tau\mid x)=\int_0^\tau S(t\mid x)\,dt$.
+
+Standardization over a target covariate distribution can turn conditional
+predictions into marginal population contrasts. This requires specifying the
+population, covariate distribution, intervention or exposure contrast, and time
+horizon.
+
+Extrapolation beyond the last well-supported event is driven increasingly by the
+assumed tail. Several distributions can fit observed follow-up similarly yet
+predict very different long-term survival. Report the observed support, show
+numbers at risk, compare scientifically defensible families, and separate
+interpolation from extrapolation. External follow-up or mechanistic knowledge is
+more informative than selecting a tail solely by AIC.
+
+# Flexible Parametric Models
+
+Simple named distributions restrict the hazard strongly. Flexible parametric
+survival models instead represent a transformation such as log cumulative hazard
+with restricted cubic splines. A common PH form is
+
+$$
+\log H(t\mid x)=s(\log t;\eta)+x^\mathsf{T}\beta,
+$$
+
+where $s$ is a spline. Interactions between covariates and functions of time can
+represent nonproportional hazards. Such models retain smooth absolute-risk
+prediction while relaxing a named baseline distribution.
+
+Flexibility does not eliminate assumptions. Knot placement, boundary behavior,
+degrees of freedom, time-varying effects, and penalization affect the fit,
+especially in sparse tails. Model complexity must be judged against the number
+and timing of events rather than the number of rows or molecular features.
+
+# Diagnostics and Sensitivity
+
+No single residual plot validates a parametric survival model. A useful workflow
+asks distinct questions.
+
+1. **Audit time and observation.** Check time zero, delayed entry, interval
+   construction, competing events, censoring reasons, and covariate timing.
+2. **Compare with nonparametric estimates.** Overlay fitted survival curves with
+   Kaplan--Meier estimates in meaningful groups, with uncertainty and risk-set
+   sizes. Agreement in coarse groups does not validate covariate form.
+3. **Check distributional shape.** Use probability plots or cumulative-hazard
+   transformations appropriate to the proposed family, and inspect Cox--Snell
+   residuals with censoring retained.
+4. **Check covariate functions and time variation.** Examine nonlinear terms,
+   interactions, residual patterns, and plausible time-varying effects.
+5. **Assess influence and numerical stability.** Inspect gradients, Hessian
+   conditioning, profiles, starting values, and deletion sensitivity.
+6. **Test conclusions across plausible models.** Compare named and flexible
+   distributions, censoring assumptions, time horizons, and tail constraints.
+7. **Validate predictions.** Evaluate time-specific calibration and prediction
+   error with resampling or external data that repeats the complete modeling
+   process.
+
+Information criteria compare candidate likelihood models for the observed data;
+they do not establish correct extrapolation, causal interpretation, independent
+censoring, or transportability.
+
+# Bioinformatics Example: Time to Molecular Relapse
+
+Suppose 320 patients contribute baseline tumor expression, clinical covariates,
+and time from surgery to molecular relapse. The patient is the experimental unit;
+assayed regions, cells, and reads are nested measurements. A log-normal AFT model
+might estimate how a prespecified expression score changes relapse-time quantiles,
+whereas a Weibull PH model targets a hazard ratio. Those are different estimands
+even when fitted to the same records.
+
+The design should distinguish technical assay batches from biological patients,
+predefine how death before relapse is handled, prevent outcome-informed feature
+selection from leaking into validation, and retain center or treatment variables
+that affect observation and prognosis. If death prevents observing relapse, it
+is a [competing risk](competing-risks.qmd), not ordinary independent censoring.
+
+Statistically, a fitted time ratio describes the event-time distribution under
+the model and conditioning set. Biologically, it may reflect tumor aggressiveness,
+treatment allocation, surveillance intensity, comorbidity, or assay artifacts.
+Association alone does not identify a causal mechanism.
+
+# Connections and Take-home Messages
+
+- [Censoring and survival functions](censoring-and-survival-functions.qmd) defines
+  the event and observation processes used in the likelihood.
+- [Kaplan--Meier estimation and log-rank tests](kaplan-meier-estimation-and-log-rank-tests.qmd)
+  provides nonparametric curve estimation and an unadjusted comparison.
+- [Cox proportional-hazards regression](cox-proportional-hazards-regression.qmd)
+  estimates hazard ratios without a parametric baseline hazard.
+- [Proportional-hazards diagnostics](proportional-hazards-diagnostics.qmd) separates
+  time-constant effects from other sources of model failure.
+- [Maximum-likelihood estimation](../statistical-inference/maximum-likelihood-estimation.qmd)
+  explains estimation, curvature-based uncertainty, and nonregular cases.
+- [AIC, BIC, and information criteria](../regression-models/aic-bic-and-information-criteria.qmd)
+  clarifies what likelihood-based model comparisons can and cannot establish.
+
+Parametric models convert explicit event-time assumptions into smooth absolute
+risk, quantile, and mean-survival estimates. Their coefficients may be hazard
+ratios or time ratios depending on parameterization. The reward is efficient
+estimation and possible extrapolation; the price is sensitivity to distributional
+shape, tail behavior, observation mechanisms, and correct biological replication.
+
+# References
+
+- Weibull, W. (1951). A statistical distribution function of wide applicability.
+  *Journal of Applied Mechanics*, 18, 293--297.
+  <https://doi.org/10.1115/1.4010337>
+- Kalbfleisch, J. D. and Prentice, R. L. (2002). *The Statistical Analysis of
+  Failure Time Data*, 2nd ed. Wiley.
+  <https://doi.org/10.1002/9781118032985>
+- Royston, P. and Parmar, M. K. B. (2002). Flexible parametric proportional-hazards
+  and proportional-odds models for censored survival data. *Statistics in
+  Medicine*, 21, 2175--2197. <https://doi.org/10.1002/sim.1203>
+- Jackson, C. H. (2016). `flexsurv`: a platform for parametric survival modeling
+  in R. *Journal of Statistical Software*, 70(8), 1--33.
+  <https://doi.org/10.18637/jss.v070.i08>
+- R `survival` package. Parametric survival regression (`survreg`).
+  <https://stat.ethz.ch/R-manual/R-devel/library/survival/html/survreg.html>
