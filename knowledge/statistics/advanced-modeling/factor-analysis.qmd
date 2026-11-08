@@ -1,0 +1,304 @@
+---
+title: "Factor Analysis"
+subtitle: "Latent common factors and measurement-specific variation"
+description: "Exploratory and confirmatory factor models, identification, estimation, rotation, diagnostics, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-11-08"
+date-modified: "2026-11-08"
+categories: [Statistics, Advanced Modeling, Multivariate Analysis, Latent Variables]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Model for Shared Covariance
+
+Factor analysis explains dependence among observed variables through a smaller
+number of unobserved common factors. For experimental unit $i$, the Gaussian
+common-factor model is
+
+$$
+\boxed{
+\mathbf Y_i=\boldsymbol\mu+\boldsymbol\Lambda\mathbf F_i
++\boldsymbol\varepsilon_i,
+}
+$$
+
+with
+
+$$
+\operatorname{E}(\mathbf F_i)=\mathbf0,
+\quad
+\operatorname{Cov}(\mathbf F_i)=\boldsymbol\Phi,
+\quad
+\operatorname{E}(\boldsymbol\varepsilon_i)=\mathbf0,
+\quad
+\operatorname{Cov}(\boldsymbol\varepsilon_i)=\boldsymbol\Psi,
+$$
+
+and $\operatorname{Cov}(\mathbf F_i,\boldsymbol\varepsilon_i)=\mathbf0$.
+Usually $\boldsymbol\Psi$ is diagonal, expressing local independence of observed
+variables conditional on the factors. Marginally,
+
+$$
+\boxed{
+\operatorname{Cov}(\mathbf Y_i)
+=\boldsymbol\Lambda\boldsymbol\Phi\boldsymbol\Lambda^{\mathsf T}
++\boldsymbol\Psi.
+}
+$$
+
+The loading $\lambda_{jk}$ describes how variable $j$ changes with factor $k$
+on the chosen latent scale. The uniqueness $\psi_j$ is variable-specific
+variance not explained by the common factors. When variables are standardized,
+the communality is
+
+$$
+h_j^2=(\boldsymbol\Lambda\boldsymbol\Phi
+\boldsymbol\Lambda^{\mathsf T})_{jj},
+\qquad
+1=h_j^2+\psi_j.
+$$
+
+The model separates common and specific variation. This is a scientific and
+statistical assumption, not a consequence of calculating eigenvectors.
+
+# Exploratory and Confirmatory Questions
+
+**Exploratory factor analysis (EFA)** searches for a low-dimensional loading
+pattern with limited prior restrictions. Rotation is used to find an interpretable
+representative among observationally equivalent or near-equivalent solutions.
+
+**Confirmatory factor analysis (CFA)** specifies a measurement model in advance:
+which variables load on which factors, which residual associations are allowed,
+and whether parameters are shared across groups. CFA can test implications of a
+theory, but good fit does not prove that the named factors exist or that the model
+is uniquely causal. Alternative latent structures can imply similar covariance.
+
+The intended estimand should be explicit. Possible targets include the covariance
+decomposition, a prespecified loading, a group difference on a defined latent
+scale, or prediction of an external outcome. A fitted factor score for a person,
+sample, or cell is an estimate under the model, not a directly observed trait.
+
+# Identification, Scale, and Rotation
+
+The representation is not unique. For any invertible matrix $\mathbf T$,
+
+$$
+\boldsymbol\Lambda\mathbf F_i
+=\boldsymbol\Lambda\mathbf T
+(\mathbf T^{-1}\mathbf F_i).
+$$
+
+Constraints are therefore needed to set the scale, orientation, and sometimes
+rotation. Common choices fix factor variances to one or fix one loading per factor.
+Changing every loading and factor score for one factor by $-1$ leaves the observed
+distribution unchanged, so factor signs are arbitrary.
+
+In an orthogonal factor model, $\boldsymbol\Phi=\mathbf I$ and rotations satisfy
+$\mathbf T^{\mathsf T}\mathbf T=\mathbf I$. Oblique rotations permit correlated
+factors and can be scientifically more plausible. Orthogonal rotation should not
+be chosen merely because its plot is convenient: forcing independent factors can
+redistribute loadings and obscure real factor correlation.
+
+Identification requires enough nonredundant covariance information for the
+free parameters and a loading pattern that fixes rotational ambiguity. Counting
+parameters is necessary but not sufficient. Weak loadings, nearly indistinguishable
+factors, too few indicators, or residual dependencies can make estimation unstable
+even in a formally identified model. Inspect the information matrix, likelihood
+profiles, convergence across starts, and sensitivity to constraints.
+
+# Estimation and Uncertainty
+
+Under multivariate normality, maximum likelihood compares the sample covariance
+$\mathbf S$ with the model-implied covariance
+
+$$
+\boldsymbol\Sigma(\theta)
+=\boldsymbol\Lambda\boldsymbol\Phi\boldsymbol\Lambda^{\mathsf T}
++\boldsymbol\Psi.
+$$
+
+Apart from constants, the covariance part of the log-likelihood for $n$
+independent units is
+
+$$
+\ell(\theta)
+=-\frac n2\left[
+\log|\boldsymbol\Sigma(\theta)|
++\operatorname{tr}\{\mathbf S\boldsymbol\Sigma(\theta)^{-1}\}
+\right].
+$$
+
+Other estimators include principal-axis factoring, generalized or weighted least
+squares, robust likelihoods, and Bayesian models. Ordinal indicators need models
+for category probabilities or latent response variables rather than routine
+Gaussian treatment. Count, binary, zero-inflated, or censored measurements require
+observation models that respect their support.
+
+Standard errors and likelihood-ratio tests rely on identification, independent
+experimental units, and regularity conditions. Boundary estimates such as a
+uniqueness near zero can invalidate routine approximations. Robust or sandwich
+standard errors can address some nonnormality but do not repair a wrong factor
+structure, dependence between rows, or selection of the model using the same
+tests later reported as confirmatory.
+
+In a Bayesian analysis,
+
+$$
+p(\boldsymbol\Lambda,\boldsymbol\Phi,\boldsymbol\Psi,
+\mathbf F_{1:n}\mid\mathbf Y)
+\propto
+p(\mathbf Y\mid\mathbf F,\boldsymbol\Lambda,\boldsymbol\Psi)
+p(\mathbf F\mid\boldsymbol\Phi)p(\theta).
+$$
+
+Priors can regularize weak loadings and residual variances, but rotational and
+sign symmetries still need attention. Posterior predictive checks should compare
+observed and replicated covariances, marginal distributions, residual associations,
+and group-specific patterns. Prior sensitivity is essential when the likelihood
+weakly identifies a factor.
+
+# How Many Factors?
+
+Factor number is a modeling decision, not a mechanical reading of eigenvalues.
+Useful evidence includes subject-matter theory, residual covariance, parallel
+analysis, likelihood-based comparisons under their conditions, information
+criteria, held-out prediction, and stability across samples.
+
+A scree plot alone is ambiguous. The rule “retain eigenvalues greater than one”
+depends on standardization and can over- or under-extract. Too few factors leave
+structured residual covariance and can bias loadings. Too many create weak,
+unstable factors that absorb noise or method artifacts. Decisions made through
+exploration should be confirmed in independent data or clearly labeled exploratory.
+
+# Factor Scores Are Predictions, Not Measurements
+
+Even with known parameters, $\mathbf F_i$ is latent. Regression scores use a
+conditional mean such as $E(\mathbf F_i\mid\mathbf Y_i)$; Bartlett scores use a
+weighted residual criterion. Different scoring rules need not agree, and factor
+scores can be indeterminate because many latent values are compatible with the
+same observed covariance model.
+
+Using estimated scores in a downstream regression as if error-free ignores both
+score uncertainty and estimated measurement parameters. This can attenuate or
+otherwise distort associations and understate standard errors. Prefer a joint
+model for measurement and outcome when the downstream coefficient is the target,
+or propagate uncertainty through multiple plausible scores or posterior draws.
+
+# Model Checking and Sensitivity
+
+Global fit indices compress many discrepancies and should not replace targeted
+checks. With large samples, trivial deviations can be statistically detectable;
+with small samples, serious misspecification may escape detection.
+
+| Assumption or risk | Why it matters | Evidence and response |
+|---|---|---|
+| Correct factor number | determines the covariance rank attributed to common causes | inspect residual covariance, stability, theory, and held-out fit |
+| Local independence | diagonal $\boldsymbol\Psi$ rules out residual dependence | examine residual correlations; add only scientifically justified residual links |
+| Stable measurement | loadings and intercepts define the latent scale | test and estimate plausible invariance patterns across groups or time |
+| Appropriate observation model | Gaussian likelihood may mishandle counts, categories, tails, or censoring | use generalized factor models or robust likelihoods |
+| Independent units | row dependence changes likelihood information | model donor, family, time, plate, or spatial clustering |
+| No influential units | covariance is sensitive to extremes | inspect case influence and robust sensitivity analyses |
+| Identified factors | otherwise parameters and scores are arbitrary or unstable | inspect rank, profiles, starts, constraints, and posterior geometry |
+
+Modification indices are diagnostic prompts, not automatic instructions. Adding
+the largest suggested cross-loading or residual covariance repeatedly capitalizes
+on chance and changes the model's meaning. Any revision should have a substantive
+rationale and be evaluated in new data.
+
+# Measurement Invariance and Group Comparisons
+
+Comparing latent means across conditions requires the indicators to define the
+factor comparably. In a common sequence:
+
+1. **Configural invariance:** the broad loading pattern is shared.
+2. **Metric invariance:** corresponding loadings are equal, supporting comparison
+   of factor relationships on a common unit.
+3. **Scalar invariance:** intercepts or thresholds are equal, supporting latent
+   mean comparisons.
+4. **Residual invariance:** uniquenesses are equal, a stronger condition needed
+   for some reliability or observed-score comparisons.
+
+These levels are modeling conventions and should be evaluated through effect
+sizes, residuals, uncertainty, and scientific consequences, not a rigid sequence
+of thresholded tests. Partial invariance can be defensible if noninvariant
+parameters are identified transparently and the latent scale remains anchored.
+
+# Bioinformatics Example: A Gene-expression Program
+
+Suppose a prespecified panel of genes is measured in tumors from independently
+sampled patients. A factor model may represent a shared expression program, while
+gene-specific uniqueness includes measurement noise and biological regulation
+not shared by the panel. Patients are the experimental units. Reads, technical
+libraries, repeated wells, and multiple sections from one tumor are not additional
+independent patients; their dependence belongs in the measurement or multilevel
+structure.
+
+Design should balance biological condition across processing batches and include
+enough independent patients to estimate covariance rather than relying on the
+large number of genes or reads. Expression preprocessing must address library
+size and mean--variance relationships. Fitting a Gaussian factor model to raw
+counts gives a covariance decomposition on an inappropriate scale.
+
+Statistically, a treatment-associated latent mean difference is conditional on
+the chosen genes, loading constraints, measurement invariance, observation model,
+and sampling design. Biologically, calling the factor pathway activation requires
+coherent loadings, external annotation or perturbation evidence, reproducibility
+across patients, and exclusion of plausible batch or cell-composition explanations.
+A convenient rotated axis is not itself a molecular mechanism.
+
+# Factor Analysis Compared with PCA
+
+| Feature | Factor analysis | [Principal component analysis](principal-component-analysis.qmd) |
+|---|---|---|
+| Primary goal | model common covariance through latent variables | summarize total variance and reconstruct data |
+| Representation | $\Sigma=\Lambda\Phi\Lambda^{\mathsf T}+\Psi$ | eigendecomposition of covariance or SVD of centered data |
+| Variable-specific error | explicit uniqueness $\Psi$ | included in total variance |
+| Scores | predictions of latent quantities | exact linear combinations after fitting |
+| Identification | needs scale and rotation constraints | axes identified up to sign, and rotations within tied eigenspaces |
+| Inferential basis | requires a probability model | algebra is distribution-free; inference adds assumptions |
+
+PCA can initialize or inform exploration, but its loadings are not maximum-
+likelihood factor loadings and its retained components need not estimate common
+factors. Choose the method from the scientific target, not from superficial
+similarity of biplots.
+
+# Connections and Take-home Messages
+
+- [Latent-variable models](latent-variable-models.qmd) gives the general
+  marginalization, identification, and score-uncertainty framework.
+- [Normal and multivariate normal distributions](../probability-randomness/normal-and-multivariate-normal-distributions.qmd)
+  supplies the Gaussian covariance model used in classical factor analysis.
+- [Identifiability and label switching](identifiability-and-label-switching.qmd)
+  separates structural nonidentification from weak empirical information.
+- [Posterior predictive checks](posterior-predictive-checks.qmd) explains how to
+  test model implications through replicated observed data.
+- [Partial pooling and exchangeability](partial-pooling-and-exchangeability.qmd)
+  is relevant when factor models contain group-specific parameters.
+
+Factor analysis is a latent measurement model for shared covariance, not merely
+a dimension-reduction algorithm. Interpretation depends on the observation
+model, identification constraints, rotation, factor number, local independence,
+and measurement invariance. Factor scores remain uncertain predictions. In
+bioinformatics, independent biological units and external evidence are required
+before a fitted factor can support population or mechanistic claims.
+
+# References
+
+- Spearman, C. (1904). “General intelligence,” objectively determined and
+  measured. *American Journal of Psychology*, 15, 201--293.
+  <https://doi.org/10.2307/1412107>
+- Lawley, D. N., and Maxwell, A. E. *Factor Analysis as a Statistical Method*,
+  2nd ed. Butterworths, 1971.
+- Bartholomew, D. J., Knott, M., and Moustaki, I. *Latent Variable Models and
+  Factor Analysis: A Unified Approach*, 3rd ed. Wiley, 2011.
+  <https://doi.org/10.1002/9781119970583>
+- Browne, M. W. (2001). An overview of analytic rotation in exploratory factor
+  analysis. *Multivariate Behavioral Research*, 36, 111--150.
+  <https://doi.org/10.1207/S15327906MBR3601_05>
+- Meredith, W. (1993). Measurement invariance, factor analysis and factorial
+  invariance. *Psychometrika*, 58, 525--543.
+  <https://doi.org/10.1007/BF02294825>
+- R Core Team. `factanal`: Factor analysis. *R statistical software
+  documentation*. <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/factanal.html>

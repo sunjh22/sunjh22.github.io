@@ -1,0 +1,259 @@
+---
+title: "Principal Component Analysis"
+subtitle: "Orthogonal directions that summarize multivariate variation"
+description: "PCA geometry, covariance eigendecomposition, scaling, uncertainty, diagnostics, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-11-08"
+date-modified: "2026-11-08"
+categories: [Statistics, Advanced Modeling, Multivariate Analysis, Dimension Reduction]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Rotation of the Measurement Space
+
+Principal component analysis (PCA) replaces correlated variables by orthogonal
+linear combinations that successively capture as much sample variation as
+possible. For a centered data matrix $\mathbf X\in\mathbb R^{n\times p}$, rows
+are experimental units and columns are variables. PCA writes
+
+$$
+\boxed{\mathbf X=\mathbf U\mathbf D\mathbf V^{\mathsf T}},
+$$
+
+where $\mathbf V$ contains loading directions, $\mathbf Z=\mathbf X\mathbf V
+=\mathbf U\mathbf D$ contains component scores, and the singular values in
+$\mathbf D$ order the components by explained variation.
+
+PCA is descriptive unless embedded in a sampling or measurement model. It does
+not discover causes, guarantee biological mechanisms, or automatically remove
+noise. Its useful question is narrower: **which orthogonal directions summarize
+the variation in these variables, under this preprocessing and sampling design?**
+
+# Population Target and Sample Estimate
+
+Let a random vector $\mathbf Y\in\mathbb R^p$ have mean $\boldsymbol\mu$ and
+covariance matrix $\boldsymbol\Sigma$. The first population principal-component
+direction is
+
+$$
+\mathbf v_1
+=\arg\max_{\|\mathbf v\|_2=1}
+\operatorname{Var}(\mathbf v^{\mathsf T}\mathbf Y)
+=\arg\max_{\|\mathbf v\|_2=1}
+\mathbf v^{\mathsf T}\boldsymbol\Sigma\mathbf v.
+$$
+
+Using a Lagrange multiplier,
+
+$$
+\frac{\partial}{\partial\mathbf v}
+\left(\mathbf v^{\mathsf T}\boldsymbol\Sigma\mathbf v
+-\lambda(\mathbf v^{\mathsf T}\mathbf v-1)\right)=\mathbf0
+$$
+
+implies $\boldsymbol\Sigma\mathbf v=\lambda\mathbf v$. The maximizer is an
+eigenvector for the largest eigenvalue. Later directions maximize variance while
+being orthogonal to earlier ones:
+
+$$
+\boldsymbol\Sigma\mathbf v_k=\lambda_k\mathbf v_k,
+\qquad
+\lambda_1\geq\cdots\geq\lambda_p\geq0.
+$$
+
+The population score $\mathbf v_k^{\mathsf T}(\mathbf Y-\boldsymbol\mu)$ has
+variance $\lambda_k$, and distinct scores are uncorrelated. The population
+directions are estimands; eigenvectors of the sample covariance
+
+$$
+\mathbf S=\frac{1}{n-1}\mathbf X^{\mathsf T}\mathbf X
+$$
+
+are estimators, and the fitted loadings are estimates. When eigenvalues are tied,
+individual eigenvectors within the tied eigenspace are not identified: only the
+subspace is. Nearly tied eigenvalues make estimated directions unstable even
+when their combined subspace is reproducible.
+
+# Variance, Reconstruction, and Geometry
+
+The fraction of total sample variance attributed to component $k$ is
+
+$$
+\operatorname{PVE}_k=
+\frac{d_k^2}{\sum_j d_j^2}
+=\frac{\hat\lambda_k}{\sum_j\hat\lambda_j}.
+$$
+
+This is a proportion of variation in the analyzed matrix, not a proportion of
+biological truth or outcome predictability. A nuisance batch effect can explain
+more variance than the scientific signal, and a small but consistent treatment
+effect can occupy a low-variance direction.
+
+Keeping the first $r$ components gives the rank-$r$ reconstruction
+
+$$
+\hat{\mathbf X}_r
+=\mathbf U_r\mathbf D_r\mathbf V_r^{\mathsf T}
+=\mathbf X\mathbf V_r\mathbf V_r^{\mathsf T}.
+$$
+
+The Eckart--Young--Mirsky theorem shows that this reconstruction minimizes
+$\|\mathbf X-\mathbf A\|_F$ among matrices $\mathbf A$ of rank at most $r$.
+Thus PCA is simultaneously a projection, a best low-rank approximation under
+squared error, and an eigendecomposition of covariance. These equivalences depend
+on Euclidean geometry and the chosen variable scale.
+
+Loadings are directions, not ordinary regression coefficients. A loading's sign
+is arbitrary because $\mathbf v_k$ and $-\mathbf v_k$ define the same axis.
+Comparing signs therefore requires orienting components consistently. Scores
+locate rows in the fitted coordinate system; loadings describe how columns
+contribute to its axes.
+
+# Centering, Scaling, and Preprocessing Define the Question
+
+Centering removes the variable means so that PCA describes covariance around the
+sample centroid. Without centering, the first component can largely point toward
+the mean vector. Scaling each variable by its sample standard deviation makes
+PCA on $\mathbf X$ equivalent to eigendecomposition of the correlation matrix.
+
+- **Covariance PCA** preserves measurement units and lets high-variance variables
+  dominate. It is sensible when variables share a meaningful scale.
+- **Correlation PCA** gives each nonconstant variable unit variance. It can be
+  useful across heterogeneous units but can amplify low-variance noisy variables.
+- **Domain-specific transforms** may stabilize variance or respect compositional,
+  count, or detection-limit structure. They change the estimand and must be
+  reported as part of the method.
+
+For RNA-seq, raw counts combine library size, mean abundance, and biological
+variation. PCA is usually applied after an appropriate normalization and
+variance-stabilizing or log-like transformation, not to unadjusted counts.
+Selecting highly variable genes is also data-dependent preprocessing: it changes
+the feature population and can emphasize cell state, batch, or technical noise.
+
+Missing values require an explicit strategy. Mean imputation reduces variance
+and distorts covariance; complete-case analysis changes the sampled population
+unless missingness is sufficiently benign. Model-based or multiple-imputation
+approaches should propagate uncertainty rather than treating a filled matrix as
+fully observed.
+
+# Choosing a Dimension
+
+No single rule identifies a universally correct number of components. The choice
+should follow the purpose.
+
+| Goal | Useful evidence | Main limitation |
+|---|---|---|
+| Visualization | two- or three-dimensional score plots | visible axes may omit the relevant signal |
+| Reconstruction | held-out reconstruction error | favors variance, not necessarily scientific relevance |
+| Covariance structure | scree plot, parallel analysis, bootstrap stability | boundaries are often gradual |
+| Prediction | nested cross-validation of the complete pipeline | supervised relevance can differ from high variance |
+| Downstream inference | prespecified target and sensitivity across dimensions | estimated components add uncertainty |
+
+A cumulative explained-variance threshold such as 80% or 90% is a convention,
+not a theorem. Parallel analysis compares observed eigenvalues with those expected
+under a reference noise model. Cross-validation must repeat centering, scaling,
+feature selection, PCA, and prediction within each training split; computing PCA
+once on all data leaks information from validation observations.
+
+# Uncertainty, Diagnostics, and Failure Modes
+
+PCA is often plotted without acknowledging that loadings, scores, and eigenvalues
+are estimated. Bootstrap resampling can assess subspace stability, but resampling
+must follow the independent experimental unit. Clustered cells, repeated visits,
+or technical replicates should not be resampled as if independent. Because signs
+and near-tied axes can switch, compare aligned subspaces or projection matrices,
+not raw loading columns alone.
+
+| Risk | Symptom | Check or sensitivity analysis |
+|---|---|---|
+| Outliers | one unit controls a score axis | inspect score distances and leave-one-unit-out fits; consider robust PCA |
+| Batch or confounding | components align with plate, site, or processing date | color scores by recorded design variables; model rather than merely erase effects |
+| Nonlinear structure | curved score clouds or poor local reconstruction | consider justified nonlinear methods, while validating their stability |
+| Heterogeneous scale | results change drastically after standardization | report the scale choice and compare scientifically defensible alternatives |
+| High $p/n$ | unstable eigenvectors and inflated leading eigenvalues | bootstrap independent units, use shrinkage, and validate out of sample |
+| Sparse or selected features | loadings depend on filtering threshold | repeat the full selection procedure and report sensitivity |
+
+Classical fixed-$p$, large-$n$ intuition can fail when $p$ is comparable to or
+larger than $n$. Sample eigenvalues are then systematically dispersed, and weak
+population directions may not be consistently recovered. Regularized, sparse,
+or probabilistic variants can help, but each changes the target and introduces
+tuning or modeling assumptions.
+
+# Bioinformatics Example: Samples, Genes, and Replication
+
+Suppose normalized expression is available for 40 independently sampled patients,
+20 per condition, with two technical libraries per patient. The experimental
+unit for a condition contrast is the patient. Libraries are technical replicates
+and should be combined or represented through an appropriate measurement model;
+they do not increase the biological sample size to 80.
+
+After prespecified quality control and a variance-stabilizing transformation, a
+PCA of patient-level profiles can reveal gross sample structure. A first component
+associated with sequencing center is statistical evidence that center explains a
+large direction of transformed expression variation. It is not proof that center
+caused every gene difference, nor is subtracting that component automatically
+valid: if center is confounded with condition, biological and technical effects
+cannot be separated from these data alone.
+
+A condition shift along PC2 is a multivariate descriptive pattern under the
+chosen preprocessing. Biological interpretation requires examining stable gene
+loadings, pathway coherence, effect sizes in the original variables, design
+balance, and replication in independent patients. A visually separated score
+plot is not a hypothesis test and can exaggerate separation when labels guided
+feature selection.
+
+# PCA and Neighboring Methods
+
+PCA is not the same as [factor analysis](factor-analysis.qmd). PCA decomposes
+total covariance to optimize representation; factor analysis posits latent common
+causes plus variable-specific error. Principal components are exact functions of
+the observed variables, whereas factor scores are estimates of unobserved
+quantities under a model.
+
+- [Normal and multivariate normal distributions](../probability-randomness/normal-and-multivariate-normal-distributions.qmd)
+  supplies covariance geometry; PCA itself does not require normality for its
+  algebra, though distributional assumptions matter for inferential results.
+- [Covariance and correlation](../probability-randomness/covariance-and-correlation.qmd)
+  explains the matrix being decomposed.
+- [Least squares and the geometry of regression](../regression-models/least-squares-and-regression-geometry.qmd)
+  develops the projection viewpoint.
+- [Latent-variable models](latent-variable-models.qmd) introduces the model-based
+  framework used by probabilistic PCA and factor analysis.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a framework for checking whether preprocessing and feature choices
+  materially change a conclusion.
+
+# Take-home Messages
+
+1. PCA estimates orthogonal directions of maximal variance and gives the best
+   rank-constrained squared-error reconstruction of the analyzed matrix.
+2. Centering, scaling, transformation, filtering, and the definition of an
+   independent row are part of the estimand, not neutral software details.
+3. Explained variance measures variation in the input representation; it does
+   not measure biological importance, causality, or predictive value.
+4. Near-tied eigenvalues, outliers, batch effects, and high dimension can make
+   individual loadings unstable even when a broader subspace is useful.
+5. Validation and resampling must repeat the full pipeline and respect biological
+   experimental units rather than technical observations.
+
+# References
+
+- Pearson, K. (1901). On lines and planes of closest fit to systems of points in
+  space. *Philosophical Magazine*, 2, 559--572.
+  <https://doi.org/10.1080/14786440109462720>
+- Hotelling, H. (1933). Analysis of a complex of statistical variables into
+  principal components. *Journal of Educational Psychology*, 24, 417--441 and
+  498--520. <https://doi.org/10.1037/h0071325>
+- Jolliffe, I. T., and Cadima, J. (2016). Principal component analysis: a review
+  and recent developments. *Philosophical Transactions of the Royal Society A*,
+  374, 20150202. <https://doi.org/10.1098/rsta.2015.0202>
+- Johnstone, I. M., and Paul, D. (2018). PCA in high dimensions: an orientation.
+  *Proceedings of the IEEE*, 106, 1277--1292.
+  <https://doi.org/10.1109/JPROC.2018.2846730>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>
+- R Core Team. `prcomp`: Principal components analysis. *R statistical software
+  documentation*. <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/prcomp.html>

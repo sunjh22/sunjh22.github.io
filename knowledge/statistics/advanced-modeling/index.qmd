@@ -28,9 +28,12 @@ categories: [Statistics, Advanced Modeling]
 - [Proportional-hazards diagnostics](proportional-hazards-diagnostics.qmd)
 - [Parametric survival models](parametric-survival-models.qmd)
 - [Competing risks](competing-risks.qmd)
+- [Principal component analysis](principal-component-analysis.qmd)
+- [Factor analysis](factor-analysis.qmd)
 - [Mixture models overview](mixture-models.qmd)
 
-Future notes in this level will cover multivariate methods.
+Future notes in this level will cover multivariate hypothesis testing and
+supervised multivariate methods.
 
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Real Bioinformatics Problems](../bioinformatics-problems/index.qmd)
