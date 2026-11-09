@@ -30,10 +30,12 @@ categories: [Statistics, Advanced Modeling]
 - [Competing risks](competing-risks.qmd)
 - [Principal component analysis](principal-component-analysis.qmd)
 - [Factor analysis](factor-analysis.qmd)
+- [Multivariate hypothesis testing](multivariate-hypothesis-testing.qmd)
+- [Canonical correlation and partial least squares](canonical-correlation-and-partial-least-squares.qmd)
 - [Mixture models overview](mixture-models.qmd)
 
-Future notes in this level will cover multivariate hypothesis testing and
-supervised multivariate methods.
+This level now covers regularization, hierarchical and latent-variable models,
+survival analysis, and core multivariate methods.
 
 - [Regression & Statistical Models](../regression-models/index.qmd)
 - [Real Bioinformatics Problems](../bioinformatics-problems/index.qmd)

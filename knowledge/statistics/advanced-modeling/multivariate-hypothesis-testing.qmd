@@ -1,0 +1,319 @@
+---
+title: "Multivariate Hypothesis Testing"
+subtitle: "Joint tests for vector-valued outcomes"
+description: "Hotelling tests, MANOVA, multivariate test criteria, assumptions, diagnostics, and design-aware interpretation."
+author: "Jiahong Sun"
+date: "2026-11-09"
+date-modified: "2026-11-09"
+categories: [Statistics, Advanced Modeling, Multivariate Analysis, Hypothesis Testing]
+toc: true
+number-sections: true
+draft: false
+---
+
+# One Scientific Claim, Several Outcomes
+
+Many experiments measure a vector rather than one response. A perturbation may
+change several cytokines, a phenotype may contain multiple correlated traits, or
+an assay may quantify several molecular layers on the same specimen. Testing
+each outcome separately asks several marginal questions. A multivariate test
+instead asks whether a prespecified joint feature of the outcome distribution
+differs between conditions.
+
+For independent experimental units $i=1,\ldots,n$, write
+
+$$
+\mathbf Y_i=(Y_{i1},\ldots,Y_{ip})^{\mathsf T},
+\qquad
+\operatorname{E}(\mathbf Y_i\mid \mathbf x_i)
+=\mathbf B^{\mathsf T}\mathbf x_i.
+$$
+
+The rows of the design matrix $\mathbf X$ describe groups, covariates, or
+interactions, while the $p$ columns of $\mathbf Y$ are outcomes measured on the
+same units. A multivariate linear model is
+
+$$
+\boxed{\mathbf Y=\mathbf X\mathbf B+\mathbf E},
+$$
+
+where row $i$ of $\mathbf E$ has covariance matrix $\boldsymbol\Sigma$. The
+cross-outcome covariance is part of the data-generating process: it is not a
+nuisance that can be ignored and then recovered by combining univariate
+$p$-values.
+
+The experimental unit must be defined before the response vector. If ten proteins
+are measured twice in each of 40 patients, the inferential sample size is normally
+40 patients, not 800 protein measurements. Proteins are outcome coordinates and
+repeat assays are technical observations; neither creates independent biological
+replication.
+
+# What Is Being Tested?
+
+A multivariate hypothesis should identify the population, response coordinates,
+design contrast, and scale. In the general linear model, a broad family of null
+hypotheses can be written
+
+$$
+H_0:\ \mathbf C\mathbf B\mathbf M=\mathbf 0.
+$$
+
+$\mathbf C$ selects contrasts among design coefficients and $\mathbf M$ selects
+or combines response variables. Examples include:
+
+- equality of the full mean vector between two treatment groups;
+- no treatment effect on any of several prespecified endpoints after adjustment;
+- no group-by-time interaction in a vector of longitudinal summaries;
+- equality of a particular linear combination of molecular outcomes.
+
+The parameter $\mathbf C\mathbf B\mathbf M$ is the **estimand**. Its least-squares
+version is an **estimator**, and the numerical matrix from observed data is the
+**estimate**. A test statistic reduces that estimated matrix, relative to its
+uncertainty, to a scalar used for calibration. These objects should not be
+collapsed into the statement that “the MANOVA was significant.”
+
+A global rejection means that the joint null is incompatible with the data under
+the working model and test procedure. It does not identify which outcome differs,
+establish that every coordinate changes, measure biological importance, or
+provide a classification rule. Follow-up estimates and simultaneous uncertainty
+are needed to localize and quantify the compatible effects.
+
+# Hotelling's $T^2$: A Multivariate Mean Test
+
+Suppose $\mathbf Y_1,\ldots,\mathbf Y_n$ are independent with mean
+$\boldsymbol\mu$ and sample covariance $\mathbf S$. For
+
+$$
+H_0:\boldsymbol\mu=\boldsymbol\mu_0,
+$$
+
+Hotelling's one-sample statistic is
+
+$$
+\boxed{
+T^2=n(\bar{\mathbf Y}-\boldsymbol\mu_0)^{\mathsf T}
+\mathbf S^{-1}
+(\bar{\mathbf Y}-\boldsymbol\mu_0).
+}
+$$
+
+This is a squared Mahalanobis distance between the estimated and hypothesized
+mean vectors. Multiplication by $\mathbf S^{-1}$ downweights noisy directions
+and accounts for correlations. If two outcomes are almost redundant, their shared
+shift should not be counted as two independent pieces of evidence.
+
+Under independent multivariate-normal sampling, $n>p$, and nonsingular
+$\mathbf S$,
+
+$$
+\frac{n-p}{p(n-1)}T^2\sim F_{p,n-p}
+\quad\text{under }H_0.
+$$
+
+When $p=1$, this reduces to the square of the ordinary one-sample $t$ statistic.
+For two independent groups with a common covariance matrix, the corresponding
+statistic is
+
+$$
+T^2=
+\frac{n_1n_2}{n_1+n_2}
+(\bar{\mathbf Y}_1-\bar{\mathbf Y}_2)^{\mathsf T}
+\mathbf S_p^{-1}
+(\bar{\mathbf Y}_1-\bar{\mathbf Y}_2),
+$$
+
+where $\mathbf S_p$ is the pooled within-group covariance estimate. The exact
+$F$ calibration depends on multivariate normality and equal population covariance
+matrices. A covariance difference can therefore affect both validity and the
+scientific meaning of a mean comparison.
+
+# MANOVA as Multivariate Regression
+
+Multivariate analysis of variance (MANOVA) is best understood as multivariate
+linear regression, not as a separate ritual. Fit the unrestricted model and
+decompose variation relevant to a hypothesis into two sum-of-squares-and-products
+matrices:
+
+$$
+\mathbf H
+=\text{variation attributed to the tested contrast},
+\qquad
+\mathbf E
+=\text{residual variation in the unrestricted model}.
+$$
+
+In a univariate model, these become scalar hypothesis and error sums of squares.
+In a multivariate model, the eigenvalues
+$\lambda_1,\ldots,\lambda_s$ of $\mathbf E^{-1}\mathbf H$ describe standardized,
+mutually distinct directions along which fitted groups differ, with
+$s\leq\min(p,\operatorname{rank}(\mathbf H))$.
+
+Several classical statistics summarize these roots differently:
+
+| Criterion | Expression in the roots | Emphasis |
+|---|---:|---|
+| Wilks' lambda | $\Lambda=\prod_j(1+\lambda_j)^{-1}=|\mathbf E|/|\mathbf E+\mathbf H|$ | evidence spread across roots through a likelihood-ratio form |
+| Pillai's trace | $V=\sum_j\lambda_j/(1+\lambda_j)$ | bounded contribution from every root |
+| Hotelling--Lawley trace | $U=\sum_j\lambda_j$ | total standardized separation |
+| Roy's largest root | $\Theta=\max_j\lambda_j$ | the single strongest discriminating direction |
+
+The criteria answer the same null hypothesis but weight alternatives differently.
+They need not rank borderline datasets identically. Pillai's trace is often less
+sensitive than Wilks' lambda to some covariance and normality departures, but it
+does not make dependence, gross outliers, an invalid design, or severe
+high-dimensionality harmless. Choosing whichever statistic gives the smallest
+$p$-value is an unreported multiple search.
+
+Exact or approximate reference distributions also depend on the hypothesis rank,
+response dimension, residual degrees of freedom, and distributional assumptions.
+Software labels such as “approximate $F$” should be reported as approximations,
+not as universal finite-sample facts.
+
+# Geometry and Connection to Univariate Tests
+
+For any fixed direction $\mathbf a$, the scalar outcome
+$Z_i=\mathbf a^{\mathsf T}\mathbf Y_i$ can be analyzed by an ordinary linear
+model. Multivariate tests consider standardized effects over a collection of
+directions rather than selecting one outcome coordinate in advance. Hotelling's
+statistic has the variational representation
+
+$$
+T^2=
+\max_{\mathbf a\ne\mathbf0}
+\frac{n\{\mathbf a^{\mathsf T}
+(\bar{\mathbf Y}-\boldsymbol\mu_0)\}^2}
+{\mathbf a^{\mathsf T}\mathbf S\mathbf a}.
+$$
+
+Thus the test searches for the best standardized linear combination. That
+direction is estimated from the same data, so its apparent separation is
+optimistic as a descriptive effect size. It should not be interpreted as a
+prevalidated biomarker without independent validation.
+
+A global multivariate test is not automatically more powerful than well-chosen
+univariate tests. It can gain when a coherent effect is distributed across
+correlated outcomes, but estimating a large covariance matrix consumes
+information. Irrelevant or very noisy coordinates can reduce power. The response
+set should therefore be scientifically defined before looking at results.
+
+# Assumptions, Diagnostics, and Alternatives
+
+| Issue | Why it matters | Check or sensitivity analysis |
+|---|---|---|
+| Independent experimental units | covariance and reference laws use independent rows | map randomization, sampling, nesting, and repeated measures before fitting |
+| Correct mean structure | omitted interactions or nonlinearities change the tested contrast | inspect design balance and residual patterns; fit scientifically motivated alternatives |
+| Multivariate normal errors | classical small-sample calibration uses joint normality | inspect marginal and robust Mahalanobis residuals; compare bootstrap or valid randomization calibration |
+| Common covariance where assumed | pooled-covariance tests can be distorted by heterogeneity | compare group covariance patterns and use design-appropriate robust methods |
+| Nonsingular, stable covariance | inversion fails when outcomes are redundant or $p$ is too large | inspect rank, eigenvalues, condition number, and leave-one-unit-out stability |
+| No dominant unit | one multivariate outlier can determine several roots | inspect influence and scientific provenance; report robust sensitivity analyses |
+| Prespecified outcome vector | data-driven selection invalidates nominal calibration | repeat the entire selection in resampling or reserve confirmatory data |
+
+Marginal normality does not imply multivariate normality, and a collection of
+univariate residual plots cannot reveal every joint anomaly. Conversely, formal
+normality tests can be overpowered or underpowered and do not establish design
+validity. Diagnostics should target plausible failure mechanisms.
+
+When treatment was randomized, a randomization test can recompute a chosen
+multivariate statistic over assignments allowed by the design. Exchangeability
+must respect blocks, pairs, clusters, and repeated measures. A parametric bootstrap
+can simulate under a fitted null model, but it inherits that model and must repeat
+all fitting and selection steps. Sandwich or cluster-robust covariance estimators
+can address some variance misspecification when the number of independent clusters
+is adequate; they do not repair confounding or an unidentified contrast.
+
+Classical MANOVA is especially fragile when $p$ approaches or exceeds the
+residual sample size because $\mathbf E$ becomes singular or unstable. Options
+include prespecifying a smaller scientifically meaningful response set, testing
+predefined summaries, using validated regularized high-dimensional tests, or
+sample-splitting dimension reduction and confirmation. Performing PCA on all
+observations and then testing selected components with ordinary reference laws
+can leak outcome and group information unless the whole adaptive procedure is
+accounted for.
+
+# Worked Bioinformatics Design
+
+Suppose 48 independently randomized patients, 24 per treatment arm, provide one
+post-treatment plasma specimen. Three prespecified log-transformed cytokines form
+$\mathbf Y_i$. Each specimen is assayed on two plates, with plate allocation
+balanced across treatment.
+
+The experimental unit is the patient. Duplicate wells are technical replicates
+used to estimate or reduce measurement error. A suitable model can include a
+plate term and test the three-dimensional treatment coefficient:
+
+$$
+H_0:\boldsymbol\beta_{\mathrm{treatment}}=\mathbf0.
+$$
+
+A rejected Pillai test supplies evidence against no joint treatment shift under
+the model. The next scientific step is not to claim that “the cytokine profile is
+causal.” Report the estimated three-outcome contrast, simultaneous or multiplicity-
+aware intervals, covariance structure, and sensitivity to influential patients
+and plate handling. A direction driven mainly by one cytokine should be described
+as such.
+
+Statistically, the result concerns the prespecified transformed means in the
+sampled patient population. Biologically, it may support a coordinated immune
+response only when effect sizes are meaningful, measurement artifacts are
+unlikely, the randomized contrast is preserved, and relevant tissues, timing,
+and mechanisms align. Additional technical wells cannot compensate for too few
+patients or poor representation of the target population.
+
+# Common Interpretation Errors
+
+- **“The global test proves every outcome changed.”** Rejection only rules out
+  the full joint null; compatible effects may be concentrated in one direction.
+- **“MANOVA solves multiple testing.”** It controls the error of one global
+  claim. Post hoc outcome tests create another family requiring its own plan.
+- **“A nonsignificant global test proves equality.”** It may reflect low power,
+  noisy or numerous outcomes, or covariance instability. Equivalence requires
+  prespecified margins and an appropriate procedure.
+- **“More measured features always give more information.”** Each added outcome
+  also increases covariance-estimation burden and can dilute a focused signal.
+- **“Technical measurements are multivariate replicates.”** They refine the
+  response vector or its measurement; inference about a biological population
+  still depends on independent biological units.
+
+# Connections and Take-home Messages
+
+- [Normal and multivariate normal distributions](../probability-randomness/normal-and-multivariate-normal-distributions.qmd)
+  develops the covariance geometry behind exact classical tests.
+- [Hypothesis tests and test statistics](../statistical-inference/hypothesis-tests-and-test-statistics.qmd)
+  separates scientific hypotheses, statistics, and null calibration.
+- [Family-wise error rate](../statistical-inference/family-wise-error-rate.qmd)
+  explains error control for follow-up outcome families.
+- [Multiple linear regression](../regression-models/multiple-linear-regression.qmd)
+  supplies the design-matrix and contrast framework.
+- [Principal component analysis](principal-component-analysis.qmd) can summarize
+  outcomes descriptively, but data-adaptive dimension reduction changes inference.
+- [Canonical correlation and partial least squares](canonical-correlation-and-partial-least-squares.qmd)
+  studies relationships between two variable blocks rather than a group contrast
+  in one response block.
+
+1. Multivariate tests evaluate a defined joint hypothesis about a vector outcome;
+   they do not identify all affected coordinates by themselves.
+2. Hotelling's $T^2$ measures a covariance-standardized mean distance, while
+   MANOVA criteria summarize roots of hypothesis variation relative to error.
+3. The design, response set, scale, and experimental unit are part of the
+   estimand and must be specified before analysis.
+4. Classical calibration relies on covariance stability, adequate residual
+   information, and distributional conditions that become strained as dimension
+   grows.
+5. Biological conclusions require effect estimates, uncertainty, diagnostics,
+   and genuine biological replication in addition to a global $p$-value.
+
+# References
+
+- Hotelling, H. (1931). The generalization of Student's ratio. *The Annals of
+  Mathematical Statistics*, 2(3), 360--378.
+  <https://doi.org/10.1214/aoms/1177732979>
+- Wilks, S. S. (1932). Certain generalizations in the analysis of variance.
+  *Biometrika*, 24(3/4), 471--494.
+  <https://doi.org/10.1093/biomet/24.3-4.471>
+- Anderson, T. W. (2003). *An Introduction to Multivariate Statistical Analysis*
+  (3rd ed.). Wiley.
+- Rencher, A. C., and Christensen, W. F. (2012). *Methods of Multivariate
+  Analysis* (3rd ed.). Wiley. <https://doi.org/10.1002/9781118391686>
+- R Core Team. `manova`: Multivariate analysis of variance. *R statistical
+  software documentation*.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/manova.html>

@@ -1,0 +1,360 @@
+---
+title: "Canonical Correlation and Partial Least Squares"
+subtitle: "Relating two multivariate variable blocks"
+description: "CCA and PLS objectives, geometry, estimation, validation, diagnostics, and design-aware multi-omics interpretation."
+author: "Jiahong Sun"
+date: "2026-11-09"
+date-modified: "2026-11-09"
+categories: [Statistics, Advanced Modeling, Multivariate Analysis, Dimension Reduction]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Two Blocks Measured on the Same Units
+
+Canonical correlation analysis (CCA) and partial least squares (PLS) construct
+paired linear summaries of two variable blocks. For each independent unit $i$,
+suppose
+
+$$
+\mathbf X_i\in\mathbb R^p,
+\qquad
+\mathbf Y_i\in\mathbb R^q
+$$
+
+are measured on the same specimen. Examples include transcript abundances and
+metabolites from the same patients, imaging features and clinical traits, or a
+large predictor panel and several outcomes.
+
+The methods are often grouped together because both use cross-block covariance,
+but they optimize different quantities:
+
+- **CCA** finds linear combinations with the greatest correlation after
+  standardizing variation within both blocks.
+- **PLS** is a family of supervised component methods that emphasizes
+  cross-covariance and, in PLS regression, prediction of $\mathbf Y$ from
+  $\mathbf X$.
+
+Neither method creates replication. If 10,000 genes and 100 metabolites are
+measured in 30 donors, $n=30$ independent rows. Genes and metabolites are
+variables, not biological replicates. Multiple cells, aliquots, or sequencing
+lanes nested within a donor are technical or subsampling observations unless the
+scientific target and model explicitly operate at those levels.
+
+# Canonical Correlation Analysis
+
+Let centered random vectors $(\mathbf X,\mathbf Y)$ have covariance matrix
+
+$$
+\boldsymbol\Sigma=
+\begin{pmatrix}
+\boldsymbol\Sigma_{XX} & \boldsymbol\Sigma_{XY}\\
+\boldsymbol\Sigma_{YX} & \boldsymbol\Sigma_{YY}
+\end{pmatrix}.
+$$
+
+The first canonical correlation is
+
+$$
+\boxed{
+\rho_1=
+\max_{\mathbf a,\mathbf b}
+\operatorname{Corr}(\mathbf a^{\mathsf T}\mathbf X,
+\mathbf b^{\mathsf T}\mathbf Y)
+}
+$$
+
+subject to
+
+$$
+\mathbf a^{\mathsf T}\boldsymbol\Sigma_{XX}\mathbf a=1,
+\qquad
+\mathbf b^{\mathsf T}\boldsymbol\Sigma_{YY}\mathbf b=1.
+$$
+
+The canonical variates are
+$U_1=\mathbf a_1^{\mathsf T}\mathbf X$ and
+$V_1=\mathbf b_1^{\mathsf T}\mathbf Y$. With nonsingular within-block covariance
+matrices, $\rho_k^2$ are eigenvalues of
+
+$$
+\boldsymbol\Sigma_{XX}^{-1}
+\boldsymbol\Sigma_{XY}
+\boldsymbol\Sigma_{YY}^{-1}
+\boldsymbol\Sigma_{YX}.
+$$
+
+Later pairs maximize correlation subject to being uncorrelated with earlier
+canonical variates within each block. There are at most $\min(p,q)$ nonzero
+canonical correlations.
+
+An illuminating equivalent form whitens both blocks:
+
+$$
+\mathbf K=
+\boldsymbol\Sigma_{XX}^{-1/2}
+\boldsymbol\Sigma_{XY}
+\boldsymbol\Sigma_{YY}^{-1/2}.
+$$
+
+The singular values of $\mathbf K$ are the canonical correlations. Thus CCA
+first removes within-block scale and correlation, then finds the strongest
+remaining cross-block alignment. This explains both its invariance to nonsingular
+linear transformations within a block and its instability when covariance
+matrices are nearly singular.
+
+Population canonical correlations and subspaces are **estimands**. Replacing
+population covariance matrices with sample estimates defines **estimators**;
+the resulting correlations, weights, and scores are **estimates**. Weight vectors
+are defined only up to sign, and when canonical correlations are tied or close,
+individual directions can rotate substantially while the associated subspace is
+more stable.
+
+# What CCA Does and Does Not Mean
+
+A large canonical correlation says that two data-derived linear combinations
+co-vary strongly in the analyzed population and representation. It does not mean
+that every variable in one block is associated with every variable in the other,
+that the relationship is causal, or that the fitted weights will reproduce in a
+new sample.
+
+Three quantities should be distinguished:
+
+- **canonical weights** $\mathbf a_k,\mathbf b_k$ define the combinations;
+- **canonical loadings** correlate original variables with their own canonical
+  variate;
+- **cross-loadings** correlate variables with the opposite block's variate.
+
+Weights can be large because they cancel correlated variables, so reading them as
+ordinary marginal importance scores is unsafe. Loadings can aid description but
+are also sample-dependent and need uncertainty or stability assessment.
+
+Classical likelihood-ratio tests of whether remaining population canonical
+correlations are zero use Wilks-type products such as
+
+$$
+\Lambda_k=\prod_{j=k}^{\min(p,q)}(1-\hat\rho_j^2).
+$$
+
+Their usual approximations rely on independent rows, adequate sample size,
+nonsingular covariance estimates, and joint distributional conditions such as
+multivariate normality. Testing after selecting variables or component count on
+the same data invalidates the nominal interpretation. In exploratory work,
+out-of-sample stability and uncertainty are generally more informative than a
+sequence of optimistic in-sample tests.
+
+# Partial Least Squares Is a Family, Not One Formula
+
+The label “PLS” covers related algorithms with different normalizations,
+deflations, and prediction rules. The implementation and objective must be
+reported. A common first PLS pair for centered blocks solves
+
+$$
+\boxed{
+(\mathbf w_1,\mathbf c_1)
+=\arg\max_{\|\mathbf w\|=\|\mathbf c\|=1}
+\operatorname{Cov}(\mathbf X\mathbf w,\mathbf Y\mathbf c)^2.
+}
+$$
+
+For sample matrices, the first weight vectors are singular vectors of the
+cross-product $\mathbf X^{\mathsf T}\mathbf Y$. The scores
+$\mathbf t_1=\mathbf X\mathbf w_1$ and
+$\mathbf u_1=\mathbf Y\mathbf c_1$ identify a direction with large shared
+covariance. Subsequent components depend on the chosen deflation scheme, which is
+one reason software objects bearing the PLS name are not automatically equivalent.
+
+In PLS regression (PLS1 for one response and PLS2 for multiple responses), the
+$X$ scores form a low-dimensional basis used to predict $\mathbf Y$:
+
+$$
+\hat{\mathbf Y}=\mathbf X\hat{\mathbf B}_{\mathrm{PLS},K},
+$$
+
+where $K$ is the retained component count. Unlike principal-component regression,
+which chooses high-variance $X$ directions without seeing $Y$, PLS constructs
+directions using both predictor variation and association with the response.
+This supervision can improve prediction when signal lies in a moderate-variance
+predictor direction, but it also makes leakage especially damaging.
+
+CCA maximizes **correlation** and therefore divides by score variances. A common
+PLS formulation maximizes **covariance**, so variables and blocks with larger
+scale can dominate. Centering and scaling are consequently part of the model,
+not cosmetic defaults. With whitened blocks, the CCA objective becomes a singular-
+value problem for standardized cross-covariance; without whitening, the analogous
+PLS objective follows raw cross-covariance.
+
+# Choosing Between PCA, CCA, and PLS
+
+| Method | Uses which blocks to learn directions? | Primary objective | Typical target |
+|---|---|---|---|
+| PCA | one block | maximize within-block variance | representation or reconstruction |
+| CCA | two blocks symmetrically | maximize correlation between paired scores | cross-block association |
+| PLS regression | predictors and responses asymmetrically | components useful for covariance and prediction | out-of-sample prediction of $Y$ |
+| PLS canonical | two blocks more symmetrically | successive cross-covariance | joint representation |
+
+Method choice follows the scientific question. If the goal is to summarize
+transcriptomic variation without an outcome, use an unsupervised method such as
+PCA. If the goal is symmetric association between two prespecified blocks, CCA
+matches that estimand. If prediction of one block from the other is primary, PLS
+regression is a candidate that must be judged by held-out prediction.
+
+PLS discriminant analysis encodes class labels as a response and applies PLS-like
+regression. It is not automatically a calibrated probability model, and component
+plots do not establish classification performance. Compare it with explicit
+classification models using nested, design-respecting validation and metrics
+appropriate for imbalance and the intended decision.
+
+# Estimation, Regularization, and Validation
+
+Ordinary sample CCA requires stable inverses of within-block covariance matrices.
+If $p\geq n$ or $q\geq n$, those matrices are singular; even below that threshold,
+weak eigenvalues can produce nearly perfect in-sample canonical correlations from
+noise. Regularized CCA replaces or penalizes covariance estimates, while sparse
+CCA adds variable-selection penalties. These methods change the estimand and
+introduce tuning parameters; they do not simply “fix” classical CCA.
+
+PLS can be computed when predictors are collinear or $p>n$, which makes it useful
+for high-dimensional prediction. That computational ability does not guarantee
+statistical stability. The number of components, scaling, filtering, missing-data
+handling, and any sparsity penalty must be selected inside training data.
+
+A sound validation pipeline is:
+
+```text
+outer training units
+    -> fit transformations and filters
+    -> tune regularization and component count by inner validation
+    -> refit the complete pipeline on the outer training set
+    -> evaluate once on outer held-out units
+```
+
+All observations from one biological unit must remain in the same fold. When
+data have sites, batches, families, time order, or intended future domains, splits
+should mimic the deployment question. Randomly splitting cells from the same
+donor between training and validation estimates interpolation between cells, not
+generalization to new donors.
+
+For CCA, held-out canonical correlation must use weights fitted only on training
+units; refitting weights on the test set destroys the test. For PLS regression,
+report held-out error, calibration where relevant, and performance relative to
+simple baselines such as an intercept-only model, ridge regression, or principal-
+component regression. Repeated nested validation or a genuinely external cohort
+helps quantify selection variability.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Risk | Consequence | Assessment or remedy |
+|---|---|---|
+| Wrong experimental unit | apparently large $n$ and overoptimistic stability | map nesting and split or resample independent biological units |
+| Scaling choice | high-variance variables dominate covariance-based components | justify units; compare defensible transformations and scaling schemes |
+| Outliers | one row can determine cross-covariance | inspect robust distances, score plots, and leave-one-unit-out fits |
+| Batch or confounding | components align technical rather than biological blocks | inspect design balance and metadata; model known structure and validate across batches |
+| High dimension | spurious near-perfect CCA and unstable weights | regularize, reduce variables without outcome leakage, and validate out of sample |
+| Nonlinearity | linear scores miss curved or conditional relationships | inspect held-out residual structure; use nonlinear extensions only with stronger validation |
+| Missingness | complete cases may represent a selected population | model missingness, impute within folds, and propagate uncertainty |
+| Adaptive interpretation | selected loadings look more stable than they are | bootstrap whole pipelines and confirm variables in independent data |
+
+Permutation procedures must encode the null and design. Permuting rows of one
+block can calibrate a no-association statistic only when rows are exchangeable
+under the null; paired, blocked, related, clustered, or longitudinal data require
+restricted transformations. Hyperparameter tuning and feature selection must be
+repeated in every permutation if they contributed to the observed statistic.
+
+Bootstrap intervals for weights are complicated by sign changes, tied directions,
+and component switching. Align signs and compare subspaces or predictions when
+individual directions are not well identified. A narrow conditional interval from
+one fixed selected model does not capture uncertainty from choosing variables,
+scaling, regularization, or component count.
+
+# Multi-omics Example and Interpretation
+
+Suppose paired RNA-seq and metabolomics profiles are measured in 80 independent
+donors, balanced across treatment and processing batch. RNA libraries have two
+technical lanes, and metabolites have repeated quality-control injections.
+
+The donor is the experimental unit. Lanes and injections help characterize
+measurement quality but do not increase $n$ beyond 80. Preprocessing should be
+appropriate within each omics block, fitted without using held-out donor outcomes,
+and recorded as part of the target representation.
+
+If the scientific question is whether transcript and metabolite programs are
+associated symmetrically, regularized CCA may estimate paired cross-block
+directions. Stability should be assessed across donor resamples and, ideally, an
+external cohort. A high in-sample $\hat\rho_1$ is not sufficient because the same
+donors chose both weight vectors.
+
+If the goal is to predict metabolites from transcripts, PLS regression defines a
+directional problem. The component count is tuned within training donors, and the
+full pipeline is evaluated on held-out donors. Statistical interpretation concerns
+prediction on the chosen transformed scales and target population. Biological
+interpretation requires stable genes and metabolites, pathway coherence, batch
+robustness, plausible mechanisms, and replication. Cross-block association alone
+does not reveal which molecular layer causes the other; treatment, cell composition,
+and shared technical factors can generate the same pattern.
+
+# Common Interpretation Errors
+
+- **“A canonical correlation is the correlation between the two datasets.”** It
+  is the optimized correlation between estimated linear combinations, usually
+  upward biased in sample.
+- **“Large weights are important variables.”** Collinearity, scale, and cancellation
+  affect weights; inspect loadings, stability, and predictive contribution.
+- **“PLS is unsupervised dimension reduction.”** PLS directions use the response
+  block. Any preprocessing or plot built from them is supervised.
+- **“PLS handles $p>n$, so overfitting is solved.”** The algorithm can be fitted,
+  but components and performance still require nested validation or external data.
+- **“A two-dimensional score plot validates separation.”** It is a selected view
+  of training data, not an estimate of generalization or a formal biological claim.
+- **“Cells supply sample size for donor-level multi-omics.”** Cells are nested
+  observations; independent donors support donor-population inference.
+
+# Connections and Take-home Messages
+
+- [Covariance and correlation](../probability-randomness/covariance-and-correlation.qmd)
+  provides the cross-covariance quantities optimized by both families.
+- [Principal component analysis](principal-component-analysis.qmd) contrasts
+  unsupervised within-block variance with supervised cross-block objectives.
+- [Factor analysis](factor-analysis.qmd) models latent common causes rather than
+  merely optimizing paired linear summaries.
+- [Ridge regression](ridge-regression.qmd) supplies a useful regularized prediction
+  comparator in collinear or high-dimensional settings.
+- [Cross-validation](../regression-models/cross-validation.qmd) explains why the
+  complete supervised pipeline must be repeated inside folds.
+- [Train, validation, and test-set design](../regression-models/train-validation-and-test-set-design.qmd)
+  connects split structure to the intended generalization target.
+- [Multivariate hypothesis testing](multivariate-hypothesis-testing.qmd) focuses
+  on joint group or model contrasts rather than cross-block association and prediction.
+
+1. CCA maximizes correlation between standardized linear summaries of two blocks;
+   PLS methods emphasize cross-covariance and often prediction.
+2. Weights, loadings, scores, canonical correlations, and predictions are different
+   objects and require different interpretations.
+3. Scaling, filtering, regularization, deflation, and component count define the
+   fitted procedure and must be reported and validated.
+4. High dimension can produce striking but spurious in-sample associations even
+   when an algorithm is computationally well defined.
+5. Validation and resampling must operate on independent biological units and
+   repeat every data-adaptive step.
+6. Cross-block statistical association does not by itself establish biological
+   mechanism, causal direction, or transportability to new cohorts.
+
+# References
+
+- Hotelling, H. (1936). Relations between two sets of variates. *Biometrika*,
+  28(3/4), 321--377. <https://doi.org/10.1093/biomet/28.3-4.321>
+- Wold, S., Sjostrom, M., and Eriksson, L. (2001). PLS-regression: a basic tool
+  of chemometrics. *Chemometrics and Intelligent Laboratory Systems*, 58(2),
+  109--130. <https://doi.org/10.1016/S0169-7439(01)00155-1>
+- de Jong, S. (1993). SIMPLS: an alternative approach to partial least squares
+  regression. *Chemometrics and Intelligent Laboratory Systems*, 18(3), 251--263.
+  <https://doi.org/10.1016/0169-7439(93)85002-X>
+- Wegelin, J. A. (2000). *A Survey of Partial Least Squares (PLS) Methods, with
+  Emphasis on the Two-Block Case*. University of Washington, Department of
+  Statistics. <https://stat.uw.edu/research/tech-reports/survey-partial-least-squares-pls-methods-emphasis-two-block-case>
+- Hastie, T., Tibshirani, R., and Friedman, J. (2009). *The Elements of
+  Statistical Learning* (2nd ed.), Chapter 3. Springer.
+  <https://doi.org/10.1007/978-0-387-84858-7>
+- scikit-learn developers. Cross decomposition: PLS and CCA. *scikit-learn
+  documentation*. <https://scikit-learn.org/stable/modules/cross_decomposition.html>
