@@ -1,0 +1,276 @@
+---
+title: "Missing-data Mechanisms: MCAR, MAR, and MNAR"
+subtitle: "What the observation process implies for identification and inference"
+description: "A design-aware guide to MCAR, MAR, MNAR, ignorability, diagnostics, and sensitivity analysis in bioinformatics."
+author: "Jiahong Sun"
+date: "2026-11-10"
+date-modified: "2026-11-10"
+categories: [Statistics, Bioinformatics, Missing Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Missingness Is Part of the Data-generating Process
+
+A blank entry is not a value and does not explain why the value was not
+observed. A specimen may be unavailable, an assay may fail, a signal may fall
+below a detection threshold, or a participant may leave a study. Those causes
+can select a systematically different subset of biological units or
+measurements. The resulting bias depends on the scientific estimand, the
+variables recorded, and the assumptions connecting observation to unseen data.
+
+Let $Y=(Y_{\mathrm{obs}},Y_{\mathrm{mis}})$ denote the data that would be
+available under complete observation, and let $R$ be a response indicator with
+$R_j=1$ when component $Y_j$ is observed. With fully observed covariates $X$,
+the joint model factors as
+
+$$
+\boxed{
+p(Y,R\mid X,\theta,\psi)
+=p(Y\mid X,\theta)\,
+p(R\mid Y,X,\psi).
+}
+$$
+
+The first factor is the **full-data model** and contains the target parameter
+$\theta$. The second is the **missingness model**. MCAR, MAR, and MNAR describe
+restrictions on the second factor; they are not labels that can be read directly
+from a missingness table.
+
+# Define the Target and the Units First
+
+Before choosing a missing-data method, document:
+
+- the target population, estimand, and analysis model;
+- the biological experimental unit and the level of randomization or sampling;
+- which variables can be missing, at what stage, and for which units;
+- which auxiliary variables and reasons for missingness were recorded; and
+- whether absence means an unobserved value, a structural impossibility, or a
+  censored value known only to lie in a range.
+
+Suppose an RNA-seq study compares treatment groups across 40 people. People are
+the biological units. Libraries, lanes, reads, and repeated assays are technical
+levels; they do not turn 40 people into a larger independent sample. A missing
+library from a retained person differs from a missing follow-up visit, and an
+undetected transcript differs from a person who never entered the cohort.
+
+The estimand might be the mean treatment contrast among all eligible people at
+week 8. The estimator is the rule applied to incomplete data, and its observed
+value is the estimate. Valid uncertainty must reflect both biological sampling
+and the information lost through missingness.
+
+# Three Mechanisms, Relative to an Information Set
+
+Write the observation model as $p(R\mid Y_{\mathrm{obs}},Y_{\mathrm{mis}},X)$.
+The standard mechanisms are:
+
+## Missing completely at random
+
+$$
+p(R\mid Y_{\mathrm{obs}},Y_{\mathrm{mis}},X)=p(R).
+$$
+
+Under **MCAR**, observation is independent of all variables in the full data.
+A randomly broken freezer affecting specimens without regard to subject or assay
+values may approximate MCAR. If failures are more common on one plate and plate
+is associated with treatment, the mechanism is not MCAR for that analysis.
+
+MCAR is strong. It can make complete cases representative of the original
+sample, but deletion still discards information and can change precision.
+
+## Missing at random
+
+$$
+\boxed{
+p(R\mid Y_{\mathrm{obs}},Y_{\mathrm{mis}},X)
+=p(R\mid Y_{\mathrm{obs}},X).
+}
+$$
+
+Under **MAR**, after conditioning on the observed information used in the
+missingness or analysis procedure, observation no longer depends on the missing
+values. For example, week-8 expression may be more often missing among people
+with a high observed week-4 toxicity score. This can be MAR if, within week-4
+score and other recorded predictors, dropout does not additionally depend on
+the unseen week-8 expression.
+
+MAR is always relative to an information set. Collecting and including strong
+predictors of both missingness and the incomplete variable can make an MAR
+assumption more credible. Omitting those predictors can turn a defensible
+conditional statement into an implausible one.
+
+## Missing not at random
+
+When observation still depends on $Y_{\mathrm{mis}}$ after conditioning on the
+observed information, the mechanism is **MNAR**. A protein may be unreported
+because its latent abundance is below an assay-dependent detection limit, or a
+participant with an unrecorded severe response may be less likely to return.
+
+MNAR is not one model. Different selection, pattern-mixture, or shared-parameter
+models can imply the same observed-data distribution but different values for
+the estimand. Extra assumptions, external information, validation measurements,
+or designed follow-up are needed to distinguish them.
+
+| Mechanism | Dependence allowed for $R$ | Typical analysis implication |
+|---|---|---|
+| MCAR | none of $Y$ or $X$ | deletion may be unbiased for some targets, but inefficient |
+| MAR | observed $Y$ and $X$ | likelihood, weighting, or imputation can be valid under correct models |
+| MNAR | unobserved $Y$ remains relevant | observed data alone do not identify the answer without additional assumptions |
+
+# Ignorability Is More Than MAR
+
+For likelihood or Bayesian inference about $\theta$, Rubin's ignorability result
+requires an MAR observation process and **distinct parameters**: the parameter
+spaces for $\theta$ and $\psi$ must not constrain one another. Bayesian analysis
+also requires an appropriate prior separation. Under these conditions,
+
+$$
+L_{\mathrm{obs}}(\theta)
+=\int p(Y_{\mathrm{obs}},Y_{\mathrm{mis}}\mid X,\theta)
+\,dY_{\mathrm{mis}}
+$$
+
+can be used without explicitly modeling $R$. Ignorable does not mean that the
+missing values may be discarded: the observed-data likelihood integrates over
+them. It also does not guarantee that a misspecified outcome model, a poor
+imputation model, or a complete-case analysis is valid.
+
+The sampling design, nonresponse weights, censoring, and protocol-defined
+intercurrent events can require additional treatment even when a convenient
+outcome model uses the word MAR.
+
+# What the Observed Data Can and Cannot Diagnose
+
+Start with a missingness map by variable, unit, group, time, batch, and assay
+stage. Compare observed covariates and earlier outcomes across response patterns.
+Modeling $R$ from observed variables can reveal dependencies that contradict
+MCAR and identify useful auxiliary predictors.
+
+These checks cannot prove MAR or distinguish MAR from MNAR, because the defining
+comparison involves unseen values. A nonsignificant test of association with
+recorded variables is not evidence that missingness is random. Conversely, a
+predictable response indicator does not by itself imply MNAR; it may support an
+MAR analysis conditional on those predictors.
+
+| Question | Useful check | Limitation |
+|---|---|---|
+| Where is information lost? | pattern plot by unit, variable, time, and batch | describes patterns, not causes |
+| Is MCAR implausible? | compare recorded values across response groups | unrecorded causes remain invisible |
+| Is there enough support? | cross-tabulate response by treatment and design strata | sparse cells can prevent reliable adjustment |
+| Is missingness monotone? | order longitudinal patterns by dropout time | monotonicity does not determine the mechanism |
+| Could detection drive absence? | inspect signal, quality, and limit-of-detection metadata | observed signals may themselves be selected |
+
+# Design Prevention Is Stronger Than Statistical Repair
+
+Prespecify collection windows, follow-up procedures, assay failure codes, and
+rules for reruns. Balance plates and processing order across biological groups;
+avoid placing all treated samples on one plate. Retain pre-failure quality
+metrics and reasons for noncollection. A random audit or high-sensitivity
+reassay of selected missing specimens can supply information about an otherwise
+unidentified observation process.
+
+Technical replication can reduce accidental assay loss or characterize
+measurement reliability. It cannot recover biological units that were never
+sampled, remove selective dropout, or repair treatment--batch confounding.
+
+# Sensitivity Analysis for Unverifiable Assumptions
+
+Use MAR as a primary assumption only when its conditioning set and scientific
+rationale are stated. Then perturb the unobserved part of the model. In a
+pattern-mixture sensitivity analysis for a continuous outcome, one simple
+departure is
+
+$$
+E(Y_{\mathrm{mis}}\mid Y_{\mathrm{obs}},X,R=0)
+=E_{\mathrm{MAR}}(Y_{\mathrm{mis}}\mid Y_{\mathrm{obs}},X)+\delta.
+$$
+
+$\delta$ is not estimated from the incomplete data; it encodes a scientifically
+calibrated difference between missing and comparable observed outcomes. Vary it
+over plausible values, propagate uncertainty, and report the point at which the
+scientific conclusion changes. Binary outcomes may use an odds-ratio departure;
+selection models may instead vary the effect of unseen $Y$ on response.
+
+Sensitivity scenarios should preserve the original experimental unit and
+estimand. A method that silently changes the target from all eligible people to
+people with complete assays answers a different question.
+
+# Bioinformatics Example: Proteins Missing from LC--MS/MS
+
+Consider 48 people randomized to two conditions, with plasma processed across
+balanced plates and thousands of peptide intensities summarized to proteins.
+People are the biological units. Peptides, spectra, injections, and reruns are
+technical observations nested within specimens.
+
+Absence may arise from random acquisition failure, observed plate quality,
+peptide identification rules, or abundance-dependent detection. One global
+label is therefore inadequate: mechanisms may differ by protein and pipeline
+stage. Replacing every blank by a low constant asserts an abundance-dependent
+model without estimating its uncertainty and may create artificial group
+separation.
+
+Statistically, an adjusted group coefficient estimates a population contrast
+only under the sampling, normalization, outcome-model, and observation-process
+assumptions. Biologically, a protein more often detected in one condition may
+reflect abundance, ionization, peptide composition, sample handling, or batch;
+it is not automatically evidence of pathway activation. Confirming the pattern
+in new people and with an orthogonal assay addresses biological reproducibility,
+not merely technical repeatability.
+
+# Common Errors
+
+- **Treating NA as a number:** zero, a detection limit, and “not measured” have
+  different meanings.
+- **Calling MAR a property of the dataset:** MAR is conditional on specified
+  variables and a model for observation.
+- **Testing MAR from observed data:** MAR and MNAR generally cannot be separated
+  empirically without extra information.
+- **Equating ignorability with deletion:** observed-data likelihood and
+  principled imputation use incomplete records rather than dropping them.
+- **Using many technical rows as evidence:** missingness at the person or sample
+  level is not repaired by read- or cell-level sample size.
+- **Reporting one analysis:** an unverifiable assumption needs a calibrated
+  sensitivity analysis, not a robustness adjective.
+
+# Connections and Take-home Messages
+
+- [Populations, samples, parameters, and estimands](../statistical-inference/populations-samples-parameters-and-estimands.qmd)
+  clarifies what population quantity an incomplete-data analysis targets.
+- [Complete-case analysis and simple imputation](complete-case-analysis-and-simple-imputation.qmd)
+  examines common shortcuts and their failure mechanisms.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  develops structured tipping-point analyses.
+- [Repeated measures and longitudinal data](../advanced-modeling/repeated-measures-and-longitudinal-data.qmd)
+  connects dropout to trajectory models and within-unit dependence.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  explains how conditioning on observed subsets can distort estimates.
+
+1. MCAR, MAR, and MNAR restrict the observation process, not the numerical NA
+   entries themselves.
+2. MAR is conditional on recorded information and is usually not testable from
+   observed data alone.
+3. Ignorability requires more than MAR and does not justify deleting incomplete
+   records.
+4. Design, metadata, and validation measurements can make assumptions more
+   credible; technical replication cannot replace missing biological units.
+5. Report effect estimates and uncertainty across scientifically plausible MNAR
+   departures, and separate statistical from biological interpretation.
+
+# References
+
+- Rubin, D. B. (1976). Inference and missing data. *Biometrika*, 63(3),
+  581--592. <https://doi.org/10.1093/biomet/63.3.581>
+- Little, R. J. A., and Rubin, D. B. (2019). *Statistical Analysis with Missing
+  Data* (3rd ed.). Wiley. <https://doi.org/10.1002/9781119482260>
+- National Research Council. (2010). *The Prevention and Treatment of Missing
+  Data in Clinical Trials*. National Academies Press.
+  <https://doi.org/10.17226/12955>
+- Molenberghs, G., and Kenward, M. G. (2007). *Missing Data in Clinical
+  Studies*. Wiley. <https://doi.org/10.1002/9780470510445>
+- Lazar, C., Gatto, L., Ferro, M., Bruley, C., and Burger, T. (2016).
+  Accounting for the multiple natures of missing values in label-free
+  quantitative proteomics data sets to compare imputation strategies.
+  *Journal of Proteome Research*, 15(4), 1116--1125.
+  <https://doi.org/10.1021/acs.jproteome.5b00981>

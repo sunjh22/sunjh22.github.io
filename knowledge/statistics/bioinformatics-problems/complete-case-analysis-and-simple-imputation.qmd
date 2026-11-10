@@ -1,0 +1,311 @@
+---
+title: "Complete-case Analysis and Simple Imputation"
+subtitle: "What deletion and single-value filling estimate, and why uncertainty fails"
+description: "Assumptions, bias, precision, diagnostics, and limited uses of complete-case analysis and simple imputation."
+author: "Jiahong Sun"
+date: "2026-11-10"
+date-modified: "2026-11-10"
+categories: [Statistics, Bioinformatics, Missing Data, Imputation]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Two Convenient Shortcuts with Different Problems
+
+**Complete-case analysis** retains only units with every variable required by a
+particular analysis. **Simple imputation** fills each missing entry once, often
+with a mean, median, group summary, last observation, or fixed low value, and
+then analyzes the completed table as if those replacements had been observed.
+
+Both methods are easy to run. Neither is a neutral data-cleaning step. Deletion
+changes which units contribute; deterministic filling changes distributions and
+pretends there is more information than was collected. Their validity depends
+on the estimand, data-generating model, observation process, and variance
+calculation.
+
+# Begin with the Estimand and Analysis Set
+
+Let $Z_i=(Y_i,X_i)$ contain the outcome and predictors for biological unit $i$,
+and let $C_i=1$ indicate that all variables required by the analysis are
+observed. For a full-population estimating equation
+
+$$
+E\{U(Z_i;\theta_0)\}=0,
+$$
+
+complete-case analysis instead solves
+
+$$
+\boxed{
+\sum_{i=1}^n C_i U(Z_i;\theta)=0.
+}
+$$
+
+This targets $\theta_0$ only when selection by $C$ leaves the relevant
+estimating equation unbiased:
+
+$$
+E\{C_iU(Z_i;\theta_0)\}=0.
+$$
+
+MCAR is sufficient but not always necessary. For some correctly specified
+regression models, complete-case slope estimates can remain consistent when
+selection depends on fully observed predictors but not on the outcome given
+those predictors. That result is target- and model-specific; it does not imply
+that complete cases represent the source population, that an intercept or mean
+is unbiased, or that the same deletion rule works for another analysis.
+
+Always report the intended population, the complete-case population, the number
+of independent biological units retained by group, and the precise estimand.
+
+# Complete-case Analysis
+
+Suppose 100 independent specimens were planned and 70 are complete. Even under
+MCAR, the estimator uses less information. For a sample mean with response rate
+$\pi$, its approximate variance is
+
+$$
+\operatorname{Var}(\bar Y_{\mathrm{CC}})
+\approx \frac{\sigma^2}{n\pi},
+$$
+
+compared with $\sigma^2/n$ under complete observation. The effective loss is in
+biological units, not merely in table cells.
+
+When completeness depends on outcome, exposure, or their causes, bias can be
+severe. If low-abundance samples fail more often in one treatment group, the
+observed group mean is shifted upward. Conditioning on completeness can also
+open a noncausal path when both exposure and outcome influence observation.
+
+Complete-case analysis can be a defensible primary or sensitivity analysis when:
+
+- the estimand is defined for complete units or selection is justified for the
+  specific estimator;
+- the number and balance of retained independent units remain adequate;
+- all variables controlling selection and the analysis model are handled
+  correctly; and
+- the loss of precision and change in target population are reported.
+
+It is not validated merely because the fraction missing is small. A small,
+highly selective loss can matter more than a larger nearly random loss.
+
+# Available-case Calculations Are Not a Coherent Joint Analysis
+
+Pairwise deletion uses every available pair to estimate each covariance or
+correlation. Different matrix entries then describe different subsets. The
+resulting covariance matrix may not be positive semidefinite, and a regression
+assembled from it may not correspond to any common sample or likelihood.
+
+Use available-case summaries for transparent description only when their
+denominators are displayed. They should not be mistaken for a generally valid
+multivariate missing-data procedure.
+
+# Mean and Median Imputation
+
+For a partially observed variable $X$, mean imputation defines
+
+$$
+X_i^*=R_iX_i+(1-R_i)\bar X_{\mathrm{obs}}.
+$$
+
+It preserves the completed-data mean by construction, but not the distribution.
+If $m$ of $n$ values are observed, deviations for the $n-m$ filled values are
+zero, so
+
+$$
+\sum_{i=1}^n(X_i^*-\bar X_{\mathrm{obs}})^2
+=\sum_{i:R_i=1}(X_i-\bar X_{\mathrm{obs}})^2.
+$$
+
+Dividing essentially the same sum of squares by a larger denominator reduces
+the apparent variance. Covariances and correlations are also distorted because
+imputed values carry no genuine joint variation. Median imputation has analogous
+problems and can create an artificial spike at the median.
+
+Regression imputation can preserve conditional patterns better, but a single
+predicted value lies exactly on a fitted surface. Subsequent analysis ignores
+both residual variability and uncertainty in the fitted imputation model.
+Standard errors are therefore usually too small unless a valid variance method
+explicitly accounts for the imputation procedure.
+
+# Last Observation, Zero, and Limit-based Filling
+
+These rules encode strong scientific models:
+
+- **last observation carried forward** asserts no unobserved change after the
+  last measurement and can bias both trajectory and uncertainty;
+- **zero filling** asserts measured absence, which differs from not collected,
+  not detected, or filtered out;
+- **half a detection limit** asserts a common low value and ignores the
+  distribution below the threshold and variation in assay sensitivity; and
+- **minimum-value or down-shift filling** can force artificial separation,
+  especially when missingness differs between biological groups.
+
+For genuinely censored measurements, use a model that represents the known
+inequality or detection process. For structural absence, define the variable
+and biological question accordingly. Do not use one numeric code for several
+observation states.
+
+# Missing-indicator Methods
+
+A common predictor shortcut replaces missing $X$ by a constant and adds
+$M=1-R$ to the regression. In a linear model,
+
+$$
+E(Y\mid X^*,M,Z)
+=\beta_0+\beta_XX^*+\beta_MM+\boldsymbol\gamma^{\mathsf T}Z.
+$$
+
+$\beta_M$ compares the missing-$X$ group with observed units at the fill value;
+it does not recover the missing $X$ values. For observational regression it can
+bias covariate effects and leave residual confounding. It may be useful when
+“not measured” is itself a well-defined category or in some randomized-trial
+adjustment settings, but those are specific estimands and designs, not a general
+solution.
+
+# A Worked Example
+
+Suppose gene-expression response values are observed for three of four people:
+
+$$
+Y_{\mathrm{obs}}=(2,4,6), \qquad Y_4\text{ missing}.
+$$
+
+The observed mean is $4$. Mean imputation produces $(2,4,6,4)$, still with mean
+$4$. Using the usual sample-variance denominator, the observed-data variance is
+
+$$
+s_{\mathrm{obs}}^2=\frac{(2-4)^2+(4-4)^2+(6-4)^2}{3-1}=4,
+$$
+
+whereas the completed-table variance is
+
+$$
+s_*^2=\frac{8}{4-1}=\frac{8}{3}.
+$$
+
+Nothing was learned about the fourth value, yet the completed table appears
+less variable and a naive standard error treats the invented value as data. If
+the fourth value was missing because it was very high, the mean is biased too.
+This small example separates two problems: an unverified assumption about the
+missing value and failure to propagate imputation uncertainty.
+
+# A Design-aware Decision Guide
+
+| Situation | Better first response | Why |
+|---|---|---|
+| Rare accidental MCAR loss | compare complete-case and justified model-based analysis | deletion may be adequate but loses precision |
+| Outcome missing given recorded history | model likelihood, weighting, or principled imputation | uses observed predictors and propagates uncertainty |
+| Covariates missing | include outcome and relevant auxiliaries in a joint or imputation model | outcome helps preserve associations |
+| Value below a known detection limit | censored or measurement model | respects partial information rather than inventing a value |
+| Plausible MNAR process | selection or pattern-mixture sensitivity analysis | observed data cannot determine unseen dependence |
+| Structural non-applicability | explicit state or separate estimand | structural absence is not ordinary missingness |
+
+The next method should be chosen from the observation process and scientific
+target, not from which function produces a rectangular matrix fastest.
+
+# Diagnostics and Sensitivity
+
+At minimum:
+
+1. tabulate missingness by variable, treatment, time, batch, and biological
+   unit, showing denominators;
+2. compare retained and excluded units on recorded baseline and quality
+   variables;
+3. draw the analysis flow from eligible units to the final analysis set;
+4. compare estimates, intervals, and group balance across defensible methods;
+5. inspect whether imputation creates spikes, shrinks variance, changes
+   correlations, or fills outside biological support; and
+6. vary assumptions about unseen values, not only software settings.
+
+A complete-case comparison is useful as a sensitivity analysis, but agreement
+with an imputed analysis is not proof that either assumption is correct. Both
+can share the same misspecified outcome model or omit the same predictor of
+missingness.
+
+# Bioinformatics Example: Incomplete RNA-seq Covariates
+
+Imagine a differential-expression study of 60 patient-derived samples. The
+patient is the experimental unit; repeated libraries and sequencing lanes are
+technical replicates. Treatment, disease stage, and extraction batch are design
+variables, but stage is missing for 12 patients and two libraries fail quality
+control.
+
+Deleting every patient with any missing stage value can unbalance treatment and
+batch, reduce the independent sample size, and change the target to patients
+with recorded stage. Keeping technical lane rows does not restore the lost
+patients. Filling stage with its most common category hides uncertainty and can
+leave confounding; filling failed expression counts with zero confuses assay
+failure with biological absence.
+
+The analysis should distinguish missing metadata from failed measurements,
+retain failure reasons and observed auxiliary variables, and use a method
+compatible with the count model and design. Any imputation must occur within
+resampling folds for predictive validation to prevent information leakage.
+
+Statistically, a gene coefficient is a model-based contrast under assumptions
+about normalization, covariates, missingness, and independent patients.
+Biologically, it is evidence of an abundance difference in the target
+population, not proof of regulation or mechanism. New biological samples and
+orthogonal assays address generalization and mechanism; resequencing the same
+library addresses technical reliability.
+
+# Reporting Checklist
+
+Report the amount and pattern of missingness, reasons and timing, experimental
+unit, retained units per group, method and variables used, parameter settings,
+and whether imputation was performed before or inside validation splits. State
+the assumed mechanism and target population. Present effect estimates and valid
+uncertainty, not only p-values, and show sensitivity to plausible departures.
+
+If a simple method is retained, name its limitation directly. “Missing values
+were handled” is not enough to reproduce or interpret the analysis.
+
+# Connections and Take-home Messages
+
+- [Missing-data mechanisms: MCAR, MAR, and MNAR](missing-data-mechanisms-mcar-mar-and-mnar.qmd)
+  defines the observation assumptions behind deletion and filling.
+- [Point estimators: bias, variance, and mean squared error](../statistical-inference/point-estimators-bias-variance-and-mean-squared-error.qmd)
+  explains why a convenient estimator may trade or add bias and variance.
+- [Multiple linear regression](../regression-models/multiple-linear-regression.qmd)
+  supplies the conditional-mean framework in which selection assumptions must
+  be stated.
+- [Train, validation, and test-set design](../regression-models/train-validation-and-test-set-design.qmd)
+  explains why preprocessing learned from all rows leaks information.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a framework for assumption-driven comparisons.
+
+1. Complete-case analysis changes the contributing population and normally
+   sacrifices information; its validity is estimand- and model-specific.
+2. Mean, median, and deterministic regression filling distort distributions and
+   usually understate uncertainty.
+3. Zero and low-value replacement are scientific assumptions about detection,
+   not generic fixes for NA entries.
+4. Missingness at the biological-unit level cannot be repaired by technical
+   replication or feature count.
+5. Report the observation process, target population, effect estimate,
+   uncertainty, and sensitivity analyses so statistical and biological claims
+   remain distinct.
+
+# References
+
+- Little, R. J. A. (1992). Regression with missing X's: A review. *Journal of
+  the American Statistical Association*, 87(420), 1227--1237.
+  <https://doi.org/10.1080/01621459.1992.10476282>
+- Little, R. J. A., and Rubin, D. B. (2019). *Statistical Analysis with Missing
+  Data* (3rd ed.). Wiley. <https://doi.org/10.1002/9781119482260>
+- Donders, A. R. T., van der Heijden, G. J. M. G., Stijnen, T., and Moons,
+  K. G. M. (2006). Review: A gentle introduction to imputation of missing
+  values. *Journal of Clinical Epidemiology*, 59(10), 1087--1091.
+  <https://doi.org/10.1016/j.jclinepi.2006.01.014>
+- van der Heijden, G. J. M. G., Donders, A. R. T., Stijnen, T., and Moons,
+  K. G. M. (2006). Imputation of missing values is superior to complete case
+  analysis and the missing-indicator method in multivariable diagnostic
+  research: a clinical example. *Journal of Clinical Epidemiology*, 59(10),
+  1102--1109. <https://doi.org/10.1016/j.jclinepi.2006.01.015>
+- Sterne, J. A. C., White, I. R., Carlin, J. B., et al. (2009). Multiple
+  imputation for missing data in epidemiological and clinical research:
+  potential and pitfalls. *BMJ*, 338, b2393.
+  <https://doi.org/10.1136/bmj.b2393>

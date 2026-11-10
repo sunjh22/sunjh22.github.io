@@ -6,5 +6,11 @@ categories: [Statistics, Bioinformatics]
 
 This level will connect statistical foundations to missing data, confounding, batch effects, RNA-seq, gene-set inference, microbiome data, single-cell studies, spatial omics, and reproducible analysis.
 
+- [Missing-data mechanisms: MCAR, MAR, and MNAR](missing-data-mechanisms-mcar-mar-and-mnar.qmd)
+- [Complete-case analysis and simple imputation](complete-case-analysis-and-simple-imputation.qmd)
+
+Future notes will develop multiple imputation, confounding and causal adjustment,
+batch effects, omics-specific models, and reproducible statistical workflows.
+
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)
