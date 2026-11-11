@@ -8,9 +8,11 @@ This level will connect statistical foundations to missing data, confounding, ba
 
 - [Missing-data mechanisms: MCAR, MAR, and MNAR](missing-data-mechanisms-mcar-mar-and-mnar.qmd)
 - [Complete-case analysis and simple imputation](complete-case-analysis-and-simple-imputation.qmd)
+- [Multiple imputation](multiple-imputation.qmd)
+- [Sensitivity analysis for missing data](sensitivity-analysis-for-missing-data.qmd)
 
-Future notes will develop multiple imputation, confounding and causal adjustment,
-batch effects, omics-specific models, and reproducible statistical workflows.
+Future notes will develop confounding and causal adjustment, batch effects,
+omics-specific models, and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)

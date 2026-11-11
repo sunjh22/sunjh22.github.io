@@ -1,0 +1,348 @@
+---
+title: "Sensitivity Analysis for Missing Data"
+subtitle: "Stress-testing conclusions against unverifiable observation assumptions"
+description: "Pattern-mixture, selection-model, tipping-point, and calibrated sensitivity analyses for incomplete bioinformatics studies."
+author: "Jiahong Sun"
+date: "2026-11-11"
+date-modified: "2026-11-11"
+categories: [Statistics, Bioinformatics, Missing Data, Sensitivity Analysis]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Missing-data Sensitivity Analysis Varies What the Data Cannot Identify
+
+Observed data generally cannot distinguish missing at random (MAR) from missing
+not at random (MNAR). A sensitivity analysis therefore introduces explicit
+parameters for how unseen outcomes may differ from their MAR predictions, varies
+those parameters over scientifically credible ranges, and propagates the change
+through the original analysis.
+
+Let $R=1$ indicate that outcome $Y$ is observed, and let $X$ contain observed
+history and design variables. Under MAR,
+
+$$
+p(Y\mid X,R=0)=p(Y\mid X,R=1)
+$$
+
+after the required conditioning. An MNAR sensitivity model deliberately relaxes
+that equality. The unidentified departure is not estimated by repeatedly
+refitting the same observed data; it must be calibrated from scientific
+knowledge, validation data, historical studies, or transparent hypothetical
+scenarios.
+
+Sensitivity analysis does not choose a mechanism that makes a preferred result
+survive. Its aim is to show which assumptions are necessary for the conclusion
+and whether those assumptions are credible.
+
+# Fix the Estimand, Primary Analysis, and Decision First
+
+A useful protocol states before examining sensitivity results:
+
+- the target population and estimand;
+- the biological experimental unit and observation hierarchy;
+- the primary MAR or other identified analysis;
+- the missing variables, patterns, and likely causes;
+- the effect scale and scientifically meaningful threshold; and
+- the decision that would change at a tipping point.
+
+For example, the estimand might be the week-12 mean treatment difference among
+all randomized participants. It should not silently become the difference among
+participants with observed week-12 specimens. The estimator is the complete
+workflow under a stated sensitivity scenario; the estimate is its result in the
+observed study. An interval should include sampling and missing-data uncertainty,
+not just variation conditional on fixed filled values.
+
+Participants may be the randomized biological units while specimens, aliquots,
+assay runs, cells, and reads are nested observations. Sensitivity scenarios must
+perturb missingness at its actual level. Varying millions of cell entries cannot
+stand in for uncertainty about missing donors.
+
+# Pattern-mixture Models: Describe Unseen Values by Response Pattern
+
+A pattern-mixture factorization writes
+
+$$
+p(Y,R\mid X)=p(R\mid X)p(Y\mid R,X).
+$$
+
+For a continuous missing outcome, a simple delta adjustment is
+
+$$
+\boxed{
+E(Y\mid X,R=0)
+=E_{\mathrm{MAR}}(Y\mid X,R=0)+\delta.
+}
+$$
+
+$\delta=0$ reproduces the chosen MAR model. A negative $\delta$ says that,
+conditional on recorded information, missing outcomes are on average lower
+than their MAR predictions. The sign must follow the outcome scale; for an
+adverse outcome, a positive shift may represent worse outcomes.
+
+In multiple imputation, one implementation draws values under MAR and adds
+$\delta$ to appropriate imputed values before running the substantive analysis.
+For treatment-specific departures, use $\delta_0$ and $\delta_1$ rather than
+forcing the same departure in both arms. Uncertainty in $\delta$ can be
+represented with a distribution instead of treating every grid value as known.
+
+For a binary outcome, a log-odds shift can be used:
+
+$$
+\operatorname{logit}P(Y=1\mid X,R=0)
+=\operatorname{logit}P_{\mathrm{MAR}}(Y=1\mid X,R=0)+\delta.
+$$
+
+For counts, survival times, compositional measurements, or bounded assay values,
+the departure should be defined on a scale that preserves support and has a
+scientific interpretation. Adding a constant to every scale is not generally
+valid.
+
+# Selection Models: Describe Response Given the Unseen Outcome
+
+A selection factorization writes
+
+$$
+p(Y,R\mid X)=p(Y\mid X)p(R\mid Y,X).
+$$
+
+A logistic response model may introduce an MNAR coefficient $\gamma$:
+
+$$
+\boxed{
+\operatorname{logit}P(R=1\mid Y,X)
+=\alpha+X^\mathsf{T}\beta+\gamma Y.
+}
+$$
+
+Under MAR, $\gamma=0$ after conditioning on $X$. If $\gamma>0$, larger unseen
+outcomes are more likely to be observed. Because $Y$ is missing when $R=0$,
+$\gamma$ is weakly or not identified without extra information. A sensitivity
+analysis fixes or places an informative prior on $\gamma$ and examines the
+resulting estimand.
+
+Selection parameters are often difficult for subject-matter experts to elicit.
+Translate candidate values into response-probability contrasts for realistic
+outcomes. Pattern-mixture and selection models can encode related departures,
+but an apparently identical numeric parameter has a different meaning in each
+factorization.
+
+# Shared-parameter and Reference-based Models
+
+In longitudinal studies, a shared latent variable can influence both the
+outcome trajectory and dropout. Such models are useful when a common latent
+disease state plausibly drives measurements and observation, but their results
+depend on distributional and association assumptions that observed data may not
+test.
+
+Reference-based imputation specifies how post-dropout outcomes in one group
+borrow from another group's trajectory. Examples include jump-to-reference,
+copy-reference, and copy-increments-in-reference assumptions. These are not
+generic conservative defaults. Each implies a particular post-dropout treatment
+effect and covariance structure and should be tied to the intervention and
+estimand. A biological assay failure does not automatically imply that a treated
+participant's latent outcome follows the control trajectory.
+
+# A Tipping-point Analysis
+
+For a scalar $\delta$, evaluate a prespecified grid and record at least:
+
+$$
+\hat\theta(\delta),
+\qquad
+\operatorname{SE}\{\hat\theta(\delta)\},
+\qquad
+\text{interval}(\delta),
+$$
+
+plus the scientific decision. The **tipping point** is the smallest relevant
+departure at which that decision changes. It may be where an interval crosses
+zero, but a threshold for biological importance is often more informative.
+
+Suppose an estimated treatment benefit remains larger than a prespecified
+clinically meaningful difference unless missing treated outcomes average at
+least 1.8 units worse than comparable observed outcomes. The result is robust
+only if a 1.8-unit departure is judged implausible using external knowledge. The
+number alone is not a robustness certificate.
+
+With group-specific $(\delta_0,\delta_1)$, display a two-dimensional region of
+conclusions rather than varying one group while fixing the other arbitrarily.
+Report discontinuities caused by constraints, model failures, or sparse support;
+do not smooth them away.
+
+# Calibrating Sensitivity Parameters
+
+Useful calibration sources include:
+
+- blinded follow-up or high-sensitivity reassays of a random subset of missing
+  specimens;
+- earlier measurements on the same biological units;
+- external cohorts using a more complete observation protocol;
+- assay validation data near detection limits;
+- expert elicitation translated into observable-scale contrasts; and
+- worst-reasonable-case bounds anchored to natural outcome ranges.
+
+Compare $\delta$ with the residual standard deviation, a prespecified meaningful
+effect, observed change over time, and known assay variability. Compare $\gamma$
+with changes in response odds over realistic outcome differences. Separate
+uncertainty about the parameter's plausible range from sampling uncertainty
+within a scenario.
+
+Observed responders cannot validate an MNAR parameter by themselves. Cross-
+validation of an outcome model assesses prediction among observed values, not
+the untestable relationship between response and unseen outcomes.
+
+# Propagate Every Relevant Source of Uncertainty
+
+Each scenario should rerun the full analysis and its variance procedure. In an
+MI-based sensitivity analysis, retain imputation-model parameter draws and
+within-imputation uncertainty, then pool with a rule appropriate to the method.
+If $\delta$ is assigned a distribution, draw it within the imputation process so
+its uncertainty reaches the final interval.
+
+A deterministic shift followed by an ordinary complete-data standard error can
+understate uncertainty. Conversely, treating sensitivity scenarios as if they
+were random repeated samples may mix scientific uncertainty with sampling
+probability without a declared model. Report scenario-conditional intervals and,
+when using a prior over sensitivity parameters, explain that the integrated
+posterior depends on that prior.
+
+# Design and Analysis Choices That Are Not MNAR Sensitivity
+
+Several useful checks answer different questions:
+
+- complete-case versus MI compares analysis strategies but does not quantify a
+  specific MAR departure;
+- changing imputation algorithms probes model dependence, not necessarily MNAR;
+- varying preprocessing or normalization studies pipeline robustness;
+- robust standard errors change a variance estimator but do not repair
+  observation bias; and
+- best- and worst-case bounds may be informative but can be too wide unless
+  outcome support and design restrictions are used.
+
+A strong analysis can include these checks, but should label the threat addressed
+by each. A list of methods that happen to agree is not a calibrated sensitivity
+analysis.
+
+# Bioinformatics Example: Proteomic Detection and Group Differences
+
+Consider 60 people, 30 per treatment group, with plasma proteins quantified by
+LC--MS/MS across balanced plates. People are the biological experimental units.
+Peptides, spectra, injections, and technical reruns are nested measurements, not
+additional independent people. The target is an adjusted between-group mean
+log-abundance difference for a prespecified protein.
+
+Some specimens are missing entirely because visits were missed; some protein
+values are absent because abundance and run quality affect detection. A primary
+MAR MI model might include treatment, baseline abundance, observed clinical
+history, plate, run-quality metrics, and correlated proteins chosen without
+using the final group result. The sensitivity analysis should distinguish
+participant-level noncollection from protein-level nondetection rather than
+assigning one global delta.
+
+For missed specimens, vary treatment-specific mean shifts from the MAR
+prediction. For nondetection, use a model respecting lower-tail support and
+assay-specific detection limits. A validation subset measured with a more
+sensitive targeted assay can calibrate the difference between unobserved and
+MAR-predicted abundance.
+
+Statistically, report how the effect estimate and interval change across these
+departures and where they cross zero and a prespecified biologically meaningful
+fold-change threshold. Biologically, differential detection may reflect true
+abundance, peptide chemistry, ion suppression, tissue composition, medication,
+or batch. Stability to a missingness model does not establish a pathway mechanism;
+replication in new people and orthogonal measurement remain necessary.
+
+# A Reporting Workflow
+
+1. **Describe missingness.** Give counts by variable, pattern, group, time,
+   batch, and biological unit; distinguish noncollection, censoring, filtering,
+   and structural absence.
+2. **State the primary model.** Define the estimand, MAR conditioning set,
+   imputation or likelihood method, and complete-data analysis.
+3. **Name the threatened assumption.** Explain the scientific mechanism by
+   which unseen outcomes could differ.
+4. **Define the departure.** Give its equation, scale, direction, affected
+   patterns, and whether it varies by treatment or time.
+5. **Justify the range.** Use validation data, external studies, assay limits,
+   expert elicitation, or an explicit hypothetical range.
+6. **Propagate uncertainty.** Repeat imputation and analysis correctly for every
+   scenario; quantify Monte Carlo error when simulation is used.
+7. **Display estimates and decisions.** Show effect sizes, intervals, meaningful
+   thresholds, and tipping points, not only p-values.
+8. **Interpret conditionally.** State which conclusions persist, which depend on
+   unverifiable assumptions, and what new data would be most informative.
+
+# Common Failures
+
+- **Claiming MAR was tested:** observed data generally cannot separate MAR from
+  MNAR.
+- **Choosing departures after seeing the desired result:** the range is tuned to
+  protect a conclusion rather than represent scientific uncertainty.
+- **Using arbitrary percentages:** a 10% change has no stable meaning across
+  outcome scales, models, or missingness rates.
+- **Perturbing the wrong level:** cell- or read-level shifts are used to mimic
+  missing donors.
+- **Holding uncertainty fixed:** estimates move across scenarios while standard
+  errors from the primary analysis are reused.
+- **Giving only a tipping point:** no argument is made about whether the tipping
+  departure is plausible.
+- **Changing the estimand:** a scenario targets observed survivors or detected
+  features while being described as inference for the planned population.
+- **Equating statistical stability with biological truth:** assay and causal
+  explanations remain unresolved even when the sign is stable.
+
+# Connections and Take-home Messages
+
+- [Missing-data mechanisms: MCAR, MAR, and MNAR](missing-data-mechanisms-mcar-mar-and-mnar.qmd)
+  explains why MNAR departures are unidentified from observed data alone.
+- [Multiple imputation](multiple-imputation.qmd) provides a practical engine for
+  propagating missing-value and model uncertainty.
+- [Complete-case analysis and simple imputation](complete-case-analysis-and-simple-imputation.qmd)
+  distinguishes calibrated sensitivity analysis from deletion and fixed filling.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  places missing-data departures in a broader framework of assumption stress tests.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  shows how conditioning on an observed subset can change a target distribution.
+
+1. Missing-data sensitivity analysis varies unidentified assumptions; it cannot
+   estimate them from the same incomplete data without added information.
+2. Pattern-mixture deltas and selection-model coefficients express different,
+   scale-dependent departures and must be translated into scientific terms.
+3. Tipping points become informative only when compared with a justified range
+   and a biologically meaningful decision threshold.
+4. The full workflow must preserve the estimand, experimental unit, hierarchy,
+   and uncertainty in every scenario.
+5. Statistical stability under plausible missingness models strengthens a
+   conclusion conditionally; it does not prove a biological mechanism or replace
+   independent biological replication.
+
+# References
+
+- National Research Council. (2010). *The Prevention and Treatment of Missing
+  Data in Clinical Trials*. National Academies Press.
+  <https://doi.org/10.17226/12955>
+- Little, R. J. A. (1993). Pattern-mixture models for multivariate incomplete
+  data. *Journal of the American Statistical Association*, 88(421), 125--134.
+  <https://doi.org/10.1080/01621459.1993.10594302>
+- Molenberghs, G., and Kenward, M. G. (2007). *Missing Data in Clinical
+  Studies*. Wiley. <https://doi.org/10.1002/9780470510445>
+- Daniels, M. J., and Hogan, J. W. (2008). *Missing Data in Longitudinal
+  Studies: Strategies for Bayesian Modeling and Sensitivity Analysis*.
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9781420011180>
+- Carpenter, J. R., Roger, J. H., and Kenward, M. G. (2013). Analysis of
+  longitudinal trials with protocol deviation: a framework for relevant,
+  accessible assumptions, and inference via multiple imputation. *Journal of
+  Biopharmaceutical Statistics*, 23(6), 1352--1371.
+  <https://doi.org/10.1080/10543406.2013.834911>
+- Leacy, F. P., Floyd, S., Yates, T. A., and White, I. R. (2017). Analyses of
+  sensitivity to the missing-at-random assumption using multiple imputation with
+  delta adjustment: application to a tuberculosis/HIV prevalence survey with
+  incomplete HIV-status data. *American Journal of Epidemiology*, 185(4),
+  304--315. <https://doi.org/10.1093/aje/kww107>
+- Cro, S., Morris, T. P., Kenward, M. G., and Carpenter, J. R. (2019).
+  Sensitivity analysis for clinical trials with missing continuous outcome data
+  using controlled multiple imputation: a practical guide. *Statistics in
+  Medicine*, 38(15), 2815--2842. <https://doi.org/10.1002/sim.8088>

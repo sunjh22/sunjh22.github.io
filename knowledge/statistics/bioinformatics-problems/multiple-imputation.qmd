@@ -1,0 +1,331 @@
+---
+title: "Multiple Imputation"
+subtitle: "Propagating missing-value uncertainty through analysis"
+description: "A design-aware guide to imputation models, Rubin's rules, diagnostics, and valid uncertainty for incomplete bioinformatics data."
+author: "Jiahong Sun"
+date: "2026-11-11"
+date-modified: "2026-11-11"
+categories: [Statistics, Bioinformatics, Missing Data, Imputation]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Replace One Incomplete Dataset with Several Plausible Ones
+
+Multiple imputation (MI) does not try to reconstruct the one true value hidden
+behind each blank. It draws several plausible versions of the missing data from
+an explicit predictive distribution, repeats the intended analysis in every
+completed dataset, and combines the results so that uncertainty between
+completed datasets contributes to the final standard error.
+
+Let $Y_{\mathrm{obs}}$ and $Y_{\mathrm{mis}}$ denote observed and missing data,
+and let $X$ contain design variables and auxiliary information. A Bayesian
+statement of the imputation step is
+
+$$
+\boxed{
+Y_{\mathrm{mis}}^{(m)}
+\sim p(Y_{\mathrm{mis}}\mid Y_{\mathrm{obs}},X),
+\qquad m=1,\ldots,M.
+}
+$$
+
+Each completed dataset gives an estimate $\hat\theta_m$ and an estimated
+complete-data variance $U_m$. MI combines these quantities; it must not stack
+the completed datasets and pretend that they are independent observations.
+
+MI is a framework rather than a single algorithm. Its validity depends on the
+scientific estimand, observation process, imputation model, analysis model,
+sampling design, and combining rule.
+
+# Begin with the Estimand and Experimental Unit
+
+Define the target before building an imputation model. For example, an
+RNA-seq study may target the adjusted mean log-fold change at week 8 among all
+randomized participants. The participant is the biological experimental unit.
+Libraries, lanes, reads, and repeated assays provide technical information but
+do not increase the number of independently randomized people.
+
+Distinguish four objects:
+
+- the **estimand** $\theta$, such as a population treatment contrast;
+- the **complete-data estimator**, the rule that would be used if all planned
+  variables were observed;
+- the **MI estimator**, which averages estimates across imputed datasets; and
+- the reported **estimate**, the numerical value obtained from the observed
+  study.
+
+The imputation model should preserve variables and structure needed for the
+estimand: treatment, outcome, interactions, nonlinear terms, blocking factors,
+repeated measurements, clustering, and sampling weights when applicable.
+Changing the analysis set or silently removing an interaction can change the
+target rather than merely recover information.
+
+# The Three-stage MI Workflow
+
+## 1. Impute
+
+Generate $M$ completed datasets using draws that represent both residual
+variation and uncertainty in imputation-model parameters. A proper imputation
+therefore differs from filling every missing entry with a fitted conditional
+mean.
+
+## 2. Analyze
+
+Apply the same prespecified complete-data analysis to every completed dataset:
+
+$$
+(\hat\theta_m,U_m),\qquad m=1,\ldots,M.
+$$
+
+$U_m$ is the variance estimate appropriate to that analysis and design. For
+clustered studies, for example, the analysis must still use the correct
+cluster-level likelihood or variance estimator.
+
+## 3. Pool
+
+For a scalar estimand, Rubin's rules define
+
+$$
+\bar\theta=\frac{1}{M}\sum_{m=1}^{M}\hat\theta_m,
+\qquad
+\bar U=\frac{1}{M}\sum_{m=1}^{M}U_m,
+$$
+
+and the between-imputation variance
+
+$$
+B=\frac{1}{M-1}\sum_{m=1}^{M}
+(\hat\theta_m-\bar\theta)^2.
+$$
+
+The total variance is
+
+$$
+\boxed{
+T=\bar U+\left(1+\frac{1}{M}\right)B.
+}
+$$
+
+$\bar U$ measures average complete-data uncertainty. $B$ measures how much the
+answer changes across plausible missing values. The $B/M$ term accounts for
+using a finite number of imputations. A large $M$ reduces Monte Carlo error in
+the pooled result, but it cannot restore information that the study never
+collected or repair a misspecified imputation model.
+
+For large samples, $\bar\theta\pm z_{1-\alpha/2}\sqrt T$ gives a normal
+approximation. With finite $M$ or modest complete-data degrees of freedom, use
+an MI-specific $t$ reference distribution and degrees-of-freedom correction.
+Multivariate tests, likelihood-ratio statistics, correlations, and nonlinear
+summaries require their corresponding pooling procedure rather than automatic
+application of the scalar rule.
+
+# Why Random Draws Matter
+
+Suppose a normal regression is used to impute a missing continuous variable:
+
+$$
+Y_i=X_i^\mathsf{T}\beta+\varepsilon_i,
+\qquad
+\varepsilon_i\sim\operatorname{Normal}(0,\sigma^2).
+$$
+
+Proper MI draws $(\beta^{(m)},\sigma^{2(m)})$ from an appropriate uncertainty
+distribution and then draws
+
+$$
+Y_{i,\mathrm{mis}}^{(m)}
+\sim \operatorname{Normal}
+\left(X_i^\mathsf{T}\beta^{(m)},\sigma^{2(m)}\right).
+$$
+
+Using only $X_i^\mathsf{T}\hat\beta$ would omit residual variation and
+parameter uncertainty, make imputed values too smooth, and usually make the
+subsequent analysis overconfident. The randomness in MI represents uncertainty;
+it is not noise added merely for privacy or convenience.
+
+# Joint Modeling and Chained Equations
+
+Two common construction strategies are:
+
+| Strategy | Main idea | Strength | Main risk |
+|---|---|---|---|
+| Joint modeling | specify one multivariate distribution for all incomplete variables | coherent joint probability model | a convenient joint family may poorly represent mixed variable types or complex structure |
+| Fully conditional specification (FCS) | cycle through variable-specific conditional models | flexible for continuous, binary, count, and ordered variables | conditionals may be incompatible or the iterative procedure may lack a well-defined joint distribution |
+
+In FCS, a missing variable $Y_j$ is repeatedly drawn from
+$p(Y_j\mid Y_{-j},X)$ using the latest values of the other variables. The
+number of iterations controls convergence of the imputation chain; $M$ controls
+the number of completed datasets retained. These are different tuning choices.
+
+Diagnostics should examine trace plots of distributional summaries across
+iterations and chains, compare observed and imputed distributions in relevant
+strata, and inspect whether substantive estimates stabilize as $M$ increases.
+Visual similarity alone is not proof of validity: missing and observed cases
+may legitimately have different predicted distributions after conditioning.
+
+# Make the Imputation Model at Least as Rich as the Analysis
+
+The imputation model should usually contain:
+
+- every variable in the analysis model, including the outcome when predictors
+  are imputed;
+- treatment assignment and design strata;
+- interactions, transformations, splines, and nonlinear relationships required
+  by the substantive model;
+- variables predicting missingness or the missing value, even if they are not
+  analysis covariates; and
+- cluster, subject, batch, and time structure at the level where they arise.
+
+An auxiliary variable can improve precision and make missing at random (MAR)
+more plausible without appearing in the final estimand. It should be measured
+before or independently of the missing value, sufficiently reliable, and
+scientifically defensible. Feeding thousands of weak predictors into a small
+imputation model can instead cause separation, singularity, or severe
+overfitting; dimension reduction or regularization must be performed without
+using post-outcome information improperly.
+
+Derived variables need consistent handling. If body-mass index is computed from
+height and weight, independently imputing all three can create impossible
+triples. Passive calculation or a model that respects the deterministic
+relationship is preferable. Bounds, structural zeros, and logical skip patterns
+should likewise be enforced by the probability model, not clipped after the
+fact without accounting for the change.
+
+# Congeniality and Compatibility
+
+An imputation procedure is **congenial** to an analysis when both can be viewed
+as arising from a coherent model and the imputer supplies the information the
+analyst requires. Omit a treatment-by-biomarker interaction from the imputation
+model, and MI may attenuate the very interaction the analysis targets. Impute
+clustered observations with an ordinary single-level model, and within-cluster
+correlation and between-cluster uncertainty can be distorted.
+
+Exact congeniality is not always attainable, especially with complex machine
+learning analyses. A practical strategy is to make the imputation model more
+inclusive than the analysis, preserve the design structure, simulate from a
+known incomplete-data mechanism, and verify that the entire workflow recovers
+the intended estimand with calibrated uncertainty.
+
+# How Many Imputations?
+
+The old convention of five imputations is not a general design rule. The needed
+$M$ depends on the fraction of missing information, desired stability of
+standard errors and tail probabilities, number of estimands, and cost of each
+analysis. Modern computation often makes dozens or hundreds of imputations
+reasonable.
+
+Choose $M$ by Monte Carlo precision: rerun or extend the imputation process and
+check that pooled estimates, standard errors, confidence limits, and decisions
+are stable relative to the scientific resolution needed. A high missing-data
+fraction or unstable between-imputation variance calls for more imputations,
+but not for trusting an implausible MAR model.
+
+# Assumptions, Diagnostics, and Sensitivity
+
+| Issue | Diagnostic question | Response |
+|---|---|---|
+| Observation process | are predictors of missingness and the missing values represented? | add defensible auxiliary variables and perform MNAR sensitivity analysis |
+| Functional form | do imputed conditional relationships preserve nonlinearities and interactions? | use compatible transformations, substantive-model-compatible imputation, or flexible validated models |
+| Support | are impossible values, structural zeros, or category combinations generated? | use distributions and constraints reflecting the data-generating process |
+| Multilevel design | are repeated measures, families, sites, donors, and batches modeled at their proper levels? | use multilevel MI or impute within defensible strata when information permits |
+| Convergence | do FCS chains mix and stabilize? | change parameterization, iterations, predictors, or model rather than retaining a failed chain |
+| Influence | is the pooled answer driven by a few units or one imputation? | inspect unit-level and imputation-level influence and report sensitivity |
+| Monte Carlo error | does changing seeds or increasing $M$ change conclusions? | increase $M$ until numerical error is negligible for the decision |
+
+Standard MI under MAR cannot establish that MAR is true. The primary analysis
+should be accompanied by a calibrated departure, such as a delta-adjusted
+pattern-mixture model, when missing not at random (MNAR) is scientifically
+plausible. The companion note on [sensitivity analysis for missing data](sensitivity-analysis-for-missing-data.qmd)
+develops this step.
+
+# Bioinformatics Example: Longitudinal Multi-omics
+
+Suppose 80 participants are randomized to two diets and measured at baseline,
+week 4, and week 12. Plasma metabolomics and RNA-seq are collected at each visit;
+week-12 specimens are more often absent after a high week-4 toxicity score.
+Participants are the experimental units. Aliquots, sequencing lanes, reads,
+metabolite peaks, and reruns are technical or lower-level observations nested
+within participant specimens.
+
+For a week-12 treatment contrast, a defensible MI model could include treatment,
+baseline and week-4 outcomes, toxicity, age, sex, site, plate, quality metrics,
+and treatment-by-time structure. It should preserve repeated measures within
+participants and correlation among outcomes without treating thousands of
+features as independent people. Feature filtering, normalization, and any
+dimension-reduced auxiliary scores should be defined so that information from
+held-out validation data does not leak into model development.
+
+Statistically, the pooled coefficient and interval estimate a treatment
+contrast under the sampling, analysis, imputation, and MAR assumptions.
+Biologically, a metabolite or pathway shift may still reflect diet adherence,
+tissue composition, assay sensitivity, or cohort specificity. Technical reruns
+can clarify measurement error but cannot replace selectively missing
+participants or establish generalization to another population.
+
+# Common Failures
+
+- **Impute once, analyze once:** a single completed table hides missing-value
+  uncertainty and is not MI.
+- **Pool rows instead of estimates:** stacking $M$ datasets multiplies the
+  apparent sample size and produces invalid precision.
+- **Exclude the outcome from predictor imputation:** associations with the
+  outcome are weakened, biasing regression coefficients.
+- **Ignore hierarchy:** imputing cells or visits as unrelated observations
+  destroys donor- or participant-level dependence.
+- **Use a rich analysis with a simple imputation model:** omitted interactions
+  or nonlinearities are silently shrunk toward the imputation model.
+- **Diagnose only marginal histograms:** plausible marginals can conceal wrong
+  conditional relationships.
+- **Call MI an MNAR solution:** ordinary MI commonly relies on MAR; MNAR needs
+  explicit, unidentified sensitivity parameters or external information.
+- **Interpret technical abundance as biological replication:** more reads or
+  imputations do not create more sampled organisms.
+
+# Connections and Take-home Messages
+
+- [Missing-data mechanisms: MCAR, MAR, and MNAR](missing-data-mechanisms-mcar-mar-and-mnar.qmd)
+  defines the observation-process assumptions behind MI.
+- [Complete-case analysis and simple imputation](complete-case-analysis-and-simple-imputation.qmd)
+  explains why deletion and deterministic filling usually lose information or
+  understate uncertainty.
+- [Bayesian priors, likelihoods, and posteriors](../statistical-inference/bayesian-priors-likelihoods-and-posteriors.qmd)
+  provides the predictive-distribution interpretation of proper imputation.
+- [Monte Carlo estimation and uncertainty](../statistical-inference/monte-carlo-estimation-and-uncertainty.qmd)
+  separates finite-$M$ numerical error from statistical uncertainty.
+- [Repeated measures and longitudinal data](../advanced-modeling/repeated-measures-and-longitudinal-data.qmd)
+  supplies the multilevel structure that longitudinal imputation must preserve.
+
+1. MI propagates missing-value uncertainty by analyzing several plausible
+   completed datasets and pooling estimates, not by declaring filled values true.
+2. Rubin's variance combines within- and between-imputation uncertainty; stacking
+   completed rows is invalid.
+3. The imputation model must preserve the estimand, substantive model, design,
+   support, and biological unit of replication.
+4. More imputations reduce Monte Carlo error, not bias from an implausible MAR
+   assumption or an incompatible model.
+5. Diagnostics and MNAR sensitivity analysis are part of the method, and
+   statistical recovery does not by itself establish biological relevance.
+
+# References
+
+- Rubin, D. B. (1987). *Multiple Imputation for Nonresponse in Surveys*. Wiley.
+  <https://doi.org/10.1002/9780470316696>
+- Little, R. J. A., and Rubin, D. B. (2019). *Statistical Analysis with Missing
+  Data* (3rd ed.). Wiley. <https://doi.org/10.1002/9781119482260>
+- van Buuren, S. (2018). *Flexible Imputation of Missing Data* (2nd ed.).
+  Chapman and Hall/CRC. <https://doi.org/10.1201/9780429492259>
+- White, I. R., Royston, P., and Wood, A. M. (2011). Multiple imputation using
+  chained equations: issues and guidance for practice. *Statistics in Medicine*,
+  30(4), 377--399. <https://doi.org/10.1002/sim.4067>
+- Sterne, J. A. C., White, I. R., Carlin, J. B., et al. (2009). Multiple
+  imputation for missing data in epidemiological and clinical research:
+  potential and pitfalls. *BMJ*, 338, b2393.
+  <https://doi.org/10.1136/bmj.b2393>
+- Barnard, J., and Rubin, D. B. (1999). Small-sample degrees of freedom with
+  multiple imputation. *Biometrika*, 86(4), 948--955.
+  <https://doi.org/10.1093/biomet/86.4.948>
+- Carpenter, J. R., and Kenward, M. G. (2013). *Multiple Imputation and Its
+  Application*. Wiley. <https://doi.org/10.1002/9781119942283>
