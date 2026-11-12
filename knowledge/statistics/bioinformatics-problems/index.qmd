@@ -10,8 +10,10 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Complete-case analysis and simple imputation](complete-case-analysis-and-simple-imputation.qmd)
 - [Multiple imputation](multiple-imputation.qmd)
 - [Sensitivity analysis for missing data](sensitivity-analysis-for-missing-data.qmd)
+- [Confounding, mediation, and effect modification](confounding-mediation-and-effect-modification.qmd)
+- [Causal diagrams and adjustment sets](causal-diagrams-and-adjustment-sets.qmd)
 
-Future notes will develop confounding and causal adjustment, batch effects,
+Future notes will develop propensity-score and weighting methods, batch effects,
 omics-specific models, and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)

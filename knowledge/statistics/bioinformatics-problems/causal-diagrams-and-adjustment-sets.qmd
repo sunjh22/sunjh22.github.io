@@ -1,0 +1,307 @@
+---
+title: "Causal Diagrams and Adjustment Sets"
+subtitle: "Using assumed causal structure to decide what should and should not be controlled"
+description: "Directed acyclic graphs, open and blocked paths, colliders, sufficient adjustment sets, identification, and bioinformatics design."
+author: "Jiahong Sun"
+date: "2026-11-12"
+date-modified: "2026-11-12"
+categories: [Statistics, Bioinformatics, Causal Inference, DAGs]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# A Diagram Makes Assumptions Auditable
+
+A causal directed acyclic graph (DAG) represents assumptions about how variables
+generate one another. Nodes are variables; an arrow $X\rightarrow Y$ states that
+$X$ may directly cause $Y$ relative to the variables in the graph. "Acyclic"
+means that following arrows cannot return to the starting node.
+
+A DAG does not prove causality and is not learned merely by drawing observed
+correlations. Its value is to expose assumptions, distinguish causal from
+noncausal paths, and determine whether a target effect can be identified by
+covariate adjustment.
+
+```text
+Causal question + time order + domain knowledge
+                      ↓
+              candidate causal DAG
+                      ↓
+       open paths and identification analysis
+                      ↓
+   design, measurement, adjustment, sensitivity
+```
+
+The graph should be drafted before outcome-guided variable selection and should
+include relevant unmeasured variables when their existence matters. Omitting a
+node from the dataset does not remove it from the causal system.
+
+# Paths, Forks, and Colliders
+
+A **path** is a sequence of adjacent edges, regardless of arrow direction. Path
+status depends on whether its internal nodes are chains, forks, or colliders.
+
+| Structure | Unconditioned path | Effect of conditioning on middle node |
+|---|---|---|
+| $X\rightarrow M\rightarrow Y$ | open | blocks the path |
+| $X\leftarrow C\rightarrow Y$ | open | blocks the path |
+| $X\rightarrow S\leftarrow Y$ | blocked | opens the path |
+
+The third structure is a **collider**. Conditioning on a collider, or often on
+one of its descendants, can create an association between its causes. This is
+why "control for everything predictive of the outcome" is unsafe.
+
+Two sets of nodes are **d-separated** by $Z$ when every path between them is
+blocked given $Z$. Under the causal Markov assumptions encoded by a DAG,
+d-separation implies a conditional independence. Observed dependence can
+contradict a graph, but agreement with its implied independences does not prove
+the graph is correct; different DAGs can entail the same observational
+independences.
+
+# Backdoor Paths and Total Effects
+
+Let $A$ be treatment and $Y$ outcome. A **backdoor path** begins with an arrow
+into $A$. In
+
+```text
+L ──▶ A ──▶ Y
+└────────▶ Y
+```
+
+$A\leftarrow L\rightarrow Y$ is an open backdoor path. Conditioning on $L$
+blocks it. If $L$ is sufficient and the usual consistency and positivity
+conditions hold, the intervention mean is identified by
+
+$$
+\boxed{
+E(Y^a)=\sum_l E(Y\mid A=a,L=l)P(L=l)
+}
+$$
+
+for discrete $L$, with integration replacing the sum for continuous variables.
+This is the adjustment or g-formula. It standardizes treatment-specific outcome
+means to a common covariate distribution.
+
+A simple backdoor adjustment set contains no descendants of $A$ and blocks
+every path from $A$ to $Y$ that starts with an arrow into $A$. More general
+adjustment criteria cover larger graph classes, but the essential task remains:
+block noncausal paths without blocking the causal effect of interest or opening
+new paths.
+
+# Adjustment Sets Are Target-specific
+
+For the **total effect** of $A$ on $Y$, do not adjust for the mediator $M$ in
+
+```text
+A ──▶ M ──▶ Y
+└────────▶ Y
+```
+
+because that blocks part of the effect being estimated. A direct-effect
+question is different and needs additional mediation assumptions.
+
+For selection
+
+```text
+A ──▶ S ◀── Y
+```
+
+restricting to $S=1$ opens a noncausal path. This can happen when a study
+includes only samples passing quality control and both biological state and
+outcome-related assay quality affect inclusion.
+
+Several valid adjustment sets may exist. A **minimal sufficient set** is
+sufficient but ceases to be sufficient if any member is removed. Minimal does
+not mean uniquely correct or statistically most efficient. Among valid sets,
+measurement error, missingness, overlap, precision, and model complexity can
+guide the choice. Variables that only cause the outcome may improve precision;
+variables that only cause treatment can worsen finite-sample overlap without
+blocking additional biasing paths.
+
+# Why Familiar Selection Rules Fail
+
+Neither statistical significance nor change-in-estimate rules define a valid
+adjustment set.
+
+- A true confounder can look weak in a finite sample.
+- A strong outcome predictor can be a collider or mediator.
+- A covariate associated with treatment but not outcome may not block a
+  backdoor path.
+- Stepwise selection ignores unmeasured variables and causal time order.
+- Regularization can stabilize prediction while retaining the wrong causal
+  controls.
+
+An instrumental variable structure illustrates another distinction:
+
+```text
+Z ──▶ A ──▶ Y
+```
+
+If $Z$ affects $Y$ only through $A$ and shares no causes with $Y$, it is not a
+confounder of the $A$--$Y$ effect. Adjusting for an instrument is not required
+to close a backdoor path and, with residual unmeasured confounding, can amplify
+bias. Instrumental-variable identification is a separate strategy with its own
+assumptions.
+
+# A Practical DAG Workflow
+
+1. **Write the estimand.** Specify treatment versions, outcome time, population,
+   effect scale, and whether the target is total, direct, or indirect.
+2. **Order variables in time.** Include pre-exposure causes, post-exposure
+   variables, selection, missingness, and measurement processes.
+3. **Draw causal arrows from domain knowledge.** Add plausible unmeasured common
+   causes as explicit nodes; do not use bidirectional ambiguity as a substitute
+   for thinking.
+4. **List open noncausal paths.** Identify forks, colliders, and descendants.
+5. **Find sufficient adjustment sets.** Prefer a defensible set with usable
+   measurement and overlap; document alternatives.
+6. **Match estimation to design.** Standardization, weighting, matching, or
+   regression can implement the same identifying formula with different model
+   dependence.
+7. **Probe assumptions.** Compare plausible DAGs, quantify unmeasured
+   confounding, inspect positivity, and assess measurement error and selection.
+
+Software such as DAGitty can enumerate implied independences and candidate
+adjustment sets. It checks the consequences of the graph entered; it cannot
+decide whether the biological arrows are true.
+
+# Worked Bioinformatics DAG
+
+Consider an observational study of treatment $A$ and a transcriptomic response
+$Y$ across patients. Disease severity $D$ influences treatment choice and the
+outcome. Processing batch $B$ affects measured expression. Sample quality $Q$
+affects whether a library passes filtering $S$.
+
+```text
+D ──▶ A ──▶ Y_true
+└────────▶ Y_true
+
+B ─────────▶ Y_measured ◀── Y_true
+Q ──▶ S ◀────────────────── Y_true
+```
+
+For the total effect of treatment on true expression, $D$ is a candidate
+confounder. Batch is a cause of the measurement, not a biological cause of true
+expression; balancing or modeling it can reduce measurement bias. Restricting
+analysis to $S=1$ can induce selection bias if both quality and the underlying
+biological state influence passing. The appropriate graph must also show any
+arrows from severity, treatment, site, and laboratory workflow into batch or
+quality.
+
+Cell-type composition deserves special care. If baseline composition affects
+treatment and expression, it may be a confounder. If treatment changes
+composition, which then changes bulk expression, post-treatment composition is
+a mediator for the total effect. Adjusting for it changes the question. The
+same named variable can therefore require different treatment in different
+studies.
+
+Patients are the experimental units if treatment and sampling occur at the
+patient level. Cells, reads, spots, repeated libraries, and sequencing lanes are
+nested observations. A DAG of biological causation does not replace a sampling
+graph or dependence model; uncertainty must still respect the experimental
+unit and technical hierarchy.
+
+Statistically, the adjusted estimate is a causal effect only under the graph,
+identification conditions, measurement assumptions, and estimation model.
+Biologically, an arrow is a hypothesized causal relation, not proof of molecular
+mechanism. Independent perturbation and replication are needed to strengthen
+that interpretation.
+
+# Longitudinal and High-dimensional Complications
+
+With repeated treatment, a time-varying covariate may be both a consequence of
+earlier treatment and a confounder of later treatment. Ordinary regression
+adjustment can then block part of an earlier effect while trying to control
+later confounding. Longitudinal g-formula, inverse-probability weighting, or
+structural nested models may be required.
+
+In omics, thousands of measured variables do not guarantee that the necessary
+causes were measured. High-dimensional adjustment can create positivity
+violations, overfitting, and collider control. Dimension reduction based on
+post-treatment data may also change the estimand. Use the causal structure to
+define variable roles before using prediction tools to estimate nuisance
+functions.
+
+Measurement error can invalidate an otherwise sufficient set. A noisy proxy
+for a confounder may leave residual confounding, while batch correction learned
+from a design in which batch and biology are aliased cannot reconstruct missing
+comparisons. Missingness and quality filtering should be nodes in the graph when
+they affect which outcomes are observed.
+
+# Diagnostics and Sensitivity
+
+| Question | Evidence or check | Limitation |
+|---|---|---|
+| Is time order credible? | protocol, timestamps, sample-processing records | time order alone does not establish causation |
+| Are implied independences grossly contradicted? | conditional association checks | passing checks does not validate the DAG |
+| Is positivity adequate? | covariate overlap, treatment probabilities, weight tails | sparse data can hide structural nonoverlap |
+| Is adjustment numerically stable? | balance, influence, effective sample size | balance on measured variables cannot prove exchangeability |
+| Could an unmeasured cause alter the result? | bias formulas, negative controls, alternate DAGs | sensitivity parameters require scientific judgment |
+| Does selection matter? | flow diagram, inclusion models, failure reasons | missing selection drivers may be unidentifiable |
+
+Present more than one DAG when important arrows are genuinely uncertain, and
+show which adjustment sets and conclusions change. If no plausible graph yields
+identification from the available data, say so; a larger regression is not a
+substitute.
+
+# Common Mistakes
+
+- Drawing only measured variables hides rather than removes unmeasured
+  confounding.
+- Adding arrows because variables are correlated confuses a causal model with a
+  correlation network.
+- Conditioning on mediators, colliders, descendants of colliders, or selection
+  indicators can create bias.
+- Treating one minimal set as the only valid set ignores alternative sufficient
+  sets and measurement quality.
+- Using a DAG after inspecting desired results makes it a justification device
+  rather than a design tool.
+- Declaring an arrow "significant" is a category error: arrows encode assumed
+  causal structure, not hypothesis-test results.
+
+# Connections and Take-home Messages
+
+- [Confounding, mediation, and effect modification](confounding-mediation-and-effect-modification.qmd)
+  distinguishes the causal roles that determine adjustment.
+- [Conditional probability and the law of total probability](../probability-randomness/conditional-probability-and-total-probability.qmd)
+  supplies the probability rules behind standardization.
+- [Independence and conditional independence](../probability-randomness/independence-and-conditional-independence.qmd)
+  develops the conditional-independence language used by d-separation.
+- [Multiple linear regression](../regression-models/multiple-linear-regression.qmd)
+  explains conditional coefficients but not which causal controls are valid.
+- [Missing-data mechanisms: MCAR, MAR, and MNAR](missing-data-mechanisms-mcar-mar-and-mnar.qmd)
+  treats observation indicators as part of the data-generating process.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  organizes checks for assumptions the observed data cannot verify.
+
+1. A DAG is a transparent statement of causal assumptions, not empirical proof.
+2. A sufficient adjustment set blocks biasing paths without blocking the target
+   causal pathway or opening collider paths.
+3. Valid adjustment is estimand-specific; total, direct, and indirect effects
+   generally require different treatment of post-exposure variables.
+4. Statistical variable selection cannot replace design knowledge, time order,
+   positivity, and measurement quality.
+5. In bioinformatics, causal identification and correct biological replication
+   are separate requirements, and both must hold for valid uncertainty.
+
+# References
+
+- Pearl, J. (1995). Causal diagrams for empirical research. *Biometrika*,
+  82(4), 669--688. <https://doi.org/10.1093/biomet/82.4.669>
+- Greenland, S., Pearl, J., and Robins, J. M. (1999). Causal diagrams for
+  epidemiologic research. *Epidemiology*, 10(1), 37--48.
+  <https://pubmed.ncbi.nlm.nih.gov/9888278/>
+- Hernán, M. A., and Robins, J. M. (2020). *Causal Inference: What If*.
+  Chapman & Hall/CRC. <https://www.hsph.harvard.edu/miguel-hernan/causal-inference-book/>
+- Textor, J., van der Zander, B., Gilthorpe, M. S., Liśkiewicz, M., and Ellison,
+  G. T. H. (2016). Robust causal inference using directed acyclic graphs: the
+  R package `dagitty`. *International Journal of Epidemiology*, 45(6),
+  1887--1894. <https://doi.org/10.1093/ije/dyw341>
+- Perković, E., Textor, J., Kalisch, M., and Maathuis, M. H. (2018). Complete
+  graphical characterization and construction of adjustment sets in Markov
+  equivalence classes of ancestral graphs. *Journal of Machine Learning
+  Research*, 18(220), 1--62. <https://jmlr.org/papers/v18/16-319.html>
+- DAGitty. *DAGitty: drawing and analyzing causal diagrams*.
+  <https://dagitty.net/>

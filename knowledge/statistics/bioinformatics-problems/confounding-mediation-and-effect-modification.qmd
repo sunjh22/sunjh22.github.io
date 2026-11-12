@@ -1,0 +1,283 @@
+---
+title: "Confounding, Mediation, and Effect Modification"
+subtitle: "Three roles for a third variable that answer different causal questions"
+description: "A design-aware guide to confounders, mediators, effect modifiers, causal estimands, assumptions, and interpretation in bioinformatics."
+author: "Jiahong Sun"
+date: "2026-11-12"
+date-modified: "2026-11-12"
+categories: [Statistics, Bioinformatics, Causal Inference]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Same Variable Can Play Different Roles
+
+A third variable can distort a causal comparison, carry part of an effect, or
+identify a subgroup with a different effect. These are respectively questions
+about **confounding**, **mediation**, and **effect modification**. The labels do
+not follow from a correlation matrix or a regression coefficient. They depend
+on temporal order, the intervention being compared, the outcome, the target
+population, and the causal assumptions.
+
+For an exposure or treatment $A$, outcome $Y$, baseline covariates $L$, mediator
+$M$, and candidate effect modifier $V$, three questions are:
+
+| Role | Main question | Typical analysis consequence |
+|---|---|---|
+| Confounder $L$ | Does a common cause make treated and untreated units incomparable? | adjust to identify the intended causal effect |
+| Mediator $M$ | Through which post-exposure pathway does an effect operate? | define a direct or indirect effect; do not adjust reflexively |
+| Effect modifier $V$ | Does the causal contrast differ across values of $V$? | report stratum-specific effects on a prespecified scale |
+
+A variable can have different roles for different questions. Baseline immune
+state might confound a treatment--expression comparison, modify the treatment
+effect, or both. A post-treatment immune measurement might mediate the effect
+instead. A variable's name does not determine its role.
+
+# Define the Causal Estimand First
+
+Let $Y^a$ be the outcome that would be observed under intervention $A=a$. For a
+binary treatment, an additive average treatment effect is
+
+$$
+\boxed{\operatorname{ATE}=E(Y^1-Y^0).}
+$$
+
+Other targets include a risk ratio, odds ratio, quantile effect, effect among
+treated units, or a population-standardized contrast. These are different
+estimands. Before fitting a model, state the treatment versions, follow-up time,
+outcome scale, target population, and handling of competing events and missing
+outcomes.
+
+Identification of the ATE from observational data commonly uses:
+
+1. **conditional exchangeability:** $Y^a\perp A\mid L$;
+2. **positivity:** $P(A=a\mid L=l)>0$ wherever the target population has support;
+3. **consistency:** a unit receiving $A=a$ has observed outcome $Y=Y^a$; and
+4. sufficiently accurate measurement and correctly implemented estimation.
+
+Under these conditions,
+
+$$
+E(Y^a)=E_L\{E(Y\mid A=a,L)\},
+$$
+
+which motivates standardization, outcome regression, weighting, and related
+estimators. No fitted model can verify exchangeability from the observed data
+alone.
+
+# Confounding: A Comparability Failure
+
+Confounding occurs when the observed treatment groups differ in causes of the
+outcome, so their outcome contrast does not equal the causal contrast. A simple
+structure is
+
+```text
+L ──▶ A ──▶ Y
+└────────▶ Y
+```
+
+The path $A\leftarrow L\rightarrow Y$ is noncausal. Conditioning on a sufficient
+set containing $L$ blocks it. Importantly, a confounder is not merely a variable
+associated with both $A$ and $Y$. Association may arise because the variable is
+a mediator, a collider, a consequence of treatment, or a proxy with an
+ambiguous causal role.
+
+Confounding is relative to a causal contrast. Randomization can establish
+baseline exchangeability in expectation, but nonadherence, informative loss to
+follow-up, and post-randomization selection can create other identification
+problems. In observational studies, subject-matter knowledge and design are
+needed to choose covariates before outcome-driven model selection.
+
+Adjustment also needs overlap. If a sequencing protocol is used only in cases
+and never in controls, treatment and protocol effects cannot be separated by
+including both columns in a model. Trimming or restricting the population
+changes the estimand and must be reported.
+
+# Mediation: Decomposing a Causal Effect
+
+A mediator lies after treatment on a pathway to the outcome:
+
+```text
+A ──▶ M ──▶ Y
+└────────▶ Y
+```
+
+Let $M^a$ denote the mediator under treatment $a$, and $Y^{a,m}$ the outcome
+under joint intervention $A=a,M=m$. A controlled direct effect at mediator
+level $m$ is
+
+$$
+\operatorname{CDE}(m)=E(Y^{1,m}-Y^{0,m}).
+$$
+
+On the additive scale, common natural-effect definitions are
+
+$$
+\begin{aligned}
+\operatorname{NDE} &= E(Y^{1,M^0}-Y^{0,M^0}),\\
+\operatorname{NIE} &= E(Y^{1,M^1}-Y^{1,M^0}),
+\end{aligned}
+$$
+
+so that this particular pair satisfies
+
+$$
+E(Y^1-Y^0)=\operatorname{NDE}+\operatorname{NIE}.
+$$
+
+These cross-world quantities require more than treatment randomization.
+Identification usually needs control of exposure--outcome,
+exposure--mediator, and mediator--outcome confounding, plus no
+exposure-induced mediator--outcome confounder for the standard natural-effect
+formulas. The mediator must be measured before the outcome, with an
+intervention or contrast that is scientifically interpretable.
+
+When treatment creates a variable that subsequently affects both $M$ and $Y$,
+ordinary mediator regression can be biased. Interventional direct and indirect
+effects, longitudinal g-methods, or a different estimand may be more defensible.
+Measurement error in high-dimensional mediators and selection of mediators
+using the same outcome add further bias and multiplicity.
+
+"The treatment coefficient shrank after adding $M$" is not, by itself, evidence
+of mediation. Coefficient changes can reflect nonlinearity, noncollapsibility,
+measurement error, model misspecification, or a changed target.
+
+# Effect Modification: Heterogeneous Causal Contrasts
+
+For baseline $V$, an additive conditional effect is
+
+$$
+\tau(v)=E(Y^1-Y^0\mid V=v).
+$$
+
+Effect modification is present on the difference scale when $\tau(v)$ varies
+with $v$. It is scale-specific: risk differences can vary while risk ratios are
+constant, or vice versa. Therefore, always name the effect measure.
+
+In a linear conditional-mean model
+
+$$
+E(Y\mid A,V,L)=\beta_0+\beta_AA+\beta_VV+
+\beta_{AV}AV+\boldsymbol\gamma^{\mathsf T}L,
+$$
+
+$\beta_{AV}$ represents conditional additive interaction under the model.
+That product term is not automatically a causal interaction: the model still
+needs an appropriate adjustment set, correct time order, adequate overlap, and
+an interpretation that matches the target population. For nonlinear links,
+the coefficient of a product term and effect modification on the probability
+or risk-difference scale are different objects.
+
+Distinguish three ideas:
+
+- **effect modification** describes variation in a causal effect across strata;
+- **statistical interaction** is departure from additivity on a chosen model
+  scale; and
+- **biological interaction** is a mechanistic claim that normally requires
+  stronger biological evidence than either statistical pattern.
+
+Subgroup effects should be prespecified when possible and reported with
+intervals. Testing many genes, cell types, variants, and cut points creates a
+large selection problem; an apparent extreme subgroup effect is often unstable.
+
+# Worked Bioinformatics Example
+
+Suppose a randomized drug study profiles 120 patients. Baseline inflammation
+$L$, treatment $A$, day-7 DNA methylation $M$, and day-28 gene expression $Y$
+are recorded. Genotype $V$ is measured before treatment.
+
+- For the total treatment effect on day-28 expression, baseline inflammation
+  can improve precision and address chance imbalance; day-7 methylation should
+  not be adjusted away merely because it predicts $Y$.
+- For an observational treatment comparison, baseline inflammation may be a
+  confounder if it affects treatment choice and expression.
+- To ask whether methylation mediates the effect, define a direct/indirect
+  estimand and address mediator--outcome confounding, assay error, temporal
+  ordering, and any post-treatment common causes of methylation and expression.
+- To ask whether treatment works differently by genotype, estimate treatment
+  effects within genotype strata or a standardized interaction contrast on a
+  prespecified scale.
+
+The patient is the experimental unit. Repeated libraries, sequencing lanes,
+reads, CpG sites, and cells are technical or within-patient observations; they
+do not create 120 independent repetitions of treatment assignment. Technical
+replicates can improve measurement, while biological replication supports
+population inference.
+
+Statistically, a mediation estimate is a model- and assumption-dependent
+decomposition of a defined causal contrast. Biologically, it is not proof that
+the assayed molecular feature is the unique mechanism. Perturbing the proposed
+mediator, using orthogonal assays, and replicating in new biological units can
+strengthen the mechanistic claim.
+
+# Diagnostics and Sensitivity
+
+| Threat | What to inspect | Useful response |
+|---|---|---|
+| Residual confounding | design, negative controls, covariate balance, measurement quality | redesign, richer baseline data, quantitative bias analysis |
+| Poor positivity | treatment proportions and weights across covariates | restrict target, combine sparse strata, report extrapolation |
+| Post-treatment adjustment | timing and causal diagram | estimate total effect without descendants; define direct effect explicitly |
+| Mediator--outcome confounding | pre- and post-treatment common causes | sensitivity analysis or methods for exposure-induced confounding |
+| Effect-scale dependence | risk difference, ratio, and scientifically meaningful scale | report absolute effects alongside relative effects |
+| Subgroup selection | number and timing of interaction searches | prespecify, adjust multiplicity, shrink, and externally validate |
+| Pseudoreplication | assignment and sampling hierarchy | aggregate or model dependence at the biological-unit level |
+
+Sensitivity analysis should perturb a named causal assumption, not only a model
+formula. Report how strong unmeasured confounding or mediator measurement error
+would need to be to change the conclusion, and show the range of effects across
+plausible scales and populations.
+
+# Common Mistakes
+
+- Adjusting for every measured variable can open collider paths or remove part
+  of the total effect.
+- Choosing confounders by univariable p-values does not encode causal structure.
+- Calling a post-exposure biomarker a mediator does not identify an indirect
+  effect.
+- Treating a nonsignificant interaction test as proof of homogeneous effects
+  ignores low power and scale dependence.
+- Interpreting a selected molecular subgroup without validation exaggerates
+  heterogeneity.
+- Counting cells or reads as independent units understates uncertainty about
+  effects across patients, organisms, or specimens.
+
+# Connections and Take-home Messages
+
+- [Causal diagrams and adjustment sets](causal-diagrams-and-adjustment-sets.qmd)
+  formalizes paths, colliders, descendants, and sufficient adjustment sets.
+- [Interaction terms and effect modification](../regression-models/interaction-terms-and-effect-modification.qmd)
+  develops model-scale interaction and coefficient interpretation.
+- [Multiple linear regression](../regression-models/multiple-linear-regression.qmd)
+  explains why adding a variable changes a conditional coefficient.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  describes bias after selecting extreme subgroups or molecular features.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides an assumption-driven framework for robustness checks.
+
+1. Confounding threatens comparability, mediation concerns pathways, and effect
+   modification concerns heterogeneity; they are not interchangeable labels.
+2. Define the causal contrast and time order before choosing covariates.
+3. Adjustment can remove confounding, block mediation, or create collider bias.
+4. Direct and indirect effects need stronger assumptions than a total effect,
+   especially about mediator--outcome confounding.
+5. Heterogeneity is scale- and population-specific and needs uncertainty,
+   multiplicity control, and biological replication.
+
+# References
+
+- Hernán, M. A., and Robins, J. M. (2020). *Causal Inference: What If*.
+  Chapman & Hall/CRC. <https://www.hsph.harvard.edu/miguel-hernan/causal-inference-book/>
+- Robins, J. M., and Greenland, S. (1992). Identifiability and exchangeability
+  for direct and indirect effects. *Epidemiology*, 3(2), 143--155.
+  <https://doi.org/10.1097/00001648-199203000-00013>
+- VanderWeele, T. J. (2015). *Explanation in Causal Inference: Methods for
+  Mediation and Interaction*. Oxford University Press.
+  <https://doi.org/10.1093/acprof:oso/9780199325870.001.0001>
+- VanderWeele, T. J. (2016). Mediation analysis: A practitioner's guide.
+  *Annual Review of Public Health*, 37, 17--32.
+  <https://doi.org/10.1146/annurev-publhealth-032315-021402>
+- Knol, M. J., and VanderWeele, T. J. (2012). Recommendations for presenting
+  analyses of effect modification and interaction. *International Journal of
+  Epidemiology*, 41(2), 514--520. <https://doi.org/10.1093/ije/dyr218>
