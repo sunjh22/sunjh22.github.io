@@ -1,0 +1,323 @@
+---
+title: "Inverse-probability Weighting"
+subtitle: "Reweighting observed units to represent a target treatment or observation regime"
+description: "Inverse-probability treatment, censoring, and selection weighting with estimands, derivations, diagnostics, and bioinformatics interpretation."
+author: "Jiahong Sun"
+date: "2026-11-13"
+date-modified: "2026-11-13"
+categories: [Statistics, Bioinformatics, Causal Inference, Weighting]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Upweight Units Who Represent Rarer Histories
+
+Inverse-probability weighting (IPW) gives more influence to an observed unit
+when its treatment, observation, or selection history was less probable given
+measured covariates. The weighted sample can represent a population in which
+that mechanism no longer depends on those covariates.
+
+For binary treatment $A$, baseline covariates $L$, and propensity score
+$e(L)=P(A=1\mid L)$, the unstabilized average-treatment-effect weight is
+
+$$
+\boxed{
+W_i^{\mathrm{ATE}}
+=\frac{A_i}{e(L_i)}+\frac{1-A_i}{1-e(L_i)}.
+}
+$$
+
+A treated unit with $e(L)=0.2$ represents five similar units; an untreated unit
+with $e(L)=0.8$ also represents five. This creates a pseudo-population in which
+measured $L$ is balanced across treatment, provided the score and identifying
+assumptions are adequate.
+
+IPW is an estimation strategy, not an assumption. It cannot recover
+counterfactual outcomes when confounders are unmeasured, treatment versions are
+ill-defined, or some target-population covariate profiles have no chance of
+receiving one treatment.
+
+# The Estimand Determines the Weights
+
+Let $Y^a$ be the potential outcome under treatment $a$. For the average
+treatment effect
+
+$$
+\operatorname{ATE}=E(Y^1-Y^0),
+$$
+
+the treatment-specific Horvitz--Thompson means are
+
+$$
+\widehat\mu_1=
+\frac{1}{n}\sum_{i=1}^n\frac{A_iY_i}{\hat e(L_i)},
+\qquad
+\widehat\mu_0=
+\frac{1}{n}\sum_{i=1}^n\frac{(1-A_i)Y_i}{1-\hat e(L_i)},
+$$
+
+and $\widehat{\operatorname{ATE}}=\widehat\mu_1-\widehat\mu_0$.
+Hájek normalization divides each weighted outcome total by its corresponding
+sum of weights. It is a ratio estimator that often behaves more stably in
+finite samples, though it has a different finite-sample bias structure.
+
+For the average treatment effect among treated units,
+
+$$
+\operatorname{ATT}=E(Y^1-Y^0\mid A=1),
+$$
+
+common weights are
+
+$$
+W_i^{\mathrm{ATT}}
+=A_i+(1-A_i)\frac{e(L_i)}{1-e(L_i)}.
+$$
+
+Treated units retain weight one; untreated units are weighted to resemble the
+treated covariate distribution. Other choices target untreated, overlap, or
+externally standardized populations. Weight formulas are therefore inseparable
+from the target population.
+
+# Why the Weighted Mean Identifies an Intervention Mean
+
+Assume consistency, conditional exchangeability $Y^a\perp A\mid L$, positivity,
+and adequate measurement. For $a=1$,
+
+$$
+\begin{aligned}
+E\left\{\frac{AY}{e(L)}\right\}
+&=E_L\left[
+E\left\{\left.\frac{AY}{e(L)}\right|L\right\}
+\right]\\
+&=E_L\left[
+\frac{P(A=1\mid L)E(Y\mid A=1,L)}{e(L)}
+\right]\\
+&=E_L\{E(Y^1\mid L)\}\\
+&=E(Y^1).
+\end{aligned}
+$$
+
+The parallel result holds for $a=0$. IPW and outcome standardization use
+different nuisance models to identify the same intervention mean under their
+respective assumptions. This derivation also shows the danger of a small
+$e(L)$: the estimator divides by a probability near zero.
+
+# Treatment, Censoring, Missingness, and Selection
+
+The same principle applies to several mechanisms, but each requires its own
+target and assumptions.
+
+| Weight | Denominator models | Intended pseudo-population |
+|---|---|---|
+| Treatment weight | observed treatment given baseline covariates | treatment independent of measured baseline confounders |
+| Censoring weight | remaining observed given prior history | follow-up independent of measured predictors of censoring and outcome |
+| Missingness weight | outcome observed given measured information | observed outcomes represent eligible units |
+| Selection or transport weight | study inclusion given effect-relevant covariates | study units represent a specified target population |
+| Longitudinal treatment weight | each treatment given previous treatment and covariate history | observed treatment histories emulate target regimes |
+
+For dropout indicator $R=1$, an inverse-probability-of-censoring weight may be
+$1/P(R=1\mid A,L)$ among observed outcomes. Treatment and censoring weights can
+be multiplied when both mechanisms must be adjusted, but the resulting
+assumptions multiply too. Predictors of each mechanism and outcome must be
+measured at the correct time.
+
+# Stabilization and Longitudinal Histories
+
+Unstabilized longitudinal weights can become highly variable because they are
+products of reciprocal probabilities. For visits $t=0,\ldots,T$, a stabilized
+treatment weight has the form
+
+$$
+SW_i=
+\prod_{t=0}^{T}
+\frac{P(A_{it}=a_{it}\mid \bar A_{i,t-1})}
+{P(A_{it}=a_{it}\mid \bar A_{i,t-1},\bar L_{it})},
+$$
+
+where bars denote histories through time. The numerator preserves selected
+marginal features of treatment history while the denominator adjusts for
+measured time-varying confounding.
+
+This is central when a time-varying covariate both predicts later treatment and
+is affected by earlier treatment. Ordinary regression adjustment for that
+covariate may block part of the earlier treatment effect while failing to
+handle confounding of later treatment. A marginal structural model fitted in
+the weighted pseudo-population can target effects of treatment regimes under
+sequential exchangeability, sequential positivity, and correct weight models.
+
+Stabilization can reduce variance; it does not solve structural nonpositivity or
+unmeasured confounding. Truncating or winsorizing extreme weights trades some
+variance reduction for bias and changes the estimator. Always report the rule
+and show sensitivity to defensible thresholds.
+
+# Building and Checking an IPW Analysis
+
+## Define the target and independent unit
+
+Specify the intervention, outcome time, effect scale, target population, and
+whether the target is ATE, ATT, or another contrast. Identify the unit at which
+treatment or selection occurs. Technical observations nested within one donor
+do not receive independent causal histories.
+
+## Estimate each probability without outcome-driven searching
+
+Use temporally eligible variables and a causally sufficient adjustment set.
+Logistic models are common, but nonlinearities and interactions may be needed.
+Flexible prediction can help if it yields balance and stable estimates; a high
+cross-validated classification score alone is not success.
+
+## Diagnose the weighted pseudo-population
+
+At minimum, inspect:
+
+- weighted standardized differences and distributions of every important
+  baseline covariate;
+- propensity-score overlap within treatment groups;
+- minimum, maximum, quantiles, mean, and coefficient of variation of weights;
+- which units dominate weighted totals;
+- the effective sample size
+
+$$
+n_{\mathrm{eff}}=\frac{(\sum_i w_i)^2}{\sum_i w_i^2};
+$$
+
+- whether estimated stabilized weights have a mean near the value implied by
+  their construction;
+- sensitivity to model form and prespecified truncation or restriction.
+
+Balance is evaluated after weighting. Extreme weights are symptoms of sparse
+support, score-model misspecification, or both. A large original sample can
+have a small effective sample size after weighting.
+
+## Fit the marginal outcome contrast with suitable uncertainty
+
+A weighted mean or marginal regression estimates the target contrast. The
+outcome model should not be interpreted as an ordinary conditional regression
+in the original population. Standard errors need to account for weights,
+clustering, repeated measures, and estimated nuisance functions. Robust
+sandwich variance is common, but can perform poorly with few independent
+clusters or highly variable weights. Design-based bootstrap procedures should
+resample independent units and repeat every estimated-weight step.
+
+# Augmentation and Double Robustness
+
+An augmented inverse-probability-weighted estimator combines a treatment model
+with outcome regressions $m_a(L)=E(Y\mid A=a,L)$. One form for $E(Y^1)$ is
+
+$$
+\widehat\mu_1^{\mathrm{AIPW}}
+=\frac{1}{n}\sum_{i=1}^n
+\left[
+\hat m_1(L_i)+
+\frac{A_i\{Y_i-\hat m_1(L_i)\}}{\hat e(L_i)}
+\right].
+$$
+
+The estimator is consistent under standard conditions if either the propensity
+model or the outcome model is correctly specified. "Doubly robust" does not
+mean immune to two arbitrary biases: both models can be wrong, positivity is
+still required, and unmeasured confounding remains. Flexible nuisance fitting
+also requires methods such as cross-fitting and appropriate rate conditions for
+valid inference.
+
+# Bioinformatics Example: Treatment and Follow-up in a Multi-omics Cohort
+
+Consider 240 patients in an observational cancer cohort. Treatment $A$ depends
+on age, stage, performance status, center, baseline mutation burden, and renal
+function. The outcome is a 12-month donor-level immune-response score from
+RNA-seq and proteomics. Patients with severe progression are also more likely
+to miss the 12-month biopsy.
+
+The patient is the experimental unit. Aliquots, assay plates, sequencing lanes,
+genes, proteins, and cells are technical or within-patient observations. A
+defensible analysis might use:
+
+1. treatment weights to balance measured baseline common causes of treatment
+   and outcome;
+2. censoring weights to represent patients whose outcomes became unobserved,
+   conditional on measured history before dropout;
+3. their product in a marginal donor-level outcome analysis;
+4. cluster-aware uncertainty if treatment practices or sampling are correlated
+   within centers.
+
+Biological replicates are independent patients sampled from the target
+population. Repeating assays improves measurement but does not improve
+treatment positivity or replace missing patients. If a treatment is never used
+for a disease stage at one center, extra reads cannot create the missing causal
+comparison.
+
+Statistically, the weighted effect estimates a specified population contrast
+under exchangeability, positivity, consistency, and correct treatment and
+censoring models. Biologically, a shift in the multi-omic score is evidence
+about the prespecified molecular endpoint, not automatically tumor control,
+clinical benefit, or a validated mechanism. Report absolute effect magnitude,
+uncertainty, assay reliability, and replication across cohorts or perturbation
+systems.
+
+# Failure Modes and Sensitivity
+
+| Failure | What it looks like | Appropriate response |
+|---|---|---|
+| Structural nonpositivity | treatment absent for a target covariate pattern | restrict or redefine target; collect comparative data |
+| Practical nonpositivity | very small estimated probabilities and extreme weights | inspect support, simplify target, improve model cautiously |
+| Residual imbalance | weighted covariates remain different | revise assignment model without using outcomes |
+| Unmeasured confounding | good measured balance but biased effect | negative controls and quantitative sensitivity analysis |
+| Informative missingness beyond measured history | censoring weights cannot recover absent outcomes | collect predictors, use sensitivity models, bound conclusions |
+| Pseudoreplication | cells or genes treated as independent causal units | aggregate or model hierarchy at donor assignment level |
+| Aggressive truncation | stable estimate driven by altered weights | report bias--variance trade-off and threshold sensitivity |
+
+Compare IPW with outcome standardization and a justified augmented estimator.
+Large disagreement can reveal functional-form dependence or weak support, but
+agreement does not validate shared causal assumptions. Show estimates across
+prespecified weight models, overlap restrictions, and truncation rules, and
+distinguish a changed estimate from a changed estimand.
+
+# Connections and Take-home Messages
+
+- [Propensity scores](propensity-scores.qmd) explains balancing scores,
+  treatment-model construction, matching, and overlap diagnostics.
+- [Causal diagrams and adjustment sets](causal-diagrams-and-adjustment-sets.qmd)
+  determines which histories belong in each denominator model.
+- [Missing-data mechanisms: MCAR, MAR, and MNAR](missing-data-mechanisms-mcar-mar-and-mnar.qmd)
+  clarifies the assumptions behind observation and censoring weights.
+- [Standard errors](../statistical-inference/standard-errors.qmd) distinguishes
+  sampling precision from bias and explains cluster-aware uncertainty.
+- [Repeated measures and longitudinal data](../advanced-modeling/repeated-measures-and-longitudinal-data.qmd)
+  develops dependence and dropout in longitudinal studies.
+
+1. IPW reweights observed units by inverse assignment or observation
+   probabilities to represent a specified target regime.
+2. Weight formulas encode the estimand; ATE, ATT, overlap, censoring, and
+   transport weights answer different questions.
+3. Balance, support, weight influence, and effective sample size are essential
+   diagnostics, whereas treatment prediction accuracy is secondary.
+4. Stabilization and truncation can improve precision but do not repair absent
+   support, unmeasured confounding, or an ill-defined intervention.
+5. In omics, weights belong to independent biological units and histories, not
+   to the many cells, reads, or molecular features measured within them.
+
+# References
+
+- Horvitz, D. G., and Thompson, D. J. (1952). A generalization of sampling
+  without replacement from a finite universe. *Journal of the American
+  Statistical Association*, 47(260), 663--685.
+  <https://doi.org/10.1080/01621459.1952.10483446>
+- Rosenbaum, P. R., and Rubin, D. B. (1983). The central role of the
+  propensity score in observational studies for causal effects. *Biometrika*,
+  70(1), 41--55. <https://doi.org/10.1093/biomet/70.1.41>
+- Robins, J. M., Hernán, M. A., and Brumback, B. (2000). Marginal structural
+  models and causal inference in epidemiology. *Epidemiology*, 11(5), 550--560.
+  <https://doi.org/10.1097/00001648-200009000-00011>
+- Cole, S. R., and Hernán, M. A. (2008). Constructing inverse probability
+  weights for marginal structural models. *American Journal of Epidemiology*,
+  168(6), 656--664. <https://doi.org/10.1093/aje/kwn164>
+- Hernán, M. A., and Robins, J. M. (2020). *Causal Inference: What If*.
+  Chapman & Hall/CRC.
+  <https://www.hsph.harvard.edu/miguel-hernan/causal-inference-book/>
+- Lunceford, J. K., and Davidian, M. (2004). Stratification and weighting via
+  the propensity score in estimation of causal treatment effects: A comparative
+  study. *Statistics in Medicine*, 23(19), 2937--2960.
+  <https://doi.org/10.1002/sim.1903>

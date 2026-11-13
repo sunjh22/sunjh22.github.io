@@ -1,0 +1,297 @@
+---
+title: "Propensity Scores"
+subtitle: "Designing covariate-balanced observational comparisons around a causal estimand"
+description: "Propensity-score identification, matching, stratification, weighting, overlap diagnostics, and design-aware interpretation in bioinformatics."
+author: "Jiahong Sun"
+date: "2026-11-13"
+date-modified: "2026-11-13"
+categories: [Statistics, Bioinformatics, Causal Inference, Propensity Scores]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# A Score for Treatment Assignment, Not Outcome Prediction
+
+For a binary treatment or exposure $A\in\{0,1\}$ and baseline covariates $L$,
+the **propensity score** is
+
+$$
+\boxed{e(L)=P(A=1\mid L).}
+$$
+
+It describes how treatment was assigned among units with covariates $L$. It is
+not the probability that treatment will work, a prognostic score for the
+outcome, or evidence that treatment was randomized.
+
+The score is useful because it is a **balancing score**. By construction,
+
+$$
+A\perp L\mid e(L).
+$$
+
+Thus, within groups with the same true propensity score, treated and untreated
+units have the same distribution of measured baseline covariates. A scalar can
+therefore organize design-based adjustment for many covariates. This is a
+property of the true treatment-assignment probability, not a guarantee that any
+fitted model or matching algorithm has achieved balance.
+
+# Start with the Causal Target
+
+Let $Y^a$ denote the outcome that would be observed under treatment $a$. Common
+targets are
+
+$$
+\operatorname{ATE}=E(Y^1-Y^0)
+$$
+
+for the target population and
+
+$$
+\operatorname{ATT}=E(Y^1-Y^0\mid A=1)
+$$
+
+for units who were treated. These can differ when effects vary across units.
+Matching, trimming, or weighting may also target an overlap population rather
+than either original population. The estimand must therefore be stated before
+choosing a propensity-score method.
+
+Identification from observational data commonly requires:
+
+1. **Consistency:** the observed outcome equals $Y^a$ under the treatment
+   actually received, with well-defined treatment versions.
+2. **Conditional exchangeability:** $(Y^0,Y^1)\perp A\mid L$ for a sufficient
+   set of pretreatment covariates.
+3. **Positivity:** $0<e(L)<1$ for covariate patterns in the target population.
+4. **No interference**, or an explicitly defined interference structure.
+5. Accurate measurement and estimation adequate for the chosen procedure.
+
+Under these assumptions, the propensity score also supports
+
+$$
+(Y^0,Y^1)\perp A\mid e(L).
+$$
+
+This reduction does not remove confounding by variables omitted from $L$.
+Exchangeability and consistency are causal assumptions; balance plots cannot
+verify them.
+
+# Why the Balancing Result Holds
+
+Write $e=e(L)$. Among units with a fixed score value,
+
+$$
+\begin{aligned}
+P(L=l\mid A=1,e)
+&=\frac{P(A=1\mid L=l,e)P(L=l\mid e)}{P(A=1\mid e)}\\
+&=\frac{eP(L=l\mid e)}{e}\\
+&=P(L=l\mid e).
+\end{aligned}
+$$
+
+The same calculation applies to $A=0$. Treatment therefore conveys no further
+information about measured $L$ after conditioning on the true score. The
+causal result additionally needs exchangeability given $L$: balancing measured
+covariates is necessary for a successful design, but it is not sufficient for
+causal validity.
+
+# Constructing the Design
+
+Propensity-score analysis is best treated as a design stage conducted without
+using outcome differences to tune the adjustment. Its purpose is to create a
+credible comparison before estimating an effect.
+
+## Choose covariates from the causal structure
+
+Include pretreatment causes of treatment and outcome needed to block backdoor
+paths. Strong outcome predictors can improve precision. Do not select
+covariates by treatment-model p-values alone, and do not automatically include:
+
+- mediators or other descendants of treatment;
+- colliders or consequences of selection;
+- variables measured after treatment;
+- high-dimensional technical features whose causal role is unknown.
+
+The [causal diagrams and adjustment sets](causal-diagrams-and-adjustment-sets.qmd)
+note develops these distinctions. The propensity score compresses an
+adjustment set; it does not discover a valid set.
+
+## Estimate assignment flexibly enough
+
+For binary treatment, logistic regression is common, but splines,
+interactions, and machine-learning estimators may better represent assignment.
+Prediction accuracy is not the primary criterion. A model can classify
+treatment well while leaving important imbalance, and perfect prediction often
+signals poor overlap.
+
+Estimate the score on the analysis units using baseline information available
+before treatment. If exposure is assigned at a clinic, family, or batch level,
+the design and uncertainty must reflect that assignment level.
+
+## Use the score to create a comparison
+
+| Method | Resulting comparison | Important design choice |
+|---|---|---|
+| Matching | selected treated and untreated units with similar scores | target population, ratio, replacement, caliper |
+| Subclassification | effects combined across score strata | number of strata and within-stratum overlap |
+| Inverse-probability weighting | weighted pseudo-population | estimand-specific weights and weight diagnostics |
+| Overlap weighting | emphasizes units with assignment uncertainty | target becomes the overlap population |
+| Covariate adjustment using the score | outcome model conditional on estimated score | functional form and residual confounding |
+
+Matching without replacement can discard units and change the target.
+One-to-one matching often targets treated units represented in the matched
+sample, not automatically the original ATE. A caliper limits poor matches but
+also defines which units remain inferentially represented.
+
+# Balance and Overlap Are the Main Diagnostics
+
+Do not assess a propensity-score design by the treatment model's likelihood,
+$R^2$, classification accuracy, or score-model coefficient p-values. Inspect
+the covariate distribution after applying the design.
+
+For a covariate $L_j$, a standardized mean difference is
+
+$$
+\operatorname{SMD}_j=
+\frac{\bar L_{1j}-\bar L_{0j}}
+{\sqrt{(s_{1j}^2+s_{0j}^2)/2}},
+$$
+
+with weighted or matched versions used after design. SMDs are descriptive, not
+hypothesis tests; they do not become more reassuring merely because sample size
+is small. Examine higher moments, categories, interactions, and distributions
+when scientifically relevant. Common numerical thresholds such as $0.1$ are
+heuristics rather than proof of adequate control.
+
+Also inspect the score distributions by treatment group, the number and type of
+discarded units, effective sample size, and individual influence. A lack of
+overlap is a design limitation:
+
+```text
+No comparable untreated units for some treated profiles
+                         ↓
+       causal contrast requires extrapolation
+                         ↓
+ restrict or redefine the target, improve design, or acknowledge nonidentification
+```
+
+Changing the score model cannot manufacture support where treatment is
+deterministic. Trimming should use a prespecified rule and be accompanied by a
+clear statement of the new target population.
+
+# Outcome Analysis and Uncertainty
+
+After the design is fixed, estimate an effect on a scale tied to the scientific
+question: mean difference, risk difference, risk ratio, survival contrast, or
+another prespecified measure. Report the estimate and interval, not only a
+p-value.
+
+Uncertainty must represent the actual design. Matched units are not generally
+independent simple random samples; weighting changes each unit's influence;
+clustering may arise from donors, centers, families, or batches. Standard
+errors should be appropriate for the matching or weighting estimator and for
+the level of treatment assignment. A bootstrap, when justified, must repeat the
+entire design and estimation procedure at the independent sampling-unit level.
+
+The estimated propensity score is a nuisance estimate, whereas the causal
+contrast is the estimand. A successful analysis distinguishes:
+
+- **estimand:** the population causal contrast;
+- **estimator:** the full matching, weighting, or stratification rule plus
+  outcome contrast;
+- **estimate:** the numerical result in the observed data; and
+- **uncertainty:** the estimator's sampling variability under the study design.
+
+# Bioinformatics Example: A Nonrandomized Assay Protocol
+
+Suppose 180 patient biopsies were processed using either a new single-cell RNA
+sequencing protocol ($A=1$) or a legacy protocol ($A=0$). Protocol choice
+depends on collection year, tissue ischemia time, disease severity, center, and
+sample quality. The outcome $Y$ is the donor-level fraction of a prespecified
+immune-cell state after a common analysis pipeline.
+
+The patient biopsy is the experimental unit. Cells, reads, wells, and repeated
+libraries are subsamples or technical replicates; treating them as independent
+patients would produce pseudoreplication. A propensity-score design would:
+
+1. define whether the target is all eligible biopsies, protocol recipients, or
+   a population with protocol overlap;
+2. choose baseline common causes of protocol and cell-state composition using
+   timing and subject-matter knowledge;
+3. estimate protocol propensity and create matched or weighted donor groups;
+4. check donor-level covariate distributions and support after design;
+5. estimate a donor-level causal contrast with uncertainty respecting centers
+   and any matching or weights.
+
+Technical replicates can improve measurement of a biopsy but do not add
+independent protocol assignments. Biological replication across patients and,
+ideally, centers supports population inference.
+
+Statistically, balance after design means measured baseline covariates are more
+comparable under the chosen summary diagnostics. Biologically, an estimated
+protocol effect can reflect a change in capture, detection, viability, or cell
+recovery; it is not automatically a change in the underlying tissue. Negative
+controls, orthogonal assays, and protocol-swapping experiments can help separate
+measurement effects from biological differences.
+
+# Failure Modes and Sensitivity
+
+| Threat | Consequence | Response |
+|---|---|---|
+| Unmeasured confounding | balanced measured variables coexist with biased causal contrast | negative controls, validation data, quantitative sensitivity analysis |
+| Poor overlap | unstable estimates or dependence on extrapolation | restrict target, redesign sampling, report excluded population |
+| Outcome-driven design tuning | hidden selection invalidates nominal inference | freeze balance criteria and design before outcome comparison |
+| Wrong covariate timing | mediator adjustment or collider bias | use a causal diagram and preserve temporal order |
+| Flexible model without balance | good treatment prediction but poor causal design | tune and assess using covariate balance and influence |
+| Pseudoreplication | intervals reflect cells or reads rather than biological units | design and analyze at the treatment-assignment unit |
+
+Sensitivity analysis should state how strong residual confounding would need to
+be to change the scientific conclusion. Compare plausible adjustment sets,
+matching rules, and overlap restrictions, but do not call a result robust merely
+because several implementations using the same untestable assumptions agree.
+
+# Connections and Take-home Messages
+
+- [Confounding, mediation, and effect modification](confounding-mediation-and-effect-modification.qmd)
+  defines the causal roles that determine what belongs in $L$.
+- [Causal diagrams and adjustment sets](causal-diagrams-and-adjustment-sets.qmd)
+  explains backdoor paths, colliders, descendants, and target-specific adjustment.
+- [Inverse-probability weighting](inverse-probability-weighting.qmd) derives
+  estimand-specific weights from propensity scores and extends weighting to
+  censoring and longitudinal treatment.
+- [Selection bias and winner's curse](../statistical-inference/selection-bias-and-winners-curse.qmd)
+  explains why inclusion mechanisms can change the population being analyzed.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a framework for assumptions the observed balance cannot test.
+
+1. A propensity score summarizes treatment assignment conditional on measured
+   baseline covariates; it is not an outcome-risk score.
+2. The true score balances measured covariates, but estimated-score designs must
+   demonstrate balance and overlap empirically.
+3. The estimand determines whether matching, ATE weighting, ATT weighting, or an
+   overlap target is appropriate.
+4. No propensity-score method removes unmeasured confounding or repairs absent
+   treatment support.
+5. In bioinformatics, treatment assignment and biological replication belong
+   to donors or specimens, not to their cells, reads, or technical replicates.
+
+# References
+
+- Rosenbaum, P. R., and Rubin, D. B. (1983). The central role of the
+  propensity score in observational studies for causal effects. *Biometrika*,
+  70(1), 41--55. <https://doi.org/10.1093/biomet/70.1.41>
+- Austin, P. C. (2011). An introduction to propensity score methods for
+  reducing the effects of confounding in observational studies. *Multivariate
+  Behavioral Research*, 46(3), 399--424.
+  <https://doi.org/10.1080/00273171.2011.568786>
+- Stuart, E. A. (2010). Matching methods for causal inference: A review and a
+  look forward. *Statistical Science*, 25(1), 1--21.
+  <https://doi.org/10.1214/09-STS313>
+- Hernán, M. A., and Robins, J. M. (2020). *Causal Inference: What If*.
+  Chapman & Hall/CRC.
+  <https://www.hsph.harvard.edu/miguel-hernan/causal-inference-book/>
+- Ho, D. E., Imai, K., King, G., and Stuart, E. A. (2007). Matching as
+  nonparametric preprocessing for reducing model dependence in parametric
+  causal inference. *Political Analysis*, 15(3), 199--236.
+  <https://doi.org/10.1093/pan/mpl013>
