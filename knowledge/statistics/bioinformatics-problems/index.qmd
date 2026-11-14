@@ -14,9 +14,11 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Causal diagrams and adjustment sets](causal-diagrams-and-adjustment-sets.qmd)
 - [Propensity scores](propensity-scores.qmd)
 - [Inverse-probability weighting](inverse-probability-weighting.qmd)
+- [Batch effects in high-throughput experiments](batch-effects-in-high-throughput-experiments.qmd)
+- [Batch correction with ComBat and related models](batch-correction-with-combat-and-related-models.qmd)
 
-Future notes will develop batch effects, omics-specific models, and reproducible
-statistical workflows.
+Future notes will develop omics experimental design, omics-specific models, and
+reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)

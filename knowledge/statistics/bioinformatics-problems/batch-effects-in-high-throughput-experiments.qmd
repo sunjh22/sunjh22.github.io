@@ -1,0 +1,267 @@
+---
+title: "Batch Effects in High-throughput Experiments"
+subtitle: "Design, diagnosis, and inference when technical conditions shift"
+description: "A design-first guide to recognizing batch effects, separating them from biology, and reporting conclusions that respect replication and identifiability."
+author: "Jiahong Sun"
+date: "2026-11-14"
+date-modified: "2026-11-14"
+categories: [Statistics, Bioinformatics, Experimental Design, Batch Effects]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Batch Is Part of the Data-generating Process
+
+A **batch** is a set of observations processed under a shared technical
+condition: the same reagent lot, plate, flow cell, instrument run, operator,
+laboratory, acquisition day, or computational pipeline. A **batch effect** is a
+systematic measurement difference associated with such conditions rather than
+the biological contrast of interest.
+
+For feature $g$ in biological sample $i$, a useful schematic model is
+
+$$
+Y_{gi}=m_g(X_i)+b_g(B_i)+\varepsilon_{gi},
+$$
+
+where $X_i$ contains biological variables, $B_i$ identifies the technical
+batch, and $b_g$ may differ across features. Batch can shift location, alter
+scale, change detection limits, or modify correlations among features. It is
+therefore not adequately described as a single global offset.
+
+The **experimental unit** is the independently assigned or sampled biological
+unit—often a patient, animal, culture, or field specimen. Wells, reads, cells,
+images, and technical replicate libraries nested within that unit measure
+technical variation but do not create new biological replication. A sequencing
+run can be a batch without being an experimental unit.
+
+# Why Batch Effects Threaten Scientific Claims
+
+Batch effects can cause at least three different failures:
+
+1. **Bias:** if condition and batch are associated, part of the technical shift
+   can be attributed to biology.
+2. **Loss of precision:** even balanced batch variation inflates residual noise
+   when it is ignored.
+3. **Poor transportability:** a predictor can learn laboratory identity and fail
+   on samples processed elsewhere.
+
+Suppose a two-condition expression study uses the feature-wise model
+
+$$
+Y_{gi}=\alpha_g+\beta_g X_i+\gamma_g B_i+\varepsilon_{gi},
+$$
+
+with binary condition $X_i$ and batch $B_i$. The estimand $\beta_g$ is the
+conditional biological contrast on the modeled scale. Its estimator can
+separate $\beta_g$ from $\gamma_g$ only if the design contains within-batch or
+otherwise overlapping comparisons.
+
+If every control is processed in batch 1 and every treated sample in batch 2,
+then $X_i=B_i$. The two design-matrix columns are identical, so only
+$\beta_g+\gamma_g$ is identified. More samples in the same pattern reduce
+neither the ambiguity nor the bias. Post hoc correction cannot manufacture the
+missing comparison.
+
+# Design Is the Strongest Form of Batch Control
+
+Technical conditions should be anticipated before data collection. For each
+stage—collection, extraction, library preparation, labeling, plate placement,
+sequencing, and acquisition—record who, when, where, with what reagent lot, and
+on which instrument the sample was processed.
+
+## Randomize and block
+
+Randomly distribute biological conditions across technical processing order and
+positions. When unrestricted randomization could produce poor balance in a
+small study, block or stratify on important biological variables and randomize
+within those blocks. A good layout aims for:
+
+- each biological condition in every feasible batch;
+- similar numbers of independent units per condition within batch;
+- donor, sex, age, tissue, or other important covariates distributed across
+  batches rather than aligned with them;
+- randomized well or lane position, not merely randomized sample labels;
+- bridge or reference samples repeated across batches when harmonization is a
+  scientific objective.
+
+Blocking is not the same as technical replication. A reference material run in
+every batch helps estimate technical shifts, but it does not increase the number
+of biological units supporting a treatment contrast.
+
+## Preserve the hierarchy
+
+Splitting one specimen across two lanes can estimate lane-to-lane variability or
+protect against a failed run. For biological inference, however, the two lanes
+remain nested within one specimen. Combine them when scientifically appropriate
+or retain the nesting in a multilevel model; never analyze them as two
+independent donors.
+
+# Known, Latent, and Composite Technical Variation
+
+Batch information has several forms:
+
+| Form | Example | Statistical response |
+|---|---|---|
+| Recorded categorical factor | plate, center, reagent lot | Include it in the design or use a justified adjustment model |
+| Recorded continuous covariate | RNA integrity, processing time | Model a suitable linear or nonlinear effect |
+| Nested or crossed structure | lanes within samples; samples across runs | Preserve dependence with aggregation, blocking, or hierarchical models |
+| Unrecorded unwanted variation | temperature drift, operator differences | Estimate surrogate factors cautiously using many features or controls |
+| Biological heterogeneity | cell composition, disease subtype | Decide whether it is target variation, a confounder, or a mediator before adjustment |
+
+Calling every dominant axis “batch” is unsafe. A latent factor can mix technical
+variation with real biology. Its role depends on the estimand: cell-type
+composition may be unwanted for one question and the primary biological signal
+for another.
+
+# Diagnose Batch Without Chasing a Perfect Plot
+
+Diagnostics should be specified at both the sample and feature levels.
+
+1. **Audit the design table.** Cross-tabulate condition, batch, donor, time,
+   plate, and other covariates. Inspect empty cells, rank, and the number of
+   independent units in each relevant combination.
+2. **Inspect raw quality metrics.** Library yield, mapping rate, duplication,
+   detected features, control probes, intensity distributions, and spatial plate
+   patterns can reveal the stage at which variation arose.
+3. **Visualize transformed data.** Principal-component plots, sample distances,
+   hierarchical clustering, and relative-log-expression displays can show
+   association with batch. Color the same display by biology and quality
+   metrics; otherwise a real biological axis may be mislabeled technical.
+4. **Fit a variance model.** Estimate how much variation is associated with
+   donor, condition, batch, and residual error. Feature-specific effects are
+   expected; one global summary is not sufficient.
+5. **Use controls.** Negative-control features or replicated reference samples
+   can expose technical structure without assuming that most biological
+   features are null.
+
+A principal component associated with batch is evidence of structure, not proof
+of confounding or proof that every affected feature needs correction. Conversely,
+the absence of a separated PCA cluster does not establish that feature-wise
+batch bias is absent.
+
+# Match the Analysis to the Scientific Target
+
+For differential expression or another supervised feature-wise analysis, the
+usual strategy is to include recorded batch variables in the inferential model:
+
+$$
+g\{\operatorname{E}(Y_{gi})\}
+=\alpha_g+\beta_g X_i+\boldsymbol\gamma_g^\mathsf{T}\mathbf B_i
++\mathbf z_i^\mathsf{T}\boldsymbol\eta_g,
+$$
+
+where $g(\cdot)$ is appropriate for the outcome, $\mathbf B_i$ encodes batch,
+and $\mathbf z_i$ contains prespecified biological covariates. This estimates
+$\beta_g$ while propagating uncertainty from the same model. Count data should
+generally retain a count-based mean–variance model and its library-size offset.
+
+An adjusted expression matrix serves a different purpose. Removing a fitted
+batch component can be useful for PCA, heatmaps, clustering, or data integration,
+provided the biological design to preserve is declared. Such a matrix should
+not automatically replace the raw or appropriately normalized measurements in
+the inferential procedure. Adjustment changes the data and can understate
+uncertainty if downstream analyses treat estimated corrections as known.
+
+For prediction, batch handling belongs inside the resampling or validation
+loop. Estimating correction parameters on the full dataset leaks information
+from validation samples. A convincing evaluation holds out entire relevant
+batches or sites when deployment must generalize to new ones.
+
+# Normalization and Batch Adjustment Are Not Synonyms
+
+Normalization addresses specified technical comparability problems such as
+library depth, compositional scale, background, or intensity distributions.
+Batch adjustment addresses variation associated with discrete or latent
+processing conditions. Either operation can rely on assumptions about which
+features or samples should be stable, and either can remove biology if those
+assumptions fail.
+
+Order matters. The original ComBat model assumes cleaned, normalized, roughly
+continuous expression measurements. Applying it directly to raw RNA-seq counts
+ignores the discrete mean–variance relation; a count model or inclusion of batch
+in the differential-expression design is more appropriate. The next note,
+[Batch correction with ComBat and related models](batch-correction-with-combat-and-related-models.qmd),
+develops these distinctions.
+
+# Sensitivity, Validation, and Reporting
+
+No single corrected visualization validates an analysis. Compare conclusions
+across scientifically plausible specifications:
+
+- unadjusted and prespecified batch-adjusted models;
+- recorded batch covariates and defensible latent-factor adjustments;
+- alternative numbers of surrogate factors;
+- analyses with and without low-quality samples, using criteria set independently
+  of the desired result;
+- feature-level estimates, standard errors, rankings, and calibration—not only
+  apparent mixing in a low-dimensional embedding;
+- leave-one-batch-out or external validation when generalization is the goal.
+
+Report the experimental unit, technical hierarchy, allocation procedure, batch
+variables, degree of balance, model matrix, normalization and transformation,
+diagnostic evidence, adjustment method and protected biological design, and the
+sensitivity of conclusions. If biology and batch are partially or completely
+confounded, state the resulting limitation rather than describing it as solved.
+
+# Biological and Statistical Interpretation
+
+Imagine 24 independent donor biopsies, 12 per condition, processed on four
+plates. Each plate contains three donors from each condition, and aliquots are
+randomized across plate positions. Plate is a technical block; donors are the
+experimental units. A model containing condition and plate can estimate the
+condition contrast from comparisons represented within each plate.
+
+Statistically, a stable adjusted log-fold change means that the estimated
+condition contrast is not explained by the modeled plate shifts and remains
+similar across sensitivity analyses. Biologically, it does not prove that the
+gene is causal, that the effect occurs in every cell type, or that it generalizes
+to another tissue or laboratory. Those conclusions need additional design,
+measurement, and validation evidence.
+
+# Connections and Take-home Messages
+
+- [Causal diagrams and adjustment sets](causal-diagrams-and-adjustment-sets.qmd)
+  explains why a technical variable can be a confounder, mediator, or collider
+  depending on the data-generating process.
+- [Categorical predictors and contrasts](../regression-models/categorical-predictors-and-contrasts.qmd)
+  develops design-matrix coding, rank, and estimable comparisons.
+- [Linear-model assumptions and diagnostics](../regression-models/linear-model-assumptions-and-diagnostics.qmd)
+  shows how residual shifts by batch reveal model tension.
+- [Principal component analysis](../advanced-modeling/principal-component-analysis.qmd)
+  explains the exploratory projection often used to visualize technical
+  structure.
+- [Train, validation, and test-set design](../regression-models/train-validation-and-test-set-design.qmd)
+  covers leakage and deployment-aligned validation.
+
+1. Batch is a feature of the measurement process, not a nuisance label that a
+   single algorithm can always erase.
+2. Randomization, balance, blocking, metadata, and bridge samples protect
+   identifiability before computation begins.
+3. Perfect condition–batch confounding makes separate effects unidentified;
+   more technical observations cannot repair it.
+4. Include batch in the inferential model when possible; reserve corrected
+   matrices for uses that genuinely require them.
+5. Technical adjustment is credible only when it preserves biological contrasts,
+   respects experimental units, and survives sensitivity and external checks.
+
+# References
+
+- Fisher, R. A. (1935). *The Design of Experiments*. Oliver and Boyd.
+- Leek, J. T., Scharpf, R. B., Bravo, H. C., et al. (2010). Tackling the
+  widespread and critical impact of batch effects in high-throughput data.
+  *Nature Reviews Genetics*, 11, 733–739.
+  <https://doi.org/10.1038/nrg2825>
+- Auer, P. L., and Doerge, R. W. (2010). Statistical design and analysis of
+  RNA sequencing data. *Genetics*, 185(2), 405–416.
+  <https://doi.org/10.1534/genetics.110.114983>
+- Hicks, S. C., Townes, F. W., Teng, M., and Irizarry, R. A. (2018). Missing
+  data and technical variability in single-cell RNA-sequencing experiments.
+  *Biostatistics*, 19(4), 562–578.
+  <https://doi.org/10.1093/biostatistics/kxx053>
+- Ritchie, M. E., Phipson, B., Wu, D., et al. (2015). `limma` powers
+  differential expression analyses for RNA-sequencing and microarray studies.
+  *Nucleic Acids Research*, 43(7), e47.
+  <https://doi.org/10.1093/nar/gkv007>

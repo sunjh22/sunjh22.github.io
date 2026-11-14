@@ -1,0 +1,310 @@
+---
+title: "Batch Correction with ComBat and Related Models"
+subtitle: "Empirical Bayes adjustment, alternatives, assumptions, and validation"
+description: "How ComBat estimates feature-specific location and scale effects, when related batch-adjustment methods are appropriate, and what they cannot identify."
+author: "Jiahong Sun"
+date: "2026-11-14"
+date-modified: "2026-11-14"
+categories: [Statistics, Bioinformatics, Empirical Bayes, Batch Effects]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Target Is a Preserved Biological Signal
+
+Batch correction attempts to remove specified technical variation while
+retaining the biological variation relevant to a declared analysis. That goal
+is conditional on the design: if treatment and batch are perfectly confounded,
+the data do not identify which component is technical. No ComBat option,
+surrogate-variable method, or stronger prior resolves that ambiguity.
+
+Let $Y_{gij}$ be a normalized continuous measurement for feature $g$, sample
+$j$, and batch $i$. ComBat begins with a feature-wise location-and-scale model:
+
+$$
+Y_{gij}
+=\alpha_g+\mathbf x_{ij}^{\mathsf T}\boldsymbol\beta_g
++\gamma_{gi}+\delta_{gi}\varepsilon_{gij},
+\qquad \varepsilon_{gij}\sim N(0,\sigma_g^2).
+$$
+
+Here $\mathbf x_{ij}$ describes biological covariates to preserve,
+$\gamma_{gi}$ is the additive effect of batch $i$ on feature $g$, and
+$\delta_{gi}$ is a multiplicative batch effect. The corrected matrix is an
+estimated representation of what would have been observed under a common batch
+distribution—not a direct observation of a batch-free biological truth.
+
+# Why Empirical Bayes Helps
+
+Estimating a location and scale parameter for every feature–batch combination
+is unstable when batches contain few samples. ComBat borrows information across
+features by treating their batch parameters as draws from shared distributions.
+In the parametric version, the working priors have the form
+
+$$
+\gamma_{gi}\sim N(\bar\gamma_i,\tau_i^2),
+\qquad
+\delta_{gi}^2\sim \operatorname{InverseGamma}(\lambda_i,\theta_i).
+$$
+
+The hyperparameters are estimated from all features. Posterior estimates
+$\gamma_{gi}^*$ and $\delta_{gi}^*$ shrink noisy feature-specific estimates
+toward batch-level patterns. Strongly informed features move little; imprecise
+ones borrow more. This is the same bias–variance tradeoff developed in
+[Empirical Bayes](../advanced-modeling/empirical-bayes.qmd), applied to technical
+effects rather than biological effect sizes.
+
+ComBat first standardizes each feature after estimating the grand mean and the
+preserved biological component. If $Z_{gij}$ is the standardized value, the
+adjustment has the schematic form
+
+$$
+Y_{gij}^{\mathrm{adj}}
+=\frac{\hat\sigma_g}{\delta_{gi}^*}
+  (Z_{gij}-\gamma_{gi}^*)
++\hat\alpha_g
++\mathbf x_{ij}^{\mathsf T}\hat{\boldsymbol\beta}_g.
+$$
+
+Thus additive batch shifts are subtracted, scale differences are standardized,
+and the fitted biological component is restored. The nonparametric empirical-
+Bayes option estimates the prior distributions without the normal and inverse-
+gamma forms; it may be useful when feature-wise batch parameters have unusual
+tails, but it does not relax the need for overlap or correct covariate protection.
+
+# What ComBat Assumes
+
+The original procedure is most natural for cleaned, normalized, approximately
+continuous feature measurements such as log-scale microarray intensities. Its
+scientific validity depends on more than conditional Gaussian residuals:
+
+- the batch label is known and correctly recorded;
+- biological variables to preserve are included in the model matrix;
+- batch and biology have enough overlap to estimate their separate effects;
+- location-and-scale adjustment is an adequate description of technical change;
+- sharing information across features is reasonable;
+- normalization and filtering occurred without using outcome information in a
+  way that creates bias;
+- downstream use acknowledges that correction parameters were estimated.
+
+With one sample in a batch, scale adjustment is not estimable from that batch.
+With sparse or highly unbalanced batches, the empirical-Bayes prior can stabilize
+estimation but cannot replace absent design information.
+
+# Correction Matrix or Inferential Model?
+
+For a differential-expression estimand, incorporating batch in the feature-wise
+regression is often preferable to analyzing a corrected matrix. A single model
+
+$$
+g\{\operatorname{E}(Y_{gi})\}
+=\alpha_g+\beta_g X_i+\boldsymbol\gamma_g^\mathsf T\mathbf B_i
+
+$$
+
+estimates the biological coefficient and its uncertainty together. This is
+especially important for RNA-seq counts, for which negative-binomial methods
+model the mean–variance relation, dispersion, and library-size offsets.
+
+By contrast, a corrected matrix is useful when an algorithm requires a matrix
+with reduced technical structure—for example PCA, a heatmap, clustering, or
+some cross-study integration. The `limma::removeBatchEffect` documentation makes
+this division explicit: it is intended for plotting or unsupervised analysis,
+whereas batch should normally enter the linear model for differential analysis.
+
+The matrix used for visualization and the data used for inference therefore
+need not be identical. Showing a batch-adjusted PCA while fitting a count model
+with batch in its design is coherent if both operations and their purposes are
+reported.
+
+# ComBat-seq for Counts
+
+Applying Gaussian ComBat directly to raw counts is incompatible with their
+discrete, mean-dependent variance. ComBat-seq instead uses a negative-binomial
+model. For gene $g$ and sample $j$ in batch $i$, a simplified mean model is
+
+$$
+\log \mu_{gij}
+=\alpha_g+\log N_{ij}
++\mathbf x_{ij}^{\mathsf T}\boldsymbol\beta_g+\gamma_{gi},
+$$
+
+where $N_{ij}$ is a library-size factor. Batch-specific dispersions allow the
+technical effect to alter variability as well as the mean. Observed counts are
+mapped by fitted quantiles to a batch-free negative-binomial distribution, so
+the returned values remain integers.
+
+That property can support count-based downstream tools, but it does not make
+adjustment automatically superior to including batch in the original model.
+Quantile mapping adds estimation and model assumptions, and low counts lead to
+many-to-one mappings. For a prespecified differential-expression contrast in a
+single study, a design-aware negative-binomial regression is usually the more
+direct inferential route.
+
+# Known and Unknown Unwanted Variation
+
+ComBat is one member of a broader family:
+
+| Method | Information used | Typical target | Central vulnerability |
+|---|---|---|---|
+| Batch covariate in the analysis model | Recorded batch | Valid conditional biological coefficient and uncertainty | Cannot estimate aliased effects; misspecified batch structure |
+| ComBat | Known batches; many continuous features | Adjusted matrix with empirical-Bayes location and scale effects | Wrong protected design or inappropriate data scale |
+| ComBat-seq | Known batches; integer counts | Integer adjusted count matrix | Negative-binomial and quantile-mapping assumptions |
+| `removeBatchEffect` | Known batches and covariates | Visualization or unsupervised analysis on continuous/log expression | Treating output as raw data for inference |
+| SVA | Many features; primary biological model | Estimated latent surrogate variables | Surrogates can absorb biology or miss structured technical variation |
+| RUV | Negative-control features, replicate samples, or residual structure | Latent factors of unwanted variation | Invalid controls or an unsuitable number of factors |
+
+## Surrogate variable analysis
+
+Surrogate variable analysis (SVA) estimates latent directions associated with
+unmodeled heterogeneity while attempting to protect the primary variables. The
+estimated surrogate variables enter the downstream regression as covariates.
+SVA is useful when technical or biological nuisance factors were not recorded,
+but the meaning of a surrogate variable is not identified by the algorithm. The
+analyst must assess whether it represents nuisance variation, target biology, or
+a mixture.
+
+## Remove unwanted variation
+
+RUV methods estimate unwanted factors using negative-control genes (RUVg),
+replicate samples (RUVs), or residuals from an initial fit (RUVr). For RNA-seq,
+a common model is
+
+$$
+\log \operatorname{E}(\mathbf Y)
+=\mathbf X\boldsymbol\beta
++\mathbf W\boldsymbol\alpha+\mathbf O,
+$$
+
+where $\mathbf X$ contains biology of interest, $\mathbf W$ contains estimated
+unwanted factors, and $\mathbf O$ contains offsets. Control genes must truly be
+unaffected by the biological contrast while responding to relevant technical
+variation. Spike-ins can fail that role when they experience a different
+measurement process from endogenous genes.
+
+# A Design-aware Workflow
+
+1. **Define the estimand and experimental unit.** State the biological contrast,
+   target population, and independent units before choosing a correction.
+2. **Audit identifiability.** Cross-tabulate batch with condition and other
+   covariates; inspect model-matrix rank and sparse cells.
+3. **Choose the data scale.** Distinguish raw counts, normalized continuous
+   measurements, transformed expression, and embeddings. Use a method whose
+   probability model matches that scale.
+4. **Choose the output needed.** Prefer batch covariates in the inferential model
+   for effect estimation; create a corrected matrix only for a justified
+   downstream task.
+5. **Protect biology explicitly.** Supply the complete biological design to
+   ComBat or `removeBatchEffect`; include variables whose variation should remain.
+6. **Estimate without leakage.** In prediction, fit normalization, latent factors,
+   and batch corrections using training data only. Define how a genuinely new
+   batch will be handled.
+7. **Validate more than mixing.** Compare effect estimates, standard errors,
+   null controls, replicate agreement, predictive performance, and biological
+   signal before and after adjustment.
+8. **Run sensitivity analyses.** Vary the adjustment family, protected design,
+   number of latent factors, and reasonable quality-control decisions.
+
+# Diagnostics and Failure Modes
+
+## Biology disappears after correction
+
+This can mean that the original signal was technical, but it can also mean that
+biology was aligned with batch or omitted from the protected design. Check the
+allocation table and model rank before interpreting disappearance as successful
+deconfounding.
+
+## Batches mix perfectly in a PCA
+
+Perfect mixing is not the objective. Aggressive correction can erase real
+condition, tissue, ancestry, or cell-state structure. Examine known positive
+biological controls, held-out replicates, feature-wise effects, and downstream
+performance. A visually homogeneous embedding can be overcorrected.
+
+## Batch remains visible
+
+Residual structure may reflect batch-by-condition interactions, nonlinear drift,
+spatial effects, variance changes not captured by the method, poor normalization,
+or a quality failure requiring exclusion rather than correction. Inspect
+feature-level residuals and technical metrics rather than repeatedly adding
+latent factors until the plot looks satisfactory.
+
+## Standard errors are too small
+
+A two-stage analysis often treats the estimated corrected matrix as fixed. That
+ignores uncertainty in batch parameters or surrogate factors. Joint modeling,
+resampling the full workflow, or direct inclusion of nuisance variables in the
+inferential model better represents uncertainty.
+
+# Worked Interpretation
+
+Suppose 40 independent patient samples are split evenly across two phenotypes
+and four processing batches, with five patients from each phenotype in every
+batch. A log-expression ComBat analysis includes phenotype in the model matrix
+and batch as the known adjustment factor.
+
+- **Experimental unit:** patient, not gene, read, or technical lane.
+- **Biological estimand:** the phenotype-associated mean log-expression
+  difference in the target patient population.
+- **Technical target:** feature-specific batch location and scale variation.
+- **Inferential analysis:** a feature-wise model containing phenotype and batch.
+- **Exploratory display:** ComBat-adjusted log-expression used for PCA and
+  heatmaps, clearly labeled as adjusted.
+
+If adjusted and model-based phenotype estimates agree and negative controls lose
+batch association without loss of positive-control biology, confidence improves.
+The result still does not establish a causal phenotype effect or transport to a
+new platform. Statistical correction and biological validation answer different
+questions.
+
+# Connections and Take-home Messages
+
+- [Batch effects in high-throughput experiments](batch-effects-in-high-throughput-experiments.qmd)
+  covers design, identifiability, diagnostics, and reporting before method choice.
+- [Empirical Bayes](../advanced-modeling/empirical-bayes.qmd) explains the
+  information-sharing principle behind ComBat shrinkage.
+- [Negative binomial regression](../regression-models/negative-binomial-regression.qmd)
+  develops the count model used by RNA-seq differential-expression procedures
+  and ComBat-seq.
+- [Latent-variable models](../advanced-modeling/latent-variable-models.qmd)
+  provides the framework underlying SVA and RUV factors.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  organizes comparisons across credible adjustment choices.
+
+1. ComBat estimates feature-specific additive and multiplicative batch effects
+   and stabilizes them by empirical-Bayes borrowing across features.
+2. Its corrected values depend on the supplied biological design, data scale,
+   and overlap between biology and batch.
+3. For supervised inference, placing batch in the outcome model is often more
+   direct than testing a previously corrected matrix.
+4. ComBat-seq, SVA, and RUV solve different problems; they are not interchangeable
+   switches labeled “remove batch.”
+5. Validate preserved biology, uncertainty, and out-of-batch performance—not
+   merely visual mixing.
+
+# References
+
+- Johnson, W. E., Li, C., and Rabinovic, A. (2007). Adjusting batch effects in
+  microarray expression data using empirical Bayes methods. *Biostatistics*,
+  8(1), 118–127. <https://doi.org/10.1093/biostatistics/kxj037>
+- Zhang, Y., Parmigiani, G., and Johnson, W. E. (2020). ComBat-seq: batch effect
+  adjustment for RNA-seq count data. *NAR Genomics and Bioinformatics*, 2(3),
+  lqaa078. <https://doi.org/10.1093/nargab/lqaa078>
+- Leek, J. T., and Storey, J. D. (2007). Capturing heterogeneity in gene
+  expression studies by surrogate variable analysis. *PLoS Genetics*, 3(9),
+  e161. <https://doi.org/10.1371/journal.pgen.0030161>
+- Risso, D., Ngai, J., Speed, T. P., and Dudoit, S. (2014). Normalization of
+  RNA-seq data using factor analysis of control genes or samples. *Nature
+  Biotechnology*, 32, 896–902. <https://doi.org/10.1038/nbt.2931>
+- Leek, J. T., Johnson, W. E., Parker, H. S., Jaffe, A. E., and Storey, J. D.
+  (2012). The `sva` package for removing batch effects and other unwanted
+  variation in high-throughput experiments. *Bioinformatics*, 28(6), 882–883.
+  <https://doi.org/10.1093/bioinformatics/bts034>
+- Bioconductor. `sva`: surrogate variable analysis and ComBat documentation.
+  <https://bioconductor.org/packages/release/bioc/html/sva.html>
+- Bioconductor. `RUVSeq`: remove unwanted variation from RNA-seq data.
+  <https://bioconductor.org/packages/release/bioc/html/RUVSeq.html>
+- Bioconductor. `limma::removeBatchEffect` documentation.
+  <https://bioconductor.org/packages/release/bioc/html/limma.html>
