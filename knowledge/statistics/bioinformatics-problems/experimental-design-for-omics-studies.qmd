@@ -1,0 +1,299 @@
+---
+title: "Experimental Design for Omics Studies"
+subtitle: "Aligning biological questions, experimental units, allocation, and measurement"
+description: "A design-first guide to estimands, replication, randomization, blocking, sample size, batching, and interpretation in high-throughput studies."
+author: "Jiahong Sun"
+date: "2026-11-15"
+date-modified: "2026-11-15"
+categories: [Statistics, Bioinformatics, Experimental Design, Omics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Design Determines What the Data Can Answer
+
+An omics assay may measure millions of molecules, but its inferential strength is
+usually determined by a much smaller number: the independent biological units.
+Good design connects a scientific question to an estimand, assigns or samples
+units so that the comparison is identifiable, and carries that structure through
+specimen processing and analysis.
+
+```text
+Biological question
+        ↓
+Target population and estimand
+        ↓
+Experimental units and treatment allocation or sampling
+        ↓
+Specimens, batches, and technical measurements
+        ↓
+Model, uncertainty, and multiplicity control
+        ↓
+Statistical conclusion ≠ complete biological explanation
+```
+
+A sophisticated model cannot recover a treatment effect if every treated sample
+was processed on one day and every control on another. Conversely, careful
+randomization, blocking, and replication make simpler analyses credible.
+
+# Start with the Scientific Contrast
+
+Specify the target before deciding how many samples or which platform to use.
+For a two-condition study, a feature-specific estimand might be
+
+$$
+\Delta_g
+=E\!\left\{Y_g(1)-Y_g(0)\right\},
+$$
+
+the average causal effect of treatment on the chosen abundance scale for feature
+$g$ in a defined population. In an observational study, the target may instead
+be an adjusted association or a prediction. These are different questions and
+require different assumptions.
+
+At minimum, a design protocol should state:
+
+- the target population and eligibility criteria;
+- the experimental or observational unit;
+- the intervention, exposure, or biological groups being compared;
+- the primary outcome scale and prespecified contrasts;
+- nuisance factors worth blocking or balancing;
+- the intended analysis population and missing-data strategy; and
+- which claims are confirmatory and which are exploratory.
+
+The **estimand** is the population quantity. The design and analysis define an
+**estimator**; the observed result is an **estimate**. Its standard error or
+posterior uncertainty must follow the actual allocation and dependence structure.
+
+# Map the Experimental Hierarchy
+
+The experimental unit is the smallest unit independently assigned to a condition
+or independently sampled from the target population. A specimen, aliquot, well,
+cell, library, lane, read, peptide, or image field may be below that level.
+
+Consider a drug experiment in eight mice. Each mouse contributes two tissues;
+each tissue is split into two library preparations; each library yields millions
+of reads. If drug is assigned to mice, then the mouse is the experimental unit.
+Tissues are repeated biological material within mice, libraries are technical
+replicates, and reads are subsamples used to estimate library abundance. The
+treatment sample size is eight mice, not 32 libraries or millions of reads.
+
+| Level | Example | What variation it represents | Does it add treatment replication? |
+|---|---|---|---|
+| Experimental unit | person, mouse, independently grown culture | target biological variation | yes, when independently allocated or sampled |
+| Repeated specimen | time point or tissue from one unit | within-unit biology | no |
+| Technical replicate | extraction, library, well, array, or instrument rerun | measurement variation | no |
+| Subsample | cell, read, molecule, spot, peptide | finite sampling and local heterogeneity | no |
+
+Record stable identifiers for every level. This makes nesting, repeated measures,
+batching, and exclusions explicit rather than reconstructing them after data
+collection.
+
+# Randomization, Blocking, and Balance
+
+## Randomize where intervention occurs
+
+Random assignment makes treatment independent of baseline causes in expectation.
+The randomization unit must match the unit used for treatment inference. If a
+diet is assigned by cage, the cage—not each animal—is the randomization unit
+unless animals within cages truly receive independently assigned treatments.
+
+Randomization should continue through the measurement pipeline when possible:
+shuffle sample processing order, library preparation, plates, lanes, and acquisition
+order. Preserve the randomization record and random seed. Unrecorded convenience
+ordering can turn time trends into apparent biology.
+
+## Block important nuisance variation
+
+Blocking groups similar units before randomization or distributes each biological
+condition across unavoidable technical strata. Useful blocking variables may
+include donor, litter, sex, collection site, sequencing run, plate, or tissue
+processing day.
+
+For a randomized complete block design,
+
+$$
+Y_{gij}=\mu_g+\tau_{gi}+b_{gj}+\varepsilon_{gij},
+$$
+
+where $\tau_{gi}$ is the condition effect and $b_{gj}$ is the block effect. A
+within-block contrast removes the shared block contribution, often improving
+precision. Blocking must be represented in the analysis; otherwise its paired
+information is discarded.
+
+Avoid creating blocks so small that treatment cannot vary within them. If
+condition and batch are identical labels, their effects are not separately
+identifiable. [Batch correction](batch-correction-with-combat-and-related-models.qmd)
+cannot reconstruct a missing condition-by-batch combination.
+
+## Prefer balance, but protect identifiability
+
+Equal group sizes usually maximize precision for a fixed total under equal costs
+and variances. More important than exact balance is **overlap**: every main
+comparison should be represented across relevant sites, batches, times, and
+biological strata. Deliberate partial replication across batches provides the
+connections needed to estimate batch separately from biology.
+
+# Factorial, Paired, and Longitudinal Designs
+
+A factorial design varies two or more factors and can estimate their joint effect.
+For treatment $A$, genotype $G$, and block $B$,
+
+$$
+Y_g=\beta_{0g}+\beta_{Ag}A+\beta_{Gg}G
++\beta_{AGg}AG+\boldsymbol\gamma_g^{\mathsf T}B+\varepsilon_g.
+$$
+
+The interaction coefficient asks whether the treatment contrast changes with
+genotype on the model's outcome scale. It needs replication in all relevant
+factor combinations; adding an interaction term does not create information in
+empty cells.
+
+Paired designs compare conditions within the same unit, such as tumor and
+adjacent tissue from one person. Pairing removes stable between-person variation
+but does not make the two specimens independent. Longitudinal designs similarly
+need a within-unit covariance model and a plan for dropout. Crossover designs
+also require defensible assumptions about period and carryover effects.
+
+# Sample Size, Power, and Precision
+
+For an idealized two-group comparison with equal allocation, feature variance
+$\sigma_g^2$, target difference $\delta_g$, type I error $\alpha$, and power
+$1-\beta$, the approximate per-group size is
+
+$$
+n\approx
+\frac{2\sigma_g^2
+(z_{1-\alpha/2}+z_{1-\beta})^2}{\delta_g^2}.
+$$
+
+In omics, a single calculation is inadequate because features differ in mean,
+dispersion, prevalence, and scientific importance, and thousands of hypotheses
+are tested. Design calculations should therefore use pilot estimates or realistic
+simulation to evaluate:
+
+- power across a plausible distribution of effect sizes and abundance levels;
+- the intended false-discovery procedure rather than only unadjusted $\alpha$;
+- imbalance, blocking, repeated measurements, dropout, and unusable samples;
+- uncertain dispersion and between-unit heterogeneity; and
+- the minimum effect that is biologically worth detecting.
+
+Pilot data should reflect independent biological units. Treating technical
+replicates as independent makes variance appear too small and power too high.
+When resources are fixed, additional biological units usually improve population
+inference more than deeper technical replication once measurement error is
+acceptably controlled.
+
+# Plan Measurement and Analysis Together
+
+Design includes the assay process, not only group labels. Prespecify sample
+collection, stabilization, extraction, library preparation, quality-control
+rules, normalization, blind outcome assessment where possible, and the handling
+of failed measurements. Thresholds chosen after viewing condition labels can
+induce selection bias.
+
+The analysis plan should encode the design matrix and intended contrasts before
+feature-wise fitting. Include nuisance variables because the design justifies
+them, not because automated selection happened to retain them. Preserve raw data
+and metadata so that normalization and exclusions can be audited.
+
+Negative controls, spike-ins, pooled reference materials, and technical replicates
+can reveal contamination, drift, or assay variability. They diagnose and estimate
+measurement behavior; they do not substitute for independent biological units.
+
+# Diagnostics and Sensitivity Analysis
+
+| Design threat | Diagnostic | Prevention or sensitivity check |
+|---|---|---|
+| treatment–batch confounding | cross-tabulate all biological and technical factors | randomize within batches; require connected overlap |
+| pseudoreplication | count unique units at the assignment/sampling level | aggregate or fit hierarchical models at the correct level |
+| unequal processing order | plot QC metrics against time, plate, and lane | randomized order; adjust and stratify sensitivity analyses |
+| influential unit | unit-level PCA, distances, and leave-one-unit-out refits | verify provenance; report robust conclusions and exceptions |
+| attrition or failed assays | compare failure rates and predictors by condition | prespecify QC; model missingness; best/worst-case analyses |
+| hidden heterogeneity | inspect covariate balance and residual structure | stratification, interaction analysis, or restricted estimand |
+| analytic multiplicity | enumerate contrasts, outcomes, and pipelines | prespecification, held-out confirmation, and FDR control |
+
+Principal components and clustering are useful diagnostics but are not proof
+that a batch has been removed or a treatment is causal. Repeat conclusions under
+reasonable normalization, covariate, exclusion, and variance-model choices.
+
+# Statistical and Biological Interpretation
+
+Suppose a randomized RNA-seq study estimates a log-fold change with a narrow
+interval and controlled false-discovery rate. Statistically, this supports an
+average abundance contrast under the sampling, normalization, model, and
+multiplicity assumptions. It does not by itself show that the gene causes the
+phenotype or that every cell type changed expression.
+
+Biological interpretation additionally considers tissue composition, timing,
+pathway coherence, dose response, external replication, and orthogonal assays.
+A tiny but precisely estimated shift may have little functional importance; a
+large uncertain shift may justify follow-up without constituting confirmation.
+
+# Common Design Failures
+
+- **One sample per condition:** condition is indistinguishable from unit-specific
+  variation; millions of features do not repair this.
+- **Condition equals batch:** adjustment is algebraically unable to identify both
+  effects.
+- **Technical replicates analyzed as independent:** standard errors are too small
+  because shared biological variation is counted repeatedly.
+- **Blocking ignored in analysis:** precision is lost and contrasts can be
+  misrepresented.
+- **Power based on optimistic pilot features:** regression to the mean and
+  selection make projected performance unrealistic.
+- **Exploratory flexibility presented as confirmation:** uncounted model and
+  contrast searches invalidate nominal error rates.
+
+# Connections and Take-home Messages
+
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  develops the hierarchy and variance consequences in detail.
+- [Batch effects in high-throughput experiments](batch-effects-in-high-throughput-experiments.qmd)
+  explains how design and processing create unwanted variation.
+- [Categorical predictors and contrasts](../regression-models/categorical-predictors-and-contrasts.qmd)
+  connects factor coding to the planned scientific comparison.
+- [Interaction terms and effect modification](../regression-models/interaction-terms-and-effect-modification.qmd)
+  clarifies factorial interactions and scale dependence.
+- [Repeated measures and longitudinal data](../advanced-modeling/repeated-measures-and-longitudinal-data.qmd)
+  handles correlated measurements and dropout.
+- [Statistical power and sample-size calculation](../statistical-inference/statistical-power-and-sample-size-calculation.qmd)
+  develops power, precision, and design effects.
+- [False discovery rate](../statistical-inference/false-discovery-rate.qmd)
+  describes error control across many features.
+
+1. Define the population, experimental unit, estimand, and contrast before
+   choosing an assay or model.
+2. Randomization protects comparisons; blocking and balance improve precision
+   and keep biological effects identifiable from technical effects.
+3. Biological units determine treatment replication. Specimens, cells, reads,
+   and technical reruns answer different variance questions.
+4. Omics power calculations must reflect biological variance, multiplicity,
+   dropout, and the intended analysis pipeline.
+5. Statistical evidence for a feature-level contrast is not by itself a causal
+   mechanism or a biologically important effect.
+
+# References
+
+- Fisher, R. A. (1935). *The Design of Experiments*. Oliver and Boyd.
+  <https://archive.org/details/in.ernet.dli.2015.502684>
+- Hurlbert, S. H. (1984). Pseudoreplication and the design of ecological field
+  experiments. *Ecological Monographs*, 54(2), 187–211.
+  <https://doi.org/10.2307/1942661>
+- Churchill, G. A. (2002). Fundamentals of experimental design for cDNA
+  microarrays. *Nature Genetics*, 32, 490–495.
+  <https://doi.org/10.1038/ng1031>
+- Auer, P. L., and Doerge, R. W. (2010). Statistical design and analysis of RNA
+  sequencing data. *Genetics*, 185(2), 405–416.
+  <https://doi.org/10.1534/genetics.110.114983>
+- Blainey, P., Krzywinski, M., and Altman, N. (2014). Replication. *Nature
+  Methods*, 11, 879–880. <https://doi.org/10.1038/nmeth.3091>
+- Conesa, A., Madrigal, P., Tarazona, S., et al. (2016). A survey of best
+  practices for RNA-seq data analysis. *Genome Biology*, 17, 13.
+  <https://doi.org/10.1186/s13059-016-0881-8>
+- Schurch, N. J., Schofield, P., Gierliński, M., et al. (2016). How many
+  biological replicates are needed in an RNA-seq experiment and which
+  differential expression tool should you use? *RNA*, 22(6), 839–851.
+  <https://doi.org/10.1261/rna.053959.115>

@@ -1,0 +1,314 @@
+---
+title: "Biological versus Technical Replication"
+subtitle: "Matching independent evidence to the question and measurement hierarchy"
+description: "How biological replicates, technical replicates, subsamples, repeated measures, and hierarchical models support different kinds of inference."
+author: "Jiahong Sun"
+date: "2026-11-15"
+date-modified: "2026-11-15"
+categories: [Statistics, Bioinformatics, Replication, Experimental Design]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Replication Is Defined by the Claim
+
+A replicate is not simply another row in a data table. **Biological replicates**
+are independently sampled or independently assigned units that represent the
+biological population relevant to a claim. **Technical replicates** repeat part
+of the measurement process on the same biological material. Both are useful,
+but they estimate different variation and cannot be exchanged.
+
+> The number of independent experimental units—not the number of wells, cells,
+> reads, or measurements—sets the replication for a treatment or population
+> comparison.
+
+The label depends on the question. Two clonal cultures grown independently may
+be biological replicates for culture-to-culture variability but not for genetic
+diversity among organisms. Two tissues from one person represent biological
+variation within that person, yet they are repeated observations rather than
+independent people for population inference.
+
+# Identify Every Level
+
+For observation $k$ from technical replicate $j$ within biological unit $i$, a
+simple variance-components model is
+
+$$
+Y_{ijk}=\mu+u_i+v_{ij}+\varepsilon_{ijk},
+$$
+
+with
+
+$$
+u_i\sim(0,\sigma_B^2),\qquad
+v_{ij}\sim(0,\sigma_T^2),\qquad
+\varepsilon_{ijk}\sim(0,\sigma_E^2).
+$$
+
+$\sigma_B^2$ describes variation among biological units, $\sigma_T^2$ variation
+among technical preparations within a unit, and $\sigma_E^2$ remaining sampling
+or readout error. The exact levels depend on the assay: extraction, library,
+lane, plate, instrument run, cell, spot, and read may require separate identifiers.
+
+| Repeated item | Typical role | Variance learned | Independent for a group effect? |
+|---|---|---|---|
+| different people, animals, or independently grown cultures | biological replicate | between-unit heterogeneity | usually yes |
+| two tissues or time points from one unit | repeated biological observation | within-unit heterogeneity | no |
+| split extraction or library preparation | technical replicate | preparation variability | no |
+| repeated instrument read | technical replicate | readout repeatability | no |
+| many cells from one donor | subsampling plus within-donor biology | cell heterogeneity within donor | no |
+| many sequencing reads from one library | molecular sampling | counting precision | no |
+
+Independence is created by the sampling or assignment mechanism, not by spatial
+separation, unique barcodes, or separate files.
+
+# Why Pseudoreplication Understates Uncertainty
+
+Suppose $m$ biological units each have $r$ exchangeable measurements with
+variance $\sigma^2$ and intraclass correlation $\rho$. The mean of all $mr$
+measurements has variance
+
+$$
+\operatorname{Var}(\bar Y)
+=\frac{\sigma^2}{mr}\{1+(r-1)\rho\}.
+$$
+
+The multiplier
+
+$$
+D=1+(r-1)\rho
+$$
+
+is the design effect. Treating measurements as independent assumes $D=1$ and
+therefore reports a standard error that is too small whenever $\rho>0$. The
+corresponding effective sample size is
+
+$$
+n_{\mathrm{eff}}=\frac{mr}{1+(r-1)\rho}.
+$$
+
+If $m=6$, $r=100$, and $\rho=0.2$, then 600 rows provide the mean precision of
+only about 29 independent observations under this model—not 600, and certainly
+not 600 independently treated donors. As $r$ grows, $n_{\mathrm{eff}}$ approaches
+$m/\rho$; more subsampling has diminishing returns.
+
+Pseudoreplication affects more than p-values. It can distort cross-validation,
+confidence intervals, feature rankings, and claims of reproducibility when
+observations from the same unit leak across analysis groups.
+
+# What Technical Replication Can Do
+
+Technical replicates are valuable when they answer a measurement question:
+
+- estimate repeatability and assay variance;
+- detect plate, extraction, library, lane, or instrument failures;
+- separate measurement error from within-unit biological heterogeneity;
+- compare protocols or laboratories;
+- improve measurement precision by averaging; and
+- provide quality-control material across batches.
+
+Under the simple model
+
+$$
+Y_{ij}=\mu+u_i+e_{ij},\qquad
+\operatorname{Var}(u_i)=\sigma_B^2,\quad
+\operatorname{Var}(e_{ij})=\sigma_T^2,
+$$
+
+the mean of $r$ technical replicates for one biological unit has variance
+
+$$
+\operatorname{Var}(\bar Y_i)
+=\sigma_B^2+\frac{\sigma_T^2}{r}.
+$$
+
+Averaging reduces the technical term, but the biological term remains. Once
+$\sigma_T^2/r$ is small relative to $\sigma_B^2$, another independent biological
+unit generally contributes more to population precision than another technical
+repeat. The choice should still reflect assay failure rates, costs, and whether
+variance components themselves are scientific targets.
+
+# Aggregation or Hierarchical Modeling?
+
+## Aggregate when technical repeats share one target value
+
+If technical replicates are exchangeable measurements of the same quantity,
+quality-control them and combine them at the biological-unit level using a
+prespecified mean, median, total, or assay-specific rule. The combined value
+should retain unit and batch metadata. Averaging is inappropriate if replicates
+measure distinct tissues, time points, or cell states.
+
+## Model the hierarchy when levels matter
+
+A mixed model can preserve information and estimate variance components:
+
+$$
+Y_{ijk}
+=\mathbf x_i^{\mathsf T}\boldsymbol\beta
++b_i+c_{ij}+\varepsilon_{ijk}.
+$$
+
+Here $\boldsymbol\beta$ represents condition contrasts, while random effects
+$b_i$ and $c_{ij}$ represent unit and nested preparation variation. Fixed batch
+effects may be added when the relevant levels are few and scientifically defined.
+The model must reflect how units were sampled and treatments assigned; adding a
+random intercept after complete treatment–batch confounding cannot identify the
+treatment effect.
+
+Cluster-robust standard errors can protect uncertainty for a correctly specified
+mean model with enough independent clusters. They do not turn a study with three
+donors into a large-sample study, and small-cluster corrections may still be
+unstable.
+
+# Common Omics Structures
+
+## Bulk RNA sequencing
+
+Independent donors, animals, or cultures are biological replicates. Split RNA
+extractions and libraries are technical replicates; reads are sampling units
+from a library. For differential expression between treatments assigned to
+animals, inference is supported by animals. Sequencing deeper reduces counting
+noise but cannot estimate between-animal variation.
+
+## Single-cell and spatial omics
+
+Cells or spots are nested within specimens and donors. They may be the outcomes
+of scientific interest, but donors usually support population-level treatment
+inference. Analyzing thousands of cells as independent treatment replicates
+confounds cell-level heterogeneity with donor replication. Donor-level pseudobulk
+summaries or hierarchical models preserve the independent-unit structure;
+cell-level covariates and compositional changes require additional care.
+
+## Proteomics and metabolomics
+
+Peptides, transitions, injections, and aliquots can be nested within a specimen.
+Repeated injections estimate instrument repeatability; distinct peptides provide
+imperfect evidence about a protein and may have peptide-specific biases. Neither
+adds independent participants.
+
+## Multi-tissue and longitudinal studies
+
+Tissues and visits from one individual are biologically meaningful repeated
+observations. They can improve within-person contrasts and trajectory estimates,
+but population uncertainty must account for person-level clustering and missing
+visits. A paired design is powerful precisely because the observations are
+dependent, not because it has twice as many independent units.
+
+# Design Allocation across Levels
+
+Begin with the target claim, then allocate resources.
+
+1. Choose enough independent biological units to estimate the target contrast
+   and between-unit variability.
+2. Randomize or sample at the correct unit; identify cages, families, plates,
+   sites, or pools that constrain independence.
+3. Use technical replication where assay error, failure detection, or a variance
+   component justifies it.
+4. Distribute every condition across processing batches and order.
+5. Keep unit, specimen, preparation, and readout identifiers in the metadata.
+6. Use pilot variance components to compare the marginal benefit of more units,
+   deeper measurement, or technical repeats.
+
+Pooling deserves special attention. A pool of material from several units can
+estimate a pooled average but usually loses individual variability. Multiple
+aliquots from one pool are technical replicates; they do not restore the number
+of contributing individuals. Independent pools can be biological units only if
+the sampling scheme and target population make that interpretation defensible.
+
+# Diagnostics and Sensitivity
+
+| Question | Check | Consequence if ignored |
+|---|---|---|
+| What received treatment independently? | compare assignment log with analysis IDs | wrong denominator and inflated degrees of freedom |
+| Which rows share source material? | trace donor → specimen → preparation → run | hidden dependence and leakage |
+| How large are variance components? | replicate plots, intraclass correlation, hierarchical model | inefficient resource allocation |
+| Are conditions represented across batches? | condition-by-batch tables | non-identifiability or extrapolation |
+| Do technical repeats agree? | within-unit differences and control charts | undetected measurement failure |
+| Does one unit drive the result? | leave-one-unit-out analysis | fragile population claim |
+| Are validation data genuinely independent? | split by donor/site/batch as required | optimistic prediction performance |
+
+Sensitivity analyses should compare unit-level aggregation with a justified
+hierarchical model, vary technical-replicate combination rules, and repeat fits
+after excluding failed preparations. Resampling and cross-validation must split
+or resample at the level at which generalization is claimed.
+
+# Statistical versus Biological Interpretation
+
+Imagine four treated and four control donors, with 5,000 cells per donor. A
+donor-aware analysis may estimate a large condition contrast but a wide interval.
+Statistically, the study has eight independent units and limited information
+about between-donor heterogeneity. A cell-naive analysis may produce a tiny
+p-value, but that precision answers an artificial question about those observed
+cells conditional on their donors.
+
+Biologically, a donor-level abundance change could reflect altered expression
+within a cell type, changed cell-type composition, or both. Replication protects
+the population comparison; it does not determine the mechanism. Orthogonal
+measurement, new donors, perturbation, and mechanistic experiments address
+additional biological claims.
+
+# Common Misconceptions
+
+- **“More rows mean more replicates.”** Rows sharing a biological source remain
+  correlated and do not add independent treatment assignments.
+- **“Technical replicates are useless.”** They quantify and monitor measurement
+  variation, but they do not replace biological replication.
+- **“Different plates make samples independent.”** Independence comes from
+  sampling or assignment; different plates may instead introduce batch effects.
+- **“A random effect fixes pseudoreplication.”** It can model recorded clustering,
+  but it cannot create independent units or separate completely confounded causes.
+- **“Cells are never biological replicates.”** The answer is claim-specific. Cells
+  can be units for cell-autonomous experiments independently randomized at the
+  cell level, but donor-level claims still require donor replication.
+
+# Connections and Take-home Messages
+
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  connects replication to randomization, blocking, contrasts, and power.
+- [Batch effects in high-throughput experiments](batch-effects-in-high-throughput-experiments.qmd)
+  explains technical structure, confounding, and leakage.
+- [Random intercepts and random slopes](../advanced-modeling/random-intercepts-and-random-slopes.qmd)
+  derives hierarchical covariance and partial pooling.
+- [Linear mixed-effects models](../advanced-modeling/linear-mixed-effects-models.qmd)
+  develops estimation, diagnostics, and variance components.
+- [Repeated measures and longitudinal data](../advanced-modeling/repeated-measures-and-longitudinal-data.qmd)
+  covers within-unit dependence and dropout.
+- [Nonparametric bootstrap](../statistical-inference/nonparametric-bootstrap.qmd)
+  explains why resampling must preserve the sampling unit.
+- [Train, validation, and test-set design](../regression-models/train-validation-and-test-set-design.qmd)
+  discusses group-aware splitting and leakage.
+
+1. Replication is defined by the population claim and the independent sampling
+   or treatment-assignment mechanism.
+2. Biological replication estimates between-unit variation; technical replication
+   estimates and controls measurement variation.
+3. Ignoring within-unit correlation inflates effective sample size and understates
+   uncertainty.
+4. Aggregation, hierarchical models, and cluster-aware resampling are valid only
+   when they match the recorded experimental hierarchy.
+5. More cells, reads, wells, or reruns improve measurement depth, not the number
+   of independent donors supporting a biological conclusion.
+
+# References
+
+- Hurlbert, S. H. (1984). Pseudoreplication and the design of ecological field
+  experiments. *Ecological Monographs*, 54(2), 187–211.
+  <https://doi.org/10.2307/1942661>
+- Lazic, S. E. (2010). The problem of pseudoreplication in neuroscientific
+  studies: is it affecting your analysis? *BMC Neuroscience*, 11, 5.
+  <https://doi.org/10.1186/1471-2202-11-5>
+- Blainey, P., Krzywinski, M., and Altman, N. (2014). Replication. *Nature
+  Methods*, 11, 879–880. <https://doi.org/10.1038/nmeth.3091>
+- Auer, P. L., and Doerge, R. W. (2010). Statistical design and analysis of RNA
+  sequencing data. *Genetics*, 185(2), 405–416.
+  <https://doi.org/10.1534/genetics.110.114983>
+- Hicks, S. C., Townes, F. W., Teng, M., and Irizarry, R. A. (2018). Missing data
+  and technical variability in single-cell RNA-sequencing experiments.
+  *Biostatistics*, 19(4), 562–578. <https://doi.org/10.1093/biostatistics/kxx053>
+- Zimmerman, K. D., Espeland, M. A., and Langefeld, C. D. (2021). A practical
+  solution to pseudoreplication bias in single-cell studies. *Nature
+  Communications*, 12, 738. <https://doi.org/10.1038/s41467-021-21038-1>
+- Gelman, A., Hill, J., and Vehtari, A. (2020). *Regression and Other Stories*.
+  Cambridge University Press. <https://doi.org/10.1017/9781139161879>
