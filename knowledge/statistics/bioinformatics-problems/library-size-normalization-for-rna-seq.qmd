@@ -1,0 +1,263 @@
+---
+title: "Library-size Normalization for RNA-seq"
+subtitle: "Putting sample counts on a comparable effective scale"
+description: "Library-size normalization for bulk RNA-seq, from the count-generating model and size-factor estimand to estimation, diagnostics, and interpretation."
+author: "Jiahong Sun"
+date: "2026-11-16"
+date-modified: "2026-11-16"
+categories: [Statistics, Bioinformatics, RNA-seq, Normalization]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Counts Need a Sample-specific Scale
+
+An RNA-seq count is not an absolute expression measurement. For gene $g$ in
+sample $j$, the observed fragment count depends on the gene's abundance, the
+amount of sequenceable material, and how deeply that library was sampled. A
+standard bulk RNA-seq mean model separates a sample-specific scale from a
+gene- and condition-specific signal:
+
+$$
+K_{gj}\sim\operatorname{NB}(\mu_{gj},\alpha_g),
+\qquad
+\mu_{gj}=s_jq_{gj},
+$$
+
+where $s_j>0$ is a size factor, $q_{gj}$ is expression on a common relative
+scale, and $\alpha_g$ describes residual biological and technical variation.
+In a regression model,
+
+$$
+\log(\mu_{gj})=\log(s_j)+\mathbf x_j^\mathsf T\boldsymbol\beta_g.
+$$
+
+The term $\log(s_j)$ is an offset: it has a fixed coefficient of one and changes
+the exposure represented by a count. Normalization therefore belongs inside the
+count model. Dividing counts by a factor can be useful for plots, but feeding
+rounded or transformed normalized counts into a method that expects raw counts
+changes its sampling model.
+
+| Quantity | Role |
+|---|---|
+| $K_{gj}$ | Raw fragment or read count for gene $g$ in biological sample $j$ |
+| $N_j=\sum_gK_{gj}$ | Observed total library count over the retained features |
+| $s_j$ | Estimated effective library scale, defined only up to a common multiplier |
+| $q_{gj}$ | Relative abundance on the common scale induced by the normalization |
+| $\boldsymbol\beta_g$ | Gene-specific coefficients and contrasts |
+| $\alpha_g$ | Gene-specific negative binomial dispersion |
+
+# What Is Being Normalized?
+
+Library-size normalization targets *between-sample scale differences*. It does
+not by itself correct gene length, GC bias, batch effects, RNA degradation, cell
+composition, or confounding. The target also depends on the downstream question.
+
+- For gene-wise differential expression, one compares the same gene across
+  biological samples; fixed gene length cancels from that contrast.
+- For comparing different genes within one sample, length and feature-specific
+  capture efficiency matter, so counts divided only by $s_j$ are not comparable
+  absolute molecule measurements.
+- For transcript proportions or cross-sample summaries, the appropriate
+  denominator and inferential target must be stated explicitly.
+
+The scale is relative. If every $s_j$ is multiplied by $c>0$ and every $q_{gj}$
+is divided by $c$, $\mu_{gj}$ is unchanged. Software therefore imposes a
+convention such as a geometric mean of one. This normalization constraint sets
+the coordinate system; it does not reveal total RNA molecules per cell.
+
+# Why Raw Library Totals Can Be Misleading
+
+Using $s_j=N_j$ assumes that the sampled feature composition is sufficiently
+stable that total reads represent comparable exposure. Consider two libraries
+with 1,000 retained reads. In sample A, one highly expressed gene uses 100 reads;
+in sample B, it uses 500. If the remaining genes have unchanged absolute
+abundance, they must nevertheless share only 500 reads in B rather than 900 in
+A. Total-count normalization makes many unchanged genes appear lower in B.
+
+This is not repaired by deeper sequencing: greater depth estimates the same
+relative composition more precisely. The inferential problem is that changes in
+a small set of abundant features alter the denominator for all features. The
+companion note on [composition bias and normalization factors](composition-bias-and-normalization-factors.qmd)
+derives this mechanism and the robust scaling estimators used to address it.
+
+# Estimating Size Factors
+
+## Median-of-ratios scaling
+
+DESeq and DESeq2 construct a pseudo-reference for each gene using its geometric
+mean across $m$ samples,
+
+$$
+G_g=\left(\prod_{j=1}^{m}K_{gj}\right)^{1/m},
+$$
+
+and estimate
+
+$$
+\boxed{
+\hat s_j=\operatorname{median}_{g:G_g>0}
+\left(\frac{K_{gj}}{G_g}\right)
+}.
+$$
+
+The median makes the sample scale insensitive to a minority of genes with large
+changes. The usual implementation omits genes whose geometric mean is zero;
+variants such as `poscounts` accommodate sparse matrices differently. The
+estimator is meaningful when the reference set contains enough features whose
+changes are balanced or absent.
+
+## TMM effective library sizes
+
+The trimmed mean of M-values (TMM) compares a sample with a reference library.
+For gene $g$, define the empirical log ratio
+
+$$
+M_g=\log_2\left{
+\frac{K_{gj}/N_j}{K_{gr}/N_r}
+\right}
+$$
+
+and an average-abundance statistic $A_g$. TMM removes extreme $M_g$ and $A_g$
+values, then takes an inverse-variance-weighted mean of the retained $M_g$'s.
+The resulting normalization factor $f_j$ gives the effective library size
+$N_jf_j$. Trimming limits the influence of strongly changing or very abundant
+genes; weighting recognizes that low counts have noisier log ratios.
+
+Median-of-ratios and TMM are not attempts to make every sample's count
+distribution identical. Both estimate one scale per sample from a robust
+consensus across genes, preserving gene-specific biological differences.
+
+# Estimand, Estimator, and Estimate
+
+The scientific estimand might be the gene-specific condition log fold change
+$\beta_{gA}$ in a specified population of biological units. The size factor is
+a nuisance parameter needed to define and estimate that contrast. A rule such as
+the median-of-ratios formula is an estimator; the number returned for sample $j$
+is its estimate $\hat s_j$.
+
+Conditional on estimated size factors, many count pipelines proceed as if the
+offsets were known. This plug-in treatment usually ignores some normalization
+uncertainty. That omission is often minor when thousands of informative genes
+support a stable scale, but it can matter with small targeted panels, pervasive
+changes, or an unstable reference set. Sensitivity across defensible
+normalizations is then more informative than reporting extra decimal places in
+$\hat s_j$.
+
+# Experimental Units and Replication
+
+The experimental unit is the independently sampled or treatment-assigned
+organism, patient, culture, or other biological unit. Library preparation and
+sequencing occur downstream of that unit:
+
+```text
+biological unit → RNA extraction → library preparation → sequencing → gene counts
+```
+
+Reads are subsamples of a library, not biological replicates. Multiple lanes from
+one library are usually combined after checking compatibility. Repeated library
+preparations can reveal technical variation, but they do not increase the number
+of independent units supporting a population contrast. Size factors align
+library scales; they cannot create replication or separate a condition that is
+confounded with batch.
+
+# Diagnostics and Sensitivity
+
+Normalization should be checked together with the design and count model.
+
+| Check | Warning sign | Response |
+|---|---|---|
+| Raw totals and estimated factors | Effective scales differ sharply from library totals | Inspect which abundant genes drive composition |
+| Relative log-expression or M-value plots | Most genes shift away from zero after scaling | Reconsider the stable-majority assumption and reference set |
+| PCA or sample distances after a count-appropriate transformation | Separation tracks depth, lane, or preparation batch | Check quality and design; normalization is not batch correction |
+| Known controls or spike-ins | Controls show systematic sample shifts | Verify control behavior and consider control-based factors |
+| Factor stability | Estimates change greatly when dominant genes are removed | Report sensitivity across robust methods or prespecified controls |
+| Within-condition replicate consistency | One sample has a distinct scale and residual pattern | Investigate sample quality; do not normalize away a failed library automatically |
+
+Filtering can change the set used to estimate scale. Record whether factors were
+estimated before or after filtering, and avoid choosing filters or controls by
+looking for the differential-expression result one hopes to obtain. When global
+RNA output is biologically expected to change, compare standard factors with
+validated spike-ins, housekeeping sets chosen independently of the data, or a
+model that encodes the relevant absolute-scale information.
+
+# Statistical and Biological Interpretation
+
+Suppose a fitted model estimates $\exp(\hat\beta_{gA})=1.8$ after normalization.
+Statistically, this is an estimated 1.8-fold change in the gene's expected count
+relative to the normalization-defined reference scale, conditional on the design
+covariates. Its standard error reflects between-unit sampling and the fitted
+mean--variance model, not the number of reads treated as independent replicates.
+
+Biologically, the result need not mean 1.8 times as many transcripts per cell.
+Changes in total RNA output, cell-type mixture, extraction efficiency, and the
+chosen reference scale can alter that interpretation. Absolute claims require
+additional information such as cell counts, calibrated spike-ins, or another
+validated denominator. Effect size, replicate consistency, assay quality, and
+mechanistic validation remain separate from statistical significance.
+
+# Common Misconceptions
+
+- **"More reads eliminate the need for normalization."** Depth reduces counting
+  noise but does not identify a cross-sample scale under composition changes.
+- **"Normalized counts are corrected raw data."** They are values expressed on
+  an estimated reference scale and inherit its assumptions.
+- **"TPM solves differential-expression normalization."** TPM adjusts for feature
+  length and closes each sample to a fixed total; it does not by itself identify
+  a valid between-sample scale for count-based inference.
+- **"A size factor removes batch effects."** A scalar offset addresses library
+  scale. Batch can affect features differently and belongs in design or an
+  appropriate adjustment strategy.
+- **"Genes are replicates for the treatment effect."** Genes help estimate a
+  nuisance scale, but biological samples provide replication for condition
+  contrasts.
+
+# Connections and Take-home Messages
+
+- [Negative binomial regression](../regression-models/negative-binomial-regression.qmd)
+  explains the count likelihood, offset, coefficients, and dispersion.
+- [Offsets and modeling event rates](../regression-models/offsets-and-modeling-event-rates.qmd)
+  develops the general meaning of an exposure offset.
+- [Batch effects in high-throughput experiments](batch-effects-in-high-throughput-experiments.qmd)
+  distinguishes scale normalization from technical adjustment.
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  connects normalization to randomization, blocking, and identifiable contrasts.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  identifies the unit that supports uncertainty and generalization.
+
+1. Library-size normalization estimates a sample-specific exposure scale for a
+   count model; it is not a generic cleaning step.
+2. Raw totals can be biased proxies for exposure when a few abundant genes alter
+   library composition.
+3. Median-of-ratios and TMM estimate robust relative scales under assumptions
+   about a sufficiently stable set of genes.
+4. Size factors do not correct confounding, feature-specific bias, or absent
+   biological replication.
+5. The resulting fold changes are relative to the normalization reference;
+   absolute per-cell interpretation needs external scale information.
+
+# References
+
+- Anders, S., and Huber, W. (2010). Differential expression analysis for
+  sequence count data. *Genome Biology*, 11, R106.
+  <https://doi.org/10.1186/gb-2010-11-10-r106>
+- Robinson, M. D., and Oshlack, A. (2010). A scaling normalization method for
+  differential expression analysis of RNA-seq data. *Genome Biology*, 11, R25.
+  <https://doi.org/10.1186/gb-2010-11-3-r25>
+- McCarthy, D. J., Chen, Y., and Smyth, G. K. (2012). Differential expression
+  analysis of multifactor RNA-seq experiments with respect to biological
+  variation. *Nucleic Acids Research*, 40(10), 4288--4297.
+  <https://doi.org/10.1093/nar/gks042>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>
+- Chen, Y., Lun, A. T. L., and Smyth, G. K. (2016). From reads to genes to
+  pathways: differential expression analysis of RNA-seq experiments using
+  Rsubread and the edgeR quasi-likelihood pipeline. *F1000Research*, 5, 1438.
+  <https://doi.org/10.12688/f1000research.8987.2>
+- Bioconductor. *DESeq2 vignette: Analyzing RNA-seq data with DESeq2*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html>
+- Bioconductor. *edgeR User's Guide*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf>

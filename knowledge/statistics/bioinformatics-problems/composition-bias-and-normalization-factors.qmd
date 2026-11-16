@@ -1,0 +1,298 @@
+---
+title: "Composition Bias and Normalization Factors"
+subtitle: "Why relative sequencing counts need a defensible reference scale"
+description: "Composition bias in RNA-seq, its mathematical source, the assumptions behind TMM and median-ratio normalization, and diagnostics for global or asymmetric changes."
+author: "Jiahong Sun"
+date: "2026-11-16"
+date-modified: "2026-11-16"
+categories: [Statistics, Bioinformatics, RNA-seq, Compositional Data]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Sequencing Measures Shares of a Finite Library
+
+RNA-seq samples molecules from a library with finite sequencing capacity. Let
+$a_{gj}>0$ denote the amount of sequenceable material from gene $g$ in sample
+$j$, after feature-specific capture effects are included, and let
+
+$$
+A_j=\sum_{h=1}^{G}a_{hj}.
+$$
+
+Conditional on a total of $N_j$ assigned fragments, a simple multinomial view is
+
+$$
+(K_{1j},\ldots,K_{Gj})\mid N_j
+\sim\operatorname{Multinomial}
+\left(N_j;p_{1j},\ldots,p_{Gj}\right),
+\qquad
+p_{gj}=\frac{a_{gj}}{A_j}.
+$$
+
+Only the proportions $p_{gj}$ are observed through counts. Multiplying every
+$a_{gj}$ in one sample by the same constant leaves every $p_{gj}$ unchanged.
+Total RNA abundance is therefore not identifiable from ordinary relative counts
+alone. A normalization factor supplies a reference-scale assumption or imports
+external information; it cannot recover an absolute scale from no information.
+
+# The Mechanism of Composition Bias
+
+For the same gene in samples 1 and 2,
+
+$$
+\frac{p_{g2}}{p_{g1}}
+=\frac{a_{g2}}{a_{g1}}\frac{A_1}{A_2}.
+$$
+
+The observed relative fold change combines the gene's abundance change with a
+sample-wide composition term. If one abundant transcript increases enough to
+raise $A_2$, an unchanged gene with $a_{g2}=a_{g1}$ has
+$p_{g2}/p_{g1}=A_1/A_2<1$. It appears down-regulated even though its absolute
+amount did not change.
+
+This denominator coupling explains several empirical patterns:
+
+- a few highly expressed genes can shift the apparent center of log fold changes;
+- total-count or counts-per-million scaling can propagate those changes to every
+  other gene;
+- more reads narrow counting uncertainty around the biased relative contrast;
+- a normalization method can change estimated fold changes without changing raw
+  counts because it changes the effective sample scale.
+
+Composition bias is not synonymous with biological error. A genuine global
+transcriptional response changes composition. The problem is interpretive: a
+relative assay cannot distinguish a global abundance shift from a technical
+change in sampled material unless the design supplies a reference.
+
+# Normalization Factors as Model Offsets
+
+A gene-wise negative binomial model can write
+
+$$
+K_{gj}\sim\operatorname{NB}(\mu_{gj},\alpha_g),
+\qquad
+\log(\mu_{gj})=log(N_jf_j)+\mathbf x_j^\mathsf T\boldsymbol\beta_g,
+$$
+
+where $f_j$ is a composition normalization factor and $N_jf_j$ is an effective
+library size. Some software instead combines depth and composition into one size
+factor $s_j$:
+
+$$
+\log(\mu_{gj})=\log(s_j)+\mathbf x_j^\mathsf T\boldsymbol\beta_g.
+$$
+
+The factors are relative and require a constraint, commonly
+$\prod_jf_j=1$ or a geometric mean of one. A factor below one in edgeR reduces
+the effective library size and is algebraically equivalent to scaling that
+sample's counts upward for descriptive comparison. The fitted count model keeps
+raw counts as responses and uses the effective size as an offset.
+
+# How Robust Scaling Methods Define the Reference
+
+## TMM
+
+For sample $j$ and reference $r$, TMM begins with
+
+$$
+M_g=\log_2\left(\frac{K_{gj}/N_j}{K_{gr}/N_r}\right),
+\qquad
+A_g=\frac{1}{2}\log_2
+\left(\frac{K_{gj}}{N_j}\frac{K_{gr}}{N_r}\right).
+$$
+
+After excluding zero counts and trimming genes with extreme $M_g$ or $A_g$, it
+computes a precision-weighted mean
+
+$$
+\bar M_{jr}^{\mathrm{trim}}
+=\frac{\sum_{g\in\mathcal T}w_gM_g}
+{\sum_{g\in\mathcal T}w_g},
+\qquad
+f_{j:r}=2^{\bar M_{jr}^{\mathrm{trim}}}.
+$$
+
+The trimming set $\mathcal T$ prevents strongly changing or extremely abundant
+features from defining the reference, while $w_g$ downweights noisy log ratios.
+Rescaling factors across libraries imposes the identifying constraint.
+
+## Median-of-ratios
+
+The DESeq family compares each gene with its across-sample geometric-mean
+pseudo-reference and takes the median ratio within a sample:
+
+$$
+\hat s_j=\operatorname{median}_{g:G_g>0}
+\left(\frac{K_{gj}}{G_g}\right),
+\qquad
+G_g=\left(\prod_vK_{gv}\right)^{1/m}.
+$$
+
+On the log scale, this centers the median gene-wise sample-to-reference change at
+zero. TMM uses trimming and approximate precision weights; median-of-ratios uses
+a median. Both rely on a sufficiently large informative set whose true changes
+are absent or reasonably balanced. Neither can identify the correct absolute
+scale when nearly all genes change in the same direction.
+
+# The Assumption Must Match the Biology
+
+The usual robust scaling assumption is often paraphrased as “most genes are not
+differentially expressed.” The operational requirement is more nuanced: after
+excluding influential features, the reference genes' changes must locate a
+stable center. Many genes may change if upward and downward changes are balanced;
+a smaller asymmetric set may still cause failure if it dominates counts or the
+chosen center.
+
+Examples that challenge this assumption include:
+
+- transcription-factor perturbations producing broad directional shifts;
+- RNA degradation or depletion affecting large transcript classes;
+- very different tissues or cell-type mixtures;
+- small RNA experiments dominated by a few species;
+- targeted panels with few candidate reference features; and
+- conditions that change total RNA per cell.
+
+Removing ribosomal, mitochondrial, or other dominant features may stabilize the
+factor when those features are technical contaminants. It may instead discard a
+real biological change. The exclusion rule should follow the measurement target
+and be reported, not selected merely to make fold changes look centered.
+
+# External and Feature-specific Scale Information
+
+When the stable-majority assumption is implausible, scale can come from a
+prespecified control set or external spike-ins. If spike-in molecules are added
+in a known amount per cell, per unit input, or per sample, that choice defines
+which absolute quantity is calibrated. Spike-ins are useful only if addition,
+recovery, and capture are reliable and if their denominator matches the desired
+estimand.
+
+A single factor cannot correct sample-specific gene biases. GC-content, gene
+length, mappability, or transcript-level abundance estimation may require
+gene-by-sample normalization factors $NF_{gj}$:
+
+$$
+\mu_{gj}=NF_{gj}q_{gj}.
+$$
+
+Those factors address a different problem from one composition multiplier per
+sample. Likewise, batch covariates, latent-factor adjustment, and cell-type
+composition models are not substitutes for exposure normalization.
+
+# Experimental Design and Replication
+
+For a condition contrast, independently sampled donors, organisms, or cultures
+are experimental units. Reads, genes, technical lanes, and aliquots are not
+replicates for that contrast. Genes provide repeated evidence for estimating a
+nuisance normalization factor, but their shared sample means that they cannot
+replace between-unit replication.
+
+Distribute conditions across extraction, library-preparation, and sequencing
+batches. Include controls across batches when cross-run scaling matters. If
+condition and batch are completely confounded, normalization cannot decide
+whether a global shift is biological or technical. Randomization and bridge
+samples create information that no downstream scaling formula can reconstruct.
+
+# Diagnostics and Sensitivity Analysis
+
+No diagnostic proves the normalization assumption from relative counts alone,
+because the missing absolute scale is an identification problem. Diagnostics can
+nevertheless expose instability and implausible consequences.
+
+| Question | Diagnostic | Sensitivity analysis |
+|---|---|---|
+| Do a few genes dominate the libraries? | Cumulative count shares and top-feature fractions | Re-estimate factors with prespecified dominant classes excluded |
+| Is the log-ratio center stable? | M-value or relative log-expression plots by condition | Compare TMM, median-of-ratios, and justified control-based factors |
+| Are factors driven by low counts? | Plot gene-wise ratios against average abundance | Filter uninformative features before factor estimation using a documented rule |
+| Do known controls remain stable? | Control log ratios and residuals | Use independent control sets or spike-in calibration when valid |
+| Is a sample anomalous beyond scale? | Replicate distances and residual patterns after normalization | Investigate quality; do not force a failed sample onto the reference |
+| Are conclusions normalization-dependent? | Compare log fold changes, standard errors, rankings, and FDR decisions | Report instability and narrow the claim rather than choosing the preferred result |
+
+The analysis record should include raw library sizes, estimated factors,
+features used to estimate them, method and software version, handling of zeros,
+and sensitivity results for important contrasts.
+
+# Statistical versus Biological Interpretation
+
+Suppose a stimulus doubles the total RNA per cell while each gene preserves its
+share of the transcriptome. Ordinary relative RNA-seq counts show no gene-wise
+change. Statistically, the data support stable proportions under the chosen
+scale. Biologically, transcripts per cell doubled. Without cell counts, calibrated
+spike-ins, or another external denominator, both states produce the same relative
+composition.
+
+Conversely, after robust normalization a gene may show a two-fold relative
+increase with a precise interval across donors. That is a population estimate
+relative to the normalization reference. It does not establish an absolute
+per-cell increase, a causal molecular mechanism, or practical biological
+importance. Those claims require design information and additional measurements.
+
+# Common Misinterpretations
+
+- **"Normalization removes biological differences."** A suitable method removes
+  a nuisance scale while preserving feature-specific contrasts; a poor reference
+  can erase real global biology or create artificial changes.
+- **"The method with the flattest boxplots is best."** Identical marginal
+  distributions are not a scientific requirement and can conceal genuine shifts.
+- **"A factor is measured sequencing depth."** It is an estimated effective scale
+  combining depth with a composition reference assumption.
+- **"Spike-ins are an assumption-free gold standard."** Their calibration target,
+  addition protocol, recovery, and sampling variability all matter.
+- **"Normalization uncertainty is always negligible."** It may be consequential
+  for small panels, pervasive shifts, sparse data, or factors driven by few genes.
+
+# Connections and Take-home Messages
+
+- [Library-size normalization for RNA-seq](library-size-normalization-for-rna-seq.qmd)
+  places size factors in the negative binomial count model.
+- [Categorical and multinomial distributions](../probability-randomness/categorical-and-multinomial-distributions.qmd)
+  provides the sampling model underlying the finite library denominator.
+- [Negative binomial regression](../regression-models/negative-binomial-regression.qmd)
+  develops gene-wise means, offsets, dispersion, and coefficient interpretation.
+- [Batch effects in high-throughput experiments](batch-effects-in-high-throughput-experiments.qmd)
+  separates normalization from batch adjustment and confounding control.
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  explains randomization, blocking, and identifiable contrasts.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  distinguishes deeper measurement from more independent evidence.
+
+1. RNA-seq counts identify relative composition, not total RNA abundance, without
+   an external reference.
+2. Composition bias occurs because changing one abundant component changes the
+   denominator and therefore the apparent abundance of other components.
+3. TMM and median-of-ratios use robust gene-wise consensus to estimate an
+   effective sample scale.
+4. Their validity depends on a sufficiently stable or balanced reference set;
+   global asymmetric changes require external or prespecified controls.
+5. Normalization factors solve neither batch confounding nor pseudoreplication,
+   and their assumptions belong in the biological interpretation.
+
+# References
+
+- Robinson, M. D., and Oshlack, A. (2010). A scaling normalization method for
+  differential expression analysis of RNA-seq data. *Genome Biology*, 11, R25.
+  <https://doi.org/10.1186/gb-2010-11-3-r25>
+- Anders, S., and Huber, W. (2010). Differential expression analysis for
+  sequence count data. *Genome Biology*, 11, R106.
+  <https://doi.org/10.1186/gb-2010-11-10-r106>
+- Bullard, J. H., Purdom, E., Hansen, K. D., and Dudoit, S. (2010). Evaluation of
+  statistical methods for normalization and differential expression in mRNA-Seq
+  experiments. *BMC Bioinformatics*, 11, 94.
+  <https://doi.org/10.1186/1471-2105-11-94>
+- Lovén, J., Orlando, D. A., Sigova, A. A., et al. (2012). Revisiting global gene
+  expression analysis. *Cell*, 151(3), 476--482.
+  <https://doi.org/10.1016/j.cell.2012.10.012>
+- Evans, C., Hardin, J., and Stoebel, D. M. (2018). Selecting between-sample
+  RNA-seq normalization methods from the perspective of their assumptions.
+  *Briefings in Bioinformatics*, 19(5), 776--792.
+  <https://doi.org/10.1093/bib/bbx008>
+- Quinn, T. P., Erb, I., Richardson, M. F., and Crowley, T. M. (2018).
+  Understanding sequencing data as compositions: an outlook and review.
+  *Bioinformatics*, 34(16), 2870--2878.
+  <https://doi.org/10.1093/bioinformatics/bty175>
+- Bioconductor. *DESeq2 vignette: Analyzing RNA-seq data with DESeq2*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html>
+- Bioconductor. *edgeR User's Guide*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf>

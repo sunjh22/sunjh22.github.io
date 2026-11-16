@@ -18,9 +18,11 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Batch correction with ComBat and related models](batch-correction-with-combat-and-related-models.qmd)
 - [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
 - [Biological versus technical replication](biological-versus-technical-replication.qmd)
+- [Library-size normalization for RNA-seq](library-size-normalization-for-rna-seq.qmd)
+- [Composition bias and normalization factors](composition-bias-and-normalization-factors.qmd)
 
-Future notes will develop omics-specific models and reproducible statistical
-workflows.
+Future notes will develop RNA-seq mean--variance modeling, differential-expression
+inference, and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)
