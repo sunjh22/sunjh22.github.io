@@ -1,0 +1,323 @@
+---
+title: "Negative-binomial Differential-expression Models"
+subtitle: "From gene-level counts and design matrices to estimable contrasts"
+description: "Negative-binomial GLMs for RNA-seq differential expression, including offsets, dispersion moderation, contrasts, tests, diagnostics, and biological interpretation."
+author: "Jiahong Sun"
+date: "2026-11-17"
+date-modified: "2026-11-17"
+categories: [Statistics, Bioinformatics, RNA-seq, Differential Expression]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Differential Expression Is a Model-based Contrast
+
+Differential-expression analysis asks whether a defined population contrast in
+expression is compatible with the observed gene-level counts and their
+variability. It does not merely compare two columns of normalized counts, and a
+list of rejected null hypotheses is not a list of proven biological mechanisms.
+
+For gene $g$ and sample $i$, a standard model is
+
+$$
+Y_{gi}\sim\operatorname{NB}(\mu_{gi},\alpha_g),
+\qquad
+\operatorname{Var}(Y_{gi})=\mu_{gi}+\alpha_g\mu_{gi}^2,
+$$
+
+with a log-linear mean
+
+$$
+\boxed{
+\log(\mu_{gi})=\log(s_i)+\mathbf x_i^\mathsf T\boldsymbol\beta_g.
+}
+$$
+
+Here $s_i$ is an effective library-size factor, entered as an offset;
+$\mathbf x_i$ is a row of the design matrix; and $\boldsymbol\beta_g$ contains
+gene-specific coefficients. The dispersion $\alpha_g$ represents residual
+heterogeneity after the design and offset have been applied.
+
+The scientific estimand should be stated before fitting. For two conditions, it
+might be a population log fold change among the sampled class of donors at a
+specified batch or averaged over a target covariate distribution. The estimator
+is the fitting and moderation procedure; the estimate is the numerical contrast
+obtained from this dataset. These distinctions matter because alternate designs
+or shrinkage rules can target or estimate different quantities.
+
+# Experimental Units and the Sampling Model
+
+The independent unit is determined by treatment assignment and biological
+sampling. If treatment is applied to cultures, the independent cultures—not
+their reads—are the experimental units. If several tissues or time points come
+from one donor, observations share a donor and require blocking, aggregation, or
+a dependence-aware method. Sequencing lanes and technical library replicates can
+usually be summed when they measure the same biological sample under compatible
+processing.
+
+Genes are parallel outcomes. Sharing information across genes can stabilize
+dispersion or effect estimation, but it does not multiply the number of
+independent condition assignments. Pseudoreplication gives artificially small
+standard errors even when the negative-binomial probability formula is otherwise
+correct.
+
+The model also presumes that assigned counts are relevant measurements of the
+target. Ambiguous mapping, transcript-level changes hidden by gene aggregation,
+RNA degradation, and changing cell composition can alter the biological meaning
+of a gene-level contrast without appearing as a formal GLM failure.
+
+# Design Matrices Encode the Comparison
+
+Consider donors measured under control or treatment in two processing batches.
+A design might use
+
+$$
+\log(\mu_{gi})=\log(s_i)+\beta_{0g}
++\beta_{1g}\operatorname{Treatment}_i
++\beta_{2g}\operatorname{Batch2}_i.
+$$
+
+Then $\beta_{1g}$ is a conditional log fold change comparing treatment with
+control at the same modeled batch. With natural logarithms,
+$\exp(\beta_{1g})$ is the fold change; software may report
+$\beta_{1g}/\log(2)$ as a log2 fold change.
+
+For a general contrast vector $\mathbf c$, the target is
+
+$$
+\theta_g=\mathbf c^\mathsf T\boldsymbol\beta_g,
+\qquad
+\widehat\theta_g=\mathbf c^\mathsf T\widehat{\boldsymbol\beta}_g.
+$$
+
+This formulation handles multiple groups, factorial designs, interactions, and
+spline coefficients. Main effects in a model with an interaction are conditional
+on the reference level of the interacting variable. An interaction contrast
+tests whether one modeled effect differs across levels of another variable; it
+is not recovered by declaring one subgroup significant and the other
+nonsignificant.
+
+Paired designs include a subject-blocking term when the number and structure of
+subjects support it. Completely confounded variables—for example, every control
+in batch 1 and every treatment in batch 2—cannot be separated by including both
+columns. Software may drop a coefficient, but no algorithm can reconstruct a
+comparison absent from the design.
+
+# Estimation and Information Sharing
+
+For fixed dispersion, the coefficients can be estimated by maximizing the
+negative-binomial likelihood. In practice, dispersion is unknown and hard to
+estimate gene by gene from small samples. edgeR and DESeq2 combine gene-specific
+evidence with an across-gene dispersion trend or prior. This moderation improves
+stability under an exchangeability assumption about nuisance variation.
+
+The methods differ in detail:
+
+| Component | DESeq2 | edgeR |
+|---|---|---|
+| Sample scaling | median-of-ratios size factors by default | TMM normalization factors commonly used |
+| Dispersion | gene-wise estimates moderated toward a fitted trend | common, trended, and tagwise empirical-Bayes estimates |
+| Inference | Wald tests or likelihood-ratio tests | likelihood-ratio or quasi-likelihood $F$ tests |
+| Outlier handling | Cook's-distance diagnostics and configurable replacement/filtering | robust dispersion estimation and observation diagnostics |
+| Effect moderation | optional log-fold-change shrinkage estimators | separate prior-count or shrinkage tools depending on goal |
+
+These are workflow defaults, not mathematical identities. A valid comparison of
+software should align the design, contrasts, filtering, normalization target,
+and inferential method.
+
+edgeR's quasi-likelihood pipeline models uncertainty in the estimated
+gene-specific variability, yielding more conservative error-rate control when
+dispersion estimation is uncertain. DESeq2 estimates dispersions by empirical
+Bayes and can test coefficients using Wald statistics or compare nested models
+with a likelihood-ratio statistic. Both approaches require enough independent
+units to estimate residual biological variation.
+
+# Tests, Intervals, and Effect Estimates
+
+For the null hypothesis
+
+$$
+H_{0g}:\mathbf c^\mathsf T\boldsymbol\beta_g=0,
+$$
+
+a Wald statistic has the form
+
+$$
+Z_g=
+\frac{\mathbf c^\mathsf T\widehat{\boldsymbol\beta}_g}
+{\operatorname{SE}
+(\mathbf c^\mathsf T\widehat{\boldsymbol\beta}_g)}.
+$$
+
+Its reference distribution is approximate and inherits the fitted mean,
+dispersion, design, and large-sample assumptions. Likelihood-ratio tests compare
+nested models, while quasi-likelihood tests propagate additional dispersion
+uncertainty. They need not give identical $p$-values because they ask related
+questions using different approximations.
+
+Thousands of gene-wise tests require a multiplicity procedure. The
+Benjamini--Hochberg method commonly controls the false discovery rate under its
+stated dependence conditions. The adjusted $p$-value is evidence against a null
+within a multiple-testing procedure; it is not the probability that the gene is
+a false positive.
+
+Log-fold-change shrinkage addresses a different problem. It can improve noisy
+effect estimates and rankings, especially for low-information genes, but the
+shrunken estimate should not be silently combined with a test derived from an
+unshrunk estimator. Report which effect estimate and uncertainty procedure were
+used.
+
+An interval for a log fold change is often more informative than a thresholded
+test because it shows compatible effect sizes. Testing a minimum biologically
+meaningful effect, when supported by the software and design, aligns the null
+more closely with the scientific question than testing exactly zero and applying
+an effect-size cutoff afterward.
+
+# A Minimal Design-aware Workflow
+
+The following non-executed R sketch shows the order of decisions rather than a
+copy-and-run recipe:
+
+```r
+# columns of sample_table correspond exactly to columns of counts
+stopifnot(identical(colnames(counts), rownames(sample_table)))
+
+# condition and batch were defined before looking at gene-wise results
+sample_table$condition <- relevel(factor(sample_table$condition), "control")
+sample_table$batch <- factor(sample_table$batch)
+
+dds <- DESeq2::DESeqDataSetFromMatrix(
+  countData = counts,
+  colData = sample_table,
+  design = ~ batch + condition
+)
+
+# A prevalence filter may improve power; define it without using test outcomes.
+keep <- rowSums(DESeq2::counts(dds) >= 10) >= 3
+dds <- dds[keep, ]
+dds <- DESeq2::DESeq(dds)
+
+res <- DESeq2::results(
+  dds,
+  contrast = c("condition", "treated", "control"),
+  alpha = 0.05
+)
+```
+
+Before this code, one must decide what was randomized or sampled, whether batch
+is confounded with condition, what the contrast means, how repeated units are
+handled, and which genes belong to the testing family. Afterward, one must check
+normalization, sample relationships, dispersion, influential observations, and
+the stability of important conclusions.
+
+Normalized or transformed values are useful for visualization, but the count
+model should receive integer counts with offsets as required by the method.
+Rounding TPM or other normalized abundance values does not reconstruct the
+sampling model.
+
+# Diagnostics and Failure Modes
+
+| Failure mechanism | What may be seen | Appropriate response |
+|---|---|---|
+| condition confounded with batch | rank deficiency or an apparently perfect group split | redesign or narrow the estimand; no statistical correction identifies both effects |
+| one influential sample | extreme Cook's distance, residual, or sample-level separation | verify provenance and quality; report prespecified exclusion sensitivity |
+| inadequate biological replication | unstable dispersions and effects; overly discrete evidence | collect independent units; avoid treating reads or cells as replicates |
+| implausible normalization | asymmetric MA plots or disagreement with controls | use justified controls, spike-ins, or alternative scaling sensitivity |
+| unmodeled dependence | too many small $p$-values; replicate clusters | aggregate at the experimental-unit level or model the dependence |
+| excess heterogeneity | poor residual fit or high gene-wise dispersion | add justified covariates; use robust/quasi-likelihood methods; interpret heterogeneity |
+| low counts | unstable fold changes and little test power | independent filtering and honest uncertainty, not arbitrary pseudocount conclusions |
+
+Filtering can increase power by removing genes with almost no chance of producing
+an informative test, but the rule and testing family should be recorded. A filter
+based on observed condition differences reuses the test signal and can invalidate
+error control. Unannotated or low-count genes may still be biologically important;
+statistical filtering is not a statement of biological worth.
+
+Useful sensitivity analyses refit the complete pipeline under defensible choices:
+alternative sample exclusions, covariate sets, normalization assumptions,
+dispersion methods, and filtering rules. Cherry-picking the analysis with the
+most discoveries defeats the purpose.
+
+# Statistical versus Biological Interpretation
+
+Suppose the fitted contrast for a gene is a log2 fold change of $1.2$, with a
+95% interval from $0.5$ to $1.9$ and a false-discovery-rate adjusted $p$-value
+below $0.05$. Under the model and multiplicity procedure, the data support a
+positive conditional expression contrast and exclude small effects near zero.
+
+That conclusion does **not** by itself establish that:
+
+- the gene is directly regulated by the treatment;
+- every cell type changes expression in the same direction;
+- the protein abundance or activity changes correspondingly;
+- the result generalizes beyond the sampled population; or
+- the gene is the most important intervention target.
+
+Biological interpretation should integrate absolute abundance, effect magnitude,
+isoforms, cell composition, pathway context, assay quality, prior evidence, and
+independent validation. Conversely, failing an adjusted-$p$ threshold does not
+prove absence of a biologically important effect; the interval may reveal that
+the experiment was simply imprecise.
+
+# Connections and Take-home Messages
+
+- [RNA-seq mean--variance modeling](rna-seq-mean-variance-modeling.qmd) explains
+  the variance structure and dispersion moderation used here.
+- [Library-size normalization for RNA-seq](library-size-normalization-for-rna-seq.qmd)
+  and [composition bias and normalization factors](composition-bias-and-normalization-factors.qmd)
+  develop the offset and its assumptions.
+- [Categorical predictors and contrasts](../regression-models/categorical-predictors-and-contrasts.qmd)
+  explains design-matrix coding and estimable comparisons.
+- [Likelihood-ratio, Wald, and score tests](../statistical-inference/likelihood-ratio-wald-and-score-tests.qmd)
+  compares the main testing principles.
+- [False discovery rate](../statistical-inference/false-discovery-rate.qmd) and
+  [Benjamini--Hochberg and Storey q-values](../statistical-inference/benjamini-hochberg-and-storey-q-values.qmd)
+  explain multiplicity control.
+- [Batch effects in high-throughput experiments](batch-effects-in-high-throughput-experiments.qmd)
+  and [experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  show why design precedes correction.
+
+1. Differential expression is an estimable model contrast, not a property read
+   directly from normalized counts.
+2. Offsets describe sample scale, design coefficients describe conditional means,
+   and dispersion describes residual biological heterogeneity.
+3. Information sharing stabilizes nuisance and effect estimates but does not
+   substitute for independent biological replication.
+4. Wald, likelihood-ratio, and quasi-likelihood tests use different uncertainty
+   approximations; multiplicity control is a separate layer.
+5. Diagnostics, sensitivity, effect sizes, and biological context are necessary
+   for turning statistical results into credible scientific conclusions.
+
+# References
+
+- Robinson, M. D., and Smyth, G. K. (2008). Small-sample estimation of negative
+  binomial dispersion, with applications to SAGE data. *Biostatistics*, 9(2),
+  321--332. <https://doi.org/10.1093/biostatistics/kxm030>
+- Anders, S., and Huber, W. (2010). Differential expression analysis for sequence
+  count data. *Genome Biology*, 11, R106.
+  <https://doi.org/10.1186/gb-2010-11-10-r106>
+- Robinson, M. D., McCarthy, D. J., and Smyth, G. K. (2010). edgeR: a Bioconductor
+  package for differential expression analysis of digital gene expression data.
+  *Bioinformatics*, 26(1), 139--140.
+  <https://doi.org/10.1093/bioinformatics/btp616>
+- McCarthy, D. J., Chen, Y., and Smyth, G. K. (2012). Differential expression
+  analysis of multifactor RNA-Seq experiments with respect to biological
+  variation. *Nucleic Acids Research*, 40(10), 4288--4297.
+  <https://doi.org/10.1093/nar/gks042>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>
+- Chen, Y., Lun, A. T. L., and Smyth, G. K. (2016). From reads to genes to
+  pathways: differential expression analysis of RNA-Seq experiments using
+  Rsubread and the edgeR quasi-likelihood pipeline. *F1000Research*, 5, 1438.
+  <https://doi.org/10.12688/f1000research.8987.2>
+- Zhu, A., Ibrahim, J. G., and Love, M. I. (2019). Heavy-tailed prior distributions
+  for sequence count data: removing the noise and preserving large differences.
+  *Bioinformatics*, 35(12), 2084--2092.
+  <https://doi.org/10.1093/bioinformatics/bty895>
+- Bioconductor. *DESeq2 vignette: Analyzing RNA-seq data with DESeq2*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html>
+- Bioconductor. *edgeR User's Guide*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf>

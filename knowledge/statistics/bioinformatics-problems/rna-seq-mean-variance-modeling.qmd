@@ -1,0 +1,309 @@
+---
+title: "RNA-seq Mean--Variance Modeling"
+subtitle: "Connecting abundance, biological variability, and inferential precision"
+description: "Mean--variance relationships in RNA-seq counts, negative-binomial and precision-weight models, diagnostics, replication, and interpretation."
+author: "Jiahong Sun"
+date: "2026-11-17"
+date-modified: "2026-11-17"
+categories: [Statistics, Bioinformatics, RNA-seq, Mean-Variance Modeling]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Counts Do Not Have Constant Variance
+
+RNA-seq produces nonnegative counts, but the variability of those counts changes
+with abundance. A highly expressed gene can have a much larger raw variance than
+a weakly expressed gene while having a smaller *relative* uncertainty. Treating
+all counts or log-counts as equally precise therefore misrepresents the data.
+
+For gene $g$ in biological sample $i$, let
+
+$$
+Y_{gi}=\text{assigned fragment or read count},
+\qquad
+s_i=\text{effective library-size factor}.
+$$
+
+A useful mean model is
+
+$$
+E(Y_{gi}\mid \mathbf x_i)=\mu_{gi}=s_iq_{gi},
+$$
+
+where $q_{gi}$ is expression on the scale defined by the normalization procedure
+and $\mathbf x_i$ describes condition, batch, and other design variables. The
+offset $s_i$ handles sample scale; it does not describe the remaining variation
+among biological samples.
+
+The statistical target is usually a contrast in the conditional expression
+means, such as a log fold change between conditions. The model is fitted to the
+observed counts, but inference concerns a population of biological units under
+the stated design—not the particular reads that happened to be sequenced.
+
+# Sources of Variation
+
+The observed dispersion is produced by several layers:
+
+```text
+biological units and their expression states
+                 ↓
+RNA extraction, library preparation, and batch variation
+                 ↓
+sampling molecules or fragments into a finite library
+                 ↓
+alignment, assignment, and observed gene counts
+```
+
+Conditional on a fixed pool of molecules, Poisson or multinomial sampling can
+describe part of the technical counting noise. Across biological units, however,
+expression also varies because of genetics, environment, cell composition, and
+unmeasured experimental factors. Independent RNA-seq samples consequently tend
+to be more variable than a Poisson model permits.
+
+Technical replicates measure repeated parts of the assay process. They may help
+estimate technical variability or identify failures, but they do not create new
+independent realizations of the biological condition. When the scientific
+contrast is between patients, organisms, or cultures, those are the experimental
+units. Reads, lanes, cells from the same specimen, and genes are nested or
+parallel observations, not biological replicates for that contrast.
+
+# The Negative-binomial Mean--Variance Relationship
+
+A common model is
+
+$$
+Y_{gi}\mid \mu_{gi},\alpha_g
+\sim \operatorname{NB}(\mu_{gi},\alpha_g),
+$$
+
+parameterized so that
+
+$$
+\boxed{
+\operatorname{Var}(Y_{gi}\mid\mathbf x_i)
+=\mu_{gi}+\alpha_g\mu_{gi}^2.
+}
+$$
+
+The Poisson term $\mu_{gi}$ represents counting variation. The quadratic term
+$\alpha_g\mu_{gi}^2$ allows extra sample-to-sample variation; $\alpha_g\geq0$ is
+the gene-wise dispersion. The biological coefficient of variation approaches
+$\sqrt{\alpha_g}$ when the mean is large because
+
+$$
+\frac{\sqrt{\operatorname{Var}(Y_{gi})}}{\mu_{gi}}
+=\sqrt{\frac{1}{\mu_{gi}}+\alpha_g}.
+$$
+
+This calculation explains two empirical regimes:
+
+- at low abundance, finite counting noise is prominent and relative uncertainty
+  rises sharply;
+- at high abundance, sequencing more deeply cannot eliminate biological
+  heterogeneity, so the relative standard deviation approaches a floor.
+
+The negative binomial can be derived as a Poisson--gamma mixture. If
+
+$$
+Y_{gi}\mid\Lambda_{gi}\sim\operatorname{Poisson}(\Lambda_{gi}),
+\qquad
+E(\Lambda_{gi})=\mu_{gi},
+\qquad
+\operatorname{Var}(\Lambda_{gi})=\alpha_g\mu_{gi}^2,
+$$
+
+then the law of total variance gives
+
+$$
+\operatorname{Var}(Y_{gi})
+=E\{\operatorname{Var}(Y_{gi}\mid\Lambda_{gi})\}
++\operatorname{Var}\{E(Y_{gi}\mid\Lambda_{gi})\}
+=\mu_{gi}+\alpha_g\mu_{gi}^2.
+$$
+
+The mixture is an illuminating probability representation, not a claim that
+one literal gamma-distributed mechanism generates every RNA-seq experiment.
+
+# Dispersion Is Estimated, Not Observed
+
+With only a few replicates per condition, estimating one unrestricted dispersion
+per gene is unstable. RNA-seq methods therefore borrow information across genes.
+The genes are not treated as replicates of the condition effect; rather, their
+ensemble helps estimate a regularity in nuisance variation.
+
+A typical strategy separates three quantities:
+
+1. a **gene-wise estimate**, driven by that gene's residual variation;
+2. a **mean--dispersion trend**, describing the systematic dependence of
+   variability on average abundance; and
+3. a **moderated estimate**, shrinking noisy gene-wise information toward the
+   trend or a common value.
+
+DESeq2 uses a fitted dispersion trend and an empirical-Bayes maximum a posteriori
+estimate, with special handling for genes whose dispersion is far above the
+trend. edgeR estimates common, trended, and tagwise dispersions using conditional
+likelihood and empirical-Bayes moderation. The algorithms and parameterizations
+differ, but both stabilize nuisance estimation by sharing information across
+features.
+
+Moderation trades some bias for a substantial variance reduction. It is most
+helpful when replication is limited, but it relies on the majority trend being
+relevant to the gene. Strong unmodeled subgroups, outliers, or poor-quality
+samples can distort both gene-wise and shared estimates.
+
+# Precision after a Log Transformation
+
+Another route is to model log-counts with observation-level precision weights.
+Ignoring offsets for a moment, the delta method gives
+
+$$
+\operatorname{Var}\{\log(Y_{gi})\}
+\approx
+\frac{\operatorname{Var}(Y_{gi})}{\mu_{gi}^2}
+=\frac{1}{\mu_{gi}}+\alpha_g.
+$$
+
+Thus log transformation reduces gross scale dependence but does not make every
+observation equally precise. Low fitted counts remain noisy. The `voom` method
+estimates a smooth mean--variance trend for log-counts and converts it into
+inverse-variance weights for linear modeling:
+
+$$
+w_{gi}\approx
+\frac{1}{\widehat{\operatorname{Var}}
+\{\log_2(\text{count per million}_{gi})\}}.
+$$
+
+The resulting weighted linear model can use mature linear-model machinery,
+including empirical-Bayes moderation of residual variances and flexible design
+matrices. This is not simply "take logs and run a t-test": the fitted mean--variance
+relationship determines how much each observation contributes.
+
+Count-scale negative-binomial models and precision-weighted log-scale models are
+different working models for the same inferential problem. Neither dominates in
+every design. Agreement across well-specified analyses can be reassuring; large
+disagreement should trigger investigation of filtering, normalization,
+dispersion, weights, outliers, and design rather than automatic method shopping.
+
+# Design Determines Which Variation Is Residual
+
+For a count model,
+
+$$
+\log(\mu_{gi})=\log(s_i)+\mathbf x_i^\mathsf T\boldsymbol\beta_g.
+$$
+
+The design matrix should include scientifically justified variables such as
+condition, batch, blocking factors, paired-subject indicators, and prespecified
+interactions. Variation explained by these columns contributes to fitted means;
+remaining variation informs dispersion. Omitting an important batch can inflate
+dispersion or bias a condition effect. Adding variables that are perfectly
+confounded with condition cannot recover the missing comparison.
+
+Repeated measures require a model or workflow that represents within-unit
+dependence. Treating several time points, tissues, or libraries from one donor as
+independent understates uncertainty. For bulk tissue, changing cell-type mixture
+can create real count differences without implying cell-intrinsic regulation;
+the relevant estimand must make that distinction explicit.
+
+# Diagnostics and Sensitivity
+
+No single plot validates the model. Diagnostics should be examined at both the
+sample and gene levels.
+
+| Question | Useful evidence | Consequence or response |
+|---|---|---|
+| Does variance change with abundance as modeled? | gene-wise dispersion versus mean; residual spread; voom mean--variance trend | revise trend, weights, or variance model |
+| Is one sample globally unusual? | library quality, multidimensional scaling or PCA, sample-level residual summaries | verify metadata; assess exclusion using prespecified quality criteria |
+| Do a few observations dominate a gene? | deviance/Pearson residuals, Cook's distance, fitted counts | inspect assay records; use robust fitting or report sensitivity |
+| Is the design adequate? | design-matrix rank, replicate counts, condition--batch table | simplify estimands, obtain data, or acknowledge non-identifiability |
+| Is normalization plausible? | MA plots, factor distributions, control genes or spike-ins | compare defensible scaling assumptions |
+| Are weak genes informative? | count prevalence and independent-filtering diagnostics | filter by a rule independent of the tested contrast under the null |
+
+Sensitivity analyses can compare negative-binomial and precision-weighted fits,
+reasonable normalization methods, outlier policies, covariate specifications,
+and filtering thresholds. The entire analysis—not only the final test—should be
+repeated when assessing how a choice affects conclusions.
+
+An apparent excess of small $p$-values is not proof that the mean--variance model
+is correct. Confounding, duplicated units, compositional bias, and underestimated
+dispersion can all create the same pattern.
+
+# Worked Interpretation
+
+Suppose two conditions each contain four independently sampled donors. For one
+gene, the normalized fitted count is about 20 and the estimated dispersion is
+$0.10$. The model variance is
+
+$$
+20+0.10(20)^2=60,
+$$
+
+which is three times the Poisson variance of 20. At a fitted mean of 1000, the
+variance is $101{,}000$, and the relative standard deviation is about $0.318$,
+close to $\sqrt{0.10}$. More sequencing would reduce the $1/\mu$ component, but
+it would not replace additional donors for learning population variability.
+
+Statistically, the dispersion affects the standard error and evidence for a
+condition contrast. Biologically, it describes heterogeneity around the fitted
+mean; it is not itself a measure of regulation, pathway importance, or technical
+quality. A stable, large fold change with a suitably calibrated interval can be
+biologically compelling even if it misses a multiple-testing threshold, whereas
+a tiny precisely estimated change may have limited biological relevance.
+
+# Connections and Take-home Messages
+
+- [Library-size normalization for RNA-seq](library-size-normalization-for-rna-seq.qmd)
+  explains the offsets that define comparable expression scales.
+- [Composition bias and normalization factors](composition-bias-and-normalization-factors.qmd)
+  examines when sample-wide scaling assumptions fail.
+- [Negative binomial regression](../regression-models/negative-binomial-regression.qmd)
+  develops the underlying count GLM.
+- [Diagnosing and modeling overdispersion](../regression-models/diagnosing-and-modeling-overdispersion.qmd)
+  places dispersion in the wider regression context.
+- [Shrinkage estimation](../advanced-modeling/shrinkage-estimation.qmd) explains
+  the bias--variance trade-off behind information sharing.
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  and [biological versus technical replication](biological-versus-technical-replication.qmd)
+  define the units that support inference.
+
+1. RNA-seq variance changes with abundance, so equal-variance analyses of raw or
+   unweighted log counts are generally inappropriate.
+2. The negative-binomial variance combines a counting term with an overdispersion
+   term that sequencing depth alone cannot remove.
+3. Borrowing information across genes stabilizes dispersion or precision
+   estimates; genes do not thereby become biological replicates.
+4. The design matrix, normalization offsets, and dependence structure determine
+   what the estimated residual variability means.
+5. Diagnostics and sensitivity must accompany a mean--variance model before
+   statistical evidence is given a biological interpretation.
+
+# References
+
+- Robinson, M. D., and Smyth, G. K. (2007). Moderated statistical tests for
+  assessing differences in tag abundance. *Bioinformatics*, 23(21), 2881--2887.
+  <https://doi.org/10.1093/bioinformatics/btm453>
+- Anders, S., and Huber, W. (2010). Differential expression analysis for sequence
+  count data. *Genome Biology*, 11, R106.
+  <https://doi.org/10.1186/gb-2010-11-10-r106>
+- McCarthy, D. J., Chen, Y., and Smyth, G. K. (2012). Differential expression
+  analysis of multifactor RNA-Seq experiments with respect to biological
+  variation. *Nucleic Acids Research*, 40(10), 4288--4297.
+  <https://doi.org/10.1093/nar/gks042>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>
+- Law, C. W., Chen, Y., Shi, W., and Smyth, G. K. (2014). voom: precision weights
+  unlock linear model analysis tools for RNA-seq read counts. *Genome Biology*,
+  15, R29. <https://doi.org/10.1186/gb-2014-15-2-r29>
+- Chen, Y., Lun, A. T. L., and Smyth, G. K. (2016). From reads to genes to
+  pathways: differential expression analysis of RNA-Seq experiments using
+  Rsubread and the edgeR quasi-likelihood pipeline. *F1000Research*, 5, 1438.
+  <https://doi.org/10.12688/f1000research.8987.2>
+- Bioconductor. *DESeq2 vignette: Analyzing RNA-seq data with DESeq2*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html>
+- Bioconductor. *limma User's Guide*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/limma/inst/doc/usersguide.pdf>

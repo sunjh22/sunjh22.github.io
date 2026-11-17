@@ -20,9 +20,11 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Biological versus technical replication](biological-versus-technical-replication.qmd)
 - [Library-size normalization for RNA-seq](library-size-normalization-for-rna-seq.qmd)
 - [Composition bias and normalization factors](composition-bias-and-normalization-factors.qmd)
+- [RNA-seq mean--variance modeling](rna-seq-mean-variance-modeling.qmd)
+- [Negative-binomial differential-expression models](negative-binomial-differential-expression-models.qmd)
 
-Future notes will develop RNA-seq mean--variance modeling, differential-expression
-inference, and reproducible statistical workflows.
+Future notes will develop dispersion shrinkage, differential-expression contrasts,
+gene-set inference, and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)
