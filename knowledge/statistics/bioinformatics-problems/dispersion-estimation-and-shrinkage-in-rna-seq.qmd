@@ -1,0 +1,345 @@
+---
+title: "Dispersion Estimation and Shrinkage in RNA-seq"
+subtitle: "Stabilizing gene-wise biological variability without inventing replication"
+description: "Negative-binomial dispersion estimation for RNA-seq, including gene-wise likelihoods, abundance trends, empirical-Bayes shrinkage, diagnostics, and interpretation."
+author: "Jiahong Sun"
+date: "2026-11-18"
+date-modified: "2026-11-18"
+categories: [Statistics, Bioinformatics, RNA-seq, Dispersion, Shrinkage]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Dispersion Is Residual Biological Variability
+
+For gene $g$ in biological sample $i$, a common RNA-seq model is
+
+$$
+Y_{gi}\sim\operatorname{NB}(\mu_{gi},\alpha_g),
+\qquad
+\operatorname{Var}(Y_{gi}\mid\mathbf x_i)
+=\mu_{gi}+\alpha_g\mu_{gi}^2,
+$$
+
+with
+
+$$
+\log(\mu_{gi})=\log(s_i)+\mathbf x_i^{\mathsf T}\boldsymbol\beta_g.
+$$
+
+The offset $s_i$ represents effective library size, the design row $\mathbf x_i$
+represents modeled condition, batch, and other covariates, and $\alpha_g\geq0$ is
+the gene-specific dispersion. At large means, $\sqrt{\alpha_g}$ is approximately
+the residual biological coefficient of variation.
+
+Dispersion is conditional on the fitted mean model. If batch, subject, or another
+systematic source is omitted, its variation can be absorbed into $\alpha_g$.
+Conversely, an overfitted or aliased design can leave too little information for
+estimating residual variation. A dispersion estimate is therefore not an intrinsic
+property of a gene: it belongs to a gene, experiment, design, normalization rule,
+and probability model together.
+
+The scientific targets are usually expression contrasts in
+$\boldsymbol\beta_g$. Dispersion is a nuisance parameter, but a consequential
+one: it determines the width of sampling distributions, standard errors, tests,
+and intervals. Underestimating it produces overconfident evidence; severe
+overestimation sacrifices power.
+
+# Why Gene-wise Estimation Is Unstable
+
+An RNA-seq experiment may measure twenty thousand genes but contain only three or
+four independent samples per condition. Each gene has many counts across reads,
+yet only the biological samples provide independent information about
+sample-to-sample variability. Sequencing deeper primarily reduces the Poisson
+component $\mu_{gi}$; it cannot manufacture more realizations of the biological
+population.
+
+If $n$ samples are fitted with a design of rank $p$, roughly $n-p$ residual degrees
+of freedom inform gene-wise variability. With small $n-p$, an unrestricted
+estimate $\widehat\alpha_g$ has high variance. Randomly quiet genes appear nearly
+Poisson, while a single unusual observation can make another gene appear highly
+dispersed. Plugging either extreme directly into downstream tests makes the
+ranking of genes depend too strongly on noise in nuisance estimates.
+
+The parallel structure of genomics offers a remedy. Genes are not biological
+replicates, but their estimated dispersions can reveal a shared abundance-dependent
+regularity. Modern methods combine gene-specific evidence with this ensemble
+pattern. This is information sharing about nuisance parameters, not an increase
+in the number of treatment assignments.
+
+# Three Layers of Estimation
+
+A useful conceptual decomposition is:
+
+```text
+gene-wise counts and fitted means
+              ↓
+gene-wise dispersion likelihood
+              ↓
+mean--dispersion trend across genes
+              ↓
+moderated gene-specific dispersion
+```
+
+## Gene-wise likelihood
+
+For fixed fitted means, gene $g$ contributes a likelihood
+
+$$
+L_g(\alpha_g)
+=\prod_{i=1}^{n}
+p_{\mathrm{NB}}(Y_{gi}\mid\mu_{gi},\alpha_g).
+$$
+
+Ordinary maximum likelihood for variance components is biased downward in small
+samples because regression coefficients were estimated from the same data.
+RNA-seq methods therefore use adjustments such as Cox--Reid adjusted profile
+likelihood, conditional likelihood, or related bias-reduced procedures. These
+improve the starting estimate but do not remove its sampling variability.
+
+## Abundance-dependent trend
+
+Let $\bar\mu_g$ denote a normalized mean abundance and let
+$\alpha_{\mathrm{tr}}(\bar\mu_g)$ be a fitted trend. The trend acknowledges that
+low-count genes may have a different dispersion distribution from high-count
+genes. A parametric, local smooth, or constant trend may be used, but its form
+should be checked rather than accepted automatically.
+
+The trend is descriptive across features. It is not a biological law that every
+gene must obey. Genes may be unusually variable because of real heterogeneous
+regulation, cell-composition changes, mapping ambiguity, outliers, or model
+misspecification.
+
+## Moderation toward the trend
+
+On a log-dispersion scale, a schematic empirical-Bayes model is
+
+$$
+\log(\alpha_g)\sim
+N\!\left(\log\{\alpha_{\mathrm{tr}}(\bar\mu_g)\},\tau^2\right).
+$$
+
+Combining this prior with the gene-wise likelihood gives
+
+$$
+p(\alpha_g\mid\mathbf y_g)
+\propto L_g(\alpha_g)
+p(\alpha_g\mid\bar\mu_g,\tau^2).
+$$
+
+A posterior mode, posterior mean, or penalized-likelihood solution lies between
+the noisy gene-wise estimate and the trend. Weak gene-wise information produces
+more shrinkage; many replicates or a sharply peaked likelihood produces less.
+The prior scale $\tau$ is learned from the ensemble in empirical Bayes.
+
+This is a bias--variance trade-off. Moderate bias toward a relevant trend can
+greatly reduce the variance of gene-wise dispersion estimates and improve the
+calibration of many simultaneous tests. If the trend or pooling distribution is
+wrong for an important subgroup, shrinkage can instead obscure genuine
+heterogeneity.
+
+# DESeq2 and edgeR Use Related, Not Identical, Strategies
+
+DESeq2 first obtains gene-wise dispersion estimates, fits a mean--dispersion
+relationship, estimates the spread of log dispersions around it, and forms
+maximum-a-posteriori estimates. Genes whose gene-wise dispersion is far above
+the fitted distribution can be flagged as dispersion outliers and are not forced
+toward the trend in the standard procedure.
+
+edgeR estimates common, trended, and tagwise negative-binomial dispersions using
+adjusted profile likelihood and empirical-Bayes moderation. Its prior degrees
+of freedom control how strongly tagwise dispersions are squeezed toward the
+common or trended value. Robust estimation can reduce the influence of
+hypervariable genes when learning the shared distribution.
+
+edgeR's quasi-likelihood pipeline adds a second layer: it estimates quasi-likelihood
+dispersions that describe gene-specific uncertainty relative to the negative-binomial
+mean--variance relationship. Moderation of these values supports quasi-likelihood
+tests with error-rate control that is robust to gene-wise variability.
+
+The numerical dispersions from different packages need not match. Parameterization,
+normalization, filtering, design, likelihood adjustment, trend, prior, robust
+options, and outlier handling all matter. Method comparison should focus on the
+full fitted analysis and inferential calibration, not on whether two stored
+columns have identical values.
+
+# Experimental Units and Replication
+
+Suppose treatment is assigned independently to six organoids in each condition,
+and each organoid is sequenced in two lanes. The organoids are the experimental
+units. Compatible lane counts from the same library may be summed, or a technical
+model may retain them, but twelve lanes do not become twelve biological replicates.
+
+Likewise, cells from one specimen, reads from one library, and genes in one assay
+are nested or parallel observations. Treating them as independent condition
+replicates yields an artificially precise dispersion estimate. If repeated
+tissues or time points come from the same donor, donor-level dependence must be
+represented by blocking, aggregation, or a suitable repeated-measures method.
+
+The roles of replication are distinct:
+
+| Replicate type | What it can reveal | What it cannot replace |
+|---|---|---|
+| Independent biological units | population heterogeneity and treatment-effect uncertainty | adequate measurement quality |
+| Technical libraries or lanes | assay repeatability and processing failures | additional treatment assignments |
+| Reads or fragments | finite counting precision | biological sample-to-sample variation |
+| Genes | an ensemble distribution for moderation | biological replication of a condition |
+
+# Design and Normalization Precede Dispersion
+
+The count matrix alone is insufficient. Before estimating dispersions:
+
+1. define the experimental unit and target population;
+2. align count columns exactly with sample metadata;
+3. construct a full-rank design containing prespecified condition, block, batch,
+   and interaction terms needed for the estimand;
+4. estimate defensible normalization factors or offsets;
+5. filter features using an outcome-independent abundance or prevalence rule;
+6. then estimate dispersion conditional on that model.
+
+Normalized counts do not remove batch or donor effects. Scaling factors address
+sample-wide measurement scale, whereas design terms describe systematic mean
+differences. If treatment is perfectly confounded with batch, no dispersion
+procedure can identify a treatment effect separately from the batch effect.
+
+Filtering very weak features can improve estimation because genes with almost
+all zero counts contain little information about either mean contrasts or
+dispersion. Filtering must not select genes because they already appear to have
+large condition differences; that would alter the null distribution of later
+tests.
+
+# Diagnostics and Sensitivity
+
+Dispersion shrinkage is not self-validating. Inspect the inputs, the shared trend,
+and consequences for inference.
+
+| Question | Diagnostic | Sensitivity or remedy |
+|---|---|---|
+| Does the trend describe most genes? | gene-wise, fitted, and final dispersion versus mean | compare parametric, local, and constant trends |
+| Do a few genes drive the prior? | distribution of residual log dispersions and robust weights | use robust estimation; investigate hypervariable groups |
+| Is one sample influential? | count plots, deviance residuals, Cook's distance, library QC | verify metadata; report prespecified exclusion and leave-one-unit-out analyses |
+| Is variability condition-specific? | within-group residual spread and BCV plots | consider methods that allow heterogeneous variability or targeted sensitivity analysis |
+| Is the design adequate? | design rank, residual degrees of freedom, condition-by-batch table | simplify unsupported questions or collect independent samples |
+| Is normalization plausible? | MA plots, size-factor distributions, controls or spike-ins | compare defensible normalization assumptions |
+
+One common failure is allowing true mean differences to masquerade as dispersion.
+For example, estimating variability under an intercept-only model when many genes
+change by condition attributes systematic signal to noise. The reverse failure
+is including data-derived nuisance covariates that remove part of the biology of
+interest. Both the mean model and the variance model require scientific judgment.
+
+Important sensitivity analyses repeat the *entire* differential-expression
+pipeline under reasonable alternatives: normalization factors, design terms,
+trend type, robust moderation, outlier policy, and filtering threshold. Comparing
+only the final significant-gene counts hides which estimates changed and why.
+
+# Worked Interpretation
+
+Suppose a gene has fitted normalized mean $\mu=100$ and moderated dispersion
+$\widehat\alpha=0.04$. Its model variance at that mean is
+
+$$
+100+0.04(100)^2=500,
+$$
+
+and its standard deviation is about $22.4$, not the Poisson value $10$. At high
+abundance its residual coefficient of variation approaches
+$\sqrt{0.04}=0.20$.
+
+Assume the unstable gene-wise estimate was $0.12$ but the abundance trend was
+$0.03$. A final estimate of $0.04$ says that the gene-specific likelihood was
+not precise enough to support the extreme value against the ensemble pattern.
+It does not say that the true dispersion equals $0.04$, that the gene has little
+biological importance, or that uncertainty in the dispersion has vanished.
+
+Statistically, the moderated dispersion stabilizes the reference distribution
+for the gene's contrast. Biologically, it summarizes unexplained heterogeneity
+on the scale and population defined by the study. A high value can reflect real
+heterogeneity, technical problems, an omitted mean structure, or a mixture of
+these; it is not automatically a quality-control verdict.
+
+# A Minimal Non-executed Workflow
+
+The syntax below is illustrative. It is deliberately not an executable Quarto
+cell because this site's publication workflow does not install R or Bioconductor.
+
+```r
+# DESeq2 sketch
+dds <- DESeqDataSetFromMatrix(
+  countData = counts,
+  colData = samples,
+  design = ~ batch + condition
+)
+dds <- DESeq(dds, fitType = "parametric")
+plotDispEsts(dds)
+resultsNames(dds)
+
+# edgeR quasi-likelihood sketch
+y <- DGEList(counts)
+y <- calcNormFactors(y)
+design <- model.matrix(~ batch + condition, data = samples)
+y <- estimateDisp(y, design, robust = TRUE)
+plotBCV(y)
+fit <- glmQLFit(y, design, robust = TRUE)
+```
+
+A real analysis must also record sample matching, feature filtering, factor
+levels, design rank, package versions, and the exact contrast. Software defaults
+are part of the model and should be reported when they affect the result.
+
+# Connections and Take-home Messages
+
+- [RNA-seq mean--variance modeling](rna-seq-mean-variance-modeling.qmd) derives
+  the negative-binomial variance and precision-weight alternatives.
+- [Negative-binomial differential-expression models](negative-binomial-differential-expression-models.qmd)
+  develops the count GLM in which dispersion is used.
+- [Library-size normalization for RNA-seq](library-size-normalization-for-rna-seq.qmd)
+  and [composition bias and normalization factors](composition-bias-and-normalization-factors.qmd)
+  explain the offsets that precede dispersion estimation.
+- [Shrinkage estimation](../advanced-modeling/shrinkage-estimation.qmd) explains
+  the general bias--variance logic of moderation.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  defines which observations can inform biological variability.
+
+1. Dispersion is residual variability conditional on normalization, design, and
+   the negative-binomial model; it is not a context-free property of a gene.
+2. Few biological replicates make gene-wise dispersion estimates unstable even
+   when each library contains millions of reads.
+3. Mean-dependent trends and empirical-Bayes moderation reduce nuisance-estimation
+   variance by borrowing information across genes without treating genes as
+   biological replicates.
+4. Robustness, outlier handling, and trend checks matter because inappropriate
+   pooling can hide real heterogeneity or propagate artifacts.
+5. A moderated dispersion calibrates statistical uncertainty; biological meaning
+   still depends on experimental units, design, effect size, and validation.
+
+# References
+
+- Robinson, M. D., and Smyth, G. K. (2008). Small-sample estimation of negative
+  binomial dispersion, with applications to SAGE data. *Biostatistics*, 9(2),
+  321--332. <https://doi.org/10.1093/biostatistics/kxm030>
+- Robinson, M. D., McCarthy, D. J., and Smyth, G. K. (2010). edgeR: a Bioconductor
+  package for differential expression analysis of digital gene expression data.
+  *Bioinformatics*, 26(1), 139--140.
+  <https://doi.org/10.1093/bioinformatics/btp616>
+- McCarthy, D. J., Chen, Y., and Smyth, G. K. (2012). Differential expression
+  analysis of multifactor RNA-Seq experiments with respect to biological
+  variation. *Nucleic Acids Research*, 40(10), 4288--4297.
+  <https://doi.org/10.1093/nar/gks042>
+- Lund, S. P., Nettleton, D., McCarthy, D. J., and Smyth, G. K. (2012). Detecting
+  differential expression in RNA-sequence data using quasi-likelihood with
+  shrunken dispersion estimates. *Statistical Applications in Genetics and
+  Molecular Biology*, 11(5). <https://doi.org/10.1515/1544-6115.1826>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>
+- Phipson, B., Lee, S., Majewski, I. J., Alexander, W. S., and Smyth, G. K.
+  (2016). Robust hyperparameter estimation protects against hypervariable genes
+  and improves power to detect differential expression. *The Annals of Applied
+  Statistics*, 10(2), 946--963. <https://doi.org/10.1214/16-AOAS920>
+- Bioconductor. *DESeq2 vignette: Analyzing RNA-seq data with DESeq2*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html>
+- Bioconductor. *edgeR User's Guide*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf>

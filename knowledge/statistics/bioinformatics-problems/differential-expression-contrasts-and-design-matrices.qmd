@@ -1,0 +1,375 @@
+---
+title: "Differential-expression Contrasts and Design Matrices"
+subtitle: "Encoding estimable RNA-seq questions before testing thousands of genes"
+description: "Design matrices and contrasts for RNA-seq differential expression, including blocking, interactions, estimability, uncertainty, diagnostics, and interpretation."
+author: "Jiahong Sun"
+date: "2026-11-18"
+date-modified: "2026-11-18"
+categories: [Statistics, Bioinformatics, RNA-seq, Design Matrices, Contrasts]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Design Matrix Defines the Question
+
+RNA-seq software does not discover a scientific comparison from a count matrix.
+The analyst encodes one through sample metadata, a design matrix, and a contrast.
+For gene $g$ and sample $i$, a negative-binomial generalized linear model is
+
+$$
+Y_{gi}\sim\operatorname{NB}(\mu_{gi},\alpha_g),
+\qquad
+\log(\mu_{gi})=\log(s_i)+\mathbf x_i^{\mathsf T}\boldsymbol\beta_g.
+$$
+
+Here $s_i$ is an effective library-size factor, $\mathbf x_i$ is row $i$ of the
+design matrix $\mathbf X$, and $\boldsymbol\beta_g$ contains gene-specific
+coefficients. A differential-expression estimand is usually a linear function
+
+$$
+\boxed{
+\theta_g=\mathbf c^{\mathsf T}\boldsymbol\beta_g,
+}
+$$
+
+where $\mathbf c$ is a prespecified contrast vector. The fitted model produces
+$\widehat{\boldsymbol\beta}_g$; the estimate is
+$\widehat\theta_g=\mathbf c^{\mathsf T}\widehat{\boldsymbol\beta}_g$.
+
+The coefficient names printed by software are coordinates chosen by a coding
+scheme. The contrast is the scientific comparison. Changing the reference level
+can change individual coefficients without changing fitted means or a contrast
+that has been translated consistently.
+
+# Begin with the Estimand and Experimental Unit
+
+Before constructing $\mathbf X$, state:
+
+- the target population, such as adults with a specified disease;
+- the experimental unit, such as patient, animal, or independently treated
+  culture;
+- the expression scale, typically a ratio of conditional expected counts after
+  defined normalization;
+- the treatment or condition comparison and its direction;
+- the time, tissue, genotype, batch, and covariate values over which the comparison
+  is conditional or averaged.
+
+For example, “treated versus control” is incomplete if treatment effects vary by
+genotype. A precise estimand might be the log2 fold change for treatment versus
+control among genotype B units at day 7, conditional on the modeled batch terms.
+
+Reads, cells from one specimen, lanes, and genes are not independent biological
+replicates. If treatment was randomized to animals, animals are the units that
+support the treatment contrast. Technical replication can improve measurement,
+but it does not increase the number of independent assignments. Repeated samples
+from one person require donor blocking or another dependence-aware analysis.
+
+# From Metadata to a Full-rank Matrix
+
+Suppose eight independent samples are split between control and treatment and
+balanced across two processing batches. With treatment coding and control and
+batch 1 as reference levels, the design `~ batch + condition`
+
+creates columns resembling
+
+$$
+\mathbf X=
+\begin{bmatrix}
+1 & I(\text{batch 2}) & I(\text{treated})
+\end{bmatrix}.
+$$
+
+The mean model is
+
+$$
+\log(\mu_{gi})=\log(s_i)+\beta_{0g}
++\beta_{Bg}I(\text{batch 2})
++\beta_{Tg}I(\text{treated}).
+$$
+
+Under the no-interaction model, $\beta_{Tg}$ is the conditional natural-log fold
+change for treated versus control at the same batch. The corresponding log2 fold
+change is $\beta_{Tg}/\log(2)$. Including batch does not “normalize the counts”;
+it adjusts the modeled mean comparison for an observed systematic variable.
+
+The matrix must have full column rank for all coefficients to be uniquely
+identified. If every treated sample is in batch 2 and every control is in batch
+1, the batch and treatment columns are identical. No contrast or software option
+can separate their effects. This is a design failure, not a numerical nuisance.
+
+# Common Designs and Their Contrasts
+
+## Several independent groups
+
+For control, drug A, and drug B, a no-intercept cell-means design
+
+$$
+\log(\mu_{gi})=\log(s_i)
++\beta_{Cg}I(C)+\beta_{Ag}I(A)+\beta_{Bg}I(B)
+$$
+
+makes each coefficient a group log mean apart from the offset. Useful contrasts
+include
+
+| Question | Contrast weights for $(\beta_C,\beta_A,\beta_B)$ |
+|---|---:|
+| A versus control | $(-1,1,0)$ |
+| B versus control | $(-1,0,1)$ |
+| A versus B | $(0,1,-1)$ |
+| average drug versus control | $(-1,1/2,1/2)$ |
+
+The last row compares the equally weighted average of two log means with the
+control log mean. It is not the log of an arithmetic average of expression on
+the count scale. Contrast weights must be interpreted on the model's link scale.
+
+## Paired or blocked samples
+
+If the same donor contributes control and treated samples, a fixed-effect design
+`~ donor + condition`
+
+compares conditions within donor, removing stable donor-to-donor mean differences.
+Each donor needs the relevant conditions for a within-donor contrast. Treating
+the paired samples as independent discards design information and usually
+misstates uncertainty.
+
+This fixed-effect approach is practical when donors are blocks and the desired
+condition effect is common. More complex repeated measures, missing visits, or
+donor-specific slopes may require correlation-aware linear modeling, mixed
+models, generalized estimating equations, or pseudobulk strategies appropriate
+to the data hierarchy.
+
+## Factorial designs and interactions
+
+For genotype $G\in\{A,B\}$ and treatment $T\in\{0,1\}$,
+
+$$
+\eta_{gi}=\beta_{0g}+\beta_{Gg}I(G=B)
++\beta_{Tg}I(T=1)
++\beta_{GT,g}I(G=B)I(T=1).
+$$
+
+Then
+
+$$
+\begin{aligned}
+\text{treatment effect in genotype A} &= \beta_{Tg},\\
+\text{treatment effect in genotype B} &= \beta_{Tg}+\beta_{GT,g},\\
+\text{difference in treatment effects} &= \beta_{GT,g}.
+\end{aligned}
+$$
+
+The interaction asks whether treatment effects differ by genotype. It is not a
+test of treatment within genotype B by itself. Omitting the interaction imposes
+one common log fold change. Including it without adequate samples in every
+relevant cell can make estimates unstable or non-estimable.
+
+## Time courses
+
+Time may be represented as a factor for flexible visit-specific effects, as a
+continuous linear trend, or by splines for a smooth nonlinear trajectory. These
+choices define different estimands. A likelihood-ratio or quasi-likelihood
+omnibus test can compare a full model containing condition-by-time terms with a
+reduced model, while planned contrasts identify changes at particular times.
+
+Repeated observations from the same unit remain correlated. A fixed donor block
+does not automatically represent every temporal covariance pattern, and a simple
+count GLM that treats all visits as independent can be anti-conservative.
+
+# Estimability Is More Than Matrix Rank
+
+A contrast $\mathbf c^{\mathsf T}\boldsymbol\beta_g$ is estimable when it is
+determined by the fitted mean structure—equivalently, when $\mathbf c$ lies in
+the row space of $\mathbf X$ for the chosen parameterization. Full column rank
+makes every coefficient contrast estimable, but scientific support also requires
+overlap and replication in the relevant cells.
+
+Sparse data can create three distinct problems:
+
+1. **Exact aliasing:** columns are linearly dependent, so coefficients are not
+   uniquely defined.
+2. **Near aliasing:** columns are almost dependent, producing large standard
+   errors and sensitivity to a few samples.
+3. **Extrapolation:** a mathematical contrast exists but relies on combinations
+   of covariates scarcely represented in the data.
+
+Check rank, condition-by-batch tables, factor levels, and sample counts before
+fitting thousands of genes. Dropping a column merely to make software run changes
+the model; it cannot create information absent from the design.
+
+# Estimates, Tests, and Uncertainty
+
+Let $\widehat{\mathbf V}_g$ be the estimated covariance matrix of
+$\widehat{\boldsymbol\beta}_g$. Then
+
+$$
+\widehat{\operatorname{SE}}(\widehat\theta_g)
+=\sqrt{\mathbf c^{\mathsf T}
+\widehat{\mathbf V}_g\mathbf c}.
+$$
+
+A Wald statistic compares $\widehat\theta_g$ with a null value, often zero. A
+likelihood-ratio test compares full and reduced models, and edgeR's
+quasi-likelihood framework tests contrasts while incorporating moderated
+quasi-likelihood uncertainty. Multi-degree-of-freedom tests answer omnibus
+questions, whereas a one-degree-of-freedom contrast answers one directionally
+specified comparison.
+
+The test and the effect estimator need not use identical shrinkage. DESeq2 can
+test an unshrunk coefficient and separately produce a shrunken log2 fold change
+for ranking and visualization. A shrunken estimate should not be paired casually
+with an interval or p-value derived for a different estimator.
+
+For each gene, report the contrast estimate, its scale, uncertainty, and the
+tested null. Across genes, control the false discovery rate for the declared
+family. If many contrasts are searched and only the most favorable one is
+reported, multiplicity extends across contrasts as well as genes.
+
+# A Design-aware Non-executed Workflow
+
+This R syntax is illustrative rather than executable in Quarto; the site's
+publication workflow does not install R or Bioconductor packages.
+
+```r
+# Samples must be in exactly the same order as count-matrix columns.
+stopifnot(identical(colnames(counts), rownames(samples)))
+
+samples$condition <- relevel(factor(samples$condition), "control")
+samples$batch <- factor(samples$batch)
+
+design <- model.matrix(~ batch + condition, data = samples)
+stopifnot(qr(design)$rank == ncol(design))
+colnames(design)
+
+# DESeq2: the name/contrast should be checked against resultsNames(dds).
+dds <- DESeqDataSetFromMatrix(counts, samples, ~ batch + condition)
+dds <- DESeq(dds)
+resultsNames(dds)
+res <- results(dds, contrast = c("condition", "treated", "control"))
+
+# edgeR: explicit coefficient weights for the same comparison.
+y <- DGEList(counts)
+y <- calcNormFactors(y)
+y <- estimateDisp(y, design, robust = TRUE)
+fit <- glmQLFit(y, design, robust = TRUE)
+contrast <- makeContrasts(conditiontreated, levels = design)
+qlf <- glmQLFTest(fit, contrast = contrast)
+```
+
+Before accepting the output, verify coefficient names, the numerator and
+denominator, the log base, and the sign using a gene with an obvious count
+pattern. This catches reversed factor levels and malformed contrast vectors.
+
+# Diagnostics and Sensitivity
+
+| Question | Check | Consequence or response |
+|---|---|---|
+| Are counts and metadata aligned? | exact column-name and row-name match | stop; repair provenance before fitting |
+| Is the matrix full rank? | QR rank, aliases, singular values | redefine only scientifically supported terms |
+| Is the target supported by overlap? | samples per condition-by-batch-by-time cell | narrow the estimand or collect data |
+| Are experimental units represented correctly? | donor IDs, pairing, repeated measures, technical replicates | block, aggregate, or use a dependence-aware method |
+| Does a few units determine the effect? | count plots, residuals, Cook's distance, leave-one-unit-out fits | investigate and report sensitivity |
+| Does coding alter the result? | refit under an equivalent parameterization | explicit contrasts should agree numerically |
+| Is the variance model adequate? | dispersion/BCV plots and residual diagnostics | revise design, trend, robust settings, or method |
+
+Sensitivity analyses should preserve the scientific question while varying
+defensible analysis choices: normalization, nuisance covariates, interaction
+structure, outlier policy, filtering, dispersion moderation, and effect-size
+shrinkage. If alternative designs target different populations or covariate
+averages, label them as different estimands rather than treating their disagreement
+as mere numerical instability.
+
+# Statistical and Biological Interpretation
+
+Suppose a treatment contrast gives a log2 fold-change estimate of $1.2$ with a
+95% interval from $0.5$ to $1.9$ and a false-discovery-rate adjusted p-value of
+$0.01$. Statistically, under the fitted model and multiplicity procedure, the
+data support higher conditional mean expression in the numerator group, with an
+estimated fold change $2^{1.2}\approx2.30$.
+
+This does not establish a cell-intrinsic mechanism. Bulk-tissue composition,
+RNA quality, mapping ambiguity, an unmeasured batch, or selection of samples can
+also change the gene-level mean. The comparison is causal only if treatment
+assignment, adherence, interference, missingness, and the adjustment strategy
+support that interpretation.
+
+Biological interpretation should combine direction and magnitude with interval
+width, baseline abundance, replicate consistency, relevant isoforms or cell
+types, pathway context, assay validity, and independent validation. A tiny but
+precise difference can be statistically convincing and biologically negligible;
+a large uncertain estimate may motivate more replication rather than a definitive
+claim.
+
+# Reporting Checklist
+
+For a reproducible differential-expression contrast, report:
+
+1. experimental unit, biological replicates per relevant cell, and treatment or
+   sampling structure;
+2. count-generation and feature-filtering rules;
+3. normalization factors and their assumptions;
+4. complete design formula, factor reference levels, and blocking variables;
+5. contrast in plain language and, for complex comparisons, its coefficient
+   weights;
+6. test, dispersion procedure, effect-shrinkage method, and software versions;
+7. effect estimate, scale, uncertainty, p-value, and multiplicity adjustment;
+8. rank, overlap, influence, residual, and sensitivity checks;
+9. separate statistical and biological interpretations.
+
+Saving the exact sample table, design matrix, and contrast vector is often more
+useful than saving only a final gene list.
+
+# Connections and Take-home Messages
+
+- [Negative-binomial differential-expression models](negative-binomial-differential-expression-models.qmd)
+  develops the count likelihood and testing framework.
+- [Dispersion estimation and shrinkage in RNA-seq](dispersion-estimation-and-shrinkage-in-rna-seq.qmd)
+  explains how residual variability is stabilized.
+- [Categorical predictors and contrasts](../regression-models/categorical-predictors-and-contrasts.qmd)
+  gives the general coding and estimability principles.
+- [Interaction terms and effect modification](../regression-models/interaction-terms-and-effect-modification.qmd)
+  explains conditional effects and difference-in-differences contrasts.
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  and [biological versus technical replication](biological-versus-technical-replication.qmd)
+  connect the matrix to the actual assignment and sampling process.
+- [False discovery rate](../statistical-inference/false-discovery-rate.qmd)
+  addresses the multiplicity created by testing many genes.
+
+1. The design matrix defines the modeled means; the contrast defines the
+   scientific comparison.
+2. Coding coefficients depend on reference levels, whereas a correctly translated
+   estimable contrast is invariant to full-rank reparameterization.
+3. Aliasing, missing cells, and lack of biological replication are design
+   limitations that software cannot repair.
+4. Interactions make main effects conditional; planned contrasts should state the
+   genotype, time, tissue, or covariate distribution to which they apply.
+5. A statistically calibrated contrast is not automatically a biological or
+   causal mechanism; experimental units, effect size, uncertainty, and sensitivity
+   determine the scope of interpretation.
+
+# References
+
+- Searle, S. R. (1971). *Linear Models*. Wiley.
+  <https://doi.org/10.1002/9780470316856>
+- McCarthy, D. J., Chen, Y., and Smyth, G. K. (2012). Differential expression
+  analysis of multifactor RNA-Seq experiments with respect to biological
+  variation. *Nucleic Acids Research*, 40(10), 4288--4297.
+  <https://doi.org/10.1093/nar/gks042>
+- Love, M. I., Huber, W., and Anders, S. (2014). Moderated estimation of fold
+  change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550.
+  <https://doi.org/10.1186/s13059-014-0550-8>
+- Chen, Y., Lun, A. T. L., and Smyth, G. K. (2016). From reads to genes to
+  pathways: differential expression analysis of RNA-Seq experiments using
+  Rsubread and the edgeR quasi-likelihood pipeline. *F1000Research*, 5, 1438.
+  <https://doi.org/10.12688/f1000research.8987.2>
+- Zhu, A., Ibrahim, J. G., and Love, M. I. (2019). Heavy-tailed prior distributions
+  for sequence count data: removing the noise and preserving large differences.
+  *Bioinformatics*, 35(12), 2084--2092.
+  <https://doi.org/10.1093/bioinformatics/bty895>
+- Bioconductor. *DESeq2 vignette: Analyzing RNA-seq data with DESeq2*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html>
+- Bioconductor. *edgeR User's Guide*.
+  <https://bioconductor.org/packages/release/bioc/vignettes/edgeR/inst/doc/edgeRUsersGuide.pdf>
+- R Core Team. `model.matrix`: construct design matrices.
+  <https://stat.ethz.ch/R-manual/R-devel/library/stats/html/model.matrix.html>
