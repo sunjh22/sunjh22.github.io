@@ -24,9 +24,11 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Negative-binomial differential-expression models](negative-binomial-differential-expression-models.qmd)
 - [Dispersion estimation and shrinkage in RNA-seq](dispersion-estimation-and-shrinkage-in-rna-seq.qmd)
 - [Differential-expression contrasts and design matrices](differential-expression-contrasts-and-design-matrices.qmd)
+- [Independent filtering and RNA-seq multiple testing](independent-filtering-and-rna-seq-multiple-testing.qmd)
+- [Interpreting fold changes, p-values, and FDR](interpreting-fold-changes-p-values-and-fdr.qmd)
 
-Future notes will develop RNA-seq multiple testing, gene-set inference, and
-reproducible statistical workflows.
+Future notes will develop gene-set inference, microbiome and single-cell
+statistics, spatial omics, meta-analysis, and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)

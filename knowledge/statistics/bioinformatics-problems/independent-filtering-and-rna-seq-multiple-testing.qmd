@@ -1,0 +1,256 @@
+---
+title: "Independent Filtering and RNA-seq Multiple Testing"
+subtitle: "Removing uninformative tests without spending the error budget"
+description: "Independent filtering for RNA-seq differential expression, including validity conditions, power, diagnostics, software behavior, and reporting."
+author: "Jiahong Sun"
+date: "2026-11-20"
+date-modified: "2026-11-20"
+categories: [Statistics, Bioinformatics, RNA-seq, Multiple Testing]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Filtering Changes the Testing Family
+
+RNA-seq experiments often test thousands of genes, including genes with almost no
+counts in any sample. Such genes contribute little information about a condition
+contrast, yet including them increases the number of hypotheses entering a
+multiple-testing procedure. **Independent filtering** removes hypotheses using a
+statistic chosen without reference to evidence for the tested effect. When its
+conditions hold, filtering can increase the number of true discoveries while
+preserving false discovery rate (FDR) control.
+
+This is not a license to remove inconvenient results. A valid filter must be
+specified from the measurement and testing process, not from the observed p-values,
+effect directions, or whether a gene supports a preferred biological story.
+
+| Object | RNA-seq example |
+|---|---|
+| Experimental unit | Independently sampled donor, organism, or culture |
+| Hypothesis | $H_{0g}:\beta_g=0$ for gene $g$ and a prespecified contrast |
+| Test statistic | Wald, likelihood-ratio, or quasi-likelihood statistic |
+| Filter statistic | Mean normalized count or design-aware expression measure |
+| Testing family | All genes eligible for one declared contrast and analysis |
+| Error criterion | FDR among rejected genes, usually controlled by BH |
+
+# Why Low-information Genes Cost Power
+
+For $m$ hypotheses with p-values $p_1,\ldots,p_m$, the Benjamini--Hochberg (BH)
+procedure orders them as $p_{(1)}\leq\cdots\leq p_{(m)}$ and finds
+
+$$
+k=\max\left\{i:p_{(i)}\leq\frac{i}{m}\alpha\right\}.
+$$
+
+All hypotheses through rank $k$ are rejected. If many genes cannot produce small
+p-values because their counts are too sparse or their uncertainty is too large,
+they still increase $m$ and tighten the BH boundary. Removing such genes can replace
+$m$ by a smaller $m_f$ and make the rejection boundary less stringent.
+
+The trade-off is fundamental. Increasing a filter threshold can reduce the
+multiplicity burden and improve precision among retained genes, but it can also
+discard genuinely changing low-abundance genes. The useful threshold is therefore
+the one that maximizes discovery power under valid filtering, not the most severe
+threshold that produces a tidy result table.
+
+# Conditions for Valid Independent Filtering
+
+Let $F_g$ be a filter statistic and $T_g$ the statistic testing $H_{0g}$. A useful
+filter/test pair has three properties:
+
+1. Under the null, $F_g$ is independent of, or otherwise does not distort the
+   calibration of, $T_g$ and its p-value.
+2. Under alternatives, $F_g$ predicts power: genes with favorable $F_g$ values are
+   more likely to yield informative tests.
+3. Filtering does not create a dependence structure for the retained p-values that
+   invalidates the chosen multiple-testing procedure.
+
+For a two-group count test, an overall mean count computed without group labels is
+often approximately independent of the null test statistic while predicting test
+power. Filtering on the absolute estimated log fold change is not independent:
+the effect estimate is part of the same evidence used to construct the test.
+
+The distinction is between the null and alternative distributions. A filter need
+not be unrelated to the test statistic everywhere. Its usefulness comes precisely
+from being informative about power under alternatives while remaining innocuous
+under the null.
+
+# Prefiltering and Independent Filtering Are Different
+
+**Prefiltering** is commonly applied before model fitting. A design-aware rule may
+retain genes with a count-per-million above a threshold in enough samples to
+represent the smallest relevant group. This can reduce memory use, avoid trying to
+fit models to all-zero rows, and define a biologically measurable feature universe.
+The rule must respect the design: requiring expression in every sample can remove
+genes expressed only in one condition, including real condition-specific signals.
+
+**Independent filtering** is applied to fitted tests before multiplicity adjustment.
+For example, DESeq2 ordinarily uses the mean normalized count across samples as the
+filter statistic and chooses a threshold intended to improve the number of BH
+rejections at the requested FDR level. A gene filtered at this stage may retain its
+raw p-value but have an unavailable adjusted p-value. An all-zero gene has neither a
+defined effect estimate nor a test p-value; an outlier rule is another, distinct
+reason for an unavailable result.
+
+These stages answer different questions:
+
+| Stage | Main purpose | What must be recorded |
+|---|---|---|
+| Eligibility or annotation filter | Define the scientific feature universe | Genome build, annotation version, feature types |
+| Expression prefilter | Remove structurally uninformative rows before fitting | Exact count/CPM rule and group requirement |
+| Model diagnostics | Exclude or flag invalid fitted tests | Outlier and convergence rules |
+| Independent filter | Improve multiplicity-adjusted power | Filter statistic, selected threshold, target FDR |
+
+# Choosing a Filter Without Circularity
+
+A defensible workflow declares the candidate filter before inspecting gene-level
+significance. The filter should reflect information content, not the desired answer.
+
+## Mean abundance
+
+Mean normalized count is simple and often predicts RNA-seq precision. It can be
+appropriate when library normalization is valid and the design is not dominated by
+large group imbalances. Because it averages across conditions, a large count in only
+one group can still preserve a condition-specific gene.
+
+## Design-aware expression
+
+For complex designs, a rule based on counts per million in a sufficient number of
+samples can better represent the smallest effective group. The sample count should
+be derived from the design, including blocking and leverage, rather than copied from
+a two-group recipe. The edgeR `filterByExpr` approach follows this design-aware idea.
+
+## External or annotation covariates
+
+Gene length, detection rate from independent data, or another external measure may
+predict power, but only if the covariate cannot encode the current test result under
+the null. Annotation filters also change the scientific universe: excluding a gene
+because its function is unknown prevents discovery about that gene and is not merely
+a statistical optimization.
+
+## Covariate weighting
+
+Independent hypothesis weighting (IHW) generalizes hard filtering. It learns weights
+from a covariate that is independent of null p-values but informative about power or
+the prior probability of a signal. Cross-weighting limits overfitting by learning a
+weight function on hypotheses separate from those to which it is applied. Weighting
+can retain every hypothesis while allocating more testing budget to informative
+ones, but its assumptions and learned weights require diagnostics just as a hard
+filter does.
+
+# Threshold Selection and the Analysis Family
+
+Suppose $R(c)$ is the number of BH rejections after retaining genes with $F_g\geq c$.
+Choosing the observed threshold with the largest raw $R(c)$ can chase random local
+fluctuations. Implementations therefore regularize the rejection curve or choose a
+threshold near its stable maximum rather than treating every small peak as signal.
+
+The target FDR level is part of threshold selection. A threshold selected to
+maximize rejections at $\alpha=0.10$ is not automatically the same threshold one
+would select at $\alpha=0.05$. Record the software, version, filter statistic,
+target FDR, and any override of the default procedure.
+
+Filtering also makes the denominator explicit. The reported family should include
+all genes that were eligible before independent filtering, the number tested, the
+number retained for adjustment, and the number rejected. Silently presenting only
+retained genes hides both the selection rule and the scope of the FDR statement.
+
+# Worked Example
+
+Imagine 20,000 annotated genes are eligible for a treatment contrast. After a
+design-aware expression prefilter, 13,000 genes are fitted. At FDR $0.05$, BH on all
+13,000 tests yields 620 rejections. Independent filtering on mean normalized count
+retains 10,500 genes and yields 710 rejections.
+
+The additional 90 rejections are not justified merely because their count is
+larger. Validity depends on the filter/test relationship under the null. A useful
+audit would compare the following:
+
+- p-value histograms across filter-statistic bins, especially away from the signal
+  spike near zero;
+- the number of rejections over candidate thresholds rather than only at the chosen
+  threshold;
+- null simulations or label permutations that preserve the design;
+- results with no independent filtering and with a prespecified reasonable filter;
+- the abundance and uncertainty of genes added or removed by the procedure.
+
+If low-filter bins show anti-conservative null p-values, filtering may appear to
+improve results while merely concealing model misspecification. The model should be
+repaired before optimizing discoveries.
+
+# Experimental Units, Design, and Replication
+
+Genes are the hypotheses, not the replicates. The independent units are the donors,
+organisms, cultures, or other units independently sampled or assigned to treatment.
+Reads, lanes, technical wells, and repeated measurements nested within a sample
+improve measurement or require a hierarchical model; they do not increase the
+number of biological replicates.
+
+No filter can repair pseudoreplication, confounding, an incorrect contrast, or
+invalid normalization. If treatment is confounded with batch, the p-values entering
+BH do not isolate treatment. If cells from the same donor are analyzed as independent
+samples, underestimated standard errors invalidate the null p-values. Independent
+filtering preserves error control only when the underlying tests are valid.
+
+Design choices also affect power before filtering. Balanced allocation, adequate
+biological replication, blocking of known nuisance factors, and a full-rank design
+matrix create information. Filtering can allocate a fixed testing budget more
+efficiently; it cannot manufacture information absent from the experiment.
+
+# Diagnostics and Sensitivity Analysis
+
+| Question | Diagnostic | Concerning pattern |
+|---|---|---|
+| Are null p-values calibrated? | Null simulation, permutation, controls, p-value histograms | Excess small p-values unrelated to biology |
+| Does the filter predict power? | Rejection rates and standard errors across filter bins | No relation or a reversed relation |
+| Is selection stable? | Rejections over nearby thresholds | Sharp, isolated optimum |
+| Is the family transparent? | Counts at annotation, fitting, filtering, and rejection stages | Unexplained loss of genes |
+| Are conclusions method-dependent? | Compare no filter, prespecified filter, default filter, and valid weighting | Biological story changes completely |
+| Are low-count effects interpretable? | Count plots, model diagnostics, intervals, shrinkage | Huge effects supported by a few unstable counts |
+
+Sensitivity analysis should compare defensible procedures, not search for the one
+that declares a favored gene significant. Report genes whose status is unstable and
+interpret them as uncertain rather than selecting a convenient specification.
+
+# Common Failure Modes
+
+- **Filtering on p-values or test statistics:** this selects evidence under the null
+  and invalidates ordinary multiplicity guarantees.
+- **Filtering on observed fold change:** because fold change and its test are coupled,
+  the retained p-values are selected by the same noise used for testing.
+- **Treating every unavailable adjusted p-value as the same event:** all-zero rows,
+  model failures, outliers, and independent filtering have different meanings.
+- **Using a rule that requires expression in all groups:** this can delete genuine
+  on/off biology and changes the estimand's feature universe.
+- **Changing the filter after reading gene names:** biological familiarity is not an
+  independent power covariate for the current test.
+- **Claiming FDR control for an undisclosed subset:** the error-rate statement belongs
+  to the declared family and complete selection procedure.
+
+# Connections and Take-home Messages
+
+- [RNA-seq mean--variance modeling](rna-seq-mean-variance-modeling.qmd) explains why abundance predicts precision.
+- [Negative-binomial differential-expression models](negative-binomial-differential-expression-models.qmd) develops the gene-wise tests that produce the p-values.
+- [Dispersion estimation and shrinkage](dispersion-estimation-and-shrinkage-in-rna-seq.qmd) shows how uncertainty is stabilized before testing.
+- [Differential-expression contrasts and design matrices](differential-expression-contrasts-and-design-matrices.qmd) defines the coefficient and hypothesis being filtered.
+- [Composition bias and normalization factors](composition-bias-and-normalization-factors.qmd) explains why the abundance filter depends on valid normalization.
+- [Benjamini--Hochberg and Storey q-values](../statistical-inference/benjamini-hochberg-and-storey-q-values.qmd) gives the multiplicity procedures used after filtering.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd) identifies the units that support valid p-values.
+
+Independent filtering can improve RNA-seq discovery power by removing tests that
+have little chance of succeeding, but its validity comes from the filter's behavior
+under the null. Filtering is part of the inferential procedure and must be recorded,
+diagnosed, and included in sensitivity analysis. It improves allocation of a valid
+testing budget; it does not correct invalid experimental units, models, contrasts,
+or normalization.
+
+# References
+
+- Bourgon, R., Gentleman, R., & Huber, W. (2010). Independent filtering increases detection power for high-throughput experiments. *Proceedings of the National Academy of Sciences*, 107(21), 9546--9551. [doi:10.1073/pnas.0914005107](https://doi.org/10.1073/pnas.0914005107).
+- Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: A practical and powerful approach to multiple testing. *Journal of the Royal Statistical Society: Series B*, 57(1), 289--300. [doi:10.1111/j.2517-6161.1995.tb02031.x](https://doi.org/10.1111/j.2517-6161.1995.tb02031.x).
+- Ignatiadis, N., Klaus, B., Zaugg, J. B., & Huber, W. (2016). Data-driven hypothesis weighting increases detection power in genome-scale multiple testing. *Nature Methods*, 13, 577--580. [doi:10.1038/nmeth.3885](https://doi.org/10.1038/nmeth.3885).
+- Love, M. I., Huber, W., & Anders, S. (2014). Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550. [doi:10.1186/s13059-014-0550-8](https://doi.org/10.1186/s13059-014-0550-8).
+- DESeq2 authors. *Analyzing RNA-seq data with DESeq2*. [Bioconductor vignette](https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
+- Chen, Y., Lun, A. T. L., & Smyth, G. K. *edgeR: Empirical Analysis of Digital Gene Expression Data*. [Bioconductor package and user's guide](https://bioconductor.org/packages/release/bioc/html/edgeR.html).

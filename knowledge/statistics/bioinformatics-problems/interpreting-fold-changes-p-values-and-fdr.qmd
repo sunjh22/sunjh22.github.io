@@ -1,0 +1,310 @@
+---
+title: "Interpreting Fold Changes, P-values, and FDR"
+subtitle: "Separating effect magnitude, uncertainty, and multiplicity in RNA-seq"
+description: "A design-aware guide to interpreting RNA-seq log fold changes, p-values, adjusted p-values, FDR, shrinkage, and biological relevance."
+author: "Jiahong Sun"
+date: "2026-11-20"
+date-modified: "2026-11-20"
+categories: [Statistics, Bioinformatics, RNA-seq, Interpretation]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Three Columns Answer Three Different Questions
+
+An RNA-seq differential-expression table commonly places a log2 fold change,
+p-value, and adjusted p-value on the same row. They are related, but they are not
+interchangeable:
+
+| Quantity | Main question | What it does not answer |
+|---|---|---|
+| Log2 fold change | How large and in which direction is the modeled contrast? | How precise is it? |
+| P-value | How incompatible is the test statistic with a specified null model? | What is the probability the null is true? |
+| Adjusted p-value or q-value | How strong is the evidence after accounting for a testing family? | Is the effect biologically important? |
+| Confidence interval | Which effect sizes are compatible with the data and model? | Which value is most biologically plausible without context? |
+
+A small p-value can accompany a tiny but precise effect. A large estimated fold
+change can come from a few unstable counts and have weak evidence. A low FDR does
+not turn an association into a causal mechanism. Interpretation begins by defining
+the contrast and scale, then reading magnitude, uncertainty, and multiplicity
+together.
+
+# The Effect Estimand Comes First
+
+For gene $g$ and sample $j$, a negative-binomial generalized linear model may use
+
+$$
+K_{gj}\sim\operatorname{NB}(\mu_{gj},\alpha_g),
+\qquad
+\log(\mu_{gj})=\log(s_j)+\mathbf x_j^{\mathsf T}\boldsymbol\beta_g.
+$$
+
+Here $s_j$ is a normalization factor, $\mathbf x_j$ is a design row, and
+$\boldsymbol\beta_g$ contains gene-specific coefficients. For a contrast vector
+$\mathbf c$, the natural-log contrast is $\theta_g=\mathbf c^{\mathsf T}
+\boldsymbol\beta_g$. Software often reports
+
+$$
+\operatorname{LFC}_g=\frac{\theta_g}{\log 2}
+=\log_2\left(\frac{\text{modeled expression in numerator condition}}
+{\text{modeled expression in denominator condition}}
+\right).
+$$
+
+Thus $\operatorname{LFC}=1$ represents a twofold ratio, $-1$ a one-half ratio,
+and $0$ no modeled difference. The meaning changes with the contrast:
+
+- in a two-group model, it may compare treatment with control;
+- with a continuous predictor, it is the change per one-unit predictor increase;
+- with an interaction, it is a difference between condition effects;
+- with covariates, it is a conditional model coefficient, not automatically a
+  marginal population average;
+- after a transformation or alternative parameterization, the coefficient may no
+  longer be a simple ratio of raw group means.
+
+Always report the numerator, denominator, units, coefficient or contrast, covariate
+adjustment, and target population. A sign without a declared contrast direction is
+not interpretable.
+
+# Estimate, Standard Error, and Test
+
+Let $\hat\theta_g$ estimate the contrast and let
+$\widehat{\operatorname{SE}}(\hat\theta_g)$ quantify its sampling variability. A
+Wald statistic for the point null $H_{0g}:\theta_g=0$ is
+
+$$
+Z_g=\frac{\hat\theta_g}{\widehat{\operatorname{SE}}(\hat\theta_g)},
+$$
+
+with a two-sided large-sample p-value
+
+$$
+p_g=2\left\{1-\Phi(|Z_g|)\right\}.
+$$
+
+The p-value depends on both magnitude and precision. Two genes can have the same
+fold change but different p-values because one has more counts, lower dispersion,
+more independent samples, or a better-estimated contrast. Conversely, a very small
+effect can have a small p-value in a large, precise study.
+
+The p-value is calculated assuming the null model and the analysis pipeline. It is
+not $P(H_{0g}\mid\text{data})$, the probability that chance created the result, or
+the probability that a replication will agree. Model misspecification, confounding,
+pseudoreplication, or underestimated dispersion can make it anti-conservative.
+
+# From P-values to FDR
+
+When thousands of genes are tested, interpreting each p-value at 0.05 ignores the
+number of opportunities for false positives. The false discovery proportion is
+
+$$
+\operatorname{FDP}=\frac{V}{\max(R,1)},
+$$
+
+where $R$ is the number of rejected hypotheses and $V$ the unknown number of false
+rejections. The FDR is $E(\operatorname{FDP})$ over repeated realizations of the
+complete procedure.
+
+The BH-adjusted p-value for a gene is the smallest BH target level at which that gene
+would be rejected within the declared family. Software sometimes labels this value
+`FDR` or `qvalue`, but Storey's q-values use an additional estimate of the proportion
+of true nulls. Name the procedure rather than inferring it from a column heading.
+
+An FDR threshold of 0.05 does not mean that every reported gene has a 95% probability
+of being truly differential, nor does it guarantee that exactly 5% of one list is
+false. The guarantee concerns the expected false discovery proportion of the full
+selection procedure under its assumptions.
+
+# Fold-change Uncertainty and Shrinkage
+
+Low counts or high dispersion can produce extremely variable maximum-likelihood
+fold-change estimates. A pseudocount such as
+
+$$
+\log_2\left(\frac{\bar K_{g1}+a}{\bar K_{g0}+a}\right)
+$$
+
+prevents division by zero but makes the result depend arbitrarily on $a$, ignores
+the design, and does not propagate uncertainty. Model-based shrinkage instead uses
+information across genes to pull noisy estimates toward a prior center, usually
+zero, while allowing well-supported effects to move less.
+
+DESeq2, apeglm, and adaptive shrinkage methods can provide stabilized effects for
+ranking and visualization. Heavy-tailed priors aim to retain genuinely large
+effects while shrinking weakly informed estimates. Shrinkage changes the estimator,
+not the raw data. Report which estimator is shown and do not combine a shrunken
+effect from one procedure with a p-value whose null and coefficient came from a
+different, undocumented analysis.
+
+A shrunken estimate near zero does not prove no effect; it says the data provide
+limited information after regularization. An unshrunken, enormous low-count estimate
+does not prove a large biological effect; its interval may span a wide range.
+
+# Testing a Scientifically Meaningful Effect
+
+The usual null $H_0:\theta_g=0$ asks whether the effect is exactly zero. It does not
+test whether the effect exceeds a biologically important threshold $\delta$. To seek
+effects meaningfully different from zero, test the composite null
+
+$$
+H_{0g}:|\theta_g|\leq\delta
+\qquad\text{against}\qquad
+H_{1g}:|\theta_g|>\delta.
+$$
+
+TREAT and related count-model procedures implement tests relative to a fold-change
+threshold. Such p-values are typically larger than point-null p-values because the
+claim is stronger. The threshold should be chosen from biological resolution, assay
+performance, intervention costs, or a decision context before seeing results.
+
+Applying the rule `adjusted p-value < 0.05 and observed |LFC| > 1` is not equivalent
+to testing $|\theta_g|>1$. The first step tests a zero effect and then filters on a
+noisy estimate; it does not provide an error guarantee for effects exceeding the
+threshold. If the scientific question concerns a minimum effect, put that threshold
+inside the hypothesis or use intervals to show whether the threshold is supported.
+
+The reverse question also matters. To argue that an effect is negligibly small,
+use an equivalence test or an interval contained within $[-\delta,\delta]$. A large
+p-value for the point null does not establish equivalence.
+
+# A Worked Interpretation
+
+Suppose a treatment-versus-control analysis reports:
+
+| Gene | Log2 fold change | Standard error | Raw p-value | BH adjusted p-value |
+|---|---:|---:|---:|---:|
+| A | 0.20 | 0.04 | $5.7\times10^{-7}$ | $0.002$ |
+| B | 2.10 | 1.15 | $0.068$ | $0.31$ |
+| C | -1.30 | 0.22 | $3.4\times10^{-9}$ | $0.00003$ |
+
+- Gene A has strong statistical evidence for a precisely estimated but small
+  modeled change: $2^{0.20}\approx1.15$, about a 15% ratio increase. Whether that is
+  biologically important requires context.
+- Gene B has a large point estimate, about a $2^{2.10}\approx4.3$-fold ratio, but
+  high uncertainty. It is a candidate for more information, not evidence of a
+  reliably large change.
+- Gene C combines a large negative estimate, about a $2^{-1.30}\approx0.41$ ratio,
+  with strong evidence after multiplicity adjustment. Its mechanism and biological
+  relevance still require validation.
+
+These interpretations assume the contrast, normalization, dispersion model, and
+experimental-unit structure are valid. The table alone cannot establish causality,
+functional importance, or transportability.
+
+# Volcano and MA Plots
+
+A volcano plot displays effect estimate against $-\log_{10}(p)$ or adjusted p-value.
+It is useful for seeing the distinction between magnitude and evidence, but it can
+also encourage threshold worship and selective labeling. Points are not independent
+biological replicates, and the upper corners are not automatically the best targets.
+
+An MA plot displays log fold change against mean abundance. It reveals abundance-
+dependent variability, low-count extremes, and the effect of shrinkage. Plot raw or
+normalized counts for important genes so that one outlier or a small subgroup is not
+hidden by a summary point.
+
+Plot annotations should state whether fold changes are maximum-likelihood or
+shrunken, whether the vertical quantity is raw or adjusted evidence, and which
+thresholds were applied. Label selection is part of communication and should not
+silently become a new inferential procedure.
+
+# Experimental Units and Biological Interpretation
+
+For bulk RNA-seq, the experimental units are usually independently sampled donors,
+organisms, or cultures. Libraries, lanes, and reads are technical observations. In
+single-cell studies, cells are ordinarily nested within biological samples; treating
+every cell as an independent replicate can produce tiny p-values without independent
+biological evidence.
+
+Technical replication can reduce measurement error or reveal assay failure, but
+biological replication estimates variation across the population to which inference
+is intended. FDR correction cannot repair standard errors computed from the wrong
+unit. Likewise, thousands of discoveries from a confounded treatment/batch design
+may be statistically stable associations with batch rather than treatment effects.
+
+Statistical interpretation should state the modeled population contrast, estimate,
+uncertainty, and multiplicity procedure. Biological interpretation asks whether the
+change is plausible, meaningful on the relevant scale, coherent with orthogonal
+evidence, and reproducible in independent samples. Pathway membership or a familiar
+gene name does not substitute for these checks.
+
+# Diagnostics and Sensitivity
+
+| Issue | Why it matters | Check or response |
+|---|---|---|
+| Contrast coding | Reverses signs or changes the estimand | Print coefficient names and the exact contrast |
+| Low counts | Produces unstable effects and discrete evidence | Inspect counts, intervals, MA plots, and shrinkage |
+| Outliers | A single sample can dominate both effect and test | Inspect sample-level counts and influence diagnostics |
+| Normalization failure | Global composition shifts distort ratios | Compare defensible factors and use controls when available |
+| Dispersion/model failure | Miscalibrates standard errors and p-values | Residual checks, mean--variance diagnostics, simulation |
+| Hidden batch or confounding | Changes the meaning of the coefficient | Audit metadata, randomization, balance, and design rank |
+| Filtering and family definition | Changes adjusted values and FDR scope | Report all feature counts and the filtering rule |
+| Effect estimator | Raw and shrunken LFCs answer different estimation questions | State estimator and compare uncertainty-aware rankings |
+
+Sensitivity analyses should vary justified normalization, dispersion, filtering,
+outlier, and shrinkage choices. Conclusions stable in direction and scientifically
+relevant magnitude are stronger than conclusions defined only by crossing 0.05 in
+one pipeline.
+
+# Reporting Checklist
+
+Report enough information to reconstruct the meaning of every result:
+
+1. biological system, target population, and independent experimental units;
+2. group sizes at the biological-unit level and relevant technical nesting;
+3. count generation, annotation, eligibility, and prefiltering rules;
+4. normalization, design formula, coefficient or contrast, and reference levels;
+5. fold-change scale and whether estimates are raw or shrunken;
+6. test type, null hypothesis, effect threshold if any, and uncertainty interval;
+7. multiple-testing family, adjustment method, independent filtering, and target FDR;
+8. numbers eligible, fitted, tested, retained after filtering, and rejected;
+9. diagnostics, sensitivity analyses, and validation evidence;
+10. separate statistical and biological conclusions.
+
+# Common Misinterpretations
+
+- **“Fold change is effect certainty.”** It is a point estimate; read it with its
+  uncertainty and information level.
+- **“P < 0.05 means a 95% chance of a real effect.”** A p-value is a tail probability
+  under a null model, not a posterior probability.
+- **“FDR 5% means this gene has a 5% false-positive probability.”** FDR is an expected
+  property of a discovery procedure, not usually a gene-specific posterior.
+- **“Not significant means no effect.”** It may mean insufficient information; use
+  intervals or equivalence tests for absence claims.
+- **“Significant means important.”** Biological importance requires an effect scale,
+  threshold, context, and validation.
+- **“A twofold cutoff fixes multiplicity.”** An estimate cutoff does not replace a
+  valid hypothesis test or FDR procedure.
+- **“More reads are more biological replicates.”** Depth improves measurement but
+  does not sample more independent biological units.
+
+# Connections and Take-home Messages
+
+- [Differential-expression contrasts and design matrices](differential-expression-contrasts-and-design-matrices.qmd) defines the estimand and contrast direction.
+- [Negative-binomial differential-expression models](negative-binomial-differential-expression-models.qmd) derives the count likelihood and gene-wise tests.
+- [Dispersion estimation and shrinkage](dispersion-estimation-and-shrinkage-in-rna-seq.qmd) explains how RNA-seq uncertainty is moderated.
+- [Independent filtering and RNA-seq multiple testing](independent-filtering-and-rna-seq-multiple-testing.qmd) shows how the tested family is selected before FDR adjustment.
+- [Effect sizes](../statistical-inference/effect-sizes.qmd) separates magnitude from evidence and causality.
+- [Null distributions and p-values](../statistical-inference/null-distributions-and-p-values.qmd) gives the repeated-sampling interpretation of a p-value.
+- [False discovery rate](../statistical-inference/false-discovery-rate.qmd) distinguishes FDR, local FDR, and the realized false discovery proportion.
+- [Statistical versus practical significance](../statistical-inference/statistical-versus-practical-significance.qmd) connects effect thresholds to decisions.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd) identifies the units that determine inferential precision.
+
+Fold changes describe modeled magnitude and direction; p-values describe evidence
+against a declared null; FDR procedures describe repeated-study error among selected
+hypotheses. None replaces the others. Reliable RNA-seq interpretation combines a
+clear contrast, an uncertainty-aware effect estimate, valid gene-wise tests, a
+declared multiple-testing family, correct experimental units, and biological
+validation.
+
+# References
+
+- Love, M. I., Huber, W., & Anders, S. (2014). Moderated estimation of fold change and dispersion for RNA-seq data with DESeq2. *Genome Biology*, 15, 550. [doi:10.1186/s13059-014-0550-8](https://doi.org/10.1186/s13059-014-0550-8).
+- Zhu, A., Ibrahim, J. G., & Love, M. I. (2019). Heavy-tailed prior distributions for sequence count data: Removing the noise and preserving large differences. *Bioinformatics*, 35(12), 2084--2092. [doi:10.1093/bioinformatics/bty895](https://doi.org/10.1093/bioinformatics/bty895).
+- Stephens, M. (2017). False discovery rates: A new deal. *Biostatistics*, 18(2), 275--294. [doi:10.1093/biostatistics/kxw041](https://doi.org/10.1093/biostatistics/kxw041).
+- McCarthy, D. J., & Smyth, G. K. (2009). Testing significance relative to a fold-change threshold is a TREAT. *Bioinformatics*, 25(6), 765--771. [doi:10.1093/bioinformatics/btp053](https://doi.org/10.1093/bioinformatics/btp053).
+- Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate: A practical and powerful approach to multiple testing. *Journal of the Royal Statistical Society: Series B*, 57(1), 289--300. [doi:10.1111/j.2517-6161.1995.tb02031.x](https://doi.org/10.1111/j.2517-6161.1995.tb02031.x).
+- DESeq2 authors. *Analyzing RNA-seq data with DESeq2*. [Bioconductor vignette](https://bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html).
+- Chen, Y., Lun, A. T. L., & Smyth, G. K. *edgeR: Empirical Analysis of Digital Gene Expression Data*. [Bioconductor package and user's guide](https://bioconductor.org/packages/release/bioc/html/edgeR.html).
