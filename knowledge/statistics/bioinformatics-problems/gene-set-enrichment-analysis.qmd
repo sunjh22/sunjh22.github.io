@@ -1,0 +1,312 @@
+---
+title: "Gene-set Enrichment Analysis"
+subtitle: "Testing whether a predefined gene set accumulates at an extreme of a genome-wide ranking"
+description: "The GSEA running-sum statistic, permutation nulls, normalized scores, leading edges, multiplicity, and design-aware pathway interpretation."
+author: "Jiahong Sun"
+date: "2026-11-21"
+date-modified: "2026-11-21"
+categories: [Statistics, Bioinformatics, Gene Sets, Functional Genomics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# From Gene-level Rankings to Set-level Evidence
+
+Gene Set Enrichment Analysis (GSEA) asks whether members of a predefined gene
+set accumulate near the top or bottom of a complete ranked list more strongly
+than expected under a chosen null model. It can detect coordinated, moderate
+gene-level changes that may not produce many individually selected genes.
+
+| Item | Meaning |
+|---|---|
+| **Input** | A genome-wide signed ranking and predefined gene sets |
+| **Set-level statistic** | A weighted running-sum enrichment score (ES) |
+| **Primary reported scale** | Usually the normalized enrichment score (NES) |
+| **Uncertainty** | A permutation or other justified null distribution |
+| **Drivers** | The leading-edge subset encountered before the score's extreme |
+| **Experimental unit** | The independent biological unit whose labels or residuals may be permuted |
+
+“GSEA” sometimes refers loosely to many ranked gene-set methods. This note
+describes the original weighted running-sum procedure. Other competitive and
+self-contained tests can use different statistics and answer different null
+hypotheses.
+
+# Constructing the Enrichment Score
+
+Suppose $N$ eligible genes are ordered from the largest to the smallest signed
+gene-level statistic:
+
+$$
+g_1,g_2,\ldots,g_N,
+\qquad
+r_1\geq r_2\geq\cdots\geq r_N.
+$$
+
+Let $S$ be a gene set with $N_H=|S|$ members in the ranked universe. Choose a
+weight exponent $p\geq0$ and define
+
+$$
+N_R=\sum_{g_j\in S}|r_j|^p.
+$$
+
+At position $i$, the cumulative hit and miss fractions are
+
+$$
+P_{\mathrm{hit}}(i)
+=\sum_{\substack{j\leq i\\g_j\in S}}
+\frac{|r_j|^p}{N_R},
+\qquad
+P_{\mathrm{miss}}(i)
+=\sum_{\substack{j\leq i\\g_j\notin S}}
+\frac{1}{N-N_H}.
+$$
+
+The running sum is
+
+$$
+RS(i)=P_{\mathrm{hit}}(i)-P_{\mathrm{miss}}(i).
+$$
+
+It starts and ends at zero. Set members increase the curve, with larger increases
+for more extreme ranking statistics when $p>0$; nonmembers decrease it evenly.
+The enrichment score is the signed extreme departure:
+
+$$
+\boxed{
+ES(S)=
+\begin{cases}
+\max_i RS(i), & \text{if the positive departure is larger},\\
+\min_i RS(i), & \text{otherwise}.
+\end{cases}
+}
+$$
+
+With $p=0$, every hit has equal weight. The common choice $p=1$ gives more
+influence to set members with large absolute ranking statistics. Larger $p$
+concentrates the result on fewer extreme genes and should be treated as an
+analysis choice, not a harmless display setting.
+
+# Direction and Leading Edge
+
+A positive ES means set members accumulate toward the top under the declared
+ranking direction; a negative ES means they accumulate toward the bottom.
+Therefore, “positive” has no biological meaning until the contrast and sign of
+$r_j$ are stated.
+
+For a positive score, the **leading edge** contains set members encountered up
+to the running-sum maximum. For a negative score, it contains those from the
+minimum to the bottom of the list under the corresponding convention. These
+genes drive the score, but they are selected by the same data and are not an
+independently validated mechanistic core.
+
+# The Null Distribution Is Part of the Method
+
+## Phenotype-label permutation
+
+In the original two-class expression setting, phenotype labels are permuted
+across samples. For each permutation, the gene-level ranking is recomputed and
+so is the ES. This tests a sample-level null of no association between phenotype
+and the expression profiles. It preserves the observed correlation among genes,
+which matters because correlated set members can create more extreme scores than
+independent genes.
+
+Label permutation is valid only under the exchangeability created by the study
+design. In a paired study, labels may be swapped within pairs rather than across
+all samples. Blocks, repeated measures, family structure, batches, covariates,
+and unequal assignment probabilities can require restricted permutations,
+residual permutation, rotation tests, or another model-based calibration. An
+unrestricted shuffle is not repaired by performing many permutations.
+
+## Gene-set permutation and preranked input
+
+When only one ranked vector is available, implementations often compare the
+observed set with random gene sets of the same size. This competitive null asks
+whether the set's ranks are more extreme than ranks of genes outside the set.
+It does not preserve within-set correlation in the way phenotype permutation
+does, and it is not the same inferential experiment.
+
+GSEAPreranked uses gene-set rather than phenotype permutation. Its nominal
+p-values and NES therefore need not match standard GSEA even when the observed
+ranking and raw ES match. The input format does not determine whether the
+gene-level statistic itself was valid; it must already reflect the experimental
+design, nuisance covariates, and correct biological replication.
+
+# Normalization and Multiple Testing
+
+Raw ES values depend on gene-set size and correlation structure. GSEA scales an
+observed ES by the mean magnitude of null scores of the same sign for that set,
+producing a normalized enrichment score:
+
+$$
+NES(S)=\frac{ES(S)}{E_0\{|ES^*(S)|\mid \operatorname{sign}(ES^*)=
+\operatorname{sign}(ES)\}}.
+$$
+
+The denominator is estimated from permutations. Consequently, NES changes with
+the permutation type, number of permutations, dataset, and software settings;
+it is not simply a universal effect size. A larger absolute NES indicates stronger
+standardized enrichment relative to that analysis's null, not a fold change in
+pathway activity.
+
+The original procedure estimates false discovery rates by comparing tails of
+observed and null NES distributions across tested sets. This is not automatically
+the same as applying Benjamini--Hochberg to nominal set p-values. Report the
+implemented procedure, the complete tested collection, and the number of
+permutations. Very small permutation counts yield coarse tail probabilities and
+unstable FDR estimates.
+
+# Ranking Statistic and Gene Universe
+
+A useful ranking statistic is signed, comparable across genes, and aligned with
+the scientific contrast. A model-based $t$- or Wald statistic often combines
+direction, effect magnitude, and uncertainty better than raw fold change. An
+unsigned p-value mixes opposite directions. A product such as
+`sign(fold change) * -log10(p)` can create extreme values and ties and does not
+necessarily have a well-calibrated sampling interpretation.
+
+The ranked universe should contain eligible, uniquely represented genes. Remove
+features that could not be tested by a prespecified rule, harmonize identifiers
+with the gene-set collection, and document how duplicate probes or transcripts
+were collapsed. Excluding genes because their observed results are inconvenient
+changes the reference population.
+
+Ties make the order within a block arbitrary. If many genes share a score, assess
+sensitivity to tie handling rather than adding unexplained random jitter. Very
+small sets are unstable; very large sets are nonspecific. Minimum and maximum
+set sizes should be declared before inspecting results.
+
+# A Conceptual Walk-through
+
+Imagine a ranked list of 1000 tested genes and a 40-gene interferon set. If many
+set members have large positive treatment statistics, the running sum rises
+rapidly near the top and reaches a positive maximum. That maximum is the ES; the
+interferon genes encountered before it are the leading edge.
+
+The observed pattern is then compared with patterns generated under the chosen
+null. Under valid phenotype permutations, each shuffle reassigns treatment labels
+at the experimental-unit level, refits the gene statistics, and preserves
+gene--gene correlation. A positive NES with a small multiplicity-adjusted error
+measure supports coordinated association of that set with the treatment contrast.
+It does not show that all 40 genes increased or that interferon signaling caused
+the phenotype.
+
+# Experimental Units and the Upstream Model
+
+In bulk RNA-seq, independent participants, animals, or cultures usually determine
+the treatment sample size. Reads and technical libraries refine measurements of
+those units but are not exchangeable treatment replicates. In single-cell studies,
+cells are commonly nested within donors or specimens; permuting cell labels as
+if each cell were independently randomized is pseudoreplication.
+
+The ranked statistic should come from a model containing the planned contrast,
+blocking variables, batch terms, and within-unit dependence. If phenotype
+permutations are used, they must reproduce the actual randomization or sampling
+scheme. When such permutations are impossible, a method designed for the fitted
+model may be more defensible than forcing the original GSEA algorithm.
+
+# Diagnostics and Sensitivity Analysis
+
+| Question | Diagnostic or sensitivity analysis |
+|---|---|
+| Does direction match the contrast? | Inspect several known positive and negative gene statistics |
+| Is one gene driving the score? | Plot the running sum and inspect leading-edge contributions |
+| Are results weight-dependent? | Compare defensible values of $p$, including an unweighted analysis |
+| Is the null design-valid? | Write the exchangeability groups and verify each permutation respects them |
+| Are terms redundant? | Examine gene overlap and shared leading-edge genes |
+| Are rankings stable? | Refit under reasonable normalization, covariate, and influence choices |
+| Is Monte Carlo error material? | Increase permutations and compare tail estimates across seeds |
+| Are annotations robust? | Repeat with a frozen alternative collection or version when justified |
+
+Gene-set correlation and overlap mean that a cluster of related significant terms
+may represent one underlying signal. Summarizing redundant terms is useful, but
+the leading edges, original test family, and adjusted results should remain
+available for audit.
+
+# Statistical versus Biological Interpretation
+
+Statistically, enrichment means that set membership is associated with position
+in a ranked gene-level result more strongly than expected under the stated null.
+The sign refers to the ranking direction, NES is null-standardized, and the error
+measure describes a multiple-testing procedure across gene sets.
+
+Biologically, the result is a hypothesis about a coordinated program. It may
+reflect pathway regulation, cell-composition shifts, shared upstream control,
+annotation overlap, confounding, or assay bias. Establishing mechanism requires
+gene-level effect inspection, relevant tissue and time context, external
+replication, perturbation, and orthogonal measurement.
+
+# ORA and GSEA Answer Different Questions
+
+| Feature | [Over-representation analysis](over-representation-analysis.qmd) | GSEA |
+|---|---|---|
+| Gene-level input | Selected list | Complete signed ranking |
+| Information discarded | Rank and magnitude within selected/unselected groups | Original sample data in preranked workflows |
+| Typical statistic | Overlap count | Weighted running-sum extreme |
+| Key null | Random overlap conditional on list and set sizes | No phenotype association or random-set competitive null |
+| Main sensitivity | Selection cutoff and background | Ranking statistic, weights, and permutation scheme |
+| Driver summary | Overlapping selected genes | Leading-edge genes |
+
+GSEA avoids an arbitrary selection boundary but is not uniformly superior. A
+scientifically meaningful binary list may make ORA natural; a reliable continuous
+ranking may favor GSEA. The chosen method should follow the question and available
+design information.
+
+# Common Failure Modes
+
+- **Permuting technical units:** this understates biological variation; permute
+  at the independent unit and respect blocks or pairs.
+- **Calling NES a pathway fold change:** NES is a null-standardized rank statistic,
+  not an abundance effect.
+- **Ranking by unsigned evidence:** up- and down-regulated genes become mixed;
+  use a declared signed contrast.
+- **Ignoring ties and duplicate identifiers:** arbitrary ordering changes the
+  running sum; document collapsing and tie sensitivity.
+- **Interpreting every enriched label independently:** overlapping sets often
+  recycle the same leading-edge genes.
+- **Treating enrichment as mechanism:** association of ranks and membership does
+  not establish causal pathway activation.
+
+# Connections and Take-home Messages
+
+- [Differential-expression contrasts and design matrices](differential-expression-contrasts-and-design-matrices.qmd)
+  defines the signed gene-level comparison.
+- [Interpreting fold changes, p-values, and FDR](interpreting-fold-changes-p-values-and-fdr.qmd)
+  distinguishes magnitude, evidence, and multiplicity.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  identifies valid exchangeable units.
+- [Permutation and randomization tests](../statistical-inference/permutation-and-randomization-tests.qmd)
+  develops exchangeability and restricted randomization.
+- [Monte Carlo estimation and uncertainty](../statistical-inference/monte-carlo-estimation-and-uncertainty.qmd)
+  explains finite-permutation error.
+
+1. GSEA summarizes where set members occur in a complete signed ranking.
+2. The phenotype-permutation and random-gene-set nulls are different and must not
+   be described interchangeably.
+3. NES is specific to the estimated null distribution, not a biological effect size.
+4. Ranking, weights, set sizes, identifiers, annotations, and permutations all
+   require prespecification and sensitivity analysis.
+5. Valid inference depends on the upstream model and independent biological units;
+   biological mechanism requires evidence beyond enrichment.
+
+# References
+
+- Mootha, V. K., Lindgren, C. M., Eriksson, K.-F., et al. (2003). PGC-1alpha-responsive
+  genes involved in oxidative phosphorylation are coordinately downregulated in
+  human diabetes. *Nature Genetics*, 34, 267--273.
+  <https://doi.org/10.1038/ng1180>
+- Subramanian, A., Tamayo, P., Mootha, V. K., et al. (2005). Gene set enrichment
+  analysis: a knowledge-based approach for interpreting genome-wide expression
+  profiles. *Proceedings of the National Academy of Sciences*, 102(43),
+  15545--15550. <https://doi.org/10.1073/pnas.0506580102>
+- Goeman, J. J., and Buehlmann, P. (2007). Analyzing gene expression data in
+  terms of gene sets: methodological issues. *Bioinformatics*, 23(8), 980--987.
+  <https://doi.org/10.1093/bioinformatics/btm051>
+- Wu, D., and Smyth, G. K. (2012). Camera: a competitive gene set test accounting
+  for inter-gene correlation. *Nucleic Acids Research*, 40(17), e133.
+  <https://doi.org/10.1093/nar/gks461>
+- GSEA--MSigDB team. *GSEA User Guide*.
+  <https://docs.gsea-msigdb.org/GSEA/GSEA_User_Guide/>
+- `fgsea` authors. *Fast preranked gene set enrichment analysis*.
+  [Bioconductor package documentation](https://bioconductor.org/packages/release/bioc/html/fgsea.html).

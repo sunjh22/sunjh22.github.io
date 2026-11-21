@@ -1,0 +1,259 @@
+---
+title: "Over-representation Analysis"
+subtitle: "Testing whether a selected feature list contains more members of a gene set than expected"
+description: "Hypergeometric over-representation tests, gene universes, effect sizes, selection bias, multiplicity, and design-aware interpretation."
+author: "Jiahong Sun"
+date: "2026-11-21"
+date-modified: "2026-11-21"
+categories: [Statistics, Bioinformatics, Gene Sets, Functional Genomics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Question ORA Answers
+
+Over-representation analysis (ORA) starts with a predefined set of selected
+features---for example, genes passing both a false-discovery-rate threshold and
+a minimum fold-change threshold---and asks whether members of a biological gene
+set occur in that list more often than expected within an eligible background.
+
+| Item | Meaning |
+|---|---|
+| **Input** | A selected gene list, an eligible gene universe, and predefined gene sets |
+| **Null hypothesis** | Selection and gene-set membership are unrelated within the stated universe |
+| **Statistic** | The overlap count, often tested with an upper-tail hypergeometric test |
+| **Effect summaries** | Observed/expected overlap, odds ratio, and the contributing genes |
+| **Experimental unit** | The independent biological unit used in the upstream feature-level analysis |
+| **Main vulnerabilities** | Wrong background, biased selection probabilities, arbitrary thresholds, identifier errors, and redundant sets |
+
+ORA is a statement about overlap under a statistical reference model. It does
+not show that a pathway was activated, that every member changed, or that the
+set caused the observed phenotype.
+
+# Define the Universe Before Counting
+
+Let $U$ be the set of $N$ features that could have entered the selected list.
+For a particular gene set $S$ and selected list $L$, define
+
+$$
+K=|S\cap U|,\qquad n=|L\cap U|,\qquad k=|S\cap L\cap U|.
+$$
+
+These counts form a $2\times2$ table:
+
+|  | Selected | Not selected | Total |
+|---|---:|---:|---:|
+| In gene set | $k$ | $K-k$ | $K$ |
+| Outside gene set | $n-k$ | $N-K-n+k$ | $N-K$ |
+| Total | $n$ | $N-n$ | $N$ |
+
+The universe is not automatically every gene in the organism. It should usually
+contain features that were measurable, mapped, passed prespecified eligibility
+filters, and were actually tested upstream. A gene absent from the assay could
+not have been selected and therefore should not normally contribute a failure
+to be selected.
+
+All identifiers must be mapped to the same organism, namespace, and version as
+the gene-set collection. Resolve duplicate mappings by a declared rule before
+forming the counts. Otherwise, silent losses and one-to-many mappings change
+both the numerator and the background.
+
+# Hypergeometric Test
+
+Under the null, condition on the four margins $N$, $K$, $n$, and $N-K$. If the
+$n$ selected genes are exchangeable draws without replacement from $U$, the
+overlap random variable $X$ has probability mass function
+
+$$
+\Pr(X=x)
+=\frac{\binom{K}{x}\binom{N-K}{n-x}}{\binom{N}{n}},
+$$
+
+for
+
+$$
+\max(0,n+K-N)\leq x\leq\min(n,K).
+$$
+
+The usual one-sided enrichment p-value is
+
+$$
+\boxed{
+p_{\mathrm{ORA}}
+=\Pr(X\geq k)
+=\sum_{x=k}^{\min(n,K)}
+\frac{\binom{K}{x}\binom{N-K}{n-x}}{\binom{N}{n}}.
+}
+$$
+
+This is the upper tail of Fisher's exact test for the table. A depletion question
+uses the lower tail; a two-sided Fisher test answers a different question and
+its definition should be reported.
+
+Under the null,
+
+$$
+E(X)=\frac{nK}{N},
+$$
+
+so a transparent effect summary is the fold enrichment
+
+$$
+\frac{k}{nK/N}.
+$$
+
+The sample odds ratio is
+
+$$
+\widehat{\operatorname{OR}}
+=\frac{k(N-K-n+k)}{(K-k)(n-k)},
+$$
+
+when all four cells are nonzero. Report the raw counts with either effect measure;
+large ratios based on one or two genes are unstable.
+
+# Worked Example
+
+Suppose $N=1000$ genes were eligible, $n=100$ were selected, and an 80-gene set
+contains $k=20$ selected genes. Its null expected overlap is
+
+$$
+E(X)=\frac{100\times80}{1000}=8,
+$$
+
+so the fold enrichment is $20/8=2.5$. The table is
+
+|  | Selected | Not selected |
+|---|---:|---:|
+| In gene set | 20 | 60 |
+| Outside gene set | 80 | 840 |
+
+and the odds ratio is $(20\times840)/(60\times80)=3.5$. The hypergeometric tail
+quantifies how surprising an overlap of 20 or more would be under the conditional
+null. The scientific report should still name the 20 genes, their effect sizes,
+and the definition of the 1000-gene universe.
+
+# What the Null Model Assumes
+
+The simple hypergeometric reference treats genes as exchangeable with respect to
+selection under the null, conditional on set size and list size. That assumption
+can fail even when the upstream gene-level p-values are individually valid.
+
+For RNA-seq, long or highly expressed genes may have greater power to enter a
+differential-expression list. If a gene set contains systematically longer genes,
+standard ORA can detect the selection mechanism rather than biology. The `goseq`
+method estimates a probability weighting function and uses a biased-sampling
+null to address this problem. Analogous biases can arise from probe coverage,
+protein detectability, variant density, gene-set annotation depth, or missingness.
+
+Useful sensitivity analyses include:
+
+- redefining the universe to match every upstream eligibility rule;
+- repeating ORA across defensible selection thresholds;
+- adjusting known feature-level selection biases;
+- comparing alternative identifier mappings and gene-set versions; and
+- checking whether one gene family or annotation branch drives many results.
+
+Threshold sensitivity is intrinsic: a gene just above the cutoff counts fully,
+whereas a nearly identical gene just below it contributes nothing. When a complete,
+meaningfully ranked list is available, [gene-set enrichment analysis](gene-set-enrichment-analysis.qmd)
+can avoid this dichotomization, although it introduces a different null model.
+
+# Multiplicity, Dependence, and Redundancy
+
+An ORA run usually tests hundreds or thousands of sets. Adjust across the full
+prespecified collection, commonly using a [false-discovery-rate](../statistical-inference/false-discovery-rate.qmd)
+procedure, and report how many sets were eligible and tested. A raw p-value for
+one displayed term does not account for searching the collection.
+
+Gene sets are dependent because they overlap and because ontologies contain
+parent--child relations. Benjamini--Hochberg adjustment may be appropriate under
+its dependence conditions, but ten related significant terms are not ten
+independent biological confirmations. Grouping redundant labels can improve
+communication; it must not replace the original multiplicity correction or hide
+the tested family.
+
+# Experimental Design and Replication
+
+ORA inherits the validity of the analysis that produced $L$. In an RNA-seq
+treatment experiment, independently randomized animals, people, or cultures are
+usually the experimental units. Reads, cells from the same specimen, technical
+libraries, and repeated instrument runs do not create additional treatment
+replication. If pseudoreplication, batch confounding, or a misspecified contrast
+inflates gene-level evidence, pathway enrichment merely aggregates that error.
+
+A defensible workflow is:
+
+1. define the biological comparison, experimental units, design matrix, and contrast;
+2. fit the feature-level model with appropriate normalization and dependence;
+3. define selection and universe rules without inspecting pathway results;
+4. harmonize identifiers and freeze the gene-set collection version;
+5. compute overlap tests and adjust over every tested set;
+6. inspect contributing genes, effect directions, redundancy, and robustness; and
+7. validate important claims with independent data or orthogonal experiments.
+
+# Statistical versus Biological Interpretation
+
+A small adjusted p-value supports a statistical statement: relative to the stated
+universe and conditional null, the selected list overlaps that set more than
+expected. The fold enrichment and odds ratio describe the strength of that
+overlap.
+
+Biological interpretation requires more. A term may be driven by a few pleiotropic
+genes, biased annotation, changing cell composition, or shared genes among many
+sets. ORA does not establish pathway direction unless the selected lists and
+hypotheses encode direction, and it does not establish causal activity. Examine
+gene-level effects, pathway topology, tissue and time context, external evidence,
+and experimental validation.
+
+# Common Failure Modes
+
+| Failure | Why it fails | Better practice |
+|---|---|---|
+| Using all organism genes as background | Unmeasured genes could never be selected | Use the eligible, tested universe |
+| Mixing identifier systems or species | Overlaps and denominators become wrong | Record versions and mapping losses |
+| Choosing a cutoff to maximize appealing terms | The reported p-values omit threshold search | Prespecify or perform threshold sensitivity analysis |
+| Ignoring feature-level detection bias | The exchangeable-selection null is false | Model the bias or use an appropriate weighted null |
+| Reading an enriched term as pathway activation | ORA tests membership overlap, not mechanism or direction | Inspect contributing effects and validate biology |
+| Treating technical measurements as replicates | Upstream uncertainty is understated | Base inference on independent biological units |
+
+# Connections and Take-home Messages
+
+- [Interpreting fold changes, p-values, and FDR](interpreting-fold-changes-p-values-and-fdr.qmd)
+  separates effect magnitude, gene-level evidence, and multiplicity.
+- [Independent filtering and RNA-seq multiple testing](independent-filtering-and-rna-seq-multiple-testing.qmd)
+  clarifies which genes were eligible and tested.
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  connects experimental units and contrasts to valid gene lists.
+- [Gene-set enrichment analysis](gene-set-enrichment-analysis.qmd) uses a full
+  ranking instead of a selected-list cutoff.
+- [Benjamini--Hochberg and Storey q-values](../statistical-inference/benjamini-hochberg-and-storey-q-values.qmd)
+  develops multiple-testing adjustment and its interpretation.
+
+1. ORA is a conditional overlap test, not a direct assay of pathway activity.
+2. The eligible universe and identifier mapping are part of the statistical model.
+3. Report overlap counts and effect sizes alongside multiplicity-adjusted p-values.
+4. Unequal selection probabilities, arbitrary thresholds, and overlapping sets
+   require diagnostics and sensitivity analyses.
+5. Valid pathway inference begins with independent biological replication and a
+   valid upstream feature-level analysis.
+
+# References
+
+- Fisher, R. A. (1935). *The Design of Experiments*. Oliver and Boyd.
+  <https://archive.org/details/in.ernet.dli.2015.502684>
+- Boyle, E. I., Weng, S., Gollub, J., et al. (2004). GO::TermFinder---open
+  source software for accessing Gene Ontology information and finding
+  significantly enriched Gene Ontology terms associated with a list of genes.
+  *Bioinformatics*, 20(18), 3710--3715.
+  <https://doi.org/10.1093/bioinformatics/bth456>
+- Falcon, S., and Gentleman, R. (2007). Using GOstats to test gene lists for GO
+  term association. *Bioinformatics*, 23(2), 257--258.
+  <https://doi.org/10.1093/bioinformatics/btl567>
+- Young, M. D., Wakefield, M. J., Smyth, G. K., and Oshlack, A. (2010). Gene
+  ontology analysis for RNA-seq: accounting for selection bias. *Genome Biology*,
+  11, R14. <https://doi.org/10.1186/gb-2010-11-2-r14>
+- `goseq` authors. *Gene Ontology analyser for RNA-seq and other length-biased
+  data*. [Bioconductor package documentation](https://bioconductor.org/packages/release/bioc/html/goseq.html).
