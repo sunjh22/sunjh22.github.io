@@ -1,0 +1,321 @@
+---
+title: "Correlated Genes and Pathway-level Inference"
+subtitle: "Why co-expression changes the uncertainty of gene-set statistics"
+description: "Variance inflation from inter-gene correlation, correlation-aware gene-set tests, diagnostics, and design-aware pathway interpretation."
+author: "Jiahong Sun"
+date: "2026-11-22"
+date-modified: "2026-11-22"
+categories: [Statistics, Bioinformatics, Gene Sets, Dependence]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# Co-expression Is Signal and Dependence
+
+Genes in a pathway often share regulators, cell types, chromosomal neighborhoods,
+or responses to technical conditions. Their statistics are therefore correlated.
+That correlation can be biologically informative, but it also changes the null
+variation of any statistic that adds or averages evidence across genes.
+
+| Item | Role in pathway inference |
+|---|---|
+| **Gene-level input** | Signed statistics from a model that respects the study design |
+| **Set statistic** | Mean, sum, rank, running sum, or quadratic summary across members |
+| **Dependence source** | Shared biology, composition, batch, preprocessing, or overlapping features |
+| **Experimental unit** | Independent donor, animal, culture, or other sampled/randomized unit |
+| **Main risk** | Calibrating a correlated set as though it contained independent genes |
+| **Main remedies** | Preserve dependence by sample-level resampling or model it in the null variance |
+
+Correlation is not a nuisance that should always be removed. The goal is to
+calibrate uncertainty under the dependence that would remain if the tested
+phenotype association were absent.
+
+# Variance Inflation from a Simple Model
+
+Let $Z_1,\ldots,Z_m$ be standardized null gene-level statistics for a set of
+$m$ genes, with
+
+$$
+E(Z_j)=0,
+\qquad
+\operatorname{Var}(Z_j)=1.
+$$
+
+For their mean
+
+$$
+\bar Z_S=\frac{1}{m}\sum_{j=1}^{m}Z_j,
+$$
+
+the exact null variance is
+
+$$
+\operatorname{Var}(\bar Z_S)
+=\frac{1}{m^2}
+\left\{
+\sum_{j=1}^{m}\operatorname{Var}(Z_j)
++2\sum_{j<k}\operatorname{Cov}(Z_j,Z_k)
+\right\}.
+$$
+
+If every pair has the same correlation $\rho$, this becomes
+
+$$
+\boxed{
+\operatorname{Var}(\bar Z_S)
+=\frac{1}{m}\{1+(m-1)\rho\}.
+}
+$$
+
+The factor
+
+$$
+VIF=1+(m-1)\rho
+$$
+
+is a variance inflation factor relative to independence. The corresponding
+effective number of independent genes is
+
+$$
+m_{\mathrm{eff}}=\frac{m}{1+(m-1)\rho}.
+$$
+
+For $m=50$ and $\rho=0.10$, $VIF=5.9$ and $m_{\mathrm{eff}}\approx8.5$. Treating
+the set as 50 independent pieces of evidence would make a mean-based null
+distribution far too narrow.
+
+The equicorrelation calculation is an illustration, not a full pathway model.
+Real sets have heterogeneous variances, positive and negative correlations,
+modules, and hub genes. The general covariance expression, not one average
+correlation, determines the variance.
+
+# Where Correlation Enters the Analysis
+
+## Correlated measurements within biological units
+
+Expression profiles from the same donor share latent biology and technical
+history. At the gene-statistic level, common sample patterns induce correlation
+among $Z_j$. Treating genes as independent replicates ignores this joint sampling
+structure.
+
+## Covariates and composition
+
+Batch, RNA quality, library composition, and cell-type proportions can correlate
+many genes. A valid gene-level design can remove modeled mean effects, but residual
+correlation remains. Estimating correlation from raw expression can therefore
+mix nuisance mean structure with dependence; use residuals from an appropriate
+design when a method calls for residual correlation.
+
+## Preprocessing and shared features
+
+Normalization, filtering, transcript-to-gene aggregation, and multi-mapping can
+induce additional dependence. Gene-set overlap creates dependence between
+pathway results even if individual gene statistics were independent.
+
+# Calibration Strategies
+
+## Preserve correlation through sample-level resampling
+
+Permuting valid phenotype labels and recomputing the complete vector of gene
+statistics keeps the observed genes together within each sample. Under
+exchangeability, this preserves inter-gene correlation while breaking the tested
+phenotype association. Restricted permutations must follow pairing, blocks,
+clusters, or the original randomization scheme.
+
+Residual rotation provides a continuous analogue for linear-model residuals.
+ROAST uses rotations for self-contained gene-set tests and can accommodate
+complex design matrices. Such procedures are only as valid as the fitted model,
+variance treatment, and invariance assumptions used to generate rotations.
+
+## Adjust the set-statistic variance
+
+CAMERA is a competitive test that estimates a variance inflation factor from
+within-set residual correlation and adjusts the comparison between genes inside
+and outside the set. It avoids repeated phenotype permutations and works with
+linear-model designs, but its calibration depends on a useful summary of the
+correlation structure and valid moderated gene statistics.
+
+An independence-based rank or mean test effectively sets all off-diagonal
+covariances to zero. That can be defensible only when its null construction or
+the data make dependence negligible. It should not be the silent default for
+co-regulated gene sets.
+
+## Use a subject-level joint model
+
+Score tests, mixed models, and variance-component tests can model sample-level
+outcomes or expression profiles jointly. They can target self-contained or
+competitive questions depending on formulation. More elaborate covariance
+models require enough independent biological units; thousands of genes do not
+compensate for six donors when estimating sample-level structure.
+
+# Correlation Interacts with the Null Hypothesis
+
+[Competitive and self-contained tests](competitive-versus-self-contained-gene-set-tests.qmd)
+respond differently to dependence.
+
+- A self-contained sample-label test can preserve within-set correlation by
+  construction because the joint expression profile moves together.
+- A competitive random-gene-set test compares the observed set with genes whose
+  correlation structure may differ. Positive correlation within $S$ can then
+  look like unusually coherent phenotype evidence even under the null.
+- A phenotype-permuted running-sum test and a gene-set-permuted preranked test
+  use different reference experiments, even if their observed enrichment score
+  is identical.
+
+Correlation correction does not convert one null into the other. First choose
+the scientific comparison, then calibrate that comparison under dependence.
+
+# Worked Illustration
+
+Suppose a 40-gene set has null statistics with average pairwise correlation
+$\rho=0.05$. Under the equicorrelation approximation,
+
+$$
+VIF=1+39(0.05)=2.95.
+$$
+
+If the observed mean statistic is $\bar Z_S=0.40$, an independence calculation
+uses standard deviation $1/\sqrt{40}\approx0.158$ and reports
+
+$$
+0.40/0.158\approx2.53.
+$$
+
+A correlation-adjusted standard deviation is
+
+$$
+\sqrt{2.95/40}\approx0.272,
+$$
+
+giving a standardized value of about $1.47$. The gene-level values did not
+change; only the honest null uncertainty did. This example does not prove that
+$\rho=0.05$ is known or constant. It shows why even modest average correlation
+can matter when a set contains many genes.
+
+# Experimental Units and Study Design
+
+Consider RNA-seq from five treated and five control donors. The ten donors are
+the units supporting the treatment contrast. A pathway with 200 genes supplies
+200 correlated outcomes measured on those donors, not 200 additional treatment
+replicates. Technical libraries improve measurement of a donor but do not add
+independent assignments.
+
+Before pathway testing:
+
+1. define the population, contrast, and independently sampled or randomized unit;
+2. normalize and model counts using the correct design and offsets;
+3. account for pairing, repeated measures, batches, and precision differences;
+4. estimate gene-level effects and statistics on a common eligible universe;
+5. select a pathway null and dependence-aware calibration; and
+6. adjust across the complete prespecified set collection.
+
+If the design matrix is wrong, the correlation estimate may faithfully preserve
+confounding rather than legitimate null dependence. Design and calibration cannot
+be separated.
+
+# Diagnostics and Sensitivity Analysis
+
+| Diagnostic question | Practical check | Interpretation |
+|---|---|---|
+| Is within-set dependence material? | Residual correlation heatmaps and average-correlation summaries | Averages can hide modules and opposite signs |
+| Is correlation biological or technical? | Color samples by batch, quality, and cell composition | Association does not uniquely identify the cause |
+| Does calibration matter? | Compare correlation-aware and independence references | Large shifts indicate fragile naive evidence |
+| Is one sample inducing coherence? | Leave-one-unit-out pathway analysis | Instability weakens population interpretation |
+| Does one gene module dominate? | Contribution and leading-edge plots | A broad pathway label may summarize one submodule |
+| Are pathway results redundant? | Set-overlap matrix or network | Related terms are not independent confirmation |
+| Are conclusions method-specific? | Compare justified statistics and nulls | Agreement is supportive but not independent validation |
+
+Do not estimate a large unstructured gene-by-gene covariance matrix from a small
+number of samples and treat it as known. Prefer procedures with regularization,
+low-dimensional summaries, or design-preserving resampling, and report the
+sensitivity of conclusions to those choices.
+
+# Overlap, Multiplicity, and Pathway Collections
+
+Pathways share genes, so their test statistics share both observed values and
+sampling variation. Multiple-testing adjustment should cover the full declared
+collection, but an adjusted list can still contain many near-duplicate terms.
+The effective number of distinct biological themes is smaller than the number
+of rows, yet post hoc collapsing does not justify reducing the original testing
+family.
+
+Database versions also alter dependence: splitting one pathway, merging terms,
+or adding annotations changes set sizes, overlaps, and backgrounds. Record the
+collection, release, identifier mapping, and size filters. A pathway-level claim
+should remain recognizable under reasonable annotation and preprocessing choices.
+
+# Statistical versus Biological Interpretation
+
+A correlation-aware test may produce a larger p-value than an independence-based
+test. Statistically, that means the apparent accumulation of gene-level evidence
+is less surprising once the genes' tendency to move together is acknowledged.
+It does not mean that co-expression is unimportant or that the pathway is absent.
+
+Positive residual correlation can reflect true co-regulation, changing cell
+composition, an unmeasured exposure, or batch. A significant pathway statistic
+cannot distinguish these mechanisms. Biological interpretation requires effect
+directions, contributing genes, cell or tissue context, time ordering, orthogonal
+measurements, and ideally perturbation or external replication.
+
+# Common Failure Modes
+
+- **Multiplying evidence as though genes were independent.** Positive correlation
+  overstates the effective amount of information.
+- **Estimating correlation from unadjusted expression.** Mean differences and
+  nuisance structure contaminate the dependence estimate.
+- **Permuting samples without respecting the design.** Correlation is preserved,
+  but the reference distribution is still invalid without exchangeability.
+- **Removing all correlated signal before testing.** True coordinated biology
+  may be erased along with nuisance variation.
+- **Treating pathway overlap as replication.** Shared genes generate shared
+  discoveries, not independent confirmation.
+- **Equating more genes with more biological units.** Population uncertainty is
+  limited by donors, animals, cultures, or other independent units.
+
+# Connections and Take-home Messages
+
+- [Gene-set enrichment analysis](gene-set-enrichment-analysis.qmd) explains how
+  permutation choices affect the running-sum reference distribution.
+- [Over-representation analysis](over-representation-analysis.qmd) shows a
+  selected-list framework whose exchangeability assumptions can also fail.
+- [RNA-seq mean--variance modeling](rna-seq-mean-variance-modeling.qmd) separates
+  gene-wise precision from between-gene dependence.
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  connects randomization, blocking, and experimental units to valid inference.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  explains why genes, cells, and reads do not replace independent specimens.
+- [Benjamini--Hochberg and Storey q-values](../statistical-inference/benjamini-hochberg-and-storey-q-values.qmd)
+  develops multiplicity adjustment under dependence.
+
+1. The null variance of a set statistic contains every relevant covariance term.
+2. Even modest positive correlation can sharply reduce the effective number of
+   independent genes in a pathway.
+3. Preserve dependence through valid sample-level resampling or account for it
+   explicitly in the set-statistic reference distribution.
+4. Correlation correction and null-hypothesis choice solve different problems.
+5. Coherent expression is biologically interesting, but it is not by itself
+   evidence of pathway causation or independent replication.
+
+# References
+
+- Goeman, J. J., and Bühlmann, P. (2007). Analyzing gene expression data in
+  terms of gene sets: methodological issues. *Bioinformatics*, 23(8), 980--987.
+  <https://doi.org/10.1093/bioinformatics/btm051>
+- Barry, W. T., Nobel, A. B., and Wright, F. A. (2005). Significance analysis
+  of functional categories in gene expression studies: a structured permutation
+  approach. *Bioinformatics*, 21(9), 1943--1949.
+  <https://doi.org/10.1093/bioinformatics/bti260>
+- Wu, D., Lim, E., Vaillant, F., et al. (2010). ROAST: rotation gene set tests
+  for complex microarray experiments. *Bioinformatics*, 26(17), 2176--2182.
+  <https://doi.org/10.1093/bioinformatics/btq401>
+- Wu, D., and Smyth, G. K. (2012). CAMERA: a competitive gene set test
+  accounting for inter-gene correlation. *Nucleic Acids Research*, 40(17), e133.
+  <https://doi.org/10.1093/nar/gks461>
+- Efron, B., and Tibshirani, R. (2007). On testing the significance of sets of
+  genes. *The Annals of Applied Statistics*, 1(1), 107--129.
+  <https://doi.org/10.1214/07-AOAS101>
+- Ritchie, M. E., Phipson, B., Wu, D., et al. (2015). limma powers differential
+  expression analyses for RNA-sequencing and microarray studies. *Nucleic Acids
+  Research*, 43(7), e47. <https://doi.org/10.1093/nar/gkv007>

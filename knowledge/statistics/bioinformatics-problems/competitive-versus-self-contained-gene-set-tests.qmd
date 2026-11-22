@@ -1,0 +1,265 @@
+---
+title: "Competitive versus Self-contained Gene-set Tests"
+subtitle: "Choosing the null hypothesis before choosing a pathway method"
+description: "Competitive and self-contained gene-set null hypotheses, valid reference distributions, design-aware interpretation, and method selection."
+author: "Jiahong Sun"
+date: "2026-11-22"
+date-modified: "2026-11-22"
+categories: [Statistics, Bioinformatics, Gene Sets, Functional Genomics]
+toc: true
+number-sections: true
+code-fold: show
+draft: false
+---
+
+# The Same Gene Set Can Answer Two Different Questions
+
+A gene-set test combines evidence across related genes, but its scientific meaning
+depends first on the null hypothesis. **Self-contained** tests ask whether the
+genes in a set show any association with the phenotype. **Competitive** tests ask
+whether they show stronger association than genes outside the set. These are not
+alternative algorithms for one hypothesis; they are tests of different claims.
+
+| Feature | Self-contained test | Competitive test |
+|---|---|---|
+| Core question | Is this set associated with the outcome? | Is this set more associated than its complement? |
+| Reference | The set under a sample-level null | Genes outside the set or random sets |
+| Typical null | No member of the set is associated | Set members are no more associated than nonmembers |
+| Typical methods | ROAST, global test, set-level score tests | CAMERA, preranked GSEA, rank-sum or random-set tests |
+| Main strength | Direct statement about the chosen set | Prioritizes sets against a genome-wide background |
+| Main vulnerability | Large sets reject easily under diffuse signal | Background composition and inter-gene correlation matter |
+
+The experimental unit remains the independently sampled or randomized biological
+unit. Genes are measured variables, not replicate organisms. A method that samples
+genes can define a useful competitive reference, but that reference must not be
+mistaken for the biological sampling process.
+
+# Formalizing the Two Nulls
+
+Suppose a design-aware feature-level model gives an effect parameter $\beta_j$
+for each eligible gene $j=1,\ldots,G$. Let $S$ be a prespecified gene set and
+$S^c$ its complement within the tested universe.
+
+## Self-contained null
+
+The strongest and most common self-contained null is
+
+$$
+\boxed{H_{0,\mathrm{self}}:\ \beta_j=0\quad\text{for every }j\in S.}
+$$
+
+Rejecting it says that at least some outcome-related signal is present in $S$.
+The alternative can be directional---effects tend to be positive or negative---or
+mixed-direction---some effects differ from zero regardless of sign. The statistic
+and interpretation must match that choice.
+
+A self-contained test does not require genes outside $S$ to be null. The same
+broad biological response can therefore make many overlapping sets significant.
+This is not automatically a calibration failure: each set may genuinely violate
+its own self-contained null.
+
+## Competitive null
+
+A competitive null compares the distribution of gene-level evidence inside and
+outside the set. One schematic form is
+
+$$
+\boxed{
+H_{0,\mathrm{comp}}:\
+T(\{Z_j:j\in S\})
+\text{ is no more extreme than }
+T(\{Z_j:j\in S^c\}),
+}
+$$
+
+where $Z_j$ is a signed, design-adjusted gene statistic and $T$ is the declared
+set summary. Exact formulations differ: a method may compare means, ranks,
+tail proportions, or a running-sum score. The eligible universe, gene filtering,
+and statistic therefore form part of the null.
+
+Rejecting a competitive null says that $S$ stands out relative to the chosen
+background. It does not imply that every member is associated, nor that genes
+outside the set are null.
+
+# Why the Null Choice Changes the Answer
+
+Consider a study with 10,000 eligible genes and a 100-gene pathway.
+
+- If 20 pathway genes respond while almost all other genes do not, both nulls
+  may be rejected.
+- If a global stress response shifts most genes by similar amounts, a
+  self-contained test may reject for the pathway while a competitive test may
+  not: the pathway is involved, but not unusually involved.
+- If no gene is associated with phenotype but the pathway genes are strongly
+  positively correlated, a correlation-naive competitive test can reject too
+  often because its reference distribution is too narrow.
+
+Thus “the pathway is significant” is incomplete. A report should state whether
+the result means **some signal exists in the set** or **the set is stronger than
+the genomic background**.
+
+# Constructing a Valid Reference Distribution
+
+## Resample biological units for a self-contained question
+
+For a randomized two-group experiment, permuting treatment labels across valid
+exchangeability blocks represents the null that treatment is unrelated to the
+joint expression profile. Recomputing all gene statistics and the set statistic
+preserves the observed dependence among genes. Paired, blocked, longitudinal,
+family, and covariate-adjusted designs require restricted permutation, residual
+permutation, rotation, or a correctly specified model-based reference.
+
+ROAST uses residual rotations for linear models and can test directional or
+mixed-direction self-contained alternatives while retaining inter-gene
+correlation. Rotation is especially useful when the sample size is too small
+to supply many distinct label permutations, but it still relies on the fitted
+mean--variance model and its residual assumptions.
+
+## Compare genes for a competitive question
+
+Random-gene-set and gene-label procedures compare $S$ with sets of similar size
+or with $S^c$. They can be computationally convenient, including when only a
+preranked vector is available. However, genes are not generally exchangeable:
+expression level, gene length, variance, annotation density, and correlation
+structure can differ systematically between pathways and the background.
+
+CAMERA constructs a competitive test from moderated gene-level statistics and
+adjusts its set statistic for estimated within-set correlation. The original
+GSEA procedure with gene-set permutation also has a competitive interpretation,
+whereas phenotype-label permutation targets a sample-level null. The software
+name alone therefore does not identify the hypothesis.
+
+# Method Choice Begins with the Scientific Claim
+
+| Scientific aim | Natural null | Useful approach | Essential qualification |
+|---|---|---|---|
+| Detect whether a prespecified pathway responds at all | Self-contained | ROAST or another design-aware joint test | Large sets have many opportunities to contain signal |
+| Prioritize pathways that stand out genome-wide | Competitive | CAMERA or a correlation-aware rank test | Result is relative to the eligible complement |
+| Summarize a selected gene list | Competitive overlap | [Over-representation analysis](over-representation-analysis.qmd) | Selection threshold and universe drive the test |
+| Find concentration near an extreme of a ranking | Depends on permutation scheme | [Gene-set enrichment analysis](gene-set-enrichment-analysis.qmd) | State the ranking, score, and null-generation scheme |
+
+Method choice should also specify directionality. A mean signed statistic can
+cancel equally strong up- and down-regulation. An absolute or squared statistic
+detects mixed directions but cannot support a claim of coordinated activation.
+
+# Experimental Design and Replication
+
+Gene-set inference inherits the upstream design. For a treatment comparison in
+bulk RNA-seq, independent donors, animals, or cultures usually support inference;
+reads, genes, technical libraries, and repeated runs do not. In single-cell data,
+thousands of cells from one donor provide detailed within-donor measurement but
+not thousands of independent treatment assignments.
+
+A design-aware workflow is:
+
+1. define the biological contrast, target population, and experimental unit;
+2. record pairing, blocking, repeated measures, batches, and nuisance covariates;
+3. fit valid gene-level models with normalization and mean--variance handling;
+4. freeze the eligible gene universe and gene-set collection;
+5. choose self-contained or competitive nulls from the intended claim;
+6. calibrate the set statistic while retaining the relevant dependence; and
+7. adjust across all tested sets and examine sensitivity to method and database.
+
+If treatment is confounded with batch, neither aggregation nor a sophisticated
+gene-set statistic restores the missing comparison. The remedy is design or new
+data, not a different enrichment algorithm.
+
+# Multiplicity and Overlapping Sets
+
+Thousands of gene sets are commonly tested, so p-values must be adjusted over
+the declared family. Overlap among sets produces dependent results and redundant
+labels. Multiplicity adjustment controls a statistical error criterion under its
+conditions; it does not turn related ontology terms into independent biological
+discoveries.
+
+For self-contained tests, a widespread signal can yield many valid rejections.
+For competitive tests, pathways can trade rank as the background and tested
+collection change. Report the database version, size filters, number of tests,
+adjustment method, and contributing genes. Cluster or summarize redundant terms
+only after retaining the original adjusted results.
+
+# Diagnostics and Sensitivity
+
+| Question | Diagnostic | Sensitivity analysis |
+|---|---|---|
+| Does the null match the claim? | Translate rejection into one plain sentence | Compare self-contained and competitive results without treating them as replication |
+| Is resampling valid? | Check assignment and exchangeability blocks | Use restricted permutation, rotation, or a model-based null |
+| Does correlation drive evidence? | Inspect residual correlations and variance inflation | Compare correlation-aware and naive calibration |
+| Does direction cancel? | Plot signed effects for set members | Compare directional and mixed-direction statistics |
+| Is the background defensible? | Audit filtering and identifier mapping | Repeat with prespecified eligible universes |
+| Is one unit decisive? | Leave-one-biological-unit-out analysis | Report stability of scores and adjusted conclusions |
+| Are results database-specific? | Examine set overlap and version | Repeat with another justified collection or release |
+
+A small p-value cannot diagnose annotation errors, cell-composition shifts,
+unmeasured confounding, or causal mechanism. Those require metadata checks,
+alternative models, independent data, and biological experiments.
+
+# Statistical versus Biological Interpretation
+
+Suppose a self-contained test rejects for an interferon pathway but a competitive
+test does not. Statistically, the pathway contains phenotype-associated genes,
+yet its evidence is not stronger than the broad transcriptome response. That is
+not a contradiction. Biologically, the result may reflect interferon signaling,
+a change in immune-cell composition, or both.
+
+Conversely, a competitive rejection identifies relative concentration of evidence.
+It does not show that the pathway is necessary, sufficient, activated as a whole,
+or causal. Direction, cellular context, time, leading genes, protein-level activity,
+and perturbation evidence determine whether the statistical result supports a
+specific biological mechanism.
+
+# Common Misinterpretations
+
+- **“Self-contained is liberal and competitive is conservative.”** The tests
+  target different nulls, so rejection counts alone do not compare calibration.
+- **“Gene permutation supplies biological replication.”** It defines a reference
+  across measured features; independent biological units support population claims.
+- **“Phenotype permutation makes every GSEA result self-contained.”** The precise
+  score and permutation construction determine the tested null.
+- **“A significant competitive pathway has all genes changed.”** Only the set-level
+  distribution of evidence differs from its reference.
+- **“Agreement between two nulls is independent validation.”** Both analyses use
+  the same data, annotations, and often the same gene-level statistics.
+
+# Connections and Take-home Messages
+
+- [Correlated genes and pathway-level inference](correlated-genes-and-pathway-level-inference.qmd)
+  derives why correlation changes the null variance of set statistics.
+- [Permutation and randomization tests](../statistical-inference/permutation-and-randomization-tests.qmd)
+  explains exchangeability and restricted randomization.
+- [Differential-expression contrasts and design matrices](differential-expression-contrasts-and-design-matrices.qmd)
+  connects biological questions to gene-level statistics.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  identifies the units that support population inference.
+- [False discovery rate](../statistical-inference/false-discovery-rate.qmd)
+  clarifies multiplicity across a pathway collection.
+
+1. Competitive and self-contained tests answer different scientific questions.
+2. State the null, set statistic, eligible universe, and reference-generation
+   scheme; a method name is not enough.
+3. Sample-level resampling preserves gene dependence only when it respects the
+   experimental design and exchangeability restrictions.
+4. Correlation, set size, directionality, overlap, and background composition
+   all affect pathway evidence.
+5. Statistical pathway association is not proof of coordinated activity or
+   causal mechanism.
+
+# References
+
+- Goeman, J. J., and Bühlmann, P. (2007). Analyzing gene expression data in
+  terms of gene sets: methodological issues. *Bioinformatics*, 23(8), 980--987.
+  <https://doi.org/10.1093/bioinformatics/btm051>
+- Barry, W. T., Nobel, A. B., and Wright, F. A. (2005). Significance analysis
+  of functional categories in gene expression studies: a structured permutation
+  approach. *Bioinformatics*, 21(9), 1943--1949.
+  <https://doi.org/10.1093/bioinformatics/bti260>
+- Wu, D., Lim, E., Vaillant, F., et al. (2010). ROAST: rotation gene set tests
+  for complex microarray experiments. *Bioinformatics*, 26(17), 2176--2182.
+  <https://doi.org/10.1093/bioinformatics/btq401>
+- Wu, D., and Smyth, G. K. (2012). CAMERA: a competitive gene set test
+  accounting for inter-gene correlation. *Nucleic Acids Research*, 40(17), e133.
+  <https://doi.org/10.1093/nar/gks461>
+- Subramanian, A., Tamayo, P., Mootha, V. K., et al. (2005). Gene set
+  enrichment analysis: a knowledge-based approach for interpreting genome-wide
+  expression profiles. *Proceedings of the National Academy of Sciences*,
+  102(43), 15545--15550. <https://doi.org/10.1073/pnas.0506580102>

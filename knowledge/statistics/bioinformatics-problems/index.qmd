@@ -28,9 +28,11 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Interpreting fold changes, p-values, and FDR](interpreting-fold-changes-p-values-and-fdr.qmd)
 - [Over-representation analysis](over-representation-analysis.qmd)
 - [Gene-set enrichment analysis](gene-set-enrichment-analysis.qmd)
+- [Competitive versus self-contained gene-set tests](competitive-versus-self-contained-gene-set-tests.qmd)
+- [Correlated genes and pathway-level inference](correlated-genes-and-pathway-level-inference.qmd)
 
-Future notes will develop gene-set testing frameworks, microbiome and single-cell
-statistics, spatial omics, meta-analysis, and reproducible statistical workflows.
+Future notes will develop microbiome and single-cell statistics, spatial omics,
+meta-analysis, and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)
