@@ -1,0 +1,370 @@
+---
+title: "Log-ratio Transformations"
+subtitle: "Coordinates and interpretable contrasts for compositional data"
+description: "ALR, CLR, ILR, balances, Aitchison distance, zero handling, modeling, and interpretation for compositional omics data."
+author: "Jiahong Sun"
+date: "2026-11-23"
+date-modified: "2026-11-23"
+categories: [Statistics, Bioinformatics, Compositional Data, Data Transformation]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Ratios Become Differences on a Log Scale
+
+For a positive composition $\mathbf x=(x_1,\ldots,x_D)$, multiplying every part
+by the same constant does not change its information. Log ratios respect that
+invariance:
+
+$$
+\log\frac{cx_j}{cx_k}=\log\frac{x_j}{x_k}.
+$$
+
+They also turn multiplicative comparisons into additive ones. A doubling of
+$x_j/x_k$ changes its log ratio by $\log 2$ regardless of the starting ratio.
+This makes ordinary regression, covariance, distance, and dimension-reduction
+tools available in real coordinates while preserving the relative scale defined
+in [compositional data and the simplex](compositional-data-and-the-simplex.qmd).
+
+There is no unique log-ratio transformation. Additive log-ratio (ALR), centered
+log-ratio (CLR), and isometric log-ratio (ILR) coordinates retain the same
+$D-1$-dimensional information but serve different interpretive and geometric
+purposes.
+
+# Additive Log-ratio Coordinates
+
+Choose a denominator part $x_D$. The ALR transformation is
+
+$$
+\operatorname{alr}(\mathbf x)
+=\left(
+\log\frac{x_1}{x_D},\ldots,
+\log\frac{x_{D-1}}{x_D}
+\right)^{\mathsf T}.
+$$
+
+It gives $D-1$ unconstrained coordinates and is one-to-one on the positive
+simplex. Its inverse for total $\kappa$ is
+
+$$
+x_j=\kappa\frac{e^{z_j}}{1+\sum_{k=1}^{D-1}e^{z_k}}
+\quad(j<D),
+\qquad
+x_D=\kappa\frac{1}{1+\sum_{k=1}^{D-1}e^{z_k}}.
+$$
+
+ALR coordinates are easy to explain when $x_D$ is a scientifically meaningful,
+well-measured reference. Every coefficient then concerns abundance relative to
+that part. The drawbacks are equally important: the answer is reference-specific,
+one denominator's measurement error enters every coordinate, and ordinary
+Euclidean distance between ALR vectors is not generally the Aitchison distance.
+
+# Centered Log-ratio Coordinates
+
+Let
+
+$$
+g(\mathbf x)=\left(\prod_{j=1}^D x_j\right)^{1/D}
+$$
+
+be the geometric mean. The CLR transformation is
+
+$$
+\boxed{
+\operatorname{clr}(\mathbf x)_j
+=\log\frac{x_j}{g(\mathbf x)}
+=\log x_j-\frac{1}{D}\sum_{k=1}^D\log x_k.
+}
+$$
+
+CLR treats parts symmetrically and has the useful identity
+
+$$
+d_A(\mathbf x,\mathbf y)
+=\left\|\operatorname{clr}(\mathbf x)
+-\operatorname{clr}(\mathbf y)\right\|_2.
+$$
+
+However, CLR coordinates sum to zero. Their covariance matrix is singular and
+they occupy a $(D-1)$-dimensional hyperplane inside $\mathbb R^D$. This is
+acceptable for visualization and Aitchison-distance calculations, but it creates
+collinearity for methods that require a full-rank covariance or design matrix.
+
+A CLR coordinate is not an absolute abundance. It compares one part with the
+geometric mean of all parts included in that analysis. Filtering or changing the
+feature set changes that reference and therefore changes each coordinate, even
+when a fixed pairwise log ratio is unchanged.
+
+# Isometric Log-ratio Coordinates
+
+Let $\mathbf V$ be a $D\times(D-1)$ matrix whose columns are an orthonormal basis
+for the zero-sum subspace, so that
+
+$$
+\mathbf V^{\mathsf T}\mathbf V=\mathbf I_{D-1},
+\qquad
+\mathbf V^{\mathsf T}\mathbf 1=\mathbf0.
+$$
+
+ILR coordinates are
+
+$$
+\boxed{
+\operatorname{ilr}(\mathbf x)
+=\mathbf V^{\mathsf T}\log\mathbf x
+=\mathbf V^{\mathsf T}\operatorname{clr}(\mathbf x).
+}
+$$
+
+They are $D-1$ unconstrained, orthonormal coordinates, and
+
+$$
+\left\|\operatorname{ilr}(\mathbf x)
+-\operatorname{ilr}(\mathbf y)\right\|_2
+=d_A(\mathbf x,\mathbf y).
+$$
+
+ILR is therefore the natural representation for multivariate normal models,
+PCA, clustering, regression, and other methods whose geometry should match the
+simplex. The basis is not unique. Fitted values and Aitchison distances are
+basis-invariant when a model uses the full coordinate space, but individual ILR
+coefficients depend on the chosen basis and must be interpreted through it.
+
+# Balances Give ILR Coordinates Meaning
+
+A balance compares the geometric mean of one group of parts $R$ with that of a
+disjoint group $S$. If $r=|R|$ and $s=|S|$, then
+
+$$
+b_{R,S}(\mathbf x)
+=\sqrt{\frac{rs}{r+s}}
+\log\frac{g(\mathbf x_R)}{g(\mathbf x_S)}.
+$$
+
+The square-root factor gives unit length in Aitchison geometry. A sequence of
+binary partitions can produce $D-1$ orthonormal balances. For example, a first
+balance might compare obligate anaerobes with facultative anaerobes, while later
+balances describe contrasts within each group.
+
+The biology must justify the groups. A taxonomic split is not automatically a
+functional contrast, and a data-mined partition can overfit. When balances are
+selected using the outcome, their apparent association must be validated with
+the entire selection procedure repeated in training data or accounted for in
+inference.
+
+# Log Contrasts and Regression
+
+A log contrast is
+
+$$
+L_{\boldsymbol\beta}(\mathbf x)
+=\sum_{j=1}^D\beta_j\log x_j,
+\qquad
+\sum_{j=1}^D\beta_j=0.
+$$
+
+The zero-sum condition gives scale invariance because
+
+$$
+\sum_j\beta_j\log(cx_j)
+=\sum_j\beta_j\log x_j
++\log(c)\sum_j\beta_j
+=L_{\boldsymbol\beta}(\mathbf x).
+$$
+
+It can also be written as a log ratio of weighted geometric means:
+
+$$
+L_{\boldsymbol\beta}(\mathbf x)
+=\log
+\frac{\prod_{j:\beta_j>0}x_j^{\beta_j}}
+{\prod_{j:\beta_j<0}x_j^{-\beta_j}}.
+$$
+
+For a continuous outcome, a log-contrast model may be written
+
+$$
+E(Y_i\mid\mathbf x_i,\mathbf z_i)
+=\alpha+\sum_j\beta_j\log x_{ij}
++\boldsymbol\gamma^{\mathsf T}\mathbf z_i,
+\qquad \sum_j\beta_j=0,
+$$
+
+where $\mathbf z_i$ contains noncompositional covariates. The coefficients define
+a relative substitution pattern, not the effect of increasing one component
+while holding every other component and the total fixed, which is impossible.
+Interpretation should specify which parts increase relative to which other parts
+and on what perturbation scale.
+
+The same principle extends to generalized linear and survival models. The link
+function, outcome distribution, clustering, confounding adjustment, and
+uncertainty model remain separate choices; transforming the predictors does not
+make those assumptions disappear.
+
+# Worked Example: One Composition, Three Views
+
+For $\mathbf x=(0.6,0.3,0.1)$, using the third part as the ALR denominator gives
+
+$$
+\operatorname{alr}(\mathbf x)
+=(\log 6,\log 3)
+\approx(1.792,1.099).
+$$
+
+The geometric mean is $g(\mathbf x)=(0.018)^{1/3}\approx0.262$, so
+
+$$
+\operatorname{clr}(\mathbf x)
+\approx(0.829,0.136,-0.964),
+$$
+
+whose entries sum to zero. A balance comparing the first part with the geometric
+mean of parts 2 and 3 is
+
+$$
+b_{\{1\},\{2,3\}}(\mathbf x)
+=\sqrt{\frac{2}{3}}
+\log\frac{0.6}{\sqrt{0.3\times0.1}}
+\approx1.015.
+$$
+
+All three representations describe the same composition. ALR highlights a
+chosen reference, CLR treats the observed parts symmetrically but is singular,
+and the balance expresses a specific group comparison in an orthonormal system.
+
+# Zeros, Small Values, and Measurement Error
+
+The logarithm is undefined at zero. Replacing every zero by a constant $c$ and
+then applying a log ratio yields
+
+$$
+\log\frac{x_j+c}{x_k+c},
+$$
+
+which is not generally close to $\log(x_j/x_k)$ and depends on measurement units
+and library depth. A small pseudocount is therefore a modeling choice, not a
+mathematical formality.
+
+The response should match the zero mechanism:
+
+- rounded zeros may be handled with a count sampling model, Bayesian posterior
+  estimate, or multiplicative replacement justified by a detection process;
+- below-detection values call for a censoring-aware method;
+- structural zeros can require separate supports, presence--absence modeling, or
+  stratified scientific questions;
+- failed measurements should remain missing and enter a missing-data workflow.
+
+Filtering rare parts also changes the composition and the CLR reference. Record
+the rule before outcome analysis where possible, repeat it inside resampling,
+and assess whether conclusions survive defensible zero and prevalence choices.
+Technical uncertainty is usually greatest for the smallest measured parts, just
+where log ratios can have the largest magnitude.
+
+# Bioinformatics Workflow
+
+Suppose each of 48 independently sampled patients contributes one stool sample,
+which is split into two extraction replicates. A defensible analysis proceeds as
+follows:
+
+1. **Define the estimand.** For example, a population difference in a
+   prespecified microbial balance, conditional on baseline covariates.
+2. **Identify the experimental unit.** The patient supplies independent
+   replication; extraction splits characterize measurement variation.
+3. **Audit the measurement process.** Record input mass, extraction batch,
+   library depth, detection limits, contamination controls, and taxonomic rules.
+4. **Choose parts and zero handling without outcome-driven tuning.** Document
+   prevalence filters and why the assumed zero mechanism is plausible.
+5. **Choose coordinates for the question.** Use an interpretable ALR reference,
+   prespecified balances, or a full ILR basis for multivariate modeling.
+6. **Fit the design-aware model.** Include treatment, blocking, confounders, or
+   repeated-measure structure at their actual levels.
+7. **Quantify uncertainty at the patient level.** Do not treat taxa, reads, or
+   extraction replicates as independent biological observations.
+8. **Check sensitivity.** Vary defensible references, bases, filtering, zero
+   treatments, and influential patients; repeat supervised preprocessing inside
+   validation splits.
+
+If an ILR model finds a treatment difference, the statistical interpretation is
+a difference in specified relative coordinates across patients under the model.
+The biological interpretation may be a shift in community structure, but it is
+not proof that particular taxa changed in absolute cell count. Quantitative
+spike-ins or another validated total-load measure are needed for that stronger
+claim.
+
+# Diagnostics and Method Choice
+
+| Goal | Useful representation | Main caution |
+|---|---|---|
+| compare each part with a validated control | ALR | all coordinates inherit denominator uncertainty |
+| visualize parts symmetrically | CLR | singular covariance and feature-set-dependent center |
+| preserve simplex distances in full-rank coordinates | ILR | coordinate coefficients depend on the basis |
+| test a prespecified group contrast | balance | groups and direction need scientific justification |
+| regress on all log parts | zero-sum log contrast | coefficients describe relative reallocation, not absolute effects |
+
+Diagnostics should inspect coordinate distributions, sample distances, leverage,
+residual patterns, batch alignment, and stability under alternative defensible
+references. A basis rotation cannot fix confounding, pseudoreplication, poor
+calibration, or a misspecified outcome model. Conversely, different full ILR
+bases should not change a correctly implemented basis-invariant quantity such as
+Aitchison distance or the fitted values from an unpenalized full-space model.
+Penalties and variable selection can break that invariance because sparsity is
+defined relative to the chosen coordinates.
+
+# Connections and Take-home Messages
+
+- [Compositional data and the simplex](compositional-data-and-the-simplex.qmd)
+  develops closure, scale invariance, Aitchison geometry, and absolute-scale
+  nonidentifiability.
+- [Principal component analysis](../advanced-modeling/principal-component-analysis.qmd)
+  can be applied to ILR coordinates when Euclidean PCA should respect simplex
+  geometry.
+- [Multiple linear regression](../regression-models/multiple-linear-regression.qmd)
+  supplies coefficient, adjustment, and uncertainty principles used after a
+  coordinate choice.
+- [Composition bias and normalization factors](composition-bias-and-normalization-factors.qmd)
+  connects relative references to RNA-seq scaling.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a framework for reference, filtering, and zero-treatment checks.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  identifies the units that determine inferential uncertainty.
+
+1. ALR, CLR, and ILR retain the same positive compositional information but have
+   different coordinate geometry and interpretation.
+2. CLR is symmetric but singular; ILR is orthonormal and full-rank; ALR is most
+   interpretable when its denominator is scientifically defensible.
+3. Balances and zero-sum log contrasts state explicitly which groups of parts
+   are compared.
+4. Zeros are measurement or biological events, not values that a universal
+   pseudocount can harmlessly repair.
+5. Coordinate transformations respect relative information, but they do not
+   solve confounding, pseudoreplication, model misspecification, or the absence
+   of an absolute reference.
+
+# References
+
+- Aitchison, J. (1982). The statistical analysis of compositional data. *Journal
+  of the Royal Statistical Society: Series B*, 44(2), 139--177.
+  <https://doi.org/10.1111/j.2517-6161.1982.tb01195.x>
+- Aitchison, J., and Bacon-Shone, J. (1984). Log contrast models for experiments
+  with mixtures. *Biometrika*, 71(2), 323--330.
+  <https://doi.org/10.1093/biomet/71.2.323>
+- Egozcue, J. J., Pawlowsky-Glahn, V., Mateu-Figueras, G., and Barceló-Vidal, C.
+  (2003). Isometric logratio transformations for compositional data analysis.
+  *Mathematical Geology*, 35, 279--300.
+  <https://doi.org/10.1023/A:1023818214614>
+- Pawlowsky-Glahn, V., and Egozcue, J. J. (2011). Exploring compositional data
+  with the CoDa-dendrogram. *Austrian Journal of Statistics*, 40(1--2), 103--113.
+  <https://doi.org/10.17713/ajs.v40i1&2.202>
+- Martín-Fernández, J. A., Barceló-Vidal, C., and Pawlowsky-Glahn, V. (2003).
+  Dealing with zeros and missing values in compositional data sets using
+  nonparametric imputation. *Mathematical Geology*, 35, 253--278.
+  <https://doi.org/10.1023/A:1023866030544>
+- Lovell, D., Pawlowsky-Glahn, V., Egozcue, J. J., Marguerat, S., and Bähler, J.
+  (2015). Proportionality: a valid alternative to correlation for relative data.
+  *PLoS Computational Biology*, 11(3), e1004075.
+  <https://doi.org/10.1371/journal.pcbi.1004075>
+- Quinn, T. P., Erb, I., Richardson, M. F., and Crowley, T. M. (2018).
+  Understanding sequencing data as compositions: an outlook and review.
+  *Bioinformatics*, 34(16), 2870--2878.
+  <https://doi.org/10.1093/bioinformatics/bty175>

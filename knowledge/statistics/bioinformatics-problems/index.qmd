@@ -30,9 +30,12 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Gene-set enrichment analysis](gene-set-enrichment-analysis.qmd)
 - [Competitive versus self-contained gene-set tests](competitive-versus-self-contained-gene-set-tests.qmd)
 - [Correlated genes and pathway-level inference](correlated-genes-and-pathway-level-inference.qmd)
+- [Compositional data and the simplex](compositional-data-and-the-simplex.qmd)
+- [Log-ratio transformations](log-ratio-transformations.qmd)
 
-Future notes will develop microbiome and single-cell statistics, spatial omics,
-meta-analysis, and reproducible statistical workflows.
+Future notes will develop microbiome differential-abundance statistics,
+single-cell and spatial-omics inference, meta-analysis, and reproducible
+statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)

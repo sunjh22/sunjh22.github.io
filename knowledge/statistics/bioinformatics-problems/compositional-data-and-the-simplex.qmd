@@ -1,0 +1,324 @@
+---
+title: "Compositional Data and the Simplex"
+subtitle: "Statistical reasoning when only relative information is observed"
+description: "The simplex, closure, relative scale, Aitchison geometry, experimental design, and interpretation of compositional omics data."
+author: "Jiahong Sun"
+date: "2026-11-23"
+date-modified: "2026-11-23"
+categories: [Statistics, Bioinformatics, Compositional Data, Multivariate Analysis]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Relative Information Is the Data
+
+A composition is a positive vector whose information lies in the ratios among
+its parts, not in its total. Percentages of cell types, metabolite fractions,
+microbial relative abundances, and sequencing libraries can all have this form.
+For $D$ parts and a chosen total $\kappa>0$, the open simplex is
+
+$$
+\boxed{
+\mathcal S_\kappa^{D-1}
+=\left\{\mathbf x=(x_1,\ldots,x_D):x_j>0,
+\ \sum_{j=1}^D x_j=\kappa\right\}.
+}
+$$
+
+Although $\mathbf x$ has $D$ entries, the constant-sum constraint leaves only
+$D-1$ degrees of freedom. More importantly, the scientific information is
+unchanged by multiplying every pre-closure abundance by the same positive
+constant. A coherent analysis must therefore give the same answer for counts,
+proportions, or percentages that encode the same ratios.
+
+This is not merely a nuisance constraint to remove. It defines a sample space
+with its own geometry and determines which questions the data can answer.
+
+# From Absolute Amounts to a Composition
+
+Let $\mathbf a=(a_1,\ldots,a_D)$ denote positive absolute amounts. The closure
+operation rescales them to a chosen total:
+
+$$
+\mathcal C_\kappa(\mathbf a)
+=\kappa\frac{\mathbf a}{\sum_{j=1}^D a_j}.
+$$
+
+Closure is many-to-one because
+
+$$
+\mathcal C_\kappa(c\mathbf a)=\mathcal C_\kappa(\mathbf a)
+\qquad\text{for every }c>0.
+$$
+
+Consequently, a composition identifies relative abundance but not total load.
+The absolute vectors $(6,3,1)$, $(60,30,10)$, and $(600,300,100)$ all close to
+$(0.6,0.3,0.1)$ when $\kappa=1$. No method using only the closed vector can
+recover which total generated it.
+
+## A sequencing data-generating process
+
+For sample $i$, suppose the biological material contains absolute amounts
+$A_{i1},\ldots,A_{iD}$ and the assay produces $N_i$ classified reads. An idealized
+conditional sampling model is
+
+$$
+\mathbf Y_i\mid N_i,\boldsymbol\pi_i
+\sim\operatorname{Multinomial}(N_i,\boldsymbol\pi_i),
+\qquad
+\pi_{ij}=\frac{A_{ij}}{\sum_k A_{ik}}.
+$$
+
+The experiment observes noisy information about $\boldsymbol\pi_i$, not the
+absolute total $T_i=\sum_k A_{ik}$. Extraction, amplification, taxonomic
+classification, and feature-specific efficiency can further alter the mapping
+from biological amounts to read probabilities. Treating read depth as total
+microbial load therefore confuses an assay allocation with a biological amount.
+
+External information can change the estimand. Calibrated spike-ins, sample mass,
+cell counts, flow cytometry, or quantitative PCR may supply an absolute
+reference, but only under their own recovery and measurement assumptions.
+
+# Why Ordinary Euclidean Reasoning Misleads
+
+In ordinary Euclidean space, adding the same amount to a coordinate is a natural
+translation. In the simplex, changing one part while retaining a fixed total
+necessarily changes at least one other part. An observed decrease can therefore
+mean either that a component fell in absolute amount or that other components
+grew faster.
+
+If $X_1+\cdots+X_D=\kappa$ exactly, then
+
+$$
+0=\operatorname{Var}\!\left(\sum_jX_j\right)
+=\sum_j\operatorname{Var}(X_j)
++2\sum_{j<k}\operatorname{Cov}(X_j,X_k).
+$$
+
+Thus the raw covariance matrix is singular, and its entries must collectively
+obey the constant-sum constraint. Correlations of raw proportions can reflect
+closure as well as biological co-regulation. A negative correlation is not by
+itself evidence of competition, and a positive one is not proof of cooperation.
+The stable objects are log ratios such as $\log(x_j/x_k)$.
+
+# Aitchison Geometry
+
+Two operations make the positive simplex behave like a vector space. For
+compositions $\mathbf x$ and $\mathbf y$, **perturbation** is component-wise
+multiplication followed by closure,
+
+$$
+\mathbf x\oplus\mathbf y
+=\mathcal C_\kappa(x_1y_1,\ldots,x_Dy_D),
+$$
+
+and **powering** by $\alpha\in\mathbb R$ is
+
+$$
+\alpha\odot\mathbf x
+=\mathcal C_\kappa(x_1^\alpha,\ldots,x_D^\alpha).
+$$
+
+Perturbation changes relative abundances multiplicatively; powering expands or
+contracts log-ratio differences. These operations motivate the Aitchison
+distance
+
+$$
+d_A(\mathbf x,\mathbf y)
+=\left[
+\frac{1}{D}\sum_{j<k}
+\left\{
+\log\frac{x_j}{x_k}-\log\frac{y_j}{y_k}
+\right\}^2
+\right]^{1/2}.
+$$
+
+It depends only on pairwise ratios, is invariant to the closure total, and is
+unchanged if either underlying positive vector is multiplied by a scalar. The
+[log-ratio transformations](log-ratio-transformations.qmd) note shows how to
+represent this geometry with ordinary real coordinates.
+
+# Subcompositions and Amalgamations
+
+A **subcomposition** retains selected parts and closes them to a new total. For
+example, selecting parts 1 and 3 from $(0.6,0.3,0.1)$ gives
+$(6/7,1/7)$. Their log ratio remains
+
+$$
+\log\frac{6/7}{1/7}=\log\frac{0.6}{0.1}=\log 6.
+$$
+
+This preservation of ratios among retained parts underlies subcompositional
+coherence. It does not mean that every statistic must be numerically unchanged
+after deleting variables: a coordinate defined relative to all $D$ parts may
+change because the scientific comparison changed. It means that conclusions
+about a fixed ratio should not depend on irrelevant closure conventions.
+
+An **amalgamation** adds parts, such as combining several taxa into a phylum.
+It is not equivalent to selecting a subcomposition: in general,
+$\log\{(x_1+x_2)/x_3\}$ cannot be reconstructed from a single contrast between
+geometric means. Aggregation changes the question and can conceal heterogeneous
+responses within the combined group.
+
+# Center, Variation, and Distributional Models
+
+For positive compositions $\mathbf x_1,\ldots,\mathbf x_n$, the compositional
+center is the closed vector of component-wise geometric means:
+
+$$
+\operatorname{cen}(\mathbf x_1,\ldots,\mathbf x_n)
+=\mathcal C_\kappa
+\left(
+\left[\prod_i x_{i1}\right]^{1/n},\ldots,
+\left[\prod_i x_{iD}\right]^{1/n}
+\right).
+$$
+
+The variation matrix summarizes relative variability through
+
+$$
+t_{jk}=\operatorname{Var}\!\left(\log\frac{X_j}{X_k}\right).
+$$
+
+Small $t_{jk}$ means that parts $j$ and $k$ remain close to proportional across
+experimental units. This is not the same as saying that either part is constant
+or that they are causally linked.
+
+A Dirichlet distribution is one probability model on the simplex, but its
+covariance structure is restrictive. Logistic-normal models instead place a
+multivariate normal distribution on $D-1$ log-ratio coordinates. Neither model
+is automatically appropriate for sequencing counts: the sampling layer,
+biological heterogeneity, zeros, and study design still require explicit models.
+
+# Zeros Are Scientific and Statistical Information
+
+Log-ratio geometry requires positive components. A zero can represent several
+different processes:
+
+- **rounded or count zero:** an underlying amount may be positive but no read or
+  signal was observed;
+- **below-detection value:** the assay cannot resolve an amount beneath a limit;
+- **structural absence:** the component is genuinely absent from the system;
+- **missing or failed measurement:** zero is a coding or quality-control error.
+
+Adding the same arbitrary pseudocount to every cell treats these mechanisms as
+identical and affects rare parts most strongly. A defensible workflow states the
+zero mechanism, uses a compatible sampling or censoring model when possible,
+and checks sensitivity to justified replacement or filtering rules. Structural
+zeros may place samples on different faces of the simplex and can require a
+different scientific comparison rather than numerical replacement.
+
+# Experimental Design Comes Before Geometry
+
+Consider a microbiome study with 30 people per treatment, two stool aliquots per
+person, and two sequencing runs per aliquot. For the population treatment
+contrast, the person is usually the experimental unit. Aliquots and runs are
+technical or subsampling levels; they improve measurement or reveal technical
+variation but do not create 120 independent people per arm.
+
+The feature vector within a person is one multivariate observation. Taxa are
+components, not replicates. Resampling taxa as if they were independent subjects
+does not estimate between-person uncertainty. Randomization, blocking, repeated
+measures, household structure, batch, medication, diet, and sampling time must
+be represented at their actual design levels.
+
+The target must also be explicit:
+
+- a treatment effect on a prespecified taxon-to-reference log ratio;
+- a difference in the multivariate composition between populations;
+- prediction of a phenotype from a composition; or
+- an absolute-abundance effect supported by external calibration.
+
+These are different estimands. A method valid for one does not silently identify
+the others.
+
+# Worked Example: Relative Change Is Not Absolute Change
+
+Suppose the control absolute vector is $(60,30,10)$ and the treated vector is
+$(120,30,10)$. Their closed compositions are
+
+$$
+(0.60,0.30,0.10)
+\quad\text{and}\quad
+(0.75,0.1875,0.0625).
+$$
+
+Only the first absolute component changed, yet the proportions of the other two
+components fell. Their mutual ratio did not change:
+
+$$
+\frac{30}{10}=3
+\qquad\text{in both groups}.
+$$
+
+The log ratios involving component 1 changed by $\log 2$, while
+$\log(x_2/x_3)$ stayed fixed. A statement such as “components 2 and 3 decreased”
+is therefore correct only on the relative scale; it is false on the stated
+absolute scale. Without an external denominator, the closed data alone cannot
+distinguish this scenario from other absolute changes that yield the same two
+compositions.
+
+# Diagnostics and Sensitivity Analysis
+
+| Question | Why it matters | Useful check |
+|---|---|---|
+| What created the denominator? | total, library size, and sampling effort have different meanings | document the measurement and closure process |
+| What is the experimental unit? | uncertainty follows independent biological sampling | map every row to donor, specimen, aliquot, and run |
+| Are zeros rounded, censored, structural, or missing? | each mechanism implies different treatment | inspect detection limits, prevalence, controls, and raw records |
+| Is a reference stable enough for the claim? | all relative effects depend on a comparison | repeat analysis with prespecified plausible denominators or balances |
+| Do rare parts dominate distances? | log ratios can magnify tiny uncertain values | assess filtering and zero-treatment sensitivity |
+| Is an absolute claim being made? | relative data do not identify total load | require and validate an external quantitative reference |
+
+Sensitivity analysis should vary only scientifically defensible choices and
+report whether effect directions, uncertainty intervals, rankings, and decisions
+change. Selecting the denominator or zero rule that yields the preferred result
+is outcome-dependent analysis, not robustness.
+
+# Connections and Take-home Messages
+
+- [Log-ratio transformations](log-ratio-transformations.qmd) develops ALR, CLR,
+  ILR, balances, and log-contrast interpretation.
+- [Composition bias and normalization factors](composition-bias-and-normalization-factors.qmd)
+  explains how RNA-seq scaling methods choose an implicit relative reference.
+- [Categorical and multinomial distributions](../probability-randomness/categorical-and-multinomial-distributions.qmd)
+  provides the conditional sampling model for a fixed library total.
+- [Dirichlet distribution](../probability-randomness/dirichlet-distribution.qmd)
+  introduces a probability distribution supported on the simplex.
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  develops randomization, blocking, and valid replication.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  separates independent biological evidence from repeated measurement.
+
+1. A $D$-part composition has $D-1$ degrees of freedom and carries information
+   about ratios, not an absolute total.
+2. Closure is many-to-one, so relative data cannot identify total abundance
+   without external information.
+3. Raw covariance and correlation are constrained by the constant sum; Aitchison
+   geometry compares compositions through log ratios.
+4. Zeros require a measurement-based explanation rather than an automatic
+   pseudocount.
+5. In bioinformatics, samples or donors are experimental units; reads, taxa, and
+   technical replicates do not substitute for biological replication.
+
+# References
+
+- Aitchison, J. (1982). The statistical analysis of compositional data. *Journal
+  of the Royal Statistical Society: Series B*, 44(2), 139--177.
+  <https://doi.org/10.1111/j.2517-6161.1982.tb01195.x>
+- Aitchison, J. (1986). *The Statistical Analysis of Compositional Data*.
+  Chapman & Hall.
+- Pawlowsky-Glahn, V., Egozcue, J. J., and Tolosana-Delgado, R. (2015).
+  *Modeling and Analysis of Compositional Data*. Wiley.
+  <https://doi.org/10.1002/9781119003144>
+- Martín-Fernández, J. A., Barceló-Vidal, C., and Pawlowsky-Glahn, V. (2003).
+  Dealing with zeros and missing values in compositional data sets using
+  nonparametric imputation. *Mathematical Geology*, 35, 253--278.
+  <https://doi.org/10.1023/A:1023866030544>
+- Gloor, G. B., Macklaim, J. M., Pawlowsky-Glahn, V., and Egozcue, J. J. (2017).
+  Microbiome datasets are compositional: and this is not optional. *Frontiers in
+  Microbiology*, 8, 2224. <https://doi.org/10.3389/fmicb.2017.02224>
+- Quinn, T. P., Erb, I., Richardson, M. F., and Crowley, T. M. (2018).
+  Understanding sequencing data as compositions: an outlook and review.
+  *Bioinformatics*, 34(16), 2870--2878.
+  <https://doi.org/10.1093/bioinformatics/bty175>
