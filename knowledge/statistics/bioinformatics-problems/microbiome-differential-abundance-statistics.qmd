@@ -1,0 +1,311 @@
+---
+title: "Microbiome Differential-abundance Statistics"
+subtitle: "Estimands, references, designs, and uncertainty for taxon-level comparisons"
+description: "A design-first guide to differential-abundance analysis of microbiome sequencing data, including compositionality, model choices, diagnostics, and interpretation."
+author: "Jiahong Sun"
+date: "2026-11-24"
+date-modified: "2026-11-24"
+categories: [Statistics, Bioinformatics, Microbiome, Differential Abundance]
+toc: true
+number-sections: true
+draft: false
+---
+
+# The Question Is More Specific Than “Which Taxa Differ?”
+
+Microbiome differential-abundance analysis asks whether a feature's abundance is
+associated with a condition, exposure, or outcome. The phrase hides several
+different statistical targets. A study may compare a taxon's proportion of the
+sequenced community, its abundance relative to a reference set, its probability
+of detection, or its absolute concentration per unit of specimen. These targets
+can disagree without any calculation being wrong.
+
+The analysis therefore begins by naming four objects:
+
+1. the experimental units that support the comparison;
+2. the biological abundance or ratio that is the estimand;
+3. the observation process that turns specimens into counts; and
+4. the null hypothesis and testing family.
+
+A method name or adjusted p-value cannot substitute for those choices.
+
+# From Microbial Material to a Feature Table
+
+Let $A_{ij}$ be the unobserved absolute amount of taxon $j$ in biological sample
+$i$, and let $T_i=\sum_j A_{ij}$ be total microbial load over the represented
+features. An idealized sequencing layer is
+
+$$
+\mathbf Y_i\mid N_i,\boldsymbol\pi_i
+\sim\operatorname{Multinomial}(N_i,\boldsymbol\pi_i),
+\qquad
+\pi_{ij}=\frac{e_{ij}A_{ij}}{\sum_k e_{ik}A_{ik}},
+$$
+
+where $N_i$ is the classified library size and $e_{ij}$ represents extraction,
+amplification, sequencing, and classification efficiency. Even if efficiencies
+were constant across samples, the count table primarily identifies relative
+allocation $\boldsymbol\pi_i$, not $A_{ij}$ or $T_i$ separately.
+
+This model explains three features of microbiome data:
+
+- counts depend on sequencing effort as well as biology;
+- components are coupled by the library total; and
+- rare taxa can have many observed zeros even when their true proportions are
+  positive.
+
+Real pipelines add contamination, batch effects, taxonomic ambiguity, variable
+copy number, filtering, and database-dependent classification. Those steps are
+part of the data-generating process, not neutral preprocessing.
+
+# Define the Estimand Before the Model
+
+Suppose $X_i$ indicates treatment and $Z_i$ contains prespecified covariates.
+Common targets include the following.
+
+## Differential relative abundance
+
+A feature-wise model may target
+
+$$
+\logit(\pi_{ij})=\alpha_j+\beta_jX_i+\boldsymbol\gamma_j^{\mathsf T}Z_i.
+$$
+
+Here $\beta_j$ is a contrast in taxon $j$ relative to the rest of the represented
+community. A change in other taxa can alter this estimand even if $A_{ij}$ is
+constant.
+
+## Differential log ratio
+
+For a prespecified positive reference set $R$, a log-contrast target is
+
+$$
+\theta_j=
+\operatorname E\!\left[
+\log A_{ij}-\frac{1}{|R|}\sum_{k\in R}\log A_{ik}
+\mid X_i=1
+\right]
+-
+\operatorname E\!\left[
+\log A_{ij}-\frac{1}{|R|}\sum_{k\in R}\log A_{ik}
+\mid X_i=0
+\right].
+$$
+
+This is invariant to sample-wide scaling, but its meaning depends on the
+reference. CLR-based analyses use all included features as an evolving reference;
+ALR and balance analyses can instead encode a scientifically chosen denominator.
+
+## Differential absolute abundance
+
+An absolute target such as
+
+$$
+\delta_j=\operatorname E(\log A_{ij}\mid X_i=1)
+-\operatorname E(\log A_{ij}\mid X_i=0)
+$$
+
+is not generally identified from a count table alone. Spike-ins, flow cytometry,
+quantitative PCR, sample mass, or another calibrated measurement can provide an
+absolute scale. Some compositional methods estimate absolute-scale effects under
+assumptions about sampling fractions or the proportion and direction of changing
+taxa. Those assumptions should be stated; they do not recreate unmeasured total
+load by algebra.
+
+## Prevalence and detection
+
+The target may instead be
+
+$$
+\Pr(Y_{ij}>0\mid X_i,Z_i),
+$$
+
+which combines biological occurrence, abundance, library size, and detection.
+It is not interchangeable with the mean abundance among positive samples. The
+companion note on [zero inflation and sparsity](zero-inflation-and-sparsity-in-microbiome-data.qmd)
+develops this distinction.
+
+# Experimental Units and Design
+
+For a treatment study with one specimen per person, people are usually the
+experimental units. Reads are sampling events, taxa are response features, and
+technical PCR or sequencing replicates are repeated measurements. Ten thousand
+reads from each of six people still provide six independent biological units for
+a population treatment contrast.
+
+Repeated specimens from the same person require a paired, longitudinal, or
+hierarchical model. Household, litter, cage, plot, clinic, and batch may create
+additional clustering. A feature-wise design matrix can be written as
+
+$$
+g\{\operatorname E(Y_{ij})\}
+=\alpha_j+\beta_jX_i+\boldsymbol\gamma_j^{\mathsf T}Z_i+o_i,
+$$
+
+where $g$ and the offset $o_i$ depend on the method. The same design principles
+as other regression analyses apply: represent blocking and confounding, avoid
+complete condition--batch aliasing, and define interactions before inspecting
+results. Adding covariates after looking at the discoveries changes the analysis
+and can amplify instability.
+
+# Major Modeling Strategies
+
+No single strategy is uniformly best because the methods target different
+quantities and rely on different reference assumptions.
+
+| Strategy | Typical target | Main idea | Important limitation |
+|---|---|---|---|
+| Log-ratio regression | a taxon-to-reference contrast | analyze ALR, CLR, ILR, or balances on a relative scale | zeros and reference choice affect the estimand |
+| ALDEx2-style Monte Carlo analysis | CLR contrasts with count uncertainty | sample Dirichlet instances, transform, and compare groups | the effective reference and prior/count model matter |
+| ANCOM family | pairwise log-ratio evidence or bias-corrected abundance effects | use ratio invariance or estimate sample-specific bias | interpretation depends on sparsity and reference-set assumptions |
+| Beta-binomial regression | relative abundance and sometimes dispersion | model $Y_{ij}$ conditional on $N_i$ with extra-binomial variation | feature-wise models do not represent the full joint composition |
+| Negative-binomial count regression | normalized count mean | use an offset and overdispersed count likelihood | normalization assumptions define the implicit reference |
+| Two-part, hurdle, or zero-inflated regression | occurrence and positive abundance, or a mixture mean | separate or mix a zero process and an abundance process | extra parameters can be weakly identified; components need biological meaning |
+
+Taxon-wise Wilcoxon tests on percentages appear simple, but they do not adjust
+for covariates, repeated measures, varying precision, or the dependence induced
+by normalization. Rarefying before testing discards reads and adds Monte Carlo
+variation; it is not a general correction for library size or compositionality.
+
+# A Small Example: Absolute and Relative Effects Diverge
+
+Suppose the control absolute community is $(40,40,20)$ and treatment doubles
+only the first taxon, giving $(80,40,20)$. The relative compositions are
+
+$$
+(0.40,0.40,0.20)
+\quad\text{and}\quad
+(0.571,0.286,0.143).
+$$
+
+Taxa 2 and 3 have unchanged absolute amounts but lower relative abundances. Their
+mutual ratio is unchanged, whereas the ratios of taxon 1 to either taxon have
+doubled. A method testing proportions can report three changes; a method testing
+pairwise ratios can localize the perturbation more clearly; an absolute assay can
+show that only taxon 1 increased. “Differentially abundant” is incomplete unless
+the reporting scale is supplied.
+
+# Estimation, Testing, and Multiplicity
+
+For taxon $j$, distinguish the estimand $\theta_j$, its estimator
+$\widehat\theta_j$, the observed estimate, and its standard error or interval.
+A test may evaluate
+
+$$
+H_{0j}:\theta_j=0
+$$
+
+using a Wald, likelihood-ratio, permutation, or rank statistic. Valid p-values
+require a correct null reference distribution and a design-respecting unit of
+resampling. Permuting individual rows is invalid when several rows come from one
+person.
+
+The testing family should include all prespecified eligible taxa and contrasts.
+Prevalence or abundance filtering can improve stability, but the rule must not
+select features using the same group difference being tested unless selection is
+accounted for. Apply a stated multiplicity procedure, usually Benjamini--Hochberg
+or a justified alternative, to valid feature-level p-values. An FDR-adjusted
+p-value is evidence relative to a family; it is not an effect size or the
+probability that a taxon-specific biological claim is true.
+
+# Diagnostics and Sensitivity Analysis
+
+| Question | Diagnostic | Sensitivity analysis |
+|---|---|---|
+| Does the model reproduce mean--variance and zero patterns? | taxon-wise residuals, fitted-versus-observed prevalence, posterior or parametric predictive summaries | compare a simpler overdispersed model with a justified two-part model |
+| Is one library or donor influential? | leverage, residual, and leave-one-unit-out plots | refit after excluding documented failures or influential units |
+| Does sequencing depth track the exposure? | plot $N_i$ and detection rate by group and batch | adjust the design or restrict to supported overlap; do not interpret depth as load |
+| Is the conclusion reference-dependent? | inspect stable candidate references and global shifts | compare prespecified ALR, CLR, balance, and bias-corrected analyses |
+| Do filtering and aggregation determine the result? | tabulate prevalence by taxonomic level | vary defensible prevalence thresholds and repeat at a prespecified aggregation level |
+| Are p-values calibrated? | null simulations or label permutations that preserve the design | compare multiplicity procedures and negative-control taxa when available |
+| Is the effect driven by contamination? | blanks, extraction controls, batch plots, and taxonomic plausibility | use contamination-aware exclusion rules fixed without outcome labels |
+
+Agreement across methods is reassuring only when the methods address the same
+estimand. Disagreement can be informative: it may reveal a global compositional
+shift, unstable reference, sparse feature, model misspecification, or a contrast
+that changes meaning across methods.
+
+# Statistical and Biological Interpretation
+
+A responsible result might read: “Relative to the prespecified reference taxa,
+taxon $j$ was estimated to be 1.7-fold higher in treated participants (95%
+interval 1.2--2.4; BH-adjusted p-value 0.02). The estimate was similar under two
+reference sets but attenuated after excluding one antibiotic-exposed donor.”
+
+This is a population association on a relative scale. It does not show that the
+organism increased in absolute concentration, caused the phenotype, or changed
+metabolic activity. Taxonomic resolution and functional annotation add further
+uncertainty. Biological claims may require absolute quantification, strain-level
+resolution, metatranscriptomics, metabolomics, culture, perturbation, or an
+independent cohort.
+
+# A Design-first Workflow
+
+1. State the biological population, experimental unit, exposure, contrast, and
+   abundance scale.
+2. Audit specimen handling, controls, batches, repeated measures, library sizes,
+   taxonomy, and the provenance of zeros.
+3. Define the eligible feature universe, aggregation level, filtering rule,
+   covariates, interactions, and multiplicity family prospectively.
+4. Choose a model whose estimand and dependence structure match those choices.
+5. Report estimates and intervals with adjusted p-values; inspect fit and
+   influential units.
+6. Repeat the analysis under a small set of scientifically defensible reference,
+   zero-handling, filtering, and model choices.
+7. Separate statistical evidence from absolute, causal, and mechanistic claims.
+
+# Connections and Take-home Messages
+
+- [Compositional data and the simplex](compositional-data-and-the-simplex.qmd)
+  explains why count tables identify ratios rather than total microbial load.
+- [Log-ratio transformations](log-ratio-transformations.qmd) develops ALR, CLR,
+  ILR, balances, and log-contrast regression.
+- [Zero inflation and sparsity in microbiome data](zero-inflation-and-sparsity-in-microbiome-data.qmd)
+  distinguishes biological absence, sampling zeros, censoring, and mixture models.
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  covers randomization, blocking, confounding, and replication.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  identifies the units that support population inference.
+- [Benjamini--Hochberg and Storey q-values](../statistical-inference/benjamini-hochberg-and-storey-q-values.qmd)
+  explains multiple-testing control and interpretation.
+
+1. Differential abundance is not one estimand: proportions, log ratios,
+   prevalence, and absolute abundance answer different questions.
+2. Sequencing depth is measurement effort, not microbial load; absolute claims
+   require calibration or explicit identifying assumptions.
+3. Donors or independently assigned specimens usually support inference; reads,
+   taxa, and technical replicates do not add independent biological units.
+4. Every method chooses a likelihood, normalization or reference, zero mechanism,
+   and multiplicity procedure, whether those choices are explicit or hidden.
+5. Effect sizes, intervals, diagnostics, and sensitivity analyses are necessary
+   for biological interpretation; a discovery list alone is not.
+
+# References
+
+- Mandal, S., Van Treuren, W., White, R. A., Eggesbø, M., Knight, R., and
+  Peddada, S. D. (2015). Analysis of composition of microbiomes: a novel method
+  for studying microbial composition. *Microbial Ecology in Health and Disease*,
+  26, 27663. <https://doi.org/10.3402/mehd.v26.27663>
+- Fernandes, A. D., Reid, J. N. S., Macklaim, J. M., McMurrough, T. A.,
+  Edgell, D. R., and Gloor, G. B. (2014). Unifying the analysis of
+  high-throughput sequencing datasets: characterizing RNA-seq, 16S rRNA gene
+  sequencing and selective growth experiments by compositional data analysis.
+  *Microbiome*, 2, 15.
+  <https://doi.org/10.1186/2049-2618-2-15>
+- Lin, H., and Peddada, S. D. (2020). Analysis of compositions of microbiomes
+  with bias correction. *Nature Communications*, 11, 3514.
+  <https://doi.org/10.1038/s41467-020-17041-7>
+- Martin, B. D., Witten, D., and Willis, A. D. (2020). Modeling microbial
+  abundances and dysbiosis with beta-binomial regression. *The Annals of Applied
+  Statistics*, 14(1), 94--115. <https://doi.org/10.1214/19-AOAS1283>
+- McMurdie, P. J., and Holmes, S. (2014). Waste not, want not: why rarefying
+  microbiome data is inadmissible. *PLoS Computational Biology*, 10(4), e1003531.
+  <https://doi.org/10.1371/journal.pcbi.1003531>
+- Hawinkel, S., Mattiello, F., Bijnens, L., and Thas, O. (2019). A broken
+  promise: microbiome differential abundance methods do not control the false
+  discovery rate. *Briefings in Bioinformatics*, 20(1), 210--221.
+  <https://doi.org/10.1093/bib/bbx104>
+- Nearing, J. T., Douglas, G. M., Hayes, M. G., et al. (2022). Microbiome
+  differential abundance methods produce different results across 38 datasets.
+  *Nature Communications*, 13, 342.
+  <https://doi.org/10.1038/s41467-022-28034-z>

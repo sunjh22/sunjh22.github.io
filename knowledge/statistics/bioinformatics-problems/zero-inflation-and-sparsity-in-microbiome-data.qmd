@@ -1,0 +1,356 @@
+---
+title: "Zero Inflation and Sparsity in Microbiome Data"
+subtitle: "Distinguishing absence, non-detection, overdispersion, and mixture mechanisms"
+description: "A measurement-aware guide to zeros in microbiome count tables, including sampling zeros, structural absence, zero-inflated and hurdle models, diagnostics, and sensitivity."
+author: "Jiahong Sun"
+date: "2026-11-24"
+date-modified: "2026-11-24"
+categories: [Statistics, Bioinformatics, Microbiome, Sparse Data]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Sparse Is a Description; Zero-inflated Is a Model Claim
+
+A microbiome feature table is sparse when many entries equal zero. Zero
+inflation is a stronger statement: relative to a specified count distribution
+and covariates, the observed data contain more zeros than that model predicts.
+One cannot diagnose zero inflation by reporting that 80% of a table is zero.
+
+The distinction matters because zeros can arise from different layers:
+
+- true biological absence from the sampled unit;
+- presence at an amount too small to be captured;
+- finite sampling from a positive relative abundance;
+- extraction, amplification, sequencing, or classification failure;
+- contamination-control or prevalence filtering rules;
+- aggregation and taxonomic-definition choices; or
+- missing values or failed measurements encoded incorrectly as zero.
+
+A model should represent the plausible mechanism and the scientific estimand,
+not merely imitate the histogram.
+
+# How Ordinary Sampling Produces Zeros
+
+Suppose sample $i$ has library size $N_i$ and taxon $j$ has read probability
+$\pi_{ij}$. Under a binomial marginal sampling model,
+
+$$
+Y_{ij}\mid N_i,\pi_{ij}\sim\operatorname{Binomial}(N_i,\pi_{ij}),
+\qquad
+\Pr(Y_{ij}=0)=(1-\pi_{ij})^{N_i}.
+$$
+
+If $N_i=10{,}000$ and $\pi_{ij}=10^{-4}$, the expected count is one but
+
+$$
+\Pr(Y_{ij}=0)=(1-10^{-4})^{10{,}000}\approx e^{-1}\approx0.37.
+$$
+
+Thus a taxon present in every biological sample can be unobserved in more than a
+third of libraries. Increasing depth reduces this sampling-zero probability, but
+does not eliminate extraction bias or identify whether the organism was
+biologically absent.
+
+Variation in $\pi_{ij}$ across biological units produces overdispersion. For
+example, a beta-binomial model allows
+
+$$
+Y_{ij}\mid N_i,p_{ij}\sim\operatorname{Binomial}(N_i,p_{ij}),
+\qquad
+p_{ij}\sim\operatorname{Beta}(a_j,b_j).
+$$
+
+The resulting distribution can predict many zeros without a separate structural
+zero class. Likewise, a negative-binomial model with mean $\mu$ and variance
+$\mu+\phi\mu^2$ has
+
+$$
+\Pr(Y=0)=(1+\phi\mu)^{-1/\phi},
+$$
+
+which can greatly exceed the Poisson probability $e^{-\mu}$. A poor Poisson fit
+therefore does not by itself justify a zero-inflated negative binomial model.
+
+# Four Useful Zero Mechanisms
+
+## Sampling or rounded zeros
+
+The underlying amount is positive, but finite sequencing records no reads. These
+zeros are expected under multinomial, beta-binomial, Poisson, or negative-binomial
+sampling. Library size, efficiency, and taxon abundance determine their frequency.
+
+## Censoring or detection-limit zeros
+
+The assay reports zero below an effective threshold. The threshold may vary with
+sample matrix, batch, primer, or depth. A censoring model treats zero as partial
+information about a small latent amount rather than proof of absence.
+
+## Structural zeros
+
+The organism cannot occur in a sample because of ecological, anatomical, or
+design constraints. A structural zero can place the composition on a lower-
+dimensional face of the simplex. Replacing it with a pseudocount asserts a
+positive amount and may change the scientific population under study.
+
+## Technical and administrative zeros
+
+Failed wells, missing files, decontamination exclusions, or pipeline errors are
+not biological observations. They should be represented with failure and
+missingness indicators, not silently merged with measured zeros.
+
+These categories are often not identifiable from one count table. Controls,
+replicate assays, depth, assay validation, and biological knowledge supply the
+additional evidence.
+
+# Zero-inflated and Hurdle Models
+
+Let $f(y;\theta)$ be a count distribution with its own probability $f(0;\theta)$
+of zero. A zero-inflated model introduces a latent extra-zero probability
+$\omega_i$:
+
+$$
+\Pr(Y_i=0)=\omega_i+(1-\omega_i)f(0;\theta_i),
+$$
+
+$$
+\Pr(Y_i=y>0)=(1-\omega_i)f(y;\theta_i).
+$$
+
+Zeros can arise from either component. With covariates, one may model
+$\operatorname{logit}(\omega_i)$ separately from the count mean. The two sets of
+coefficients describe different processes, and a marginal mean effect combines
+both:
+
+$$
+\operatorname E(Y_i)=(1-\omega_i)\mu_i.
+$$
+
+A hurdle model instead assigns every zero to one process and uses a zero-
+truncated distribution for positive values:
+
+$$
+\Pr(Y_i=0)=\omega_i,
+\qquad
+\Pr(Y_i=y>0)=(1-\omega_i)
+\frac{f(y;\theta_i)}{1-f(0;\theta_i)}.
+$$
+
+This is natural when crossing from non-detection to detection is scientifically
+distinct from variation among detected samples. It does not claim that the first
+process is literal ecological absence unless the design supports that meaning.
+
+[Zero-inflated and hurdle distributions](../probability-randomness/zero-inflated-and-hurdle-distributions.qmd)
+derives these probability models in general. In microbiome data, an additional
+challenge remains: taxon counts share a library total and carry relative rather
+than independent absolute information.
+
+# Identifiability and Interpretation
+
+Zero-inflated models add flexibility by adding latent classes and parameters.
+That flexibility can create weak identification. A low mean, high dispersion,
+and large extra-zero probability can produce similar observed distributions,
+especially for a rare taxon in a small study. Convergence of an optimizer does
+not prove that the two mechanisms were learned.
+
+The latent state is also not automatically biological absence. For a fitted
+zero-inflated model,
+
+$$
+\Pr(\text{extra-zero component}\mid Y_i=0)
+=\frac{\omega_i}
+{\omega_i+(1-\omega_i)f(0;\theta_i)}.
+$$
+
+This is a model-dependent posterior classification, not a directly observed
+label. Calling it “presence versus absence” requires assumptions that distinguish
+the two sources of zero.
+
+Two-part analyses also create several possible null hypotheses:
+
+- no covariate effect on detection;
+- no effect on abundance conditional on detection;
+- no effect on the marginal mean;
+- no effect on either component jointly; or
+- no effect on a relative abundance or log ratio.
+
+Those tests can reach different conclusions because they answer different
+questions.
+
+# Compositionality Does Not Disappear at Zero
+
+For a positive composition, log ratios preserve relative information. Zeros make
+the logarithm undefined but do not make raw proportions absolute. Adding a
+pseudocount $c$ yields
+
+$$
+\log\frac{Y_{ij}+c}{Y_{ik}+c},
+$$
+
+whose value can be dominated by $c$ for rare taxa. The same pseudocount has very
+different relative impact in a shallow and a deep library. It is therefore a
+modeling decision, not a harmless computational fix.
+
+Reasonable approaches depend on the mechanism:
+
+- model counts directly when zeros are expected sampling outcomes;
+- use multiplicative replacement or a Bayesian count model when a positive
+  latent composition is scientifically credible, with sensitivity analysis;
+- use a two-part or censoring model when detection has a separate meaning;
+- treat true structural zeros as defining a different support or population; and
+- exclude failed measurements as missing under an explicit quality-control rule.
+
+Filtering very rare taxa can stabilize inference and reduce the testing burden,
+but changes the feature universe. Prevalence thresholds should be prespecified
+without using outcome labels, and results should state the retained taxonomic
+level and reference set.
+
+# Experimental Units, Replication, and Dependence
+
+In a human cohort, participants usually support population inference. Multiple
+stool aliquots, PCR wells, sequencing runs, and reads from one participant are
+technical or nested observations. Treating them as independent shrinks standard
+errors without adding between-person information.
+
+Repeated visits require subject-aware models or resampling. Cage, household,
+site, plate, extraction batch, primer set, and sequencing run can affect both
+detection and positive abundance. If depth or batch differs by outcome group, an
+apparent prevalence difference can be technical. Condition--batch confounding
+cannot be repaired by choosing a more elaborate zero model.
+
+Biological and technical replicates can help distinguish mechanisms. A taxon
+that appears inconsistently across technical repeats near the detection limit is
+different evidence from a taxon absent across deep repeated assays but present
+in other habitats. Replicates improve that diagnosis only if their hierarchy is
+recorded and analyzed correctly.
+
+# A Worked Detection Example
+
+Suppose a taxon has the same true read probability, $\pi=2\times10^{-4}$, in two
+groups, but control libraries have $N=5{,}000$ reads and treated libraries have
+$N=20{,}000$. Under binomial sampling,
+
+$$
+\Pr(Y=0\mid N=5{,}000)\approx e^{-1}=0.37,
+$$
+
+whereas
+
+$$
+\Pr(Y=0\mid N=20{,}000)\approx e^{-4}=0.018.
+$$
+
+A naive presence/absence test can therefore report strong group separation even
+though the biological proportion is identical. Rarefying the deeper libraries
+would equalize nominal depth by discarding data and adding random variation. A
+better analysis models the observation process and investigates why depth is
+associated with group.
+
+# Diagnostics: Ask Whether the Model Predicts the Zeros
+
+For each eligible taxon, compare observed summaries with fitted or simulated
+replicates conditional on the design:
+
+- zero fraction and prevalence by group, depth, and batch;
+- positive-count distribution and upper tail;
+- mean--variance relationship across comparable samples;
+- zero fraction as a function of fitted mean and library size;
+- residuals for zeros and positives separately;
+- donor-level influence and leave-one-unit-out stability; and
+- predictive performance on held-out biological units, not held-out reads.
+
+Model comparison should include a scientifically plausible simpler model. A
+negative-binomial or beta-binomial model may already reproduce the zeros. If a
+zero-inflated model is fitted, inspect boundary estimates, large standard errors,
+component separation, optimizer agreement, and simulation-based calibration.
+Information criteria or likelihood-ratio tests can assist, but mixture parameters
+on a boundary can invalidate routine chi-squared approximations.
+
+# Sensitivity Analysis
+
+No single diagnostic identifies the true zero mechanism, so conclusions should
+survive plausible alternatives.
+
+| Choice | Useful comparison |
+|---|---|
+| Feature filtering | several prespecified prevalence and abundance thresholds |
+| Taxonomic resolution | amplicon sequence variant, species, genus, or a justified aggregation |
+| Zero handling for log ratios | alternative small replacement rules or a count-based model |
+| Likelihood | beta-binomial or negative binomial versus a justified hurdle or zero-inflated model |
+| Scientific target | prevalence, positive abundance, marginal mean, and a prespecified log ratio |
+| Reference | stable reference taxa, broader reference set, or external absolute measurement |
+| Influential units | leave-one-donor/site/batch-out fits |
+
+Do not search this grid for the most significant result. Define a primary
+analysis, use alternatives to expose dependence on assumptions, and report when
+direction, magnitude, uncertainty, or the discovery decision changes.
+
+# Statistical and Biological Interpretation
+
+Suppose treatment is associated with lower detection probability but similar
+positive abundance for a taxon. Statistically, this is evidence about the assay-
+and-depth-specific occurrence process; it is not automatically evidence that
+treatment eradicates the organism. Conversely, a positive-abundance shift among
+detected samples does not imply a population-wide mean shift when prevalence
+also changes.
+
+A zero can support an ecological absence claim only when the sampling frame,
+detection capability, controls, and biological context make non-detection
+informative. Absolute abundance requires calibrated load information. Causal
+claims require an appropriate design and assumptions beyond a good-fitting count
+model.
+
+# Connections and Take-home Messages
+
+- [Microbiome differential-abundance statistics](microbiome-differential-abundance-statistics.qmd)
+  connects zero mechanisms to estimands, regression, testing, and multiplicity.
+- [Compositional data and the simplex](compositional-data-and-the-simplex.qmd)
+  explains why relative counts do not identify total microbial load.
+- [Log-ratio transformations](log-ratio-transformations.qmd) develops coordinates
+  for positive compositions and the consequences of zero replacement.
+- [Beta-binomial distribution](../probability-randomness/beta-binomial-distribution.qmd)
+  models extra-binomial variation conditional on a total.
+- [Negative binomial distribution and overdispersion](../probability-randomness/negative-binomial-distribution-and-overdispersion.qmd)
+  shows how heterogeneity alone can increase zero probability.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  distinguishes independent evidence from repeated measurement.
+
+1. Sparsity is an observed property; zero inflation is excess relative to a
+   specified, adequately fitted model.
+2. Finite depth and biological heterogeneity can generate many zeros without a
+   separate structural-zero process.
+3. Structural absence, non-detection, censoring, and failure have different
+   scientific meanings and should not be collapsed by an automatic pseudocount.
+4. Zero-inflated and hurdle models answer component-specific questions and can
+   be weakly identified for rare taxa or small samples.
+5. Diagnostics must compare observed and predicted zeros conditional on depth,
+   design, and covariates; sensitivity analysis should vary plausible mechanisms.
+6. Donors or independently sampled specimens support inference, while reads and
+   technical repeats help characterize measurement rather than population size.
+
+# References
+
+- Warton, D. I. (2005). Many zeros does not mean zero inflation: comparing the
+  goodness-of-fit of parametric models to multivariate abundance data.
+  *Environmetrics*, 16(3), 275--289. <https://doi.org/10.1002/env.702>
+- Paulson, J. N., Stine, O. C., Bravo, H. C., and Pop, M. (2013). Differential
+  abundance analysis for microbial marker-gene surveys. *Nature Methods*, 10,
+  1200--1202. <https://doi.org/10.1038/nmeth.2658>
+- McMurdie, P. J., and Holmes, S. (2014). Waste not, want not: why rarefying
+  microbiome data is inadmissible. *PLoS Computational Biology*, 10(4), e1003531.
+  <https://doi.org/10.1371/journal.pcbi.1003531>
+- Hu, T., Gallins, P., and Zhou, Y.-H. (2018). A zero-inflated beta-binomial
+  model for microbiome data analysis. *Stat*, 7(1), e185.
+  <https://doi.org/10.1002/sta4.185>
+- Martin, B. D., Witten, D., and Willis, A. D. (2020). Modeling microbial
+  abundances and dysbiosis with beta-binomial regression. *The Annals of Applied
+  Statistics*, 14(1), 94--115. <https://doi.org/10.1214/19-AOAS1283>
+- Jiang, S., Xiao, G., Koh, A. Y., Kim, J., Li, Q., and Zhan, X. (2021). A
+  Bayesian zero-inflated negative binomial regression model for the integrative
+  analysis of microbiome data. *Biostatistics*, 22(3), 522--540.
+  <https://doi.org/10.1093/biostatistics/kxz050>
+- Nearing, J. T., Douglas, G. M., Hayes, M. G., et al. (2022). Microbiome
+  differential abundance methods produce different results across 38 datasets.
+  *Nature Communications*, 13, 342.
+  <https://doi.org/10.1038/s41467-022-28034-z>

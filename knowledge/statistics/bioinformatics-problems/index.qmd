@@ -32,10 +32,11 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Correlated genes and pathway-level inference](correlated-genes-and-pathway-level-inference.qmd)
 - [Compositional data and the simplex](compositional-data-and-the-simplex.qmd)
 - [Log-ratio transformations](log-ratio-transformations.qmd)
+- [Microbiome differential-abundance statistics](microbiome-differential-abundance-statistics.qmd)
+- [Zero inflation and sparsity in microbiome data](zero-inflation-and-sparsity-in-microbiome-data.qmd)
 
-Future notes will develop microbiome differential-abundance statistics,
-single-cell and spatial-omics inference, meta-analysis, and reproducible
-statistical workflows.
+Future notes will develop single-cell and spatial-omics inference, meta-analysis,
+and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)
