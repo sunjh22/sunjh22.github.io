@@ -34,9 +34,11 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Log-ratio transformations](log-ratio-transformations.qmd)
 - [Microbiome differential-abundance statistics](microbiome-differential-abundance-statistics.qmd)
 - [Zero inflation and sparsity in microbiome data](zero-inflation-and-sparsity-in-microbiome-data.qmd)
+- [Measurement error and sequencing uncertainty](measurement-error-and-sequencing-uncertainty.qmd)
+- [Probabilistic genotype and variant likelihoods](probabilistic-genotype-and-variant-likelihoods.qmd)
 
-Future notes will develop single-cell and spatial-omics inference, meta-analysis,
-and reproducible statistical workflows.
+Future notes will develop population-genomic adjustment, single-cell and
+spatial-omics inference, meta-analysis, and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)

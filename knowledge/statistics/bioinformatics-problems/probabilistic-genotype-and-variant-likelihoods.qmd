@@ -1,0 +1,415 @@
+---
+title: "Probabilistic Genotype and Variant Likelihoods"
+subtitle: "Turning uncertain read evidence into genotype, allele, and site-level inference"
+description: "A derivation-first guide to genotype likelihoods, priors, posterior probabilities, VCF likelihood fields, diagnostics, and uncertainty-aware downstream analysis."
+author: "Jiahong Sun"
+date: "2026-11-25"
+date-modified: "2026-11-25"
+categories: [Statistics, Bioinformatics, Genotypes, Variant Calling]
+toc: true
+number-sections: true
+draft: false
+---
+
+# A Genotype Call Is a Decision, Not the Evidence
+
+At a genomic locus, aligned reads provide imperfect evidence about an unobserved
+genotype. A probabilistic caller first asks how compatible the reads are with each
+candidate genotype. Only later does it combine that likelihood with a prior or
+population model and, if required, choose a call.
+
+Keeping these objects separate prevents a common mistake:
+
+$$
+\underbrace{p(D\mid G)}_{\text{genotype likelihood}}
+\quad\ne\quad
+\underbrace{p(G\mid D)}_{\text{genotype posterior}}
+\quad\ne\quad
+\underbrace{\widehat G}_{\text{genotype call}}.
+$$
+
+Here $D$ denotes read evidence and $G$ a candidate genotype. A likelihood ranks
+how well genotypes explain the observed data. A posterior also depends on a
+genotype prior. A call applies a decision rule and discards part of the uncertainty.
+
+# Scientific Target and Experimental Units
+
+The same read likelihood can contribute to different targets:
+
+- the genotype of one sampled organism at one locus;
+- whether a locus is polymorphic in a cohort;
+- an allele frequency in a target population;
+- a somatic variant fraction in a tissue mixture; or
+- an association between latent genotype and phenotype.
+
+The donor, organism, clone, or independently sampled specimen is normally the
+experimental unit. Reads are measurements nested within that unit. Joint calling
+borrows information across units, but it does not convert reads into population
+replicates.
+
+Ploidy, tissue composition, copy number, and the sampled population are part of
+the model. A diploid germline genotype model is inappropriate for a haploid
+organism, a tumor with copy-number alteration, or a mixed microbial population.
+
+# From Reads to an Allele Likelihood
+
+Suppose a diploid biallelic locus has reference allele $A$ and alternate allele
+$B$. Candidate genotypes are $AA$, $AB$, and $BB$. For read $k$, let $d_k$ include
+the observed base or haplotype, base quality, mapping evidence, and other features.
+Define
+
+$$
+\ell_k(a)=p(d_k\mid\text{read originated from allele }a).
+$$
+
+Under equal sampling of the two chromosome copies, the read likelihood for
+genotype $G=(a,b)$ is
+
+$$
+p(d_k\mid G)=\frac{1}{2}\ell_k(a)+\frac{1}{2}\ell_k(b).
+$$
+
+If reads are conditionally independent given the genotype and error model,
+
+$$
+\boxed{
+L(G)=p(D\mid G)=\prod_{k=1}^{n}p(d_k\mid G)
+}
+$$
+
+or, more stably,
+
+$$
+\log L(G)=\sum_{k=1}^{n}\log p(d_k\mid G).
+$$
+
+Modern small-variant callers often compare locally assembled haplotypes rather
+than isolated bases, but the statistical structure is the same: compute evidence
+conditional on each candidate state, then aggregate it under explicit assumptions.
+
+# A Small Derivation
+
+Assume each read reports either $A$ or $B$ with a constant symmetric error
+probability $e$. If $n_A$ reads report $A$ and $n_B$ report $B$, then
+
+$$
+\begin{aligned}
+L(AA)&=(1-e)^{n_A}e^{n_B},\\
+L(AB)&=(1/2)^{n_A+n_B},\\
+L(BB)&=e^{n_A}(1-e)^{n_B}.
+\end{aligned}
+$$
+
+For $n_A=8$, $n_B=2$, and $e=0.01$,
+
+$$
+L(AA)=0.99^8 0.01^2,
+\qquad
+L(AB)=0.5^{10},
+\qquad
+L(BB)=0.01^8 0.99^2.
+$$
+
+The heterozygous genotype is more compatible than $AA$ despite an imbalanced
+8:2 read count, while $BB$ is effectively incompatible. This does not prove the
+sample is heterozygous: unequal allele sampling, reference bias, contamination,
+copy number, correlated errors, or an incorrect $e$ can change the likelihood.
+
+Read-specific qualities replace the constant $e$ in a realistic calculation.
+For four bases, an error probability must also be allocated among alternative
+observations, and indels require alignment or haplotype models.
+
+# Likelihoods, Priors, and Posteriors
+
+Bayes' theorem gives
+
+$$
+p(G\mid D)=
+\frac{p(D\mid G)p(G)}{\sum_{G'}p(D\mid G')p(G')}.
+$$
+
+The prior $p(G)$ may depend on allele frequency, Hardy--Weinberg assumptions,
+pedigree structure, ploidy, mutation models, or a cohort-level latent allele
+count. With alternate-allele frequency $f$ and Hardy--Weinberg equilibrium,
+
+$$
+p(AA)=(1-f)^2,
+\qquad
+p(AB)=2f(1-f),
+\qquad
+p(BB)=f^2.
+$$
+
+At low depth, the prior can materially affect the posterior and call. That is not
+an error: the reads contain limited information. It does mean that results should
+name the prior model and assess sensitivity, especially for rare variants,
+ancestrally diverse cohorts, inbred populations, pedigrees, and somatic samples.
+
+A joint caller can estimate allele frequency while integrating over uncertain
+genotypes. For individuals $i=1,\ldots,m$ with data $D_i$,
+
+$$
+L(f)=\prod_{i=1}^{m}
+\sum_{G_i}p(D_i\mid G_i)p(G_i\mid f).
+$$
+
+This is preferable to first forcing every sample to a hard genotype and then
+pretending the calls are error-free.
+
+# Site-level Variant Evidence
+
+Genotyping and variant discovery answer related but distinct questions. A
+site-level comparison can contrast
+
+$$
+H_0:\text{only the reference allele is present}
+\quad\text{versus}\quad
+H_1:\text{at least one alternate allele is present}.
+$$
+
+Evidence might be summarized through a likelihood ratio, Bayes factor, or
+posterior probability after summing over genotype configurations under each
+hypothesis. For example,
+
+$$
+\mathrm{BF}_{10}
+=\frac{p(D\mid H_1)}{p(D\mid H_0)}
+=\frac{\sum_{\mathbf G\in H_1}p(D\mid\mathbf G)p(\mathbf G\mid H_1)}
+{p(D\mid\mathbf G=\text{all reference})}.
+$$
+
+The exact quantity depends on the caller. A site quality, a sample genotype
+quality, and a genotype likelihood should never be treated as synonyms.
+
+# Reading Likelihood Fields in VCF
+
+The VCF specification defines several related sample-level fields.
+
+| Field | Statistical object | Scale and interpretation |
+|---|---|---|
+| `GT` | called genotype | allele indices; a decision, not uncertainty |
+| `GL` | genotype likelihoods | $\log_{10}L(G)$ in specified genotype order |
+| `PL` | normalized genotype likelihoods | rounded $-10\log_{10}\{L(G)/L_{\max}\}$; best likelihood has 0 |
+| `GP` | genotype posterior probabilities | probabilities between 0 and 1 |
+| `GQ` | conditional genotype-call quality | Phred-scaled probability that the call is wrong under the caller's model |
+| `AD` | allele depths | read-support summary, not a likelihood |
+| `DP` | depth | amount of recorded coverage, not independent evidence count |
+
+For diploid alleles numbered $0,1,\ldots$, genotype likelihoods use a prescribed
+ordering. With one alternate allele, the order is $0/0$, $0/1$, $1/1$. For a
+diploid site with two alternate alleles, it is $0/0$, $0/1$, $1/1$, $0/2$,
+$1/2$, $2/2$. Software should use the header and specification rather than infer
+meaning from position casually.
+
+If likelihoods are $L_0,L_1,L_2$, then
+
+$$
+\mathrm{PL}_g=\operatorname{round}
+\left[-10\log_{10}\left(\frac{L_g}{\max_h L_h}\right)\right].
+$$
+
+PL values are relative: multiplying every likelihood by the same constant does
+not change them. They cannot by themselves reconstruct a posterior without a
+prior. Conversely, `GQ` is tied to the selected call and caller's posterior or
+conditional convention; it is not simply the second-smallest PL in every tool
+and situation.
+
+# How Many Genotypes Are Possible?
+
+With $K$ alleles and ploidy $P$, the number of unordered genotypes is
+
+$$
+\binom{K+P-1}{P}.
+$$
+
+Thus a diploid biallelic site has $\binom{3}{2}=3$ genotypes, while a tetraploid
+site with three alleles has $\binom{6}{4}=15$. Likelihood arrays grow quickly as
+ploidy and allele count rise. This is a computational fact and a modeling warning:
+incorrect ploidy changes the state space, expected allele fractions, prior, and
+meaning of the call.
+
+# When Read Independence Fails
+
+The product likelihood treats reads as conditionally independent after accounting
+for modeled features. Important violations include:
+
+- PCR duplicates and read pairs derived from the same molecule;
+- early polymerase errors propagated to a family of reads;
+- context- or cycle-specific base-calling errors;
+- systematic misalignment in repeats, paralogs, and near indels;
+- reference-allele mapping bias;
+- contamination or index misassignment;
+- local copy-number changes and allele-specific amplification; and
+- incomplete or structurally different reference sequence.
+
+When correlated reads are counted as independent, likelihood ratios and quality
+scores can become far too extreme. Duplicate marking, molecular consensus,
+local assembly, base-quality recalibration, and richer error models can help, but
+each works only for mechanisms it represents. The companion note on
+[measurement error and sequencing uncertainty](measurement-error-and-sequencing-uncertainty.qmd)
+develops this observation process in detail.
+
+# Hard Calls Lose Information
+
+Suppose two samples are both called `0/1`. One may have posterior probabilities
+$(0.01,0.98,0.01)$ and the other $(0.30,0.40,0.30)$. Treating the calls as equally
+certain hides a large difference in information.
+
+For downstream allele-frequency, association, imputation, or population-genetic
+analysis, preferable strategies include:
+
+- integrate over genotype likelihoods or posterior dosages;
+- use genotype probabilities with methods that model their uncertainty;
+- conduct sensitivity analyses to prior and quality thresholds; and
+- distinguish a missing call from strong evidence for the reference genotype.
+
+A posterior dosage
+
+$$
+\operatorname E(B\text{-allele count}\mid D)
+=0\,p(AA\mid D)+1\,p(AB\mid D)+2\,p(BB\mid D)
+$$
+
+preserves more information than a hard count, although its validity still depends
+on the likelihood and prior. Plugging dosage into a standard regression as if it
+were observed without error can understate uncertainty; fully integrated methods
+are preferable when genotype uncertainty is substantial.
+
+# Germline, Somatic, and Mixed Samples
+
+## Germline inference
+
+For a conventional diploid germline sample, candidate allele fractions are near
+$0$, $1/2$, and $1$ before allowing bias and overdispersion. Population allele
+frequency, pedigree, or linkage information can contribute to the prior.
+
+## Somatic inference
+
+Tumor purity, clonality, local copy number, and normal contamination make allele
+fractions continuous and locus-specific. A low variant allele fraction is not a
+low-confidence heterozygous germline genotype; it belongs to a different
+data-generating model. Matched normal samples help distinguish somatic from
+germline evidence but do not remove sequencing or alignment artifacts.
+
+## Pooled or microbial samples
+
+In pools and mixtures, the latent state may be an allele frequency or haplotype
+composition rather than an individual genotype. Modeling the pool as one diploid
+individual forces the wrong state space and uncertainty.
+
+# Diagnostics and Sensitivity Analysis
+
+A defensible variant-likelihood analysis inspects both calibration and biological
+fit.
+
+| Check | What it can reveal |
+|---|---|
+| Empirical error versus base and mapping quality | miscalibrated likelihood inputs |
+| Allele balance by expected genotype | mapping bias, dropout, contamination, copy number |
+| Strand, orientation, position, and cycle balance | context-specific artifacts |
+| Read-start and UMI-family diversity | duplicate or molecule-level dependence |
+| Mendelian consistency or replicate concordance | call and sample problems, with design caveats |
+| Ti/Tv, region, depth, and quality distributions | broad call-set anomalies, not proof of truth |
+| Comparison across callers or representations | model sensitivity and normalization issues |
+| Truth sets or orthogonal assays | calibration in represented regions and variant classes |
+
+Sensitivity analyses should vary plausible priors, ploidy, contamination, error
+rates, quality filters, difficult-region definitions, and allele-balance models.
+Concordance on easy variants does not validate performance for low-complexity
+regions, indels, structural variation, low allele fractions, or underrepresented
+ancestries.
+
+# Design and Replication
+
+The likelihood cannot repair a confounded study. Balance biological groups across
+collection, extraction, library, capture, lane, and run. Include controls and
+reference materials that span relevant variant classes and allele fractions.
+Keep technical-replicate identities so dependence can be modeled rather than
+mistaken for biological replication.
+
+Donors or independently sampled organisms support population claims. Multiple
+reads improve genotype information for one unit; multiple libraries may reveal
+preparation variability; neither replaces additional biological units. A variant
+that is technically well supported in one specimen may still be biologically
+idiosyncratic.
+
+# Statistical versus Biological Interpretation
+
+A precise statistical conclusion is: *given the candidate alleles, ploidy,
+alignment, calibrated error model, and prior, the posterior probability of genotype
+$AB$ is 0.98.*
+
+This does not establish pathogenicity, causality, penetrance, cell of origin, or
+clinical actionability. It may not even establish that the variant representation
+is unique in a repetitive region. Biological interpretation requires annotation,
+phenotype and population context, inheritance or clonality evidence, appropriate
+replication, and sometimes orthogonal validation.
+
+# A Practical Workflow
+
+1. Define the biological target, experimental units, sample type, ploidy, and
+   candidate variant classes.
+2. Preserve read- and alignment-level quality information and sample provenance.
+3. Specify an observation model appropriate to the platform, region, and sample
+   mixture.
+4. Compute genotype or allele-state likelihoods without using cohort outcome
+   labels to tune evidence.
+5. State the prior or cohort model used to obtain posterior probabilities and calls.
+6. Retain likelihoods or posterior probabilities for uncertainty-aware downstream
+   analysis.
+7. Diagnose calibration, dependence, allele balance, mapping artifacts, and batch
+   effects.
+8. Repeat key conclusions under plausible priors, filters, ploidies, and error
+   models, and validate consequential findings independently.
+
+# Connections and Take-home Messages
+
+- [Bayes' theorem and Bayesian updating](../probability-randomness/bayes-theorem-and-bayesian-updating.qmd)
+  explains the transition from likelihood and prior to posterior.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  develops relative evidence and log-scale computation.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  separates population information from repeated measurement.
+- [Measurement error and sequencing uncertainty](measurement-error-and-sequencing-uncertainty.qmd)
+  covers quality calibration, correlated error, and validation.
+- [Variant-calling likelihood models](../../bioinformatics/algorithms/variant-calling-likelihood-models.qmd)
+  presents the complementary computational pipeline from aligned reads to VCF.
+
+1. A genotype likelihood is $p(D\mid G)$; it is not a posterior probability or
+   a hard genotype call.
+2. Priors, ploidy, allele definitions, and cohort structure can matter strongly
+   when sequence information is weak.
+3. `GL`, `PL`, `GP`, `GQ`, depth, and site quality encode different objects.
+4. Correlated or systematic errors can make apparently overwhelming read evidence
+   misleading.
+5. Retaining probabilistic evidence supports better downstream inference, but
+   biological claims still require design, replication, and validation.
+
+# References
+
+- Li, H., Ruan, J., and Durbin, R. (2008). Mapping short DNA sequencing reads and
+  calling variants using mapping quality scores. *Genome Research*, 18(11),
+  1851--1858. <https://doi.org/10.1101/gr.078212.108>
+- McKenna, A., Hanna, M., Banks, E., et al. (2010). The Genome Analysis Toolkit:
+  a MapReduce framework for analyzing next-generation DNA sequencing data.
+  *Genome Research*, 20(9), 1297--1303.
+  <https://doi.org/10.1101/gr.107524.110>
+- Nielsen, R., Paul, J. S., Albrechtsen, A., and Song, Y. S. (2011). Genotype and
+  SNP calling from next-generation sequencing data. *Nature Reviews Genetics*,
+  12, 443--451. <https://doi.org/10.1038/nrg2986>
+- Li, H. (2011). A statistical framework for SNP calling, mutation discovery,
+  association mapping and population genetical parameter estimation from
+  sequencing data. *Bioinformatics*, 27(21), 2987--2993.
+  <https://doi.org/10.1093/bioinformatics/btr509>
+- DePristo, M. A., Banks, E., Poplin, R., et al. (2011). A framework for
+  variation discovery and genotyping using next-generation DNA sequencing data.
+  *Nature Genetics*, 43, 491--498. <https://doi.org/10.1038/ng.806>
+- Danecek, P., Bonfield, J. K., Liddle, J., et al. (2021). Twelve years of
+  SAMtools and BCFtools. *GigaScience*, 10(2), giab008.
+  <https://doi.org/10.1093/gigascience/giab008>
+- Global Alliance for Genomics and Health Data Working Group (2024). *Variant
+  Call Format Specification*, version 4.3.
+  <https://github.com/samtools/hts-specs/blob/master/VCFv4.3.pdf>
+- Li, H. (2014). Toward better understanding of artifacts in variant calling
+  from high-coverage samples. *Bioinformatics*, 30(20), 2843--2851.
+  <https://doi.org/10.1093/bioinformatics/btu356>

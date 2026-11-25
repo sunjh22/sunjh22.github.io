@@ -1,0 +1,393 @@
+---
+title: "Measurement Error and Sequencing Uncertainty"
+subtitle: "From latent biological quantities to noisy reads and defensible inference"
+description: "A statistical guide to measurement error in sequencing studies, including quality scores, latent-variable models, replication, calibration, diagnostics, and sensitivity analysis."
+author: "Jiahong Sun"
+date: "2026-11-25"
+date-modified: "2026-11-25"
+categories: [Statistics, Bioinformatics, Measurement Error, Sequencing]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Sequencing Produces Measurements, Not Biological Truth
+
+A sequencer observes signals generated from sampled molecules after extraction,
+library preparation, amplification, and alignment. The resulting bases, counts,
+and variant calls are measurements of latent biological quantities. They are not
+the quantities themselves.
+
+This distinction matters whenever the scientific target is an allele fraction,
+genotype, expression level, methylation proportion, microbial abundance, or
+association with one of these quantities. Ignoring uncertainty can attenuate an
+association, create false rare variants, make intervals too narrow, or convert a
+limit of detection into an apparent biological absence.
+
+The central statistical task is therefore to connect three layers:
+
+$$
+\text{latent biological state}
+\longrightarrow
+\text{specimen and molecular sampling}
+\longrightarrow
+\text{observed sequencing data}.
+$$
+
+The observation model should preserve uncertainty that is relevant to the final
+estimand rather than replacing every intermediate quantity by a hard call.
+
+# Define the Target and the Experimental Unit
+
+Let $X_i$ denote a latent biological quantity for experimental unit $i$, and let
+$W_i$ be its observed surrogate. Examples of $X_i$ include a donor's true variant
+allele fraction in a tissue or the abundance of a transcript in a specimen. The
+experimental unit is the independently sampled or randomized donor, organism,
+specimen, or other unit that supports the scientific comparison.
+
+Reads are repeated observations from molecules, not independent biological
+replicates. Multiple lanes, resequencing runs, PCR duplicates, and libraries from
+one extraction may improve or diagnose measurement, but they do not enlarge the
+biological sample size. A valid analysis names both:
+
+- the **biological estimand**, such as a difference in mean latent allele fraction
+  between treatment groups; and
+- the **measurement estimand**, such as a platform-specific probability that a
+  read reports the alternate allele.
+
+These are linked by assumptions. They are rarely identical.
+
+# A Multistage Observation Process
+
+For DNA sequencing, a useful schematic is
+
+```text
+biological unit and tissue
+    -> extracted molecules
+    -> library molecules and amplification
+    -> instrument signals and base calls
+    -> aligned reads
+    -> read-level likelihoods
+    -> genotype, allele fraction, or variant evidence
+```
+
+Each arrow can add variation or bias.
+
+| Stage | Random or systematic mechanism | Observable symptom |
+|---|---|---|
+| Specimen collection | tissue mixture, degradation, contamination | sample-specific shifts, low endogenous fraction |
+| Extraction and library preparation | allelic dropout, GC bias, fragmentation, PCR error | uneven coverage, duplicate families, allele imbalance |
+| Sequencing | substitution and indel errors, cycle effects | quality- and position-dependent mismatches |
+| Alignment | ambiguous mapping, reference bias, incomplete reference | low mapping quality, clustered calls, strand or orientation bias |
+| Summarization | thresholds, filtering, hard calls | missingness tied to depth or quality |
+| Downstream model | ignored heterogeneity or dependence | overdispersion, anticonservative uncertainty |
+
+An error introduced before amplification may be copied into many descendant
+reads. Deep sequencing then repeats the same error rather than averaging it away.
+
+# Statistical Measurement-error Models
+
+## Additive classical error
+
+The classical model is
+
+$$
+W_i=X_i+U_i,
+\qquad
+\operatorname E(U_i\mid X_i)=0,
+\qquad
+\operatorname{Var}(U_i\mid X_i)=\sigma_U^2.
+$$
+
+It is a useful baseline, but sequencing error is often heteroscedastic,
+discrete, bounded, and dependent on sequence context. The variance may change
+with depth, base quality, batch, or the latent quantity itself.
+
+## Multiplicative and compositional error
+
+Counts and intensities often vary on a multiplicative scale:
+
+$$
+\log W_i=\log X_i+U_i.
+$$
+
+For sequencing counts, library size and feature-specific efficiency also enter.
+An idealized model for feature $j$ is
+
+$$
+Y_{ij}\mid N_i,\boldsymbol\pi_i
+\sim \operatorname{Binomial}(N_i,\pi_{ij}),
+\qquad
+\pi_{ij}=\frac{e_{ij}A_{ij}}{\sum_k e_{ik}A_{ik}},
+$$
+
+where $A_{ij}$ is latent absolute abundance and $e_{ij}$ is measurement
+efficiency. Without external information, $Y_{ij}$ does not identify absolute
+abundance separately from total abundance and efficiency. This connects to
+[compositional data and the simplex](compositional-data-and-the-simplex.qmd).
+
+## Misclassification and detection limits
+
+A called base or genotype is categorical. Its observation model can be written
+
+$$
+M_{ab}=\Pr(W=b\mid X=a),
+$$
+
+where the misclassification matrix $M$ need not be symmetric. Reference bias,
+allelic dropout, and variant-specific alignment difficulty make nondifferential,
+constant error an unsafe default.
+
+An observed zero may mean true absence, inadequate molecular sampling, a signal
+below the detection limit, filtering, or failed measurement. Treating all these
+states as the same numerical zero changes the estimand.
+
+# Quality Scores Are Error-probability Models
+
+A Phred-scaled quality score encodes an estimated error probability:
+
+$$
+Q=-10\log_{10}p_{\mathrm{err}},
+\qquad
+p_{\mathrm{err}}=10^{-Q/10}.
+$$
+
+Thus $Q=20$ corresponds to an estimated error probability of $0.01$, and $Q=30$
+to $0.001$. Base quality describes uncertainty in a base call. Mapping quality
+describes uncertainty in the read placement. They are not interchangeable, and
+neither guarantees calibration in a new chemistry, organism, context, or
+pipeline.
+
+Calibration asks whether observations assigned probability $p$ are wrong about
+$p$ of the time in comparable data. It should be checked by cycle, context,
+strand, read orientation, lane, sample, and genomic region when those dimensions
+can affect error. High nominal quality with poor calibration is precise-looking
+misinformation.
+
+# Propagate Read-level Uncertainty
+
+Consider a simplified biallelic locus. Let $\theta_i$ be the fraction of sampled
+molecules carrying the alternate allele in sample $i$, and let $R_{ik}=1$ if read
+$k$ reports the alternate allele. If $e_{ik}$ is a symmetric binary flip
+probability, then
+
+$$
+\Pr(R_{ik}=1\mid\theta_i,e_{ik})
+=e_{ik}+(1-2e_{ik})\theta_i.
+$$
+
+The likelihood is
+
+$$
+L(\theta_i)
+=\prod_{k=1}^{n_i}
+q_{ik}(\theta_i)^{R_{ik}}
+\{1-q_{ik}(\theta_i)\}^{1-R_{ik}},
+$$
+
+where $q_{ik}(\theta)=e_{ik}+(1-2e_{ik})\theta$. This small model shows why a
+low-quality alternate read and a high-quality alternate read should not contribute
+equal evidence. Real callers use richer models for four bases, indels, haplotypes,
+mapping uncertainty, local assembly, and platform-specific errors.
+
+If $X_i$ remains latent in a downstream regression with outcome $Y_i$, a coherent
+likelihood integrates rather than plugs in the most likely value:
+
+$$
+p(Y_i,W_i\mid Z_i)
+=\int p(Y_i\mid X_i,Z_i)\,p(W_i\mid X_i)\,p(X_i\mid Z_i)\,dX_i.
+$$
+
+In a Bayesian analysis, a posterior distribution for $X_i$ can be propagated
+jointly. Multiple imputation can also be useful when the imputation model
+represents the measurement process and downstream uncertainty.
+
+# Why Naive Regression Can Be Biased
+
+Suppose the scientific model is
+
+$$
+Y_i=\alpha+\beta X_i+\varepsilon_i,
+$$
+
+but the analyst regresses $Y_i$ on $W_i=X_i+U_i$. Under independent, mean-zero
+classical error,
+
+$$
+\operatorname{Cov}(W,Y)=\beta\operatorname{Var}(X),
+\qquad
+\operatorname{Var}(W)=\operatorname{Var}(X)+\operatorname{Var}(U).
+$$
+
+The population slope from the naive regression is therefore
+
+$$
+\boxed{
+\beta_{\mathrm{naive}}
+=\beta\frac{\operatorname{Var}(X)}
+{\operatorname{Var}(X)+\operatorname{Var}(U)}
+}
+$$
+
+and is attenuated toward zero. This familiar result is not universal. Differential
+error, correlated errors, nonlinear models, censoring, and multivariable regression
+can bias an estimate in either direction. Error in the outcome often increases
+variance under simple conditions, whereas error in an exposure or covariate can
+change the target and bias coefficients.
+
+# Depth Is Information Only under the Model
+
+If reads were independent with a correct, constant error model, increasing depth
+would reduce sampling variance. Sequencing data frequently violate that ideal:
+
+- PCR duplicates share an ancestral molecule;
+- overlapping read pairs can report the same template twice;
+- context-specific errors affect many reads similarly;
+- misalignment can create coherent alternate support;
+- index hopping or contamination introduces molecules from another source; and
+- copy-number variation or an incomplete reference changes expected allele balance.
+
+Consequently, the effective number of independent molecules can be far smaller
+than read depth. Unique molecular identifiers can help identify original molecules,
+but UMI errors, collisions, and consensus rules introduce their own model choices.
+The relevant diagnostic is not depth alone but agreement between the assumed and
+observed error structure.
+
+# Estimation Strategies
+
+| Available information | Defensible strategy | Key limitation |
+|---|---|---|
+| Read-level bases, qualities, and alignments | likelihood or Bayesian latent-state model | depends on calibration and error-model adequacy |
+| Technical replicates | hierarchical variance model or joint likelihood | replicate stages must be labeled correctly |
+| Validation subset with a more accurate assay | regression calibration, likelihood correction, or calibration curves | validation samples must represent the target setting |
+| Known standards, spike-ins, or truth sets | estimate context- and batch-specific error | standards may not mimic real specimens |
+| Only a hard call | sensitivity analysis over plausible misclassification | discarded likelihood information cannot be recovered |
+
+Simulation extrapolation and corrected-score methods are general measurement-error
+tools, but they require a defensible error model. No correction method can identify
+an unknown biological state and an unrestricted error process from one noisy
+measurement alone.
+
+# Worked Example: A Low-frequency Alternate Signal
+
+Suppose a specimen has 1,000 aligned reads at a locus and 5 report an alternate
+base. A naive estimate is $5/1000=0.005$. If all bases had calibrated $Q=30$
+scores and errors were independent with probability $0.001$, the expected number
+of erroneous bases of any modeled type would be small. But the five reads do not
+by themselves establish a 0.5% biological allele fraction.
+
+Before inference, ask:
+
+1. How many distinct original molecules support the alternate base?
+2. Are supporting reads balanced across strands, orientations, start positions,
+   and batches?
+3. Are base and mapping qualities calibrated in this sequence context?
+4. Is the locus repetitive, paralogous, or near an indel?
+5. Could contamination, damage, PCR error, or index misassignment explain the
+   pattern?
+6. Is the specimen expected to be diploid, mixed, mosaic, or copy-number altered?
+
+The correct likelihood may be binomial only after these questions are answered.
+Overdispersion or an explicit mixture model is often more realistic. Statistical
+evidence for a nonzero signal is distinct from biological evidence about clonality,
+function, or disease relevance.
+
+# Design, Replication, and Validation
+
+The strongest remedy is often prospective design.
+
+- Randomize and balance extraction, library, lane, and run across biological
+  groups so measurement effects are not confounded with the contrast.
+- Record the stage at which every replicate, control, and batch enters.
+- Use negative controls to characterize contamination and false signals.
+- Use positive controls or reference materials to assess sensitivity and
+  calibration across relevant allele fractions and contexts.
+- Preserve read-level quality and provenance rather than only hard calls.
+- Plan orthogonal validation for claims whose consequences justify it.
+
+Biological replicates estimate population variation and support generalization.
+Technical replicates estimate repeatability at the stage they repeat. A second
+sequencing lane does not reveal extraction error; a second library from the same
+extract does not reveal specimen heterogeneity. See
+[biological versus technical replication](biological-versus-technical-replication.qmd)
+and [experimental design for omics studies](experimental-design-for-omics-studies.qmd).
+
+# Diagnostics and Sensitivity Analysis
+
+A measurement-aware analysis should examine:
+
+- empirical error versus reported quality;
+- depth and quality distributions across samples and groups;
+- alternate support by strand, orientation, cycle, position, and molecule family;
+- allele balance conditional on genotype, ploidy, and copy number;
+- replicate concordance at the correct hierarchy;
+- residual overdispersion relative to the observation model;
+- results with difficult regions, low-quality evidence, or contaminated samples
+  excluded; and
+- conclusions over plausible error rates, detection limits, priors, and
+  correlation among reads.
+
+Sensitivity analysis should report how the effect estimate and uncertainty move,
+not count how many pipelines yield $p<0.05$. A result is robust when scientifically
+reasonable measurement models lead to the same substantive conclusion.
+
+# Statistical versus Biological Interpretation
+
+A statistical statement might be: *under the calibrated read-error and alignment
+model, the data support a higher latent alternate-allele fraction in treated
+specimens, with uncertainty propagated across biological units.*
+
+That statement does not by itself establish a somatic mutation, functional
+consequence, causal treatment effect, or clinical relevance. Those conclusions
+require appropriate specimens, biological replication, design assumptions,
+annotation, and often independent validation.
+
+# Connections and Take-home Messages
+
+- [Probabilistic genotype and variant likelihoods](probabilistic-genotype-and-variant-likelihoods.qmd)
+  develops likelihoods from read evidence and distinguishes them from calls and
+  posterior probabilities.
+- [Mapping quality estimation](../../bioinformatics/algorithms/mapping-quality-estimation.qmd)
+  explains how aligners quantify uncertainty about a read's genomic placement.
+- [Likelihood and log-likelihood](../statistical-inference/likelihood-and-log-likelihood.qmd)
+  explains likelihood as a function of the unknown state or parameter.
+- [Multiple imputation](multiple-imputation.qmd) discusses propagating uncertainty
+  when latent or missing values are repeatedly completed.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  provides a general framework for perturbing assumptions.
+
+1. Sequencing uncertainty begins before base calling and can be correlated across
+   many reads.
+2. Quality scores are model-based error probabilities whose calibration must be
+   checked in the target setting.
+3. Deep read coverage reduces only the uncertainty represented by a correct
+   observation model; it does not erase systematic error.
+4. Biological units determine inferential replication, while reads and technical
+   replicates characterize measurement.
+5. Preserve likelihood information, validate the error model, and separate
+   statistical evidence from biological interpretation.
+
+# References
+
+- Carroll, R. J., Ruppert, D., Stefanski, L. A., and Crainiceanu, C. M. (2006).
+  *Measurement Error in Nonlinear Models: A Modern Perspective*, second edition.
+  Chapman & Hall/CRC. <https://doi.org/10.1201/9781420010138>
+- Ewing, B., and Green, P. (1998). Base-calling of automated sequencer traces
+  using Phred. II. Error probabilities. *Genome Research*, 8(3), 186--194.
+  <https://doi.org/10.1101/gr.8.3.186>
+- Cock, P. J. A., Fields, C. J., Goto, N., Heuer, M. L., and Rice, P. M. (2010).
+  The Sanger FASTQ file format for sequences with quality scores, and the
+  Solexa/Illumina FASTQ variants. *Nucleic Acids Research*, 38(6), 1767--1771.
+  <https://doi.org/10.1093/nar/gkp1137>
+- Li, H., Ruan, J., and Durbin, R. (2008). Mapping short DNA sequencing reads and
+  calling variants using mapping quality scores. *Genome Research*, 18(11),
+  1851--1858. <https://doi.org/10.1101/gr.078212.108>
+- DePristo, M. A., Banks, E., Poplin, R., et al. (2011). A framework for
+  variation discovery and genotyping using next-generation DNA sequencing data.
+  *Nature Genetics*, 43, 491--498. <https://doi.org/10.1038/ng.806>
+- Kivioja, T., Vähärautio, A., Karlsson, K., et al. (2012). Counting absolute
+  numbers of molecules using unique molecular identifiers. *Nature Methods*, 9,
+  72--74. <https://doi.org/10.1038/nmeth.1778>
+- Li, H. (2014). Toward better understanding of artifacts in variant calling
+  from high-coverage samples. *Bioinformatics*, 30(20), 2843--2851.
+  <https://doi.org/10.1093/bioinformatics/btu356>
