@@ -1,0 +1,340 @@
+---
+title: "Genomic Control and Principal-component Adjustment"
+subtitle: "Calibrating genome-wide tests and modeling ancestry axes without erasing the scientific question"
+description: "Derivations, assumptions, diagnostics, and limitations of genomic control, ancestry-PC covariates, and relatedness-aware alternatives in association studies."
+author: "Jiahong Sun"
+date: "2026-11-26"
+date-modified: "2026-11-26"
+categories: [Statistics, Bioinformatics, Statistical Genetics, Genome-wide Association]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Two Adjustments with Different Targets
+
+Genomic control (GC) and principal-component (PC) adjustment are often listed as
+interchangeable ways to handle population stratification. They act at different
+stages and encode different assumptions.
+
+- **Genomic control** estimates a common multiplicative inflation factor from
+  many association statistics and rescales those statistics.
+- **PC adjustment** estimates axes of genome-wide genotype variation and includes
+  selected axes as covariates in each association model.
+
+GC is a distribution-level calibration: it does not identify which observations
+or ancestry directions produced inflation. PC adjustment is a covariate model:
+it can represent measured axes of structure, but a finite set of linear axes need
+not remove relatedness, local ancestry, technical artifacts, or nonlinear
+phenotype differences.
+
+# Data, Estimand, and Association Model
+
+Let $n$ independently sampled individuals have phenotype $Y_i$, tested genotype
+dosage $G_{ij}$ at variant $j$, design covariates $\mathbf X_i$, and ancestry PC
+scores $\mathbf Z_i$. For a quantitative trait, a PC-adjusted model is
+
+$$
+\boxed{
+Y_i=\alpha+\beta_jG_{ij}
++\mathbf X_i^{\mathsf T}\boldsymbol\gamma
++\mathbf Z_i^{\mathsf T}\boldsymbol\delta+\varepsilon_i.
+}
+$$
+
+For a binary trait, the same linear predictor is commonly used with a logit link.
+The estimand $\beta_j$ is the residual conditional association of variant $j$
+with the outcome under the chosen genotype coding, PC construction, covariates,
+and outcome model. The fitted $\hat\beta_j$ is an estimate; its standard error and
+test statistic summarize uncertainty conditional on that pipeline.
+
+The donor or independently sampled organism is the experimental unit. Variants
+are not replicates, and technical reads or repeated genotypes do not increase
+$n$. Known relatives violate an exchangeable-error model even if several PCs are
+included; a family or genomic-relatedness model may be required.
+
+# Genomic Control
+
+Suppose the unadjusted association statistic $T_j$ should approximately follow
+$\chi^2_1$ under a well-calibrated null. GC posits that most genome-wide null
+statistics instead behave like
+
+$$
+T_j\approx\lambda_{\mathrm{GC}}\chi^2_1,
+$$
+
+with the same scale factor for all variants. Because the median of $\chi^2_1$ is
+approximately 0.4549364, a robust estimator is
+
+$$
+\boxed{
+\hat\lambda_{\mathrm{GC}}
+=\frac{\operatorname{median}_j(T_j)}{0.4549364}.
+}
+$$
+
+The corrected statistic is
+
+$$
+T_j^{\mathrm{GC}}=\frac{T_j}{\hat\lambda_{\mathrm{GC}}}.
+$$
+
+If $T_j=(\hat\beta_j/\operatorname{SE}_j)^2$, dividing $T_j$ by $\lambda$
+corresponds to multiplying the standard error by $\sqrt{\lambda}$ while leaving
+the coefficient estimate unchanged. This calibration is appealingly simple but
+cannot correct bias in $\hat\beta_j$ itself.
+
+## What the inflation factor can and cannot diagnose
+
+$\lambda_{\mathrm{GC}}>1$ can arise from stratification, cryptic relatedness,
+batch effects, an incorrect outcome model, or genuine polygenic associations.
+It also grows with sample size under polygenicity, so the same value has different
+implications in a study of 1,000 and a study of 1,000,000 people. Conversely,
+$\lambda<1$ can reflect conservative tests or overadjustment.
+
+GC assumes a common multiplicative distortion. Confounding need not be uniform:
+allele-frequency differentiation, imputation quality, local ancestry, and LD can
+make distortion variant-specific. Applying GC after an already adequate model
+can reduce power and hide the reason for a poor test-statistic distribution.
+Report the pre- and post-adjustment diagnostics and the model that generated the
+statistics rather than treating $\lambda\approx1$ as validation.
+
+# Constructing Genetic Principal Components
+
+Let $g_{ij}\in\{0,1,2\}$ be the allele count for individual $i$ at marker $j$,
+and let $\hat p_j$ be its sample allele frequency. A common standardized matrix is
+
+$$
+M_{ij}=\frac{g_{ij}-2\hat p_j}
+{\sqrt{2\hat p_j(1-\hat p_j)}}.
+$$
+
+An SVD,
+
+$$
+\mathbf M=\mathbf U\mathbf D\mathbf V^{\mathsf T},
+$$
+
+gives individual scores in columns of $\mathbf U\mathbf D$ and marker loadings in
+$\mathbf V$. Leading scores summarize directions of large standardized genotype
+variation. See [principal component analysis](../advanced-modeling/principal-component-analysis.qmd)
+for the general geometry.
+
+The input matrix defines the axes. Population-genetic PCA usually requires:
+
+1. reliable autosomal markers with appropriate missingness and frequency filters;
+2. LD pruning so dense correlated blocks do not dominate;
+3. sensitivity to extended-LD regions, inversions, and selected loci;
+4. explicit handling of close relatives, whose family axes can displace ancestry
+   axes; and
+5. consistent allele coding, scaling, and reference projection for new samples.
+
+Projecting study individuals onto loadings estimated from a reference panel gives
+coordinates relative to that panel. It can improve comparability, but ancestry
+absent from the reference is not thereby controlled. Directly combining study
+and reference samples changes the PCA target because the sample composition helps
+define the axes.
+
+# Why PC Covariates Can Reduce Confounding
+
+Suppose an unobserved ancestry coordinate $A_i$ drives both allele frequencies
+and the phenotype. If leading genotype PCs estimate the relevant components of
+$A_i$, conditioning on those scores blocks part of the backdoor path
+$G\leftarrow A\rightarrow Y$. The approach works when:
+
+- the markers contain enough information about the confounding structure;
+- selected PCs span the phenotype-relevant ancestry directions;
+- the outcome depends on those scores in the modeled functional form;
+- marker and sample quality do not create artificial axes; and
+- residual dependence among individuals is handled appropriately.
+
+The PCs are estimated covariates, not experimentally assigned variables. In large
+genotype matrices their estimation error may be small for strong structure, but
+weak or fine-scale axes can be noisy. Relatedness can distort ordinary PCA;
+methods such as PC-AiR estimate ancestry axes using an ancestry-diverse unrelated
+subset and project relatives afterward.
+
+# Choosing the Number and Form of PCs
+
+There is no universal rule such as “always include ten PCs.” The number should be
+chosen without optimizing the significance of the focal variant. Evidence can
+include eigenvalue tests, scree behavior, known sampling geography, phenotype--PC
+relationships, residual calibration, and stability of effect estimates.
+
+Too few PCs leave residual confounding. Too many can reduce precision, absorb
+real ancestry-mediated or geographically structured signals, or condition on
+noise. The last point is not a reason to ignore structure: it is a reason to
+state the scientific target. If the goal is a direct variant association not
+confounded by ancestry-related exposures, adjustment is necessary; if the goal
+is to describe total population differences, the estimand is different.
+
+Linear PC terms may be insufficient. Plausible checks include nonlinear terms,
+interactions with study or site, ancestry-stratified analyses followed by a
+specified meta-analysis, and models for local ancestry in admixed populations.
+These are sensitivity analyses, not opportunities to select whichever model
+produces the smallest p-value.
+
+# Relatedness-aware Mixed Models
+
+PCs represent a low-dimensional portion of genotype covariance. A linear mixed
+model instead uses a genomic relationship matrix $\mathbf K$:
+
+$$
+\mathbf y
+=\mathbf X\boldsymbol\gamma+\mathbf g_j\beta_j+\mathbf u+\boldsymbol\varepsilon,
+$$
+
+$$
+\mathbf u\sim N(\mathbf0,\sigma_g^2\mathbf K),
+\qquad
+\boldsymbol\varepsilon\sim N(\mathbf0,\sigma_e^2\mathbf I).
+$$
+
+The random effect models covariance due to genome-wide relatedness and population
+structure. Mixed models can outperform a small PC set when structure is complex
+or relatives are retained. They still require careful construction of $\mathbf K$,
+appropriate binary-trait methods for severe imbalance or rare variants, and
+attention to whether the tested region contributes to both the fixed variant and
+the relatedness matrix. PCs may remain useful for broad ancestry even in a mixed
+model.
+
+Family-based transmission tests provide another target: they compare transmitted
+and untransmitted alleles within families and are robust to many between-family
+ancestry differences. They do not estimate exactly the same population contrast
+as an unrelated-sample GWAS and can be affected by genotype error, missing parents,
+and family-specific selection.
+
+# A Worked Calibration Example
+
+Suppose the median of one-degree-of-freedom association statistics is 0.60. Then
+
+$$
+\hat\lambda_{\mathrm{GC}}
+=\frac{0.60}{0.4549364}\approx1.32.
+$$
+
+A variant with $T=12$ would be rescaled to
+
+$$
+T^{\mathrm{GC}}=\frac{12}{1.32}\approx9.09.
+$$
+
+The calculation does not reveal whether inflation came from ancestry, relatives,
+batch, polygenicity, or model misspecification. If a PC-adjusted or mixed model
+removes recruitment-site confounding and yields $T=8.8$, the similarity to the
+GC value does not make the methods equivalent: GC globally scaled the original
+test, whereas the model changed the comparison and may also change $\hat\beta$.
+
+# Diagnostics and Sensitivity Analysis
+
+| Check | Question it addresses |
+|---|---|
+| PC plots colored by phenotype, site, batch, and missingness | do outcome and technical variables align with genetic axes? |
+| Eigenvalue and loading inspection | are components broad ancestry axes or single LD regions? |
+| Effect estimates across PC counts | is the estimated association stable, not merely its p-value? |
+| QQ plot and $\lambda_{\mathrm{GC}}$ | are test statistics globally shifted, without identifying why? |
+| LD-score regression intercept when assumptions fit | is part of inflation more consistent with confounding than polygenicity? |
+| PC versus mixed-model comparison | does low-rank adjustment leave relatedness structure? |
+| Within-site or ancestry-stratified analysis | is the result driven by nonoverlapping sample groups? |
+| Local-ancestry sensitivity | does global ancestry leave locus-specific structure in admixed samples? |
+| Genotype-quality and batch interaction checks | does measurement error vary with group or phenotype? |
+
+Diagnostics are conditional on their assumptions. LD-score methods require an
+appropriate LD reference and a highly polygenic architecture; stratified analyses
+can become imprecise or alter the target; and apparently stable estimates can
+share the same unmeasured bias.
+
+# Design and Implementation Workflow
+
+1. Define the outcome, genotype estimand, target population, experimental unit,
+   and whether related individuals will be included.
+2. Balance phenotype groups across recruitment sites and technical processing;
+   record site, array, batch, sequencing, and imputation provenance.
+3. Perform blinded sample and marker quality control, preserving uncertainty when
+   genotype likelihoods are material.
+4. Build ancestry PCs from a documented marker set with LD and relatedness handled
+   explicitly; inspect scores and loadings.
+5. Fit the association model with prespecified scientific and technical covariates,
+   PCs or a relationship matrix, and an outcome-appropriate link.
+6. Diagnose calibration, effect stability, residual structure, and technical
+   interactions. Use GC as a transparent calibration only when its common-scale
+   assumption and purpose are justified.
+7. Repeat key conclusions under defensible PC, marker, ancestry, and relatedness
+   choices, then replicate in independent biological units.
+
+The publish environment for this site contains no statistical-genetics runtime,
+so this note intentionally uses equations rather than an executable software
+example. In practice, save the exact marker filters, sample exclusions, PC
+loadings, relationship-matrix construction, model formula, and software versions.
+
+# Statistical versus Biological Interpretation
+
+After adjustment, a result such as “each alternate allele was associated with a
+0.12-standard-deviation higher phenotype value, conditional on age, sex, site,
+and eight ancestry PCs” is a statistical statement about the fitted target and
+sample. The number of PCs is not biological evidence, and calibration near one
+does not prove absence of confounding.
+
+The result does not identify a causal variant or gene, demonstrate that an effect
+is intrinsic to an ancestry group, or establish portability to another population.
+Differences across populations may reflect LD with the causal allele, frequency,
+environment, interactions, phenotype definitions, or technical pipelines.
+Biological interpretation requires fine mapping, functional work, replication,
+and uncertainty about both ancestry adjustment and variant measurement.
+
+# Connections and Take-home Messages
+
+- [Population stratification](population-stratification.qmd) develops the causal
+  mechanism and design problem that these methods address.
+- [Generalized linear models](../regression-models/generalized-linear-models.qmd)
+  explains link functions for quantitative and binary outcomes.
+- [Linear mixed-effects models](../advanced-modeling/linear-mixed-effects-models.qmd)
+  develops covariance models for clustered observations.
+- [Measurement error and sequencing uncertainty](measurement-error-and-sequencing-uncertainty.qmd)
+  shows how ancestry-dependent genotype quality can create residual artifacts.
+- [Sensitivity analysis and robustness](../statistical-inference/sensitivity-analysis-and-robustness.qmd)
+  frames comparisons across defensible specifications.
+
+1. GC rescales a genome-wide distribution of tests; PC adjustment changes the
+   conditional association model.
+2. $\lambda_{\mathrm{GC}}$ measures inflation under a reference distribution but
+   cannot by itself distinguish confounding from polygenicity or misspecification.
+3. PC estimates depend on marker QC, scaling, LD, relatives, references, and
+   sample composition.
+4. Complex relatedness, fine structure, and local ancestry may require mixed,
+   family-based, or locus-aware models rather than more global PCs.
+5. Calibration is necessary but not sufficient for causal or portable biological
+   interpretation.
+
+# References
+
+- Devlin, B., and Roeder, K. (1999). Genomic control for association studies.
+  *Biometrics*, 55(4), 997--1004.
+  <https://doi.org/10.1111/j.0006-341X.1999.00997.x>
+- Bacanu, S.-A., Devlin, B., and Roeder, K. (2000). The power of genomic control.
+  *American Journal of Human Genetics*, 66(6), 1933--1944.
+  <https://doi.org/10.1086/302929>
+- Price, A. L., Patterson, N. J., Plenge, R. M., et al. (2006). Principal
+  components analysis corrects for stratification in genome-wide association
+  studies. *Nature Genetics*, 38, 904--909.
+  <https://doi.org/10.1038/ng1847>
+- Patterson, N., Price, A. L., and Reich, D. (2006). Population structure and
+  eigenanalysis. *PLOS Genetics*, 2(12), e190.
+  <https://doi.org/10.1371/journal.pgen.0020190>
+- Price, A. L., Weale, M. E., Patterson, N., et al. (2008). Long-range LD can
+  confound genome scans in admixed populations. *American Journal of Human
+  Genetics*, 83(1), 132--135. <https://doi.org/10.1016/j.ajhg.2008.06.005>
+- Kang, H. M., Sul, J. H., Service, S. K., et al. (2010). Variance component
+  model to account for sample structure in genome-wide association studies.
+  *Nature Genetics*, 42, 348--354. <https://doi.org/10.1038/ng.548>
+- Yang, J., Weedon, M. N., Purcell, S., et al. (2011). Genomic inflation factors
+  under polygenic inheritance. *European Journal of Human Genetics*, 19,
+  807--812. <https://doi.org/10.1038/ejhg.2011.39>
+- Conomos, M. P., Miller, M. B., and Thornton, T. A. (2015). Robust inference of
+  population structure for ancestry prediction and correction of stratification
+  in the presence of relatedness. *Genetic Epidemiology*, 39(4), 276--293.
+  <https://doi.org/10.1002/gepi.21896>
+- Bulik-Sullivan, B. K., Loh, P.-R., Finucane, H. K., et al. (2015). LD Score
+  regression distinguishes confounding from polygenicity in genome-wide
+  association studies. *Nature Genetics*, 47, 291--295.
+  <https://doi.org/10.1038/ng.3211>

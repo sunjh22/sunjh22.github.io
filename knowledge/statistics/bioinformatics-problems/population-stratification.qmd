@@ -1,0 +1,273 @@
+---
+title: "Population Stratification"
+subtitle: "How ancestry-related allele frequencies and outcome determinants can confound genetic association"
+description: "A design-aware guide to population structure, stratification bias, ancestry, relatedness, diagnostics, and interpretation in genetic association studies."
+author: "Jiahong Sun"
+date: "2026-11-26"
+date-modified: "2026-11-26"
+categories: [Statistics, Bioinformatics, Statistical Genetics, Confounding]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Population Structure Is Not Automatically Confounding
+
+**Population structure** means that sampled individuals are not genetically
+exchangeable: allele frequencies and linkage-disequilibrium patterns vary along
+ancestry, geography, demography, or relatedness. **Population stratification**
+is the resulting confounding of a genetic association when those genetic
+differences align with noncausal differences in the outcome.
+
+The distinction matters. Genotype structure can be visible without biasing a
+particular association, and bias can remain along a subtle ancestry axis that a
+coarse group label misses. A useful causal sketch is
+
+```text
+genetic ancestry A ──▶ genotype G
+        │
+        └──▶ environment, phenotype ascertainment, or other causes ──▶ outcome Y
+```
+
+The path $G\leftarrow A\rightarrow Y$ makes genotype $G$ statistically
+associated with outcome $Y$ even if changing the tested allele would not change
+the outcome. The problem is one of comparability, not evidence that ancestry
+itself is a simple biological cause.
+
+# Define the Target and the Experimental Unit
+
+For a variant dosage $G_i\in\{0,1,2\}$ and outcome $Y_i$, a common target is the
+conditional additive association coefficient $\beta$ in
+
+$$
+g\{E(Y_i\mid G_i,\mathbf C_i)\}
+=\alpha+\beta G_i+\mathbf C_i^{\mathsf T}\boldsymbol\gamma,
+$$
+
+where $g$ is an identity or logit link and $\mathbf C_i$ contains prespecified
+covariates. In a causal interpretation, $\beta$ requires stronger assumptions
+about exchangeability, genotype definition, selection, interference, and the
+absence of pathways such as assortative mating or dynastic effects that violate
+the intended intervention analogy.
+
+The independently sampled person, organism, family, or breeding line is the
+experimental unit. SNPs are repeated genomic measurements on that unit; reads
+and technical genotype replicates are measurements of the same genotype. A
+million variants or deeper sequencing does not turn 200 donors into more than
+200 population replicates.
+
+The target population must also be stated. An association estimated in one
+ancestry and environmental distribution need not transport to another because
+linkage disequilibrium, allele frequency, exposures, interactions, and phenotype
+measurement can differ.
+
+# The Omitted-structure Bias
+
+Suppose the data-generating model for a quantitative trait is
+
+$$
+Y_i=\alpha+\beta G_i+\gamma A_i+\varepsilon_i,
+\qquad E(\varepsilon_i\mid G_i,A_i)=0,
+$$
+
+where $A_i$ is an ancestry-related variable. If $A_i$ is omitted and $Y$ is
+regressed only on $G$, the population slope is
+
+$$
+\boxed{
+\beta_{\mathrm{omit}}
+=\beta+\gamma\frac{\operatorname{Cov}(G,A)}{\operatorname{Var}(G)}
+}.
+$$
+
+Bias therefore needs both arms of the backdoor path:
+
+1. genotype frequency differs with ancestry, so $\operatorname{Cov}(G,A)\ne0$;
+2. the outcome differs with ancestry-related causes after accounting for the
+   tested genotype, so $\gamma\ne0$.
+
+Adjustment aims to make the residual genotype comparison exchangeable with
+respect to relevant structure. It does not prove that every relevant component
+of $A$ was observed or modeled.
+
+## A two-stratum example
+
+Consider two equally represented source populations. An allele has frequency
+0.10 in stratum 1 and 0.40 in stratum 2. A binary outcome has risk 0.10 and 0.30,
+respectively, entirely because of an environmental exposure; the allele has no
+causal effect.
+
+Under Hardy--Weinberg sampling, the expected allele dosage is $2p$, hence 0.20
+and 0.80 in the two strata. Pooling the strata produces a positive genotype--
+outcome association because both dosage and outcome risk are larger in stratum
+2. Within either stratum the association is null. This is the genetic-association
+version of confounding by a common cause of exposure distribution and outcome.
+
+# Sources of Structure and Bias
+
+Population stratification is not limited to continental ancestry.
+
+- **Geography and migration:** allele frequencies and environmental exposures
+  can change gradually across space.
+- **Recent admixture:** genome-wide ancestry and locus-specific ancestry can
+  differ within an individual.
+- **Founder events, drift, and isolation:** fine-scale structure can arise within
+  a region or a nominal population.
+- **Cryptic or known relatedness:** relatives share long genomic segments and
+  often share environments.
+- **Assortative mating and indirect genetic effects:** parental genotypes can
+  correlate with family environments and offspring outcomes.
+- **Sampling and phenotype ascertainment:** case and control recruitment from
+  different sites can align ancestry with diagnosis or measurement protocols.
+- **Technical artifacts:** array, sequencing center, imputation panel, batch, and
+  ancestry-dependent call quality can mimic or amplify structure.
+
+Self-identified race, ethnicity, nationality, genetic ancestry, and principal
+components are not interchangeable variables. Social categories can represent
+exposures created by institutions and discrimination; genetic axes summarize
+variation in a particular marker set and sample. Treating either as a biological
+essence obscures the data-generating process.
+
+# Detecting Structure Before Association Testing
+
+A defensible analysis begins with sample and marker quality, not a single
+inflation statistic.
+
+## Sample-level checks
+
+- compare reported and genetic sex where appropriate;
+- identify duplicates, sample swaps, contamination, unexpected relatives, and
+  outlying missingness or heterozygosity;
+- plot ancestry coordinates with recruitment site, case status, batch, and
+  phenotype rather than with ancestry labels alone; and
+- inspect whether exclusion rules or missing phenotypes differ across structure.
+
+## Marker-level checks
+
+Markers used to infer broad structure should have reliable calls, low missingness,
+and appropriate allele-frequency support. Closely linked markers overweight
+individual haplotype blocks, so PCA commonly uses LD pruning. Extended LD regions,
+large inversions, and selected loci can dominate components and should be examined
+through sensitivity analyses rather than removed by an unexplained recipe.
+
+[Principal component analysis](../advanced-modeling/principal-component-analysis.qmd)
+on centered, frequency-standardized genotypes can reveal major continuous axes.
+Model-based ancestry estimates, multidimensional scaling, kinship estimates, and
+geographic information answer related but different questions. Apparent clusters
+can change with reference samples, marker filters, related individuals, and the
+plotting scale.
+
+# Adjustment Strategies Answer Different Problems
+
+| Strategy | Structure represented | Important limitation |
+|---|---|---|
+| Restriction or matching | prespecified strata or sampling variables | loses target-population breadth and cannot remove within-stratum structure |
+| Measured covariates | site, batch, geography, social exposures | depends on measurement and correct functional form |
+| Ancestry principal components | major axes in genome-wide marker variation | finite PCs can miss local or fine-scale structure |
+| Linear or generalized mixed models | covariance induced by genome-wide relatedness | depends on the relationship matrix and trait model |
+| Family-based designs | transmission within families | answer a within-family target and may have lower power |
+| Local-ancestry models | ancestry at a genomic region | require accurate local ancestry and an appropriate admixed-population model |
+
+No method repairs a design in which ancestry, phenotype, and laboratory batch are
+perfectly aliased. If all cases from one ancestry group were processed on one
+array and all controls from another on a second array, genetic, biological, and
+technical explanations are not separately identifiable.
+
+# Diagnostics and Sensitivity Analysis
+
+A quantile--quantile plot or genomic inflation factor summarizes the distribution
+of test statistics, but inflation can reflect confounding, relatedness, batch
+effects, model misspecification, or true polygenic signal. Deflation can indicate
+overcorrection or conservative uncertainty. Neither pattern identifies its cause.
+
+Useful analyses include:
+
+1. compare results across defensible marker filters, LD-pruning rules, and
+   extended-LD exclusions;
+2. vary the number of ancestry components while checking whether estimates, not
+   only p-values, stabilize;
+3. inspect association of phenotype and technical covariates with each component;
+4. compare PC-adjusted and relatedness-aware models;
+5. examine residual structure within major ancestry regions or recruitment sites;
+6. use negative-control phenotypes or variants when a credible control exists;
+7. replicate in an independently sampled cohort with compatible phenotype and
+   ancestry modeling; and
+8. for admixed samples, assess whether local ancestry leaves locus-specific
+   confounding after global adjustment.
+
+The companion note on [genomic control and principal-component adjustment](genomic-control-and-principal-component-adjustment.qmd)
+derives the main calibration and covariate approaches.
+
+# Design, Replication, and Interpretation
+
+Recruitment should seek overlap in ancestry, environment, site, and technical
+processing across outcome groups. Randomize or balance samples across extraction,
+array, library, lane, and run; record these variables; and avoid using phenotype
+status to tune genotype-quality filters. Reference panels should represent the
+study's diversity, but projecting onto a reference does not make unrepresented
+variation disappear.
+
+Biological replication comes from independently sampled people, organisms,
+families, or populations appropriate to the claim. Repeated genotyping can
+estimate technical error, and additional reads can sharpen an individual's
+genotype likelihood, but neither supplies independent evidence about population
+association. Related individuals require family-aware inference rather than
+being counted as exchangeable donors.
+
+A statistically supported variant--trait association means that the estimated
+coefficient is incompatible with its null model after the stated adjustment and
+quality-control pipeline. It does not by itself establish a causal allele, target
+gene, molecular mechanism, ancestry-specific biology, or clinical portability.
+Linkage disequilibrium can make the tested marker a proxy, and residual
+stratification can persist. Biological interpretation needs fine mapping,
+functional evidence, appropriate replication, and explicit attention to the
+population in which the claim is intended to hold.
+
+# Connections and Take-home Messages
+
+- [Confounding, mediation, and effect modification](confounding-mediation-and-effect-modification.qmd)
+  supplies the general causal language for the backdoor path.
+- [Probabilistic genotype and variant likelihoods](probabilistic-genotype-and-variant-likelihoods.qmd)
+  distinguishes uncertain read evidence from hard genotypes.
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+  explains balancing and blocking across technical stages.
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+  identifies the unit supporting a population claim.
+
+1. Genetic structure becomes stratification bias only when genotype differences
+   align with outcome determinants or ascertainment.
+2. The omitted-variable formula makes the two required confounding paths explicit.
+3. Ancestry PCs, kinship models, design variables, and family-based comparisons
+   address overlapping but nonidentical structure.
+4. More markers improve measurement of structure; they do not increase the
+   number of independent biological units.
+5. Genetic ancestry is not a substitute for race, social exposure, environment,
+   or a stated target population.
+
+# References
+
+- Devlin, B., and Roeder, K. (1999). Genomic control for association studies.
+  *Biometrics*, 55(4), 997--1004.
+  <https://doi.org/10.1111/j.0006-341X.1999.00997.x>
+- Price, A. L., Patterson, N. J., Plenge, R. M., et al. (2006). Principal
+  components analysis corrects for stratification in genome-wide association
+  studies. *Nature Genetics*, 38, 904--909.
+  <https://doi.org/10.1038/ng1847>
+- Patterson, N., Price, A. L., and Reich, D. (2006). Population structure and
+  eigenanalysis. *PLOS Genetics*, 2(12), e190.
+  <https://doi.org/10.1371/journal.pgen.0020190>
+- Price, A. L., Zaitlen, N. A., Reich, D., and Patterson, N. (2010). New
+  approaches to population stratification in genome-wide association studies.
+  *Nature Reviews Genetics*, 11, 459--463.
+  <https://doi.org/10.1038/nrg2813>
+- Kang, H. M., Sul, J. H., Service, S. K., et al. (2010). Variance component
+  model to account for sample structure in genome-wide association studies.
+  *Nature Genetics*, 42, 348--354. <https://doi.org/10.1038/ng.548>
+- Conomos, M. P., Miller, M. B., and Thornton, T. A. (2015). Robust inference of
+  population structure for ancestry prediction and correction of stratification
+  in the presence of relatedness. *Genetic Epidemiology*, 39(4), 276--293.
+  <https://doi.org/10.1002/gepi.21896>
+- Peterson, R. E., Kuchenbaecker, K., Walters, R. K., et al. (2019). Genome-wide
+  association studies in ancestrally diverse populations: opportunities,
+  methods, pitfalls, and recommendations. *Cell*, 179(3), 589--603.
+  <https://doi.org/10.1016/j.cell.2019.08.051>
