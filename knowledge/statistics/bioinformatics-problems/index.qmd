@@ -38,9 +38,11 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Probabilistic genotype and variant likelihoods](probabilistic-genotype-and-variant-likelihoods.qmd)
 - [Population stratification](population-stratification.qmd)
 - [Genomic control and principal-component adjustment](genomic-control-and-principal-component-adjustment.qmd)
+- [Statistical design of single-cell experiments](statistical-design-of-single-cell-experiments.qmd)
+- [Cells, samples, and pseudoreplication](cells-samples-and-pseudoreplication.qmd)
 
-Future notes will develop single-cell and spatial-omics inference, meta-analysis,
-and reproducible statistical workflows.
+Future notes will develop single-cell expression and composition models,
+spatial-omics inference, meta-analysis, and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)
 - [Statistics overview](../index.qmd)

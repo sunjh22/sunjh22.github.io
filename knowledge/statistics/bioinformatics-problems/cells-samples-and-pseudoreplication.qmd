@@ -1,0 +1,66 @@
+---
+title: "Cells, Samples, and Pseudoreplication"
+subtitle: "How clustered cells affect estimates and uncertainty"
+description: "Derive the variance cost of within-donor dependence and choose analyses that respect single-cell sampling and assignment."
+author: "Jiahong Sun"
+date: "2026-11-27"
+date-modified: "2026-11-27"
+categories: [Statistics, Bioinformatics, Single-cell]
+toc: true
+number-sections: true
+draft: false
+---
+
+# What is replicated?
+
+In a case–control study with one tissue specimen per donor, a cell is an observation, a specimen supplies the profiled material, and an independently recruited donor is the biological replicate for a population comparison. Disease status varies across donors. Cells from one donor share genetic background, environment, and aspects of tissue collection and processing. Additional tissue pieces from the same donor are repeated biological measurements, and resequencing one library is technical replication. A cell-level dataset can therefore have thousands of rows and only a handful of independent donors.
+
+**Pseudoreplication** occurs when dependent observations are analyzed as independent replicates for the scientific contrast. For example, a cell-level rank test assuming independent observations can mistake a donor-specific expression shift for evidence of a disease association. Pooling cell observations also gives donors with more recovered cells more influence on the estimated contrast, which matters if cell yield is associated with donor expression or condition. Benchmarks have documented poor error control for differential-expression analyses that ignore biological replication. [Zimmerman, Espeland, and Langefeld (2021)](https://www.nature.com/articles/s41467-021-21038-1), [Squair et al. (2021)](https://pubmed.ncbi.nlm.nih.gov/34584091/)
+
+# Why the standard error changes
+
+For one condition, suppose $D$ independent donors each contribute $m$ cells of a given type. On a continuous expression-summary scale, write
+
+$$
+Y_{di}=\mu+B_d+E_{di},
+$$
+
+where $B_d$ is an independent mean-zero donor effect with variance $\tau^2$ and $E_{di}$ is independent mean-zero cell variation with variance $\sigma^2$, independent of all donor effects. Two cells from the same donor have covariance $\tau^2$ and intraclass correlation $\rho=\tau^2/(\tau^2+\sigma^2)$ when the total variance is positive. Averaging cells within each donor leaves the donor effect intact. Averaging across independent donors then gives
+
+$$
+\operatorname{Var}(\bar Y)
+= \frac{\tau^2+\sigma^2/m}{D}
+= \frac{\tau^2+\sigma^2}{Dm}\{1+(m-1)\rho\}.
+$$
+
+The factor $1+(m-1)\rho$ is the variance inflation relative to assuming $Dm$ independent cells with the same marginal variance. With $D=6$, $m=500$, and $\rho=0.05$, it equals $25.95$. The standard error is about $5.1$ times the independence-based value in this model. For an unpaired contrast between two groups of independent donors, add the group-mean variances. For a paired contrast use within-donor differences, whose variance depends on covariance between conditions.
+
+At fixed $D$, increasing $m$ drives the cell-level variance term toward zero while the donor term stays at $\tau^2/D$. The design effect here describes variance under equal group sizes and a common within-donor correlation. It supplies neither degrees of freedom nor a replacement donor count for an actual test.
+
+# Unequal cell yields can change the estimand
+
+Suppose two donors contribute 900 and 100 cells of a labeled type, with mean expression summaries 2 and 6. The pooled cell mean is $(900\cdot2+100\cdot6)/1000=2.4$. The mean of the two donor summaries is $(2+6)/2=4$. The first estimate describes the pool of recovered cells. The second gives each donor equal weight and estimates the mean of donor-level summaries if donors are independently and representatively sampled and their summaries measure the intended quantity. The discrepancy can be substantial if capture or cell-type abundance varies across specimens. A hierarchical or count model may induce other weights and define its effect on a link scale. Check the effect against the intended donor- or cell-level target.
+
+# Analyze and resample at the right level
+
+| Approach | Implementation | What to check |
+|---|---|---|
+| Sample-level summaries or pseudobulk | For count-based expression analysis, sum raw counts by biological sample and cell type. Use a sample-level count model with normalization, covariates, and a pairing term for repeated conditions. | Tabulate usable profiles and cells per profile. The normalized count contrast is on a model-based relative expression scale and can reflect subtype mixture. Independent samples or donor blocks determine the comparison. |
+| Cell-level hierarchical model | Model cells within specimens and donors. Include fixed condition effects, and consider donor-specific response variation where donors receive multiple conditions. | Check model fit and whether the donor count supports the random-effects structure and uncertainty method. A donor random intercept addresses shared baseline variation. Paired experiments can also have shared donor-by-condition responses. |
+| Design-based test or bootstrap | Reassign labels according to the randomized design, such as swaps within eligible donor pairs. For population bootstrap uncertainty, resample independent donors with all their linked observations and preserve design strata where needed. | Verify the assignment or sampling assumptions. Observational group labels require justified exchangeability for a permutation test. Few independent units limit the resolution and reliability of inference. |
+
+In benchmark comparisons, methods based on biological-replicate aggregates performed well for mean expression contrasts, while mixed-effects methods provide a way to retain cell-level covariates and model heterogeneity. The appropriate model depends on the estimand, cell yields, and the number of independent units. [Squair et al. (2021)](https://pubmed.ncbi.nlm.nih.gov/34584091/), [Zimmerman, Espeland, and Langefeld (2021)](https://www.nature.com/articles/s41467-021-21038-1)
+
+In an experiment with one donor per condition, a condition difference and a donor difference are inseparable in the observed comparison. Report the contrast as descriptive. The same dependence matters for prediction. Use donor-level train/test splits when the validation target is performance on new donors. Cell-level splits estimate performance under a different setting in which information from those donors can be available at training time.
+
+# Interpret results across donors
+
+Plot the sample-level effect, donor contributions, and cell counts together. In paired designs, connect outcomes from the same donor. Refit after excluding influential donors, and compare results across plausible annotation and cell-yield thresholds to see which conclusions depend on those choices. Report the number of donors and pairs contributing to each test, the estimated effect and interval, and the adjusted significance when testing multiple genes or cell types. A donor-supported expression association describes a population contrast on the chosen measurement scale. A cell-intrinsic or causal explanation requires evidence about subtype composition, confounders, and the assignment mechanism.
+
+# Related notes
+
+- [Statistical design of single-cell experiments](statistical-design-of-single-cell-experiments.qmd)
+- [Biological versus technical replication](biological-versus-technical-replication.qmd)
+- [Random intercepts and random slopes](../advanced-modeling/random-intercepts-and-random-slopes.qmd)
+- [Permutation and randomization tests](../statistical-inference/permutation-and-randomization-tests.qmd)
+- [Train, validation, and test-set design](../regression-models/train-validation-and-test-set-design.qmd)

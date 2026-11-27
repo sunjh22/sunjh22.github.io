@@ -1,0 +1,60 @@
+---
+title: "Statistical Design of Single-cell Experiments"
+subtitle: "Plan biological replication, batch allocation, and cell recovery around an estimand"
+description: "Design single-cell RNA-seq studies around donor-level contrasts, balanced processing, and usable cell counts."
+author: "Jiahong Sun"
+date: "2026-11-27"
+date-modified: "2026-11-27"
+categories: [Statistics, Bioinformatics, Single-cell]
+toc: true
+number-sections: true
+draft: false
+---
+
+# Start with the biological question
+
+Single-cell RNA sequencing can measure gene expression within a cell type and estimate how frequently that type appears among recovered cells. These are different outcomes. For example, an ex vivo stimulation study might target the mean donor-level change in normalized expression of a gene within a lymphocyte population, or the mean donor-level change in that population's share of recovered cells. Define the target donor population, the comparison, the cell population, and the scale of the outcome before choosing a design.
+
+The **experimental unit** is the smallest unit independently assigned to a condition. The **unit of biological replication** for population inference is the independently sampled biological unit, typically a donor or animal. In a split-donor experiment, treatment can be assigned at the aliquot level and the aliquots form a matched pair within each donor. The donor supplies one independent paired contrast. Cells are subsamples that describe variation within aliquots. A second capture from an aliquot or a second sequencing run of a library is a technical replicate that can help assess measurement variation. See [Biological versus technical replication](biological-versus-technical-replication.qmd).
+
+| Question | Data used for each biological unit | Interpretation |
+|---|---|---|
+| Does expression change within a cell type? | Gene counts among cells assigned to that type, with a sample-level summary or a hierarchical model | Expression change within the captured and annotated population. A shift in subtype mixture can contribute to the result. |
+| Does a cell type become more common? | Number assigned to that type and a defined denominator, such as all quality-controlled cells from the sample | Change in relative recovery. Absolute abundance in tissue also requires a quantitative reference for cell numbers or recovery. |
+| Which states appear in the sampled tissue? | Cell-level profiles plus the number of donors and batches supporting each state | Evidence for a state in the sampled material. Recurrence across donors supports broader generalization. |
+
+# Worked design: paired ex vivo stimulation
+
+Suppose eight independently recruited donors each supply material for two aliquots. Randomize stimulation and control to aliquots within each donor. Across four processing batches, process both aliquots from two donors per batch. Keep the paired aliquots in the same batch and rotate their technical positions so that position and treatment vary independently. Record donor, aliquot, condition, processing batch, capture, and sequencing-library IDs. Where compatible sample multiplexing is used, preserve sample identity through demultiplexing and tabulate ambiguous assignments and doublets by condition and batch. Kang and colleagues demonstrated donor multiplexing using genetic variation. [Kang et al. (2018)](https://www.nature.com/articles/nbt.4042)
+
+For an illustration, let $Z_{d1}$ and $Z_{d0}$ be normalized sample-level expression summaries on a prespecified scale for donor $d$ under stimulation and control. With $D$ complete independent pairs, the estimated average donor contrast and its paired standard error are
+
+$$
+\widehat{\Delta}=\frac{1}{D}\sum_{d=1}^{D}(Z_{d1}-Z_{d0}),
+\qquad
+\widehat{\operatorname{SE}}(\widehat{\Delta})=\frac{s_{\Delta}}{\sqrt D},
+$$
+
+where $s_{\Delta}$ is the sample standard deviation of the $D$ paired differences. This illustration assumes independent, identically distributed donor contrasts with finite variance. For gene-wise count inference, a donor-by-condition aggregate with a donor block and a condition term can estimate the corresponding model-based contrast using exposure normalization and a count mean–variance relationship. In the worked layout, a fixed batch main effect is absorbed by donor fixed effects because each donor occurs in one batch. The treatment coefficient remains estimable because treatment varies within donor. These analyses rely on comparable paired measurements. If a batch induces a shared treatment-specific artifact, the contrasts within that batch can be correlated and need separate consideration. See [Differential-expression contrasts and design matrices](differential-expression-contrasts-and-design-matrices.qmd).
+
+Putting every stimulated aliquot in one batch and every control aliquot in another makes treatment and batch perfectly confounded. Even with paired donors, the within-donor difference would combine both effects. Check design-matrix rank while planning the layout and again after sample exclusions. A balanced study distributes both conditions across batches and retains the overlap needed for inference. Plate effects can distort differential-expression tests when the analysis ignores the processing structure. [Lun and Marioni (2017)](https://pmc.ncbi.nlm.nih.gov/articles/PMC5862359/)
+
+# Allocate donors, cells, and reads
+
+Use pilot data from multiple donors to estimate variability between donor contrasts, the usable cells per donor, the expected cell-type frequencies, and the fraction of libraries or samples likely to fail. Additional donors improve information about population variability. Additional cells improve coverage of states and precision of sample summaries. Additional reads can improve measurement within cells when sequencing is below saturation. The resource that limits precision depends on the endpoint and assay. [Baran-Gale, Chandra, and Kirschner (2018)](https://pmc.ncbi.nlm.nih.gov/articles/PMC6063265/)
+
+If a cell type has probability $p$ among independently recovered cells, the simplified probability of detecting at least one such cell in $m$ cells is $1-(1-p)^m$. At $p=0.005$ and $m=600$, this is about $95\%$. One observed cell supplies little information for a within-type expression contrast. For planning, calculate the probability of reaching a usable count **in each donor and condition**, and vary $p$ over plausible donor- and condition-specific values. This binomial calculation assumes a fixed probability and independent recoveries. Clumping, differential capture, and donor variation can make it optimistic. For a primary analysis, simulate the planned donor structure, cell recovery, depth, and statistical model to estimate power under plausible effect sizes and sample losses.
+
+# Check what survived the design
+
+- Tabulate independent donors, complete pairs, and usable cells of each target type by condition and batch. Plot sample-level cell counts, library sizes, and expression summaries. A single donor or batch driving a contrast should be visible in these plots.
+- Track sample loss, doublets, ambiguous labels, and differences in cell recovery. A sample with zero recovered cells of a type has an observed zero for a captured-cell abundance outcome. Its within-type expression is unobserved. Excluding low-yield samples can change the population represented by the analysis when recovery depends on condition.
+- Evaluate sensitivity to cell-type definitions and reasonable quality or cell-count thresholds. Report how many donors contribute to each result and whether results persist when influential donors or batches are omitted.
+- Report the effect on the prespecified scale, its uncertainty, and the multiple-testing procedure. A reproducible shift among recovered cells supports a claim about the assay and target population. A claim about absolute tissue abundance or a specific cellular mechanism requires additional evidence. A randomized aliquot comparison can support a causal claim about the ex vivo intervention under its assay conditions.
+
+# Related notes
+
+- [Cells, samples, and pseudoreplication](cells-samples-and-pseudoreplication.qmd)
+- [Experimental design for omics studies](experimental-design-for-omics-studies.qmd)
+- [Batch effects in high-throughput experiments](batch-effects-in-high-throughput-experiments.qmd)
+- [Statistical power and sample-size calculation](../statistical-inference/statistical-power-and-sample-size-calculation.qmd)
