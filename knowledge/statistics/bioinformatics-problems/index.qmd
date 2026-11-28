@@ -40,8 +40,10 @@ This level will connect statistical foundations to missing data, confounding, ba
 - [Genomic control and principal-component adjustment](genomic-control-and-principal-component-adjustment.qmd)
 - [Statistical design of single-cell experiments](statistical-design-of-single-cell-experiments.qmd)
 - [Cells, samples, and pseudoreplication](cells-samples-and-pseudoreplication.qmd)
+- [Single-cell differential-expression models](single-cell-differential-expression-models.qmd)
+- [Pseudobulk inference](pseudobulk-inference.qmd)
 
-Future notes will develop single-cell expression and composition models,
+Future notes will address single-cell detection and cell-type proportions,
 spatial-omics inference, meta-analysis, and reproducible statistical workflows.
 
 - [Advanced Modeling](../advanced-modeling/index.qmd)

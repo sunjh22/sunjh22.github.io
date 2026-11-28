@@ -1,0 +1,60 @@
+---
+title: "Single-cell Differential-expression Models"
+subtitle: "Estimands, donor dependence, and cell-level models"
+description: "Choose a model for a cell-type-specific expression question and interpret its condition effect at the level supported by the design."
+author: "Jiahong Sun"
+date: "2026-11-28"
+date-modified: "2026-11-28"
+categories: [Statistics, Bioinformatics, Single-cell RNA-seq]
+toc: true
+number-sections: true
+draft: false
+---
+
+For a defined cell type, single-cell differential expression asks how the distribution of a gene's measured expression varies with condition across biological replicates. A shift in mean expression, a shift in detection probability, and a change in the abundance of the cell type are different scientific questions. The first two concern expression within a population of captured cells. The third concerns how common that population is among the cells sampled. Crowell et al. describe cross-condition expression comparisons within cell populations as differential state analysis. [Crowell et al. (2020)](https://doi.org/10.1038/s41467-020-19894-4)
+
+# Define the contrast and the unit
+
+Suppose eight donors each provide two aliquots from the same specimen. One aliquot per donor is randomly assigned to treatment and the other to control. For a gene in annotated monocytes, the two aliquots provide a paired contrast. The aliquots are the treatment assignment units, the eight donor pairs are independent biological blocks for generalization across donors, and monocytes are subsamples of aliquots. Sequencing the same library on two lanes adds technical measurements. In a case-control study with one specimen per person, the condition comparison is instead between donors and requires an appropriate adjustment strategy for measured confounders. See [Statistical design of single-cell experiments](statistical-design-of-single-cell-experiments.qmd) and [Cells, samples, and pseudoreplication](cells-samples-and-pseudoreplication.qmd).
+
+| Scientific question within the annotation | Target quantity | Suitable starting model |
+|---|---|---|
+| Does normalized mean expression shift across conditions? | A condition contrast in the mean on a defined relative-expression scale | [Pseudobulk inference](pseudobulk-inference.qmd) or a donor-aware count model with an appropriate exposure offset |
+| Does a captured cell yield a detectable signal more often? | A difference or ratio of modeled detection probabilities under a specified depth and covariate distribution | Logistic mixed model or a paired comparison of adequately measured sample-level detection fractions |
+| Does expression among detected cells shift? | A condition contrast in positive expression on a specified measurement scale | Positive-expression component of a donor-aware hurdle model |
+
+Specify whether the target weights donors equally or targets a particular distribution of sampled cells and covariates. The fraction detected among all pooled cells weights donors in proportion to their cell yields. A donor-standardized estimate first predicts under each condition for a specified reference population and then averages over that population. The resulting contrast can differ from a coefficient conditional on random effects, especially with a nonlinear link.
+
+# Model expression and dependence
+
+Let $y_{sic}$ denote a gene's raw count for cell $c$ from donor $s$ in condition $i$, within one annotated cell type. A count model might use
+
+$$
+y_{sic}\mid b_s,u_{si} \sim \operatorname{NB}(\mu_{sic},\phi),
+\qquad
+\log \mu_{sic} = \log L_{sic}+\alpha+\beta x_i+
+\mathbf z_{sic}^{\mathsf T}\boldsymbol\gamma+b_s+u_{si}.
+$$
+
+Here the negative binomial has variance $\mu+\phi\mu^2$, $L_{sic}>0$ is a cell exposure or normalization factor treated as fixed, $x_i$ indicates treatment, and $\mathbf z_{sic}$ contains prespecified covariates. A donor random intercept $b_s$ captures variation shared across aliquots. An aliquot random intercept $u_{si}$ captures extra variation shared by cells in the same aliquot. A standard specification takes the intercepts as independent centered normal effects, with independent donor groups and conditional independence of cell counts given the modeled effects. Other designs may call for a donor random slope, fixed donor blocking with a suitable residual structure, or additional sample terms. The number of biological blocks limits how much covariance structure can be estimated.
+
+Under this log-link model, $\exp(\beta)$ is the fitted conditional mean ratio at common exposure and covariates, for the same values of the random effects. Estimate $\beta$ from the observed data and report its uncertainty with a method appropriate to the number and structure of biological replicates. A large number of cells can improve measurement within aliquots while leaving between-donor uncertainty substantial. The [generalized linear mixed-model note](../advanced-modeling/generalized-linear-mixed-models.qmd) explains conditional and marginal effects and the role of the random-effects distribution. Replicate-aware benchmarks and simulations document the false-positive inflation that can result from ignoring biological grouping. [Squair et al. (2021)](https://www.nature.com/articles/s41467-021-25960-2) · [Zimmerman et al. (2021)](https://www.nature.com/articles/s41467-021-21038-1)
+
+# Use a hurdle model when the two components matter
+
+Let $Z$ be a nonnegative normalized expression measure that preserves zeros and $D=\mathbf 1\{Z>0\}$. A MAST-style hurdle model fits a logistic model for $\Pr(D=1)$ and a Gaussian model for a transformed positive outcome such as $\log_2(1+Z)$ given $D=1$. In a replicated study, model the appropriate donor or sample dependence in both components. Report which scale each result uses. A logistic coefficient is a conditional log odds ratio, while a coefficient in the positive component is a difference in the mean transformed positive outcome. Any joint test addresses the null that both condition effects vanish. [Finak et al. (2015)](https://link.springer.com/article/10.1186/s13059-015-0844-5) · [Zimmerman et al. (2021)](https://www.nature.com/articles/s41467-021-21038-1)
+
+On the original nonnegative scale, with probabilities and means defined at the same covariate values or under the same population distribution,
+
+$$
+\operatorname E[Z]=\Pr(D=1)\operatorname E[Z\mid D=1].
+$$
+
+For example, a change in detection from $0.40$ to $0.60$ combined with a change in mean positive expression from $3$ to $2$ leaves mean expression at $1.2$. This shift could be visible in the hurdle components even when a mean contrast is near zero. For a fitted log-scale positive model, predict back to the original scale by averaging over the fitted positive distribution. Directly inverting its mean on the transformed scale generally misses the original-scale mean. Changes in detection can arise from capture efficiency, depth, or biology. A statistical change in the detection component alone gives limited evidence about transcriptional switching.
+
+# Diagnose and interpret the fit
+
+- **Design and measurement.** Tabulate donors, aliquots, cells, and library sizes by condition, batch, and annotation. A condition perfectly confounded with processing batch is unidentifiable. Decide whether a covariate such as the fraction of genes detected captures technical variation, biology affected by treatment, or both. If the distinction is unclear, assess how the estimand and estimate change with and without adjustment.
+- **Estimation and calibration.** Inspect detection and positive-expression summaries by donor before reading the model results. Flag nonconvergence, poorly estimated random effects, separation in the logistic component, and variance or zero patterns inconsistent with the count fit. Examine the influence of each donor or pair. For a mean-expression question, compare with a replicate-aware aggregate analysis on a comparable scale.
+- **Cell labels and biological interpretation.** A shift in the proportions of substates within a broad label can move its measured expression mean even when each substate mean is stable. Examine annotation stability and substate proportions, and report the scope of the cell population supporting the result. Protein abundance and pathway activity require their own measurements or supporting evidence.
+- **Reporting.** Give the contrast, measurement scale, number of donors and pairs, effect and interval, and the [multiple-testing family](interpreting-fold-changes-p-values-and-fdr.qmd). If discovery claims span several cell types or model components, define the family accordingly. Report results at the biological replication level supported by the design.

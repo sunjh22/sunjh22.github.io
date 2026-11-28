@@ -1,0 +1,62 @@
+---
+title: "Pseudobulk Inference"
+subtitle: "Aggregate raw counts by sample and cell type, then model biological replicates"
+description: "Build pseudobulk profiles, fit sample-level contrasts, and diagnose coverage and interpretation limits in replicated single-cell studies."
+author: "Jiahong Sun"
+date: "2026-11-28"
+date-modified: "2026-11-28"
+categories: [Statistics, Bioinformatics, Single-cell RNA-seq]
+toc: true
+number-sections: true
+draft: false
+---
+
+Pseudobulk analysis sums raw gene counts across cells of the same annotated type within each biological sample. It retains one count profile per sample and cell type so an expression comparison can use variation between independent samples or within paired donor blocks. The estimand is usually a normalized relative-expression contrast for a cell type. For detection probabilities or the distribution among expressing cells, see [Single-cell differential-expression models](single-cell-differential-expression-models.qmd). [Bioconductor's multi-sample single-cell workflow](https://www.bioconductor.org/books/3.21/OSCA.multisample/multi-sample-comparisons.html)
+
+# Build profiles that preserve the design
+
+Let $Y_{gsc}$ be the raw UMI count for gene $g$ in cell $c$ from sample $s$. With $C_{sk}$ the set of retained cells assigned to type $k$, define
+
+$$
+K_{gsk}=\sum_{c\in C_{sk}}Y_{gsc},
+\qquad
+L_{sk}=\sum_g K_{gsk}.
+$$
+
+Here $L_{sk}$ is the total across genes in the chosen count matrix before any subsequent gene filtering. Keep sample identity, donor, condition, batch and cell yield with each profile. Use annotated cells after sample-aware quality control and sum their raw counts. Integrated coordinates can help define comparable labels. Log-normalized or batch-corrected expression values do not have the integer sampling scale required by a count likelihood.
+
+For paired treated and control aliquots from eight independent donors, create up to 16 profiles per type. Donor is the biological block, the aliquot is the assignment unit and the profile represents an aliquot within a type. Technical lane splits provide coverage. Reconcile records of the same cells and molecule identifiers during quantification to avoid counting the same molecules twice. If separate technical captures are combined at the sample level, retain their provenance for quality checks. Sum at a granularity that preserves the factors needed for the intended contrast. [Biological versus technical replication](biological-versus-technical-replication.qmd)
+
+# Fit a sample-level count model
+
+For a fixed cell type, a negative-binomial working model for a gene is
+
+$$
+K_{gs}\sim\operatorname{NB}(\mu_{gs},\phi_g),\qquad
+\operatorname{Var}(K_{gs})=\mu_{gs}+\phi_g\mu_{gs}^{2},\qquad
+\log\mu_{gs}=\log S_s+\alpha_g+\beta_g x_s+a_{g,d(s)}
++\mathbf z_s^{\mathsf T}\boldsymbol\gamma_g .
+$$
+
+$S_s>0$ is the effective library size for this cell type, using the normalization convention of the fitted method. $x_s$ is the treatment indicator, $a_{g,d(s)}$ is a fixed donor block term for a paired design, and $\mathbf z_s$ holds additional estimable covariates. A reference constraint identifies the intercept and donor terms. For one independent sample per donor, omit the fixed donor terms and estimate a between-donor condition contrast. For more complex repeated measures, a precision-weighted model of pseudobulk expression with donor random effects can represent the dependence. [Differential-expression contrasts and design matrices](differential-expression-contrasts-and-design-matrices.qmd) · [Hoffman et al. (2026)](https://doi.org/10.1038/s41467-026-75680-8)
+
+The normalized mean is $\mu_{gs}/S_s$, so $\exp(\beta_g)$ is its modeled treatment-to-control ratio at matched covariates and donor block. $\beta_g/\log(2)$ is the corresponding log2 fold change. The negative binomial models profile-level variability. Its adequacy is assessed at that level, since summing heterogeneous, dependent cell counts does not in general give a negative-binomial distribution. Estimate dispersions across biological profiles with borrowing across genes and propagate uncertainty using a sample-level method such as the edgeR quasi-likelihood workflow. Use design-aware gene filtering, compute normalization within the cell type, and test the specified coefficient or contrast. [Negative-binomial differential-expression models](negative-binomial-differential-expression-models.qmd) · [Bioconductor's multi-sample workflow](https://www.bioconductor.org/books/3.21/OSCA.multisample/multi-sample-comparisons.html)
+
+# Read a paired comparison
+
+Suppose two of the eight donors contribute the following counts for one gene in monocytes. The effective library sizes are treated as given to illustrate the scale of the contrast.
+
+| Donor | Control count | Control effective size | Treated count | Treated effective size | Treated/control normalized ratio |
+|---|---:|---:|---:|---:|---:|
+| A | 120 | 60,000 | 360 | 120,000 | 1.50 |
+| B | 200 | 100,000 | 120 | 50,000 | 1.20 |
+
+For donor A, the raw count triples while the normalized count increases by half. For donor B, the raw count falls while the normalized count rises by 20%. These ratios help check direction and consistency. The sample-level fit estimates the shared effect and its uncertainty using the available profiles, their exposures and the fitted variability. In a simple complete-pair design with eight donors, there are eight independent paired comparisons. Thousands of monocytes improve profile precision. They share the treatment and donor context of their aliquot.
+
+When exposures track total captured molecules, samples with more captured cells or higher RNA yield can contribute more molecules to a profile. A ratio of summed counts to total molecules is a transcript-weighted composition, which can differ from the arithmetic mean of cell-normalized expression. An extra cell-count offset on top of a library-size offset changes the model and can adjust twice for cell yield. A per-cell absolute RNA estimand requires a defensible measurement and calibration strategy. [Composition bias and normalization factors](composition-bias-and-normalization-factors.qmd)
+
+# Assess coverage, robustness, and scope
+
+- **Distinguish zero counts from missing profiles.** With adequate coverage, a gene count of zero is a valid observation. When no cells of a type were recovered from a sample, its cell-type expression profile is unavailable. Tabulate cell and UMI counts per profile, use a prespecified coverage rule, and report exclusions by condition. In a simple paired fit with fixed donor effects, donors with a single usable condition provide no direct within-donor contrast. Check the number of complete pairs and whether exclusions track condition or sample quality. Condition-dependent recovery can change the population represented by retained profiles.
+- **Audit the fit.** Check the design rank, normalization factors, profile-level ordination, dispersion and residual diagnostics, and influential donors. Inspect paired expression plots for leading genes and assess sensitivity to coverage thresholds, dominant libraries, and annotation granularity. A rare type may have too few measured profiles for a useful model even when the overall experiment has many cells. [Crowell et al. (2020)](https://doi.org/10.1038/s41467-020-19894-4)
+- **Set the reporting scope.** Give donor and profile counts, normalization method, contrast, log2 fold change with uncertainty, and adjusted $p$-value with its testing family. Adjustment within each type supports type-specific claims. If the discovery list is pooled across types, plan the multiplicity procedure for that scope. An expression shift among captured cells can reflect changing substate composition within a label. A separate abundance analysis addresses how much of the sampled population belongs to that label. [Squair et al. (2021)](https://www.nature.com/articles/s41467-021-25960-2) · [Interpreting fold changes, p-values, and FDR](interpreting-fold-changes-p-values-and-fdr.qmd)
